@@ -1,12 +1,28 @@
-# BACKSTAGE
+<div align="center">
+  <img src="public/backstage-logo.png" alt="BACKSTAGE" width="96" />
+  <h1>BACKSTAGE</h1>
+  <p><strong>Second cerveau IA personnel — déployé en production.</strong></p>
+  <p>
+    Chat IA à mémoire persistante · Passkey (WebAuthn) · Streaming SSE ·
+    Rappels synchronisés · Notifications push · PWA installable
+  </p>
+</div>
 
-**Second cerveau IA · Code · Photo · Mémoire**
-
-Une PWA personnelle qui centralise chat IA, mémoire longue, rappels, agenda, mails,
-watch-later, accréditations photo et brief du matin — le tout dans une seule interface
-éditoriale sombre, installable, utilisable hors-ligne.
+![Aperçu de BACKSTAGE](public/screenshots/hero-flux.jpg)
 
 > _Un bon outil personnel, c'est comme une bonne photo : si tu remarques l'interface avant l'intention, c'est raté._
+
+**Ce que c'est** — une PWA qui centralise chat IA, mémoire longue, rappels,
+agenda, emploi du temps, mails, watch-later et accréditations photo dans une
+seule interface éditoriale sombre, installable et utilisable hors-ligne.
+
+| | |
+| --- | --- |
+| **Échelle** | 32 000 lignes · 25 pages · 34 routes API · 20 Server Actions |
+| **Qualité** | 46 fichiers de tests (Vitest) + E2E Playwright |
+| **Auth** | Passkey WebAuthn + JWT, OAuth Google & Microsoft |
+| **Déploiement** | Build standalone Next.js sur hébergement mutualisé (cPanel) |
+| **Données** | Fichiers JSON avec écritures atomiques, verrous et rotation de backups |
 
 ---
 
@@ -39,14 +55,17 @@ Calendar, LeetCode, concerts) se répondent entre eux.
 
 ---
 
-## 🌟 Le truc qui me tient à cœur
+## 🌟 Ce que je montre
 
-![Aperçu](public/screenshots/shot.png)
+| | |
+| --- | --- |
+| ![Mémoire persistante](public/screenshots/brain.jpg) | ![Panneau de contexte](public/screenshots/panneau-code.jpg) |
+| **La mémoire longue** — l'IA retient des faits, tu les corriges ou les oublies | **Le panneau de contexte** — Flux, agenda, inbox, code et photos dans une seule colonne |
 
-- **Tout dans une seule vue** : chat à gauche, agenda / mail / leetcode / mémoire à droite, aucune page qui coupe le flux
+- **Tout dans une seule vue** : chat à gauche, agenda / mail / LeetCode / mémoire à droite, aucune page qui coupe le flux
 - **IA qui agit vraiment** : `fetch_page`, `fetch_page_title`, `search_web`, `remember_fact` — pas du texte dans un coin
 - **Pensé pour le quotidien** : raccourcis clavier (`⌘K` palette, `?` aide), PWA installable, fonctionne en 3G
-- **Le détail, c'est l'intention** : un loader avant que l'IA ne "pense", un dot animé pendant qu'elle raisonne, un toast quand elle touche au calendrier
+- **Le détail, c'est l'intention** : un loader avant que l'IA ne « pense », un dot animé pendant qu'elle raisonne, un toast quand elle touche au calendrier
 
 ➜ **[Voir le code en action](#installation)** (clone + `bun dev`)
 
@@ -63,6 +82,39 @@ Calendar, LeetCode, concerts) se répondent entre eux.
 
 > Un bon outil personnel, c'est un outil qu'on peut ouvrir à 2h du matin
 > sans se demander si la dépendance de gauche va casser.
+
+---
+
+## 🧩 Trois problèmes réels, et ce qu'ils m'ont appris
+
+Ce sont les bugs qui m'ont le plus coûté de temps — donc les plus instructifs.
+
+**1. Un bundle edge qui embarquait le système de fichiers.**
+Mon proxy d'authentification plantait au démarrage en production avec
+`__import_unsupported is not defined`. La cause : un import **statique** de
+`dotenv` dans `instrumentation.ts`, qui embarque `fs`, `path`, `os` et
+`crypto` dans le bundle edge — alors qu'un runtime edge n'a pas de système
+de fichiers. Corrigé par des imports dynamiques gardés par une condition
+`NEXT_RUNTIME === "nodejs"`.
+*Ce que j'en retiens : sur un runtime edge, ce que tu importes statiquement
+finit dans le bundle, même si tu ne l'exécutes jamais.*
+
+**2. Playwright fonctionnait en local, mort en production.**
+La synchro de l'emploi du temps passait au green sur ma machine et plantait
+une fois déployé. L'hébergement de prod est un cPanel en `--production`,
+sans Chromium : toute solution Playwright y était condamnée. J'ai réécrit le
+scraping en `fetch` HTTP pur (CSRF → login → skip CVEC → décodage JSON de
+l'attribut HTML).
+*Ce que j'en retiens : le meilleur test, c'est d'essayer sur la
+production avant d'y déployer.*
+
+**3. Une API qui répond HTTP 200 en échouant.**
+Mes compteurs LeetCode affichaient quatre zéros. Trois erreurs distinctes :
+les compteurs ne sont pas sur `/{pseudo}` (mais sur `/{pseudo}/solved`), un
+pseudo inconnu répond **200** avec un tableau `errors` dans le corps, et
+`ranking: 5000001` signifie « non classé », pas un numéro.
+*Ce que j'en retiens : HTTP 200 ne veut pas dire succès, et un champ bien
+nommé ne signifie pas ce qu'on croit.*
 
 ---
 
@@ -170,7 +222,7 @@ scripts/               # cron-scheduler, reset-passkey, QA (playwright)
 | Contact               | Lien                                                               |
 | --------------------- | ------------------------------------------------------------------ |
 | Email                 | [contact.mprnl@gmail.com](mailto:contact.mprnl@gmail.com)          |
-| GitHub                | [github.com/MattiaParrinello](https://github.com/mattiaPARRINELLO) |
+| GitHub                | [github.com/MattiaPARRINELLO](https://github.com/MattiaPARRINELLO) |
 | Portfolio développeur | [dev.mprnl.fr](https://dev.mprnl.fr)                               |
 | Portfolio photo       | [photo.mprnl.fr](https://photo.mprnl.fr)                           |
 | Instagram photo       | [instagram.com/mattia_jpeg](https://instagram.com/mattia_jpeg)     |

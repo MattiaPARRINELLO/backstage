@@ -17,7 +17,7 @@ const defaultConfig = {
     generalAlt: "deepseek-v4-flash",
     code: "kimi-k2.7-code",
     titleModel: "deepseek-v4-flash",
-    discordBot: "muse-spark-1.3-contributor",
+    discordBot: "deepseek-v4.1-flash",
   },
   llm: { temperature: 0.7, maxTokens: 4096 },
   features: { dailyBrief: true, webSearch: true, discordNotifications: true },

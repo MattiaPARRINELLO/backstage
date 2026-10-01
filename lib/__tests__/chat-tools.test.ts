@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const mockStorage = {
   webSearch: vi.fn(),
@@ -30,7 +30,17 @@ const mockGoogleActions = {
   deleteGoogleCalendarEvent: vi.fn(),
 };
 
+// get_schedule importe le module schedule dynamiquement
+const mockSchedule = {
+  getCourses: vi.fn(),
+  formatCourse: vi.fn((c: { subject: string; room: string }) => `${c.subject} — ${c.room}`),
+  getCoursesForDay: vi.fn(),
+  getNextCourse: vi.fn(),
+  getUpcomingCourses: vi.fn(),
+};
+
 vi.mock("@/lib/storage", () => mockStorage);
+vi.mock("@/lib/storage/schedule", () => mockSchedule);
 vi.mock("@/lib/google-actions", () => mockGoogleActions);
 
 const { executeTool, REQUIRE_CONFIRMATION, ACTION_BLOCKED_PREFIX } = await import("@/lib/chat-tools");
@@ -122,5 +132,49 @@ describe("chat-tools — confirmation des actions IA", () => {
     expect(result.startsWith(ACTION_BLOCKED_PREFIX)).toBe(false);
     expect(result).toContain("Scan termine");
     expect(mockGoogleActions.fetchGmailMessages).toHaveBeenCalled();
+  });
+});
+
+
+describe("chat-tools — get_schedule", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSchedule.getCourses.mockResolvedValue([{ uuid: "u1", subject: "Analyse", room: "Amphi B" }]);
+    mockSchedule.getUpcomingCourses.mockReturnValue([]);
+    mockSchedule.getNextCourse.mockReturnValue({ uuid: "u1", subject: "Analyse", room: "Amphi B" });
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-01T10:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("scope=tomorrow interroge le lendemain, pas la semaine", async () => {
+    mockSchedule.getCoursesForDay.mockReturnValue([]);
+
+    const out = await executeTool("get_schedule", { scope: "tomorrow" });
+
+    expect(mockSchedule.getCoursesForDay).toHaveBeenCalledWith(expect.anything(), "2026-10-02");
+    expect(out).toBe("Pas de cours demain.");
+  });
+
+  it("scope=tomorrow liste les seances du lendemain", async () => {
+    mockSchedule.getCoursesForDay.mockReturnValue([
+      { uuid: "u1", subject: "Analyse", room: "Amphi B" },
+    ]);
+
+    const out = await executeTool("get_schedule", { scope: "tomorrow" });
+
+    expect(mockSchedule.getCoursesForDay).toHaveBeenCalledWith(expect.anything(), "2026-10-02");
+    expect(out).toContain("Cours vendredi 2 octobre");
+    expect(out).toContain("Analyse — Amphi B");
+  });
+
+  it("scope=next reste le defaut quand aucun scope n'est fourni", async () => {
+    const out = await executeTool("get_schedule", {});
+
+    expect(mockSchedule.getNextCourse).toHaveBeenCalled();
+    expect(out).toContain("Prochain cours");
   });
 });

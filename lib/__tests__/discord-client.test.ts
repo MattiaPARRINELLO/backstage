@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // getConfig() est mocké : les tests ne doivent pas dépendre de data/config.json.
 const config = {
   features: { discordNotifications: true },
-  discord: { userId: "424242424242424242", alerts: true },
+  discord: { userId: "424242424242424242", alerts: true, bot: true },
 };
 
 vi.mock("@/lib/config", () => ({
@@ -26,7 +26,13 @@ const { resetChannelCache, sendDirectMessage, verifyConnection } = await import(
 const { notifyDiscord, notifyDiscordAlert, redactSecrets, alertKey, resetAlertThrottle } =
   await import("@/lib/discord/notify");
 
-const credentials = { token: "bot-token-test", userId: "424242424242424242", events: true, alerts: true };
+const credentials = {
+  token: "bot-token-test",
+  userId: "424242424242424242",
+  events: true,
+  alerts: true,
+  bot: true,
+};
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

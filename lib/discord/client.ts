@@ -8,6 +8,7 @@ const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
 // Cache du salon DM : Discord renvoie toujours le meme salon prive pour un
 // couple bot/utilisateur, le reouvrir a chaque envoi serait un appel perdu.
 let cachedChannelId: string | null = null;
+let cachedBotUserId: string | null = null;
 
 async function discordFetch(
   token: string,
@@ -154,6 +155,42 @@ export async function sendDirectMessage(
   }
 }
 
+/** Message texte simple dans le DM (réponses du bot conversationnel). */
+export async function sendPlainMessage(
+  config: DiscordConfig,
+  content: string
+): Promise<DiscordSendResult> {
+  const trimmed = content.trim();
+  if (!trimmed) return { sent: false, reason: "message vide" };
+
+  let channelId = cachedChannelId;
+  if (!channelId) {
+    const opened = await openDirectChannel(config.token, config.userId);
+    if ("error" in opened) {
+      return { sent: false, reason: `salon DM introuvable — ${opened.error}` };
+    }
+    channelId = opened.id;
+    cachedChannelId = channelId;
+  }
+
+  const { ok, status, body } = await discordFetch(
+    config.token,
+    `/channels/${channelId}/messages`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: trimmed.slice(0, 1900),
+        allowed_mentions: { parse: [] },
+      }),
+    }
+  );
+  if (ok) return { sent: true };
+  const reason = `${status} — ${apiErrorMessage(body)}`;
+  console.warn(`[discord] Message envoye en echec : ${reason}`);
+  return { sent: false, reason };
+}
+
 /** Test de connexion depuis /settings (validation explicite demandee). */
 export async function verifyConnection(
   config: DiscordConfig
@@ -174,8 +211,29 @@ export async function verifyConnection(
   }
 }
 
+/** Identifiant du bot lui-meme : distingue ses reponses des messages de l'user. */
+export async function getBotUserId(token: string): Promise<string | null> {
+  if (cachedBotUserId) return cachedBotUserId;
+  const { ok, body } = await discordFetch(token, "/users/@me", { method: "GET" });
+  if (!ok || !body || typeof body !== "object") return null;
+  const id = (body as { id?: unknown }).id;
+  if (typeof id !== "string") return null;
+  cachedBotUserId = id;
+  return id;
+}
+
+/** Salon DM courant, ouvert a la demande. */
+export async function getDirectChannelId(config: DiscordConfig): Promise<string | null> {
+  if (cachedChannelId) return cachedChannelId;
+  const opened = await openDirectChannel(config.token, config.userId);
+  if ("error" in opened) return null;
+  cachedChannelId = opened.id;
+  return cachedChannelId;
+}
+
 export function resetChannelCache() {
   cachedChannelId = null;
+  cachedBotUserId = null;
 }
 
 export type { DiscordEmbed };

@@ -67,6 +67,7 @@ export function DiscordCard() {
   const [userId, setUserId] = useState("");
   const [events, setEvents] = useState(true);
   const [alerts, setAlerts] = useState(true);
+  const [bot, setBot] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -79,6 +80,7 @@ export function DiscordCard() {
         setUserId(current.userId);
         setEvents(current.events);
         setAlerts(current.alerts);
+        setBot(current.bot);
       })
       .catch(() => {});
   }, []);
@@ -87,7 +89,7 @@ export function DiscordCard() {
     setSaving(true);
     setMsg(null);
     try {
-      const next = await updateDiscordSettings({ userId, events, alerts });
+      const next = await updateDiscordSettings({ userId, events, alerts, bot });
       setStatus(next);
       setMsg({ ok: true, text: "Réglages Discord enregistrés" });
     } catch (e) {
@@ -159,6 +161,13 @@ export function DiscordCard() {
             subtitle="Brief du jour, cours 30 min avant, rappels et relances en DM"
           >
             <Switch checked={events} onChange={setEvents} label="Notifications d'événements" />
+          </Row>
+
+          <Row
+            title="Bot conversationnel"
+            subtitle="Lit ce DM et répond en langage naturel (cours, rappels, météo — lecture seule)"
+          >
+            <Switch checked={bot} onChange={setBot} label="Bot conversationnel" />
           </Row>
 
           <Row

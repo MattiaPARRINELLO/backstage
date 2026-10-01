@@ -63,6 +63,35 @@ export async function chatOpenAI(
   return { content, toolCalls };
 }
 
+/**
+ * Certains modèles du catalogue (ex. muse-spark-*-contributor) n'acceptent que
+ * l'API Responses : `chat.completions` renvoie 400 ModelProtocolUnsupported.
+ * Cet appel n'est fait qu'après ce refus, donc jamais facturé deux fois.
+ */
+export async function responsesOpenAI(
+  model: string,
+  messages: UnifiedMessage[],
+  signal?: AbortSignal,
+  sessionId?: string
+): Promise<ChatCompletionResult> {
+  const client = new OpenAI(getClientConfig(sessionId));
+
+  const instructions = messages
+    .filter((m) => m.role === "system")
+    .map((m) => m.content ?? "")
+    .join("\n\n");
+  const input: OpenAI.Responses.ResponseInputItem[] = messages
+    .filter((m) => m.role !== "system")
+    .map((m) => ({ role: m.role, content: m.content ?? "" }) as OpenAI.Responses.ResponseInputItem);
+
+  const response = await client.responses.create(
+    { model, instructions, input, max_output_tokens: 512 },
+    { signal, timeout: REQUEST_TIMEOUT_MS }
+  );
+
+  return { content: response.output_text ?? "", toolCalls: [] };
+}
+
 export async function* streamOpenAI(
   model: string,
   messages: UnifiedMessage[],

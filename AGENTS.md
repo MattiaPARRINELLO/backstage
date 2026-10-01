@@ -237,6 +237,8 @@ générée par l'app** (`next/og` + polices Inter / JetBrains Mono embarquées d
 | `cards.tsx` | rendu `ImageResponse` : une carte par type, hauteur mesurée        |
 | `text.ts`   | helpers purs (troncature, comptage de lignes) — testables          |
 | `digest.ts` | digest de la carte à partir du brief persisté (aucun refetch)      |
+| `agent.ts`  | routeur IA : whitelist lecture seule + choix d'outil en JSON strict  |
+| `bot.ts`    | polling du DM, curseur verrouillé (CAS), réponse texte brut            |
 | `notify.ts` | façade, throttle des alertes, masquage des jetons                  |
 
 - **Événements** : `daily-brief`, `course`, `reminder`, `intention`, `alert`,
@@ -258,8 +260,18 @@ générée par l'app** (`next/og` + polices Inter / JetBrains Mono embarquées d
 - **Dédup des alertes** : la clé est `module + message` *neutralisé* (URLs et
   identifiants remplacés par `<url>` / `<id>`) — sans cette normalisation,
   « Push ÉCHEC 410 → <endpoint> » produisait une alerte par appareil.
+- **Bot conversationnel** : `pollDiscordOnce()` (toutes les 5 s, dans le
+  scheduler) lit le DM et répond en langage naturel. Le message va au routeur
+  (`muse-spark-1.3-contributor`, `models.discordBot`) qui renvoie un JSON
+  `{"tool":…,"args":…}` ; seul le **nom** est exécuté, via `executeTool` de
+  `lib/chat-tools.ts`. Trois garde-fous : la whitelist `READ_ONLY_TOOLS` est
+  appliquée côté serveur (un petit modèle hallucine un nom d'outil), le curseur
+  avance par compare-and-set (`data/discord-bot-state.json`) pour qu'un second
+  worker ne réponde pas deux fois, et aucun outil à effet externe n'est exposé.
+  Réponse en texte brut, sans carte image.
 - **Réglages** : `/settings` → carte Discord (`app/settings/DiscordCard.tsx`,
-  actions `app/actions/discord.ts`). Le token reste en env, jamais persisté.
+  actions `app/actions/discord.ts`) : destinataire, événements, alertes,
+  bot conversationnel, test d'envoi. Le token reste en env, jamais persisté.
 - **Vérification visuelle** : `bun run discord:preview` écrit les cartes dans
   `test-results/discord-cards/`. Le rendu WASM ne survit pas au transform de
   vitest : les tests unitaires couvrent embed, digest, client et helpers purs.
@@ -382,7 +394,7 @@ Ré-exporte `export *` des 14 domaines + `./web`, mais de `storage-core` seuleme
 
 `accreditations` · `activity` · `chat-history` · `concerts` · `config` ·
 `consent` · `demo-calls` · `emails` · `gallery` · `intentions` · `leetcode` · `memory` ·
-`notified-briefs` · `notified-courses` · `notified-reminders` · `photo-shoots` · `push-subscriptions` ·
+`discord-bot-state` · `notified-briefs` · `notified-courses` · `notified-reminders` · `photo-shoots` · `push-subscriptions` ·
 `reminders` · `schedule` · `server-cache` · `users` · `watch-later`
 
 Tokens OAuth : `calendar-token` · `gmail-token` · `microsoft-todo-token` ·

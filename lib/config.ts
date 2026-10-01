@@ -8,6 +8,8 @@ export interface AppConfig {
     generalAlt: string;
     code: string;
     titleModel: string;
+    /** Routeur du bot Discord : le plus petit modèle suffit. */
+    discordBot: string;
   };
   llm: {
     temperature: number;
@@ -24,6 +26,8 @@ export interface AppConfig {
     userId: string;
     /** Alertes techniques issues de serverLog. */
     alerts: boolean;
+    /** Bot conversationnel (lecture seule du DM). */
+    bot: boolean;
   };
   theme: {
     accentColor: string;
@@ -39,6 +43,7 @@ const defaultConfig: AppConfig = {
     generalAlt: "deepseek-v4-flash",
     code: "kimi-k2.7-code",
     titleModel: "deepseek-v4-flash",
+    discordBot: "muse-spark-1.3-contributor",
   },
   llm: {
     temperature: 0.7,
@@ -52,6 +57,7 @@ const defaultConfig: AppConfig = {
   discord: {
     userId: "",
     alerts: true,
+    bot: true,
   },
   theme: {
     accentColor: "#a5b4fc",

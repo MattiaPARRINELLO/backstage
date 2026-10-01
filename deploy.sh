@@ -76,10 +76,16 @@ MICROSOFT_REDIRECT_URI=${MICROSOFT_REDIRECT_URI}
 CRON_SECRET=${CRON_SECRET:-}
 CESAR_USERNAME=${CESAR_USERNAME}
 CESAR_PASSWORD=${CESAR_PASSWORD}
+DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
+DISCORD_USER_ID=${DISCORD_USER_ID:-}
 EOF
 
 if [ -z "${CRON_SECRET:-}" ]; then
   echo -e "${YELLOW}⚠  CRON_SECRET non défini dans .deploy.env — les routes /api/cron/* seront refusées en production. Définissez-le (openssl rand -hex 32) et ajoutez le header x-cron-secret à votre crontab.${NC}"
+fi
+
+if [ -z "${DISCORD_BOT_TOKEN:-}" ]; then
+  echo -e "${YELLOW}⚠  DISCORD_BOT_TOKEN non défini dans .deploy.env — les DM Discord (brief du jour, cours, rappels) resteront inactifs en production.${NC}"
 fi
 
 echo -e "${GREEN}✓ Standalone prêt dans ${DEPLOY_TMP}${NC}"

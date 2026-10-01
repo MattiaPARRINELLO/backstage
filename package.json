@@ -13,6 +13,7 @@
     "analyze": "ANALYZE=true bun run build",
     "cron:reminders": "bun scripts/cron-scheduler.ts reminders",
     "cron:daily-brief": "bun scripts/cron-scheduler.ts daily-brief",
+    "discord:preview": "bun scripts/discord-card-preview.tsx",
     "reset:passkey": "bun scripts/reset-passkey.ts"
   },
   "dependencies": {

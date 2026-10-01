@@ -65,6 +65,7 @@ Mono-utilisateur, auth par passkey, données en JSON local.
 | Cron rappels     | `bun run cron:reminders`   |
 | Cron daily brief | `bun run cron:daily-brief` |
 | Reset passkey    | `bun run reset:passkey`    |
+| Aperçu cartes    | `bun run discord:preview`  |
 
 ⚠️ `bun build` ≠ `bun run build`. Le premier est le bundler Bun et ne construit
 pas l'app Next.
@@ -102,6 +103,7 @@ lib/
   storage/          CRUD par domaine (15 fichiers)
   types/            définitions par domaine (17 fichiers)
   ai-providers/     openai, anthropic, config, types
+  discord/          notifications Discord (DM bot + cartes next/og)
   __tests__/        tests unitaires
 e2e/                specs Playwright (helpers, global-setup, projets no-auth/chromium)
 scripts/            cron-scheduler, reset-passkey, cesar-smoke, scripts de QA/screenshots
@@ -215,10 +217,44 @@ Ne jamais réintroduire Playwright ici : ça casse la prod standalone.
   dans `lib/storage/schedule.ts`.
 - Notifications : `checkScheduleNotifs()` envoie un push **30 min avant** chaque
   cours (matière + salle + heure), anti-doublon dans `data/notified-courses.json`.
+  Le même message part en DM Discord (voir « Notifications Discord »).
 - Chat : outil **lecture seule** `get_schedule` (`scope: today|week|next`,
   `subject` optionnel) — jamais dans `REQUIRE_CONFIRMATION`.
 - Daily brief : bloc « Cours du jour » + instruction de citer la salle du
   prochain cours.
+
+### Notifications Discord (`lib/discord/`)
+
+Le canal Discord double le web push : un DM du bot, avec embed **et carte PNG
+générée par l'app** (`next/og` + polices Inter / JetBrains Mono embarquées dans
+`assets/fonts/`).
+
+| Fichier     | Rôle                                                              |
+| ----------- | ----------------------------------------------------------------- |
+| `config.ts` | token (env) + `userId` (env ou `/settings`) + interrupteurs        |
+| `client.ts` | REST v10 : ouverture du DM (mise en cache), envoi multipart        |
+| `embed.ts`  | markdown IA → markdown Discord, embeds bornés aux limites Discord  |
+| `cards.tsx` | rendu `ImageResponse` : une carte par type, hauteur mesurée        |
+| `text.ts`   | helpers purs (troncature, comptage de lignes) — testables          |
+| `digest.ts` | digest de la carte à partir du brief persisté (aucun refetch)      |
+| `notify.ts` | façade, throttle des alertes, masquage des jetons                  |
+
+- **Événements** : `daily-brief`, `course`, `reminder`, `intention`, `alert`,
+  `test`. `sendPushToAll(payload, tag, discordEvent?)` envoie les deux canaux en
+  parallèle ; `sent` vaut vrai si **l'un des deux** a réussi — sinon un rappel
+  dont l'utilisateur n'a aucun appareil abonné serait retenté toutes les 60 s
+  indéfiniment.
+- **Alertes techniques** : `serverLog(..., "error")` déclenche un DM (import
+  dynamique). Le module `lib/discord/*` ne journalise **jamais** via `serverLog`
+  (c'est la règle anti-boucle) ; les alertes sont dédupliquées 30 min par couple
+  module/message, plafonnées à 8/h, et les jetons sont masqués avant envoi.
+- **Démarrage** : le scheduler tourne si **VAPID ou** `DISCORD_BOT_TOKEN` est
+  présent — jamais l'un au détriment de l'autre.
+- **Réglages** : `/settings` → carte Discord (`app/settings/DiscordCard.tsx`,
+  actions `app/actions/discord.ts`). Le token reste en env, jamais persisté.
+- **Vérification visuelle** : `bun run discord:preview` écrit les cartes dans
+  `test-results/discord-cards/`. Le rendu WASM ne survit pas au transform de
+  vitest : les tests unitaires couvrent embed, digest, client et helpers purs.
 
 ### Trois implémentations de session — ne pas confondre
 
@@ -247,6 +283,11 @@ En production seulement : `HSTS` + `CSP`.
 
 ⚠️ La CSP autorise `script-src 'unsafe-inline'` — requis par les scripts inline
 de préchargement RSC de Next. Ne pas « corriger » sans vérifier que l'app démarre.
+
+⚠️ `outputFileTracingIncludes` embarque `assets/fonts/*.ttf` et les icônes dans
+le build standalone : `lib/discord/cards.tsx` les lit avec `fs`, donc l'analyse
+statique des imports ne les voit pas. Sans cette entrée, les DM Discord
+arrivent sans carte image en production.
 
 ---
 
@@ -364,6 +405,7 @@ Nouveau domaine → nouveau fichier dans `lib/types/` + ajout au barrel.
 | Emploi du temps CESAR    | `lib/cesar-client.ts` (fetch pur, aucun navigateur)              | `CESAR_USERNAME` / `CESAR_PASSWORD`              |
 | Météo                    | OpenWeatherMap (`lib/daily-brief.ts`, `lib/storage/concerts.ts`) | —                                                |
 | Push                     | `lib/send-push.ts`, `lib/push-subscriptions.ts`                  | VAPID                                            |
+| Discord (DM bot)         | `lib/discord/*` — REST v10, embed + carte PNG (`next/og`)         | `DISCORD_BOT_TOKEN`                              |
 
 ⚠️ **Sync bidirectionnelle Microsoft** : `loadReminders()` appelle
 `reconcileRemindersWithMicrosoft()` ; create/update/delete poussent vers MS.
@@ -475,7 +517,8 @@ avec AUTH_SECRET aléatoire et VAPID vides).
 `MICROSOFT_CLIENT_ID` / `_SECRET` / `_REDIRECT_URI` · `SETUP_TOKEN`
 (enregistrement passkey initial) · `OPENWEATHERMAP_API_KEY` ·
 `BRAVE_SEARCH_API_KEY` · `VAPID_SUBJECT` / `VAPID_PRIVATE_KEY` /
-`NEXT_PUBLIC_VAPID_PUBLIC_KEY` · `CRON_BASE_URL` · `ANALYZE` · `CESAR_BASE` (défaut `https://cesar.emineo-education.fr`) ·
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY` · `DISCORD_BOT_TOKEN` / `DISCORD_USER_ID`
+(notifications Discord ; `DISCORD_API_BASE` pour les tests) · `CRON_BASE_URL` · `ANALYZE` · `CESAR_BASE` (défaut `https://cesar.emineo-education.fr`) ·
 `GOOGLE_TESTING_EXPIRY` (`"true"` uniquement si projet Google en mode Testing : réactive l'alerte d'âge ~7 j, sinon seul un refresh échoué déclenche « à reconnecter »)
 
 Modèle complet : `.deploy.env.example`.

@@ -25,6 +25,7 @@ import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { AccentPicker } from "@/components/ui/AccentPicker";
+import { DiscordCard } from "./DiscordCard";
 import { api, type GoogleLinkStatus, type MicrosoftTodoStatus } from "@/lib/api-client";
 import { useCachedFetch } from "@/lib/cache";
 
@@ -490,6 +491,8 @@ export default function SettingsPage() {
                 </div>
               </CardBody>
             </Card>
+
+            <DiscordCard />
 
             <Card>
               <CardHeader

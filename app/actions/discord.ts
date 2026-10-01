@@ -15,6 +15,8 @@ export interface DiscordStatus {
   userId: string;
   events: boolean;
   alerts: boolean;
+  /** Bot conversationnel : lit le DM et répond en langage naturel. */
+  bot: boolean;
   /** Un DM peut réellement partir (bot + destinataire). */
   ready: boolean;
 }
@@ -26,6 +28,7 @@ async function currentStatus(): Promise<DiscordStatus> {
     userId: config.userId,
     events: config.events,
     alerts: config.alerts,
+    bot: config.bot,
     ready: Boolean(config.token && config.userId),
   };
 }
@@ -44,6 +47,7 @@ const updateDiscordSchema = z
       .regex(/^\d*$/, "Identifiant Discord numerique attendu"),
     events: z.boolean(),
     alerts: z.boolean(),
+    bot: z.boolean(),
   })
   .strict();
 
@@ -51,6 +55,7 @@ export async function updateDiscordSettings(input: {
   userId: string;
   events: boolean;
   alerts: boolean;
+  bot: boolean;
 }): Promise<DiscordStatus> {
   await requireSession();
 
@@ -60,7 +65,11 @@ export async function updateDiscordSettings(input: {
   }
 
   await updateConfig({
-    discord: { userId: parsed.data.userId, alerts: parsed.data.alerts },
+    discord: {
+      userId: parsed.data.userId,
+      alerts: parsed.data.alerts,
+      bot: parsed.data.bot,
+    },
     features: { discordNotifications: parsed.data.events },
   });
   revalidatePath("/settings");

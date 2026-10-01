@@ -11,6 +11,8 @@ export interface DiscordConfig extends DiscordCredentials {
   events: boolean;
   /** Alertes techniques issues de serverLog. */
   alerts: boolean;
+  /** Bot conversationnel : lit le DM et répond en langage naturel. */
+  bot: boolean;
 }
 
 export function getDiscordCredentials(): DiscordCredentials {
@@ -33,6 +35,7 @@ export async function getDiscordConfig(): Promise<DiscordConfig> {
     userId: config.discord?.userId?.trim() || env.userId,
     events: config.features.discordNotifications !== false,
     alerts: config.discord?.alerts !== false,
+    bot: config.discord?.bot !== false,
   };
 }
 

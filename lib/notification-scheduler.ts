@@ -11,8 +11,12 @@ let schedulerStarted = false;
 let reminderInterval: ReturnType<typeof setInterval> | null = null;
 let dailyBriefTimeout: ReturnType<typeof setTimeout> | null = null;
 let dailyBriefInterval: ReturnType<typeof setInterval> | null = null;
+let discordPollInterval: ReturnType<typeof setInterval> | null = null;
 
 const REMINDER_INTERVAL_MS = 60_000;
+// Polling du DM : une seule requete toutes les 5 s, largement sous le budget
+// global de l'API Discord (50 requetes/minute pour le token du bot).
+const DISCORD_POLL_MS = 5_000;
 const DAILY_BRIEF_HOUR = 7;
 const NOTIFIED_FILE = "notified-reminders.json";
 const NOTIFIED_COURSES_FILE = "notified-courses.json";
@@ -435,6 +439,18 @@ export function startScheduler() {
 
   startDailyBrief();
 
+  if (discordReady) {
+    const poll = () => {
+      void import("./discord/bot")
+        .then((m) => m.pollDiscordOnce())
+        .catch((err) => {
+          console.warn(`[scheduler] Bot Discord : ${err instanceof Error ? err.message : String(err)}`);
+        });
+    };
+    poll();
+    discordPollInterval = setInterval(poll, DISCORD_POLL_MS);
+  }
+
   console.log("[scheduler] Started — reminders every 60s, daily brief at", DAILY_BRIEF_HOUR + "h");
 }
 
@@ -450,6 +466,10 @@ export function stopScheduler() {
   if (dailyBriefInterval) {
     clearInterval(dailyBriefInterval);
     dailyBriefInterval = null;
+  }
+  if (discordPollInterval) {
+    clearInterval(discordPollInterval);
+    discordPollInterval = null;
   }
   schedulerStarted = false;
   console.log("[scheduler] Stopped");

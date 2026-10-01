@@ -23,9 +23,8 @@ process.env.DISCORD_BOT_TOKEN = "bot-token-test";
 const { resetChannelCache, sendDirectMessage, verifyConnection } = await import(
   "@/lib/discord/client"
 );
-const { notifyDiscord, notifyDiscordAlert, redactSecrets, resetAlertThrottle } = await import(
-  "@/lib/discord/notify"
-);
+const { notifyDiscord, notifyDiscordAlert, redactSecrets, alertKey, resetAlertThrottle } =
+  await import("@/lib/discord/notify");
 
 const credentials = { token: "bot-token-test", userId: "424242424242424242", events: true, alerts: true };
 
@@ -73,6 +72,18 @@ describe("redactSecrets", () => {
 
   it("masque les longues séquences (jetons, clés, endpoints signés)", () => {
     expect(redactSecrets("push https://fcm.test/send/" + "a".repeat(60))).toContain("***");
+  });
+});
+
+describe("alertKey", () => {
+  it("neutralise les parties variables (endpoint d'appareil, identifiant)", () => {
+    const a = alertKey("scheduler", "Push ÉCHEC 410 → https://fcm.test/send/aaa:APA91bX1");
+    const b = alertKey("scheduler", "Push ÉCHEC 410 → https://fcm.test/send/bbb:APA91bY2");
+    expect(a).toBe(b);
+  });
+
+  it("distingue deux erreurs différentes", () => {
+    expect(alertKey("scheduler", "Push ÉCHEC 410")).not.toBe(alertKey("scheduler", "Push ÉCHEC 500"));
   });
 });
 
@@ -218,6 +229,25 @@ describe("notifyDiscord", () => {
 
     await notifyDiscordAlert({ module: "scheduler", message: "Boom", level: "error" });
     await notifyDiscordAlert({ module: "scheduler", message: "Boom", level: "error" });
+
+    expect(calls.filter((c) => c.url.endsWith("/messages"))).toHaveLength(1);
+  });
+
+  it("déduplique aussi les erreurs qui ne diffèrent que par l'endpoint", async () => {
+    stubFetch(({ url }) =>
+      url.endsWith("/users/@me/channels") ? jsonResponse({ id: "chan-1" }) : jsonResponse({})
+    );
+
+    await notifyDiscordAlert({
+      module: "scheduler",
+      message: "Push ÉCHEC 410 → https://fcm.test/send/aaa:APA91bX1",
+      level: "error",
+    });
+    await notifyDiscordAlert({
+      module: "scheduler",
+      message: "Push ÉCHEC 410 → https://fcm.test/send/bbb:APA91bY2",
+      level: "error",
+    });
 
     expect(calls.filter((c) => c.url.endsWith("/messages"))).toHaveLength(1);
   });

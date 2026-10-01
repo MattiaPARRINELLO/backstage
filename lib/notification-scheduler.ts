@@ -54,6 +54,42 @@ async function markReminderNotified(id: string): Promise<void> {
 
 const COURSE_LEAD_MIN = 30;
 
+// Le brief du jour est déclenché à la fois par le scheduler interne (7h) et par
+// le cron cPanel : sans cette garde, chaque appel renvoyait un DM et un push.
+const NOTIFIED_BRIEFS_FILE = "notified-briefs.json";
+const BRIEF_HISTORY_DAYS = 7;
+
+async function isBriefAlreadySent(date: string): Promise<boolean> {
+  try {
+    const { readJsonSafe } = await import("./storage");
+    const data = await readJsonSafe<{ briefs: { date: string; at: string }[] }>(
+      NOTIFIED_BRIEFS_FILE,
+      { briefs: [] }
+    );
+    return data.briefs.some((b) => b.date === date);
+  } catch {
+    return false;
+  }
+}
+
+async function markBriefSent(date: string): Promise<void> {
+  try {
+    const { mutateJson } = await import("./storage-core");
+    const oldest = new Date(Date.now() - BRIEF_HISTORY_DAYS * 86_400_000).toISOString().slice(0, 10);
+    await mutateJson<{ briefs: { date: string; at: string }[] }>(
+      NOTIFIED_BRIEFS_FILE,
+      { briefs: [] },
+      (data) => {
+        if (data.briefs.some((b) => b.date === date)) return null; // déjà marqué
+        data.briefs = data.briefs.filter((b) => b.date >= oldest);
+        data.briefs.push({ date, at: new Date().toISOString() });
+      }
+    );
+  } catch (err) {
+    void serverLog("scheduler", "error", "Erreur persistance brief notifie", err);
+  }
+}
+
 /** Notifications "Cours dans 30 min" : matière + salle, déduites de l'EDT CESAR. */
 export async function checkScheduleNotifs(): Promise<void> {
   try {
@@ -322,12 +358,22 @@ export async function triggerDailyBrief(
       vibrate: [100, 50, 100],
     });
 
+    // Un seul envoi par jour : le cron cPanel et le scheduler interne peuvent
+    // tomber sur la meme minute. La source "page-test" reste un envoi manuel
+    // volontaire, donc toujours autorise.
+    if (source !== "page-test" && (await isBriefAlreadySent(today))) {
+      return { skipped: "brief deja envoye aujourd'hui" };
+    }
+
     const { digestFromBrief } = await import("./discord/digest");
     const result = await sendPushToAll(payload, "daily-brief", {
       kind: "daily-brief",
       summary: todayBrief.summary,
       digest: digestFromBrief(todayBrief, todayBrief.summary),
     });
+    if (result.sent) {
+      await markBriefSent(today);
+    }
     const { logActivity } = await import("./storage");
     await logActivity(
       "daily_brief_sent",

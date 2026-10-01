@@ -250,6 +250,14 @@ générée par l'app** (`next/og` + polices Inter / JetBrains Mono embarquées d
   module/message, plafonnées à 8/h, et les jetons sont masqués avant envoi.
 - **Démarrage** : le scheduler tourne si **VAPID ou** `DISCORD_BOT_TOKEN` est
   présent — jamais l'un au détriment de l'autre.
+- **Anti-doublon du brief** : le cron cPanel (`0 7 * * *`) et le scheduler
+  interne visent la même minute ; `triggerDailyBrief` n'envoie qu'une fois par
+  jour (`data/notified-briefs.json`, 7 jours d'historique) sauf source
+  `page-test`, qui reste un renvoi manuel volontaire. Le marquage n'a lieu que
+  si un canal a réellement abouti.
+- **Dédup des alertes** : la clé est `module + message` *neutralisé* (URLs et
+  identifiants remplacés par `<url>` / `<id>`) — sans cette normalisation,
+  « Push ÉCHEC 410 → <endpoint> » produisait une alerte par appareil.
 - **Réglages** : `/settings` → carte Discord (`app/settings/DiscordCard.tsx`,
   actions `app/actions/discord.ts`). Le token reste en env, jamais persisté.
 - **Vérification visuelle** : `bun run discord:preview` écrit les cartes dans
@@ -374,7 +382,7 @@ Ré-exporte `export *` des 14 domaines + `./web`, mais de `storage-core` seuleme
 
 `accreditations` · `activity` · `chat-history` · `concerts` · `config` ·
 `consent` · `demo-calls` · `emails` · `gallery` · `intentions` · `leetcode` · `memory` ·
-`notified-courses` · `notified-reminders` · `photo-shoots` · `push-subscriptions` ·
+`notified-briefs` · `notified-courses` · `notified-reminders` · `photo-shoots` · `push-subscriptions` ·
 `reminders` · `schedule` · `server-cache` · `users` · `watch-later`
 
 Tokens OAuth : `calendar-token` · `gmail-token` · `microsoft-todo-token` ·

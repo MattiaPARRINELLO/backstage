@@ -312,11 +312,15 @@ export const tools: UnifiedTool[] = [  {
   {
     name: "get_schedule",
     description:
-      "Emploi du temps de l'utilisateur (cours du format CESAR). scope='today' ou 'week' → jour de la semaine courante ; scope='next' avec subject optionnel → le prochain cours correspondant (ex: 'dans combien de temps est mon prochain cours de base de donnees'). Retourne matiere, horaires, salle et prof.",
+      "Emploi du temps de l'utilisateur (cours du format CESAR). scope='today' → les cours du jour ; scope='tomorrow' → ceux du lendemain ; scope='week' → cours des 7 prochains jours ; scope='next' → le prochain cours, avec subject optionnel pour filtrer une matiere. Utilise 'next' pour toute question sur la salle, l'heure ou le lieu du cours en cours ou a venir (ex: 'c'est dans quelle salle mon cours ?', 'je dois aller ou ?'). Retourne matiere, horaires, salle et prof.",
     parameters: {
       type: "object",
       properties: {
-        scope: { type: "string", enum: ["today", "week", "next"], description: "Periode demandee" },
+        scope: {
+          type: "string",
+          enum: ["today", "tomorrow", "week", "next"],
+          description: "Periode demandee",
+        },
         subject: { type: "string", description: "Filtre matiere (optionnel, ex: 'base de donnees')" },
       },
       required: ["scope"],
@@ -632,12 +636,23 @@ export async function executeTool(
         if (!next) return subject ? `Aucun cours a venir pour "${subject}".` : "Aucun cours a venir.";
         return `Prochain cours${subject ? ` (${subject})` : ""} :\n${formatCourse(next)}`;
       }
-      if (scope === "today") {
+      const isoDay = (offset: number) => {
         const t = new Date();
-        const todayIso = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
-        const day = getCoursesForDay(courses, todayIso);
-        if (!day.length) return "Pas de cours aujourd'hui.";
-        return `Cours du jour :\n${day.map(formatCourse).join("\n")}`;
+        t.setDate(t.getDate() + offset);
+        return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+      };
+      if (scope === "today" || scope === "tomorrow") {
+        const offset = scope === "tomorrow" ? 1 : 0;
+        const day = getCoursesForDay(courses, isoDay(offset));
+        if (!day.length) {
+          return offset === 1
+            ? "Pas de cours demain."
+            : "Pas de cours aujourd'hui.";
+        }
+        const label = offset === 1
+          ? new Date(Date.now() + 86_400_000).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+          : "aujourd'hui";
+        return `Cours ${label} :\n${day.map(formatCourse).join("\n")}`;
       }
       // week : cours restants de la semaine en cours
       const now = new Date();

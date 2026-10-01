@@ -34,6 +34,18 @@ const SYSTEM_PROMPT = `Tu routes les demandes de l'utilisateur vers UN outil de 
 Reponds UNIQUEMENT par un objet JSON, sans texte avant ni apres : {"tool":"<nom>","args":{...}}
 - "args" doit respecter exactement le schema de l'outil (seules les cles declarees).
 - Si aucun outil ne convient (discussion, salutation, demande unknowable), reponds {"tool":"none","args":{}}.
+
+Correspondances a retenir :
+- salle, ou, quand, adresse, Building, prochain cours, ou je vais, j'ai cours, jour de cours
+  → get_schedule. scope="next" pour la salle/l'heure du cours a venir ou en cours,
+    "today" pour aujourd'hui, "tomorrow" pour demain, "week" pour la semaine.
+- rappel, tache, a faire, todo → list_reminders
+- meteo, temperature, dehors, pluie, habit → get_weather
+- concert, festival, soiree → lookup_concerts
+- rendez-vous, reunion, evenement, dispo → search_calendar_events
+- email, mail, message recu → fetch_and_search_emails
+- photo, shooting, reportage → list_photo_shoots
+
 Outils disponibles :
 {catalog}`;
 

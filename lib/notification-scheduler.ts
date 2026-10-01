@@ -4,6 +4,8 @@ import { getConfig } from "./config";
 import { configureVapid, getVapidDetails, sendPushNotification } from "./send-push";
 import { serverLog } from "./logger";
 import { markdownToText } from "./utils";
+import type { DiscordEvent } from "./discord/types";
+import type { DailyBrief } from "./types";
 
 let schedulerStarted = false;
 let reminderInterval: ReturnType<typeof setInterval> | null = null;
@@ -84,7 +86,11 @@ export async function checkScheduleNotifs(): Promise<void> {
         requireInteraction: false,
         vibrate: [200, 100, 200],
       });
-      const { sent } = await sendPushToAll(payload, `course-${key}`);
+      const { sent } = await sendPushToAll(payload, `course-${key}`, {
+        kind: "course",
+        course: c,
+        leadMin: COURSE_LEAD_MIN,
+      });
       if (sent) {
         notified.add(key);
         dirty = true;
@@ -118,8 +124,15 @@ export async function syncScheduleIfStale(): Promise<void> {
 
 export async function sendPushToAll(
   payload: string,
-  _tag?: string
+  _tag?: string,
+  discordEvent?: DiscordEvent
 ): Promise<{ sent: boolean; devices: number }> {
+  // Discord part en parallele du web push : le rendu de la carte image prend
+  // une centaine de millisecondes, inutile de l'ajouter a la latence du push.
+  const discordTask = discordEvent
+    ? import("./discord/notify").then((m) => m.notifyDiscord(discordEvent))
+    : null;
+
   const subs = await getSubscriptions();
   let webSent = false;
   if (subs.length > 0) {
@@ -159,7 +172,22 @@ export async function sendPushToAll(
     }
   }
 
-  return { sent: webSent, devices: subs.length };
+  // Un envoi Discord reussi compte comme notifie : sinon un rappel sans
+  // appareil web abonne serait retente indefiniment toutes les 60 s.
+  let discordSent = false;
+  if (discordTask) {
+    try {
+      const result = await discordTask;
+      discordSent = result.sent;
+      if (!result.sent && result.reason) {
+        console.log(`[scheduler] Discord non envoye : ${result.reason}`);
+      }
+    } catch (err) {
+      void serverLog("scheduler", "error", "Envoi Discord echoue", err);
+    }
+  }
+
+  return { sent: webSent || discordSent, devices: subs.length };
 }
 
 export async function checkReminders() {
@@ -200,9 +228,12 @@ export async function checkReminders() {
         vibrate: [200, 100, 200],
       });
 
-      // On marque le rappel notifié SEULEMENT si l'envoi a réussi (web) :
-      // sinon il sera retenté au prochain tick au lieu d'être perdu.
-      const { sent } = await sendPushToAll(payload, "reminder-" + r.id);
+      // On marque le rappel notifié SEULEMENT si l'envoi a réussi (web ou
+      // Discord) : sinon il sera retenté au prochain tick au lieu d'être perdu.
+      const { sent } = await sendPushToAll(payload, "reminder-" + r.id, {
+        kind: "reminder",
+        reminder: r,
+      });
       if (sent) {
         notifiedReminders.add(r.id);
         await markReminderNotified(r.id);
@@ -235,7 +266,10 @@ export async function checkIntentions() {
       });
 
       // Marquée faite UNIQUEMENT si l'envoi a réussi, sinon retentée au tick suivant.
-      const { sent } = await sendPushToAll(payload, "intention-" + it.id);
+      const { sent } = await sendPushToAll(payload, "intention-" + it.id, {
+        kind: "intention",
+        intention: it,
+      });
       if (sent) {
         await resolveIntention(it.id, "done");
       }
@@ -256,7 +290,7 @@ export async function triggerDailyBrief(
     if (!config.features.dailyBrief) return { skipped: "dailyBrief desactive" };
 
     const { readJsonSafe } = await import("./storage");
-    const data = await readJsonSafe<{ briefs: { date: string; summary: string }[] }>("daily-briefs.json", { briefs: [] });
+    const data = await readJsonSafe<{ briefs: DailyBrief[] }>("daily-briefs.json", { briefs: [] });
     const today = new Date().toISOString().slice(0, 10);
     let todayBrief = data.briefs.find((b) => b.date === today);
 
@@ -268,7 +302,7 @@ export async function triggerDailyBrief(
         console.log("[scheduler] Échec génération brief");
         return { skipped: "generation impossible" };
       }
-      const updated = await readJsonSafe<{ briefs: { date: string; summary: string }[] }>("daily-briefs.json", { briefs: [] });
+      const updated = await readJsonSafe<{ briefs: DailyBrief[] }>("daily-briefs.json", { briefs: [] });
       todayBrief = updated.briefs.find((b) => b.date === today);
       if (!todayBrief) {
         console.log("[scheduler] Brief généré mais introuvable après sauvegarde");
@@ -288,7 +322,12 @@ export async function triggerDailyBrief(
       vibrate: [100, 50, 100],
     });
 
-    const result = await sendPushToAll(payload, "daily-brief");
+    const { digestFromBrief } = await import("./discord/digest");
+    const result = await sendPushToAll(payload, "daily-brief", {
+      kind: "daily-brief",
+      summary: todayBrief.summary,
+      digest: digestFromBrief(todayBrief, todayBrief.summary),
+    });
     const { logActivity } = await import("./storage");
     await logActivity(
       "daily_brief_sent",
@@ -323,10 +362,18 @@ export function startScheduler() {
   if (schedulerStarted) return;
   schedulerStarted = true;
 
+  // Le scheduler porte aussi les DM Discord : il doit tourner meme sans cles
+  // VAPID (web push et Discord sont deux canaux independants).
   const vapidDetails = getVapidDetails();
-  if (!vapidDetails.publicKey || !vapidDetails.privateKey) {
-    console.warn("[scheduler] VAPID keys not configured, notifications disabled");
+  const vapidReady = Boolean(vapidDetails.publicKey && vapidDetails.privateKey);
+  const discordReady = Boolean(process.env.DISCORD_BOT_TOKEN);
+  if (!vapidReady && !discordReady) {
+    console.warn("[scheduler] Ni VAPID ni bot Discord configures, notifications desactivees");
+    schedulerStarted = false;
     return;
+  }
+  if (!vapidReady) {
+    console.log("[scheduler] VAPID absent : notifications web push desactivees");
   }
 
   checkReminders();

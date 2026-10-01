@@ -19,7 +19,8 @@ const defaultConfig = {
     titleModel: "deepseek-v4-flash",
   },
   llm: { temperature: 0.7, maxTokens: 4096 },
-  features: { dailyBrief: true, webSearch: true },
+  features: { dailyBrief: true, webSearch: true, discordNotifications: true },
+  discord: { userId: "", alerts: true },
   theme: { accentColor: "#a5b4fc" },
 };
 

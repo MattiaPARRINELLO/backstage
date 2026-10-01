@@ -27,6 +27,17 @@ export function redactSecrets(text: string): string {
     .slice(0, 260);
 }
 
+/**
+ * Clé de déduplication : sans neutralisation des parties variables (endpoint,
+ * identifiant, chemin), « Push ÉCHEC 410 → <endpoint> » produirait une alerte
+ * distincte par appareil et la dédup ne servirait à rien.
+ */
+export function alertKey(module: string, message: string): string {
+  return `${module}:${message
+    .replace(/https?:\/\/\S+/gi, "<url>")
+    .replace(/\b[A-Za-z0-9_-]{16,}\b/g, "<id>")}`;
+}
+
 function tooManyAlerts(): boolean {
   const now = Date.now();
   if (now - windowStart > ALERT_WINDOW_MS) {
@@ -84,7 +95,7 @@ export async function notifyDiscordAlert(input: {
   level: "error" | "warn";
 }): Promise<void> {
   if (alertInFlight) return;
-  const key = `${input.module}:${input.message}`;
+  const key = alertKey(input.module, input.message);
   const now = Date.now();
   const last = lastAlertAt.get(key) ?? 0;
   if (now - last < ALERT_COOLDOWN_MS) return;

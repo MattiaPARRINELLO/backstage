@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   // sans inclusion explicite, le build standalone les omet (lecture via fs,
   // invisible pour l'analyse statique des imports).
   outputFileTracingIncludes: {
-    "/**": ["./assets/fonts/*.ttf", "./assets/icon.png", "./public/icons/icon-192.png"],
+    "/**": ["./assets/fonts/*.ttf", "./public/icons/icon-192.png"],
   },
   async headers() {
     const headers = [

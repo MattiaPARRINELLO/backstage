@@ -6,7 +6,11 @@
 // changer tous les textes.
 // ============================================================
 
-export const GITHUB_URL = "https://github.com/MattiaPARRINELLO/personalbrain";
+export const GITHUB_URL = "https://github.com/MattiaPARRINELLO/backstage";
+/** Guide d'auto-hébergement (licence MIT, Docker, variables, backups). */
+export const SELF_HOST_URL =
+  "https://github.com/MattiaPARRINELLO/backstage/blob/main/docs/self-hosting.md";
+export const LICENSE_LABEL = "MIT";
 
 export const NAV_LINKS = [
   { href: "#produit", label: "Produit" },
@@ -317,14 +321,15 @@ export const PRIVACY = {
 export const OPEN_SOURCE = {
   title: "Ouvert jusque dans ses fondations.",
   description:
-    "Le code source de Backstage est publiquement accessible. Explorez son fonctionnement, étudiez son architecture et suivez son évolution.",
+    "Backstage est publié sous licence MIT : lisez le code, auditez ce qu'il fait de vos données, ou déployez votre propre instance. `docker compose up -d` et l'espace est chez vous.",
   techs: [
-    { label: "DeepSeek", role: "sous le capot", desc: "Le modèle d'intelligence artificielle qui alimente les réponses." },
-    { label: "OpenCode", role: "développé avec", desc: "L'outil utilisé pour construire le projet, commit après commit." },
+    { label: "Licence MIT", role: "libre", desc: "Utilisation, modification et redistribution libres, sans garantie." },
+    { label: "Auto-hébergement", role: "en une commande", desc: "Image Docker prête à l'emploi, données locales, aucun compte tiers obligatoire." },
     { label: "Next.js · React · TypeScript", role: "stack", desc: "Une architecture inspectable, testée et documentée." },
   ],
-  signature: "DeepSeek sous le capot. Code source public. Développé avec OpenCode.",
+  signature: "Licence MIT. Code source public. Développé avec OpenCode.",
   cta: "Voir le code sur GitHub",
+  selfHostCta: "S'auto-héberger",
 } as const;
 
 // --- CTA final ---------------------------------------------------
@@ -351,9 +356,10 @@ export const FOOTER = {
   ],
   legal: [
     { href: GITHUB_URL, label: "GitHub", external: true },
+    { href: SELF_HOST_URL, label: "Auto-hébergement", external: true },
     { href: "/privacy", label: "Mentions légales", external: false },
     { href: "/privacy", label: "Confidentialité", external: false },
     { href: "/login", label: "Se connecter", external: false },
   ],
-  signature: "Code source public · DeepSeek sous le capot · Développé avec OpenCode",
+  signature: "Licence MIT · Code source public · DeepSeek sous le capot",
 } as const;

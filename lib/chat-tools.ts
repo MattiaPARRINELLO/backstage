@@ -15,8 +15,17 @@ import {
   addPhotoShoot,
   updatePhotoShoot,
   addIntention,
+  getIntentions,
+  getWatchLater,
+  getMemory,
+  addMemoryFact,
   isSafeFetchUrl,
 } from "@/lib/storage";
+import {
+  classifyToolText,
+  renderToolText,
+  type ToolStatus,
+} from "@/lib/tool-result";
 import type { PhotoShootStatus, Accreditation } from "@/lib/types";
 import { invalidateServerCachePattern } from "@/lib/server-cache";
 import {
@@ -328,6 +337,55 @@ export const tools: UnifiedTool[] = [  {
   },
 ];
 
+/**
+ * Vérification par relecture : après une écriture, on relit les données pour
+ * confirmer que l'élément est bien là. Sans ça, un échec silencieux du stockage
+ * serait renvoyé au modèle comme un succès (« rappel créé ») alors qu'aucun
+ * rappel n'existe. Renvoie un message d'erreur si la relecture échoue, null si
+ * l'écriture est confirmée.
+ */
+async function verifyWrite(
+  label: string,
+  check: () => Promise<boolean>
+): Promise<string | null> {
+  try {
+    const present = await check();
+    if (present) return null;
+    return `Erreur : ecriture non confirmee — ${label} est introuvable apres enregistrement (verification par relecture).`;
+  } catch (err) {
+    return `Erreur : verification impossible pour ${label} (${err instanceof Error ? err.message : String(err)}).`;
+  }
+}
+
+export interface ToolRunResult {
+  /** Statut machine de l'exécution. */
+  status: ToolStatus;
+  /** Texte brut du résultat (tel qu'affiché dans l'interface). */
+  text: string;
+  /** Texte transmis au modèle, statut en tête. */
+  rendered: string;
+}
+
+/**
+ * Exécute un outil et renvoie son statut. Point d'entrée unique pour tout
+ * appelant (chat, confirmations, autres agents) : le statut est déduit du
+ * résultat, jamais d'une supposition de l'appelant.
+ */
+export async function runTool(
+  name: string,
+  args: Record<string, unknown>,
+  confirmed = false
+): Promise<ToolRunResult> {
+  let text: string;
+  try {
+    text = await executeTool(name, args, confirmed);
+  } catch (err) {
+    text = `Erreur: ${err instanceof Error ? err.message : String(err)}`;
+  }
+  const status = classifyToolText(text);
+  return { status, text, rendered: renderToolText(status, text) };
+}
+
 export async function executeTool(
   name: string,
   args: Record<string, unknown>,
@@ -432,8 +490,13 @@ export async function executeTool(
       const content = String(args.content ?? "");
       const category = String(args.category ?? "life") as "dev" | "photo" | "life" | "preference";
       if (!content) return "Erreur : contenu vide.";
-      const { addMemoryFact } = await import("@/lib/storage");
-      await addMemoryFact(content, category);
+      const fact = await addMemoryFact(content, category);
+      // Relecture : le fait est-il bien en mémoire ?
+      const problem = await verifyWrite("le fait memorise", async () => {
+        const after = await getMemory();
+        return after.facts.some((f) => f.id === fact.id);
+      });
+      if (problem) return problem;
       return `Fait memorise : ${content}`;
     }
     case "add_reminder": {
@@ -442,6 +505,12 @@ export async function executeTool(
       const dueAt = String(args.due_at ?? "");
       if (!title || !dueAt) return "Erreur : title et due_at requis.";
       const r = await addReminder({ title, notes, dueAt });
+      // Relecture : le rappel existe-t-il vraiment dans les données ?
+      const problem = await verifyWrite(`le rappel "${r.title}"`, async () => {
+        const after = await getReminders();
+        return after.reminders.some((x) => x.id === r.id);
+      });
+      if (problem) return problem;
       return `Rappel cree : "${r.title}" pour le ${new Date(r.dueAt).toLocaleString("fr-FR")}.`;
     }
     case "list_reminders": {
@@ -477,6 +546,12 @@ export async function executeTool(
         return "Erreur : due_at doit etre une date ISO 8601 valide.";
       }
       const it = await addIntention({ subject, message, dueAt });
+      // Relecture : la relance est-elle bien enregistrée ?
+      const problem = await verifyWrite(`la relance "${it.subject}"`, async () => {
+        const after = await getIntentions();
+        return after.intentions.some((x) => x.id === it.id);
+      });
+      if (problem) return problem;
       return `Relance programmee : « ${it.subject} » pour le ${new Date(it.dueAt).toLocaleString("fr-FR")}. Tu recevras une notification a ce moment-la.`;
     }
     case "add_watch_later": {
@@ -490,6 +565,12 @@ export async function executeTool(
         return "Erreur : URL non autorisee (adresse privee ou invalide).";
       }
       const item = await addWatchLaterItem({ url, title, description, thumbnail, category });
+      // Relecture : le lien est-il bien dans la liste ?
+      const problem = await verifyWrite(`le lien "${item.title}"`, async () => {
+        const after = await getWatchLater();
+        return after.items.some((x) => x.id === item.id);
+      });
+      if (problem) return problem;
       return `Ajoute a 'A voir plus tard' : ${item.title} (${item.source}).`;
     }
     case "fetch_page_meta": {
@@ -605,6 +686,12 @@ export async function executeTool(
       }
       if (!title || !date || !client) return "Erreur : titre, date et client requis.";
       const shoot = await addPhotoShoot({ title, date, client, notes, status });
+      // Relecture : le shooting est-il bien enregistré ?
+      const problem = await verifyWrite(`le shooting "${shoot.title}"`, async () => {
+        const after = await getPhotoShoots();
+        return after.shoots.some((s) => s.id === shoot.id);
+      });
+      if (problem) return problem;
       return `Shooting ajouté : ${shoot.title} (${shoot.client}) le ${new Date(shoot.date).toLocaleDateString("fr-FR")} [${shoot.status}]`;
     }
     case "update_photo_shoot": {

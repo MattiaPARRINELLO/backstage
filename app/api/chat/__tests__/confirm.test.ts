@@ -3,9 +3,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockGetSession = vi.fn();
 vi.mock("@/lib/session", () => ({ getSession: mockGetSession }));
 
-const mockExecuteTool = vi.fn();
+const mockRunTool = vi.fn();
 vi.mock("@/lib/chat-tools", () => ({
-  executeTool: mockExecuteTool,
+  runTool: mockRunTool,
   REQUIRE_CONFIRMATION: new Set(["send_email_response"]),
 }));
 
@@ -33,27 +33,42 @@ describe("POST /api/chat/confirm", () => {
     mockGetSession.mockResolvedValue(null);
     const res = await POST(makeRequest({ name: "send_email_response", arguments: {} }));
     expect(res.status).toBe(401);
-    expect(mockExecuteTool).not.toHaveBeenCalled();
+    expect(mockRunTool).not.toHaveBeenCalled();
   });
 
   it("refuse un outil non confirmable (pas de porte d'exécution arbitraire)", async () => {
     const res = await POST(makeRequest({ name: "web_search", arguments: { query: "x" } }));
     expect(res.status).toBe(400);
-    expect(mockExecuteTool).not.toHaveBeenCalled();
+    expect(mockRunTool).not.toHaveBeenCalled();
   });
 
   it("exécute un outil confirmable avec la confirmation", async () => {
-    mockExecuteTool.mockResolvedValue("Reponse envoyee (message id: m1).");
+    mockRunTool.mockResolvedValue({
+      status: "ok",
+      text: "Reponse envoyee (message id: m1).",
+      rendered: "[OK] Reponse envoyee (message id: m1).",
+    });
     const res = await POST(
       makeRequest({ name: "send_email_response", arguments: { email_id: "a", response_text: "ok" } })
     );
     expect(res.status).toBe(200);
-    expect(mockExecuteTool).toHaveBeenCalledWith("send_email_response", { email_id: "a", response_text: "ok" }, true);
+    expect(mockRunTool).toHaveBeenCalledWith("send_email_response", { email_id: "a", response_text: "ok" }, true);
+    expect(mockLogActivity).toHaveBeenCalled();
+  });
+
+  it("marque un echec meme sans exception (statut non OK)", async () => {
+    mockRunTool.mockResolvedValue({
+      status: "error",
+      text: "Erreur : email_id et response_text requis.",
+      rendered: "[ERREUR] Erreur : email_id et response_text requis.",
+    });
+    const res = await POST(makeRequest({ name: "send_email_response", arguments: {} }));
+    expect(res.status).toBe(500);
     expect(mockLogActivity).toHaveBeenCalled();
   });
 
   it("répond 500 et journalise en cas d'échec", async () => {
-    mockExecuteTool.mockRejectedValue(new Error("boom"));
+    mockRunTool.mockRejectedValue(new Error("boom"));
     const res = await POST(makeRequest({ name: "send_email_response", arguments: {} }));
     expect(res.status).toBe(500);
     expect(mockLogActivity).toHaveBeenCalled();

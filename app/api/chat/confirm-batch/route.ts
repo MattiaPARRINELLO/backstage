@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { executeTool, REQUIRE_CONFIRMATION } from "@/lib/chat-tools";
+import { runTool, REQUIRE_CONFIRMATION } from "@/lib/chat-tools";
+import { isFailedStatus, type ToolStatus } from "@/lib/tool-result";
 import { logActivity } from "@/lib/storage";
 
 // Exécute un LOT d'actions IA exigeant la confirmation utilisateur (outils à
@@ -31,22 +32,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Action non confirmable" }, { status: 400 });
   }
 
-  const results: { name: string; ok: boolean; result?: string; error?: string }[] = [];
+  const results: { name: string; ok: boolean; status: ToolStatus; result?: string; error?: string }[] = [];
   for (const action of actions) {
     const name = action.name as string;
     const args =
       action.arguments && typeof action.arguments === "object"
         ? (action.arguments as Record<string, unknown>)
         : {};
-    try {
-      const result = await executeTool(name, args, true);
-      results.push({ name, ok: true, result });
+    const run = await runTool(name, args, true);
+    // Le statut machine fait foi : un texte « Rappel introuvable. » renvoyé
+    // sans lever d'exception n'est PAS un succès. Le client affiche donc un
+    // échec plutôt qu'un « ✓ fait » mensonger.
+    const ok = !isFailedStatus(run.status);
+    if (ok) {
+      results.push({ name, ok, status: run.status, result: run.text });
       await logActivity("ai_action", `Action IA exécutée : ${name}`, JSON.stringify(args).slice(0, 150)).catch(() => {});
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`[chat/confirm-batch] Échec de ${name}:`, message);
-      await logActivity("ai_action", `Action IA échouée : ${name}`, message).catch(() => {});
-      results.push({ name, ok: false, error: message });
+    } else {
+      console.error(`[chat/confirm-batch] Échec de ${name}:`, run.text);
+      await logActivity("ai_action", `Action IA échouée : ${name}`, run.text).catch(() => {});
+      results.push({ name, ok, status: run.status, error: run.text });
     }
   }
 

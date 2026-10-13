@@ -16,7 +16,9 @@ import type { ChatMessage, MemoryCategory } from "@/lib/types";
 import { autoExtractMemoryFacts } from "@/app/actions/brain";
 import { getSession } from "@/lib/session";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { executeTool, tools, REQUIRE_CONFIRMATION, confirmationMessage } from "@/lib/chat-tools";
+import { runTool, tools, REQUIRE_CONFIRMATION, confirmationMessage } from "@/lib/chat-tools";
+import type { ToolRunResult } from "@/lib/chat-tools";
+import { parseToolText, isFailedStatus, renderToolText, TOOL_HONESTY_RULE } from "@/lib/tool-result";
 import { buildSystemPrompt } from "@/lib/chat-prompts";
 import { serverLog } from "@/lib/logger";
 
@@ -50,13 +52,7 @@ const chatBodySchema = z.object({
 
 // Consigne injectée après un résultat d'outil en échec ou bloqué : force le
 // modèle à rendre compte fidèlement au lieu d'annoncer une action non faite.
-const RESULT_HONESTY_RULE =
-  "Ne pretend JAMAIS qu'une action a ete realisee (rappel cree, email envoye, " +
-  "evenement cree...) si le resultat de l'outil commence par \"Erreur\" ou " +
-  "\"ACTION_BLOCKED\" : dans ce cas l'action n'a PAS eu lieu. Explique a " +
-  "l'utilisateur que l'action n'a pas ete realisee et pourquoi. Si l'action est " +
-  "en attente de sa confirmation (resultat \"ACTION_BLOCKED\"), dis que tu " +
-  "attends sa confirmation, jamais que c'est fait.";
+const RESULT_HONESTY_RULE = TOOL_HONESTY_RULE;
 
 function parseToolArguments(argumentsRaw: string): Record<string, unknown> {
   let parsed: unknown;
@@ -130,7 +126,8 @@ async function summarizeConfirmBatch(
 
 
 // Le dernier résultat d'outil est-il un échec ou un blocage ? Si oui, la
-// réponse finale du modèle risque d'annoncer une action non réalisée.
+// réponse finale du modèle risque d'annoncer une action non réalisée. Le
+// marqueur `[ERREUR]` / `[BLOQUE]` fait foi — pas la formulation du texte.
 function lastToolResultIsProblematic(messages: UnifiedMessage[]): boolean {
   for (let i = messages.length - 1; i >= 0; i--) {
     const m = messages[i];
@@ -139,7 +136,7 @@ function lastToolResultIsProblematic(messages: UnifiedMessage[]): boolean {
       .replace(/^<tool_result[^>]*>\s*/, "")
       .replace(/<\/tool_result>\s*$/, "")
       .trim();
-    return inner.startsWith("Erreur") || inner.startsWith("ACTION_BLOCKED");
+    return isFailedStatus(parseToolText(inner).status);
   }
   return false;
 }
@@ -422,20 +419,24 @@ export async function POST(request: NextRequest) {
         // valide le lot.
         const pendingConfirms: { toolCallId: string; name: string; arguments: string }[] = [];
 
-        const pushToolResult = (tc: { toolCallId: string; name: string }, result: string) => {
-          send({ type: "tool_result", name: tc.name, result });
+        const pushToolResult = (
+          tc: { toolCallId: string; name: string },
+          run: ToolRunResult
+        ) => {
+          send({ type: "tool_result", name: tc.name, result: run.text, status: run.status });
           messages.push({
             role: "tool",
             tool_call_id: tc.toolCallId,
             // Résultat d'outil délimité : le contenu (pages, emails, recherche)
             // est externe et NON FIABLE — le modèle ne doit pas suivre ses
             // instructions (cf. bloc CONTENU NON FIABLE du system prompt).
-            content: `<tool_result name="${tc.name}">\n${result}\n</tool_result>`,
+            // Le statut en tête dit sans ambiguïté si l'action a abouti.
+            content: `<tool_result name="${tc.name}" status="${run.status}">\n${run.rendered}\n</tool_result>`,
           });
         };
 
         for (const tc of toolCallsToExecute) {
-          let result: string;
+          let run: ToolRunResult;
           try {
             // Validation stricte : des arguments invalides ne doivent jamais
             // devenir un appel silencieux avec `{}` ni une carte de
@@ -448,11 +449,15 @@ export async function POST(request: NextRequest) {
               pendingConfirms.push(tc);
               continue;
             }
-            result = await executeTool(tc.name, args);
+            run = await runTool(tc.name, args);
           } catch (err) {
-            result = `Erreur: ${err instanceof Error ? err.message : String(err)}`;
+            run = {
+              status: "error",
+              text: `Erreur: ${err instanceof Error ? err.message : String(err)}`,
+              rendered: `[ERREUR] Erreur: ${err instanceof Error ? err.message : String(err)}`,
+            };
           }
-          pushToolResult(tc, result);
+          pushToolResult(tc, run);
         }
 
         if (pendingConfirms.length > 0) {
@@ -471,7 +476,12 @@ export async function POST(request: NextRequest) {
           // Le modèle reçoit un résultat de blocage par action et pourra
           // expliquer que ces actions attendent sa confirmation.
           for (const tc of pendingConfirms) {
-            pushToolResult(tc, confirmationMessage(tc.name));
+            const text = confirmationMessage(tc.name);
+            pushToolResult(tc, {
+              status: "blocked",
+              text,
+              rendered: renderToolText("blocked", text),
+            });
           }
         }
 

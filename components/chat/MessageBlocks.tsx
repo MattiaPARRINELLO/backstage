@@ -201,6 +201,9 @@ function ToolCallResult({ tool }: { tool: ToolCall }) {
           <Icon className="w-3 h-3 shrink-0" />
         )}
         <span className="truncate">{toolMeta[tool.name]?.label || tool.name}</span>
+        {!isRunning && isError && (
+          <span className="shrink-0 text-[var(--danger)]">· echec</span>
+        )}
         {tool.duration != null && !isRunning && (
           <span className="text-[var(--text-4)]">· {tool.duration.toFixed(1)}s</span>
         )}

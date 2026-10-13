@@ -22,13 +22,15 @@ export interface IncomingMessage {
 const FALLBACK_REPLY =
   "Je n'ai pas d'outil pour ça. Essaie par exemple : « c'est quoi mon prochain cours ? », « mes rappels », « la météo à Paris », « mes concerts ».";
 
-async function readBotState(): Promise<BotState> {
+async function readBotState(): Promise<BotState | null> {
   try {
     const { readJsonSafe } = await import("@/lib/storage");
     const data = await readJsonSafe<BotState>(BOT_STATE_FILE, { lastMessageId: "" });
     return { lastMessageId: data.lastMessageId ?? "" };
   } catch {
-    return { lastMessageId: "" };
+    // Curseur illisible : on renonce au tour plutôt que de repartir de zero,
+    // ce rejouerait tout l'historique du DM (reponses en double).
+    return null;
   }
 }
 
@@ -38,15 +40,18 @@ async function readBotState(): Promise<BotState> {
  * enverraient deux réponses.
  */
 /**
- * Rend la reservation apres un echec technique : le message sera retraite au
- * tour suivant plutot que perdu. Sans effet si un autre worker a avance.
+ * Rend la reservation apres un echec technique : le curseur revient a sa
+ * valeur d'AVANT la reservation (`previous`), donc seul ce message est
+ * retraite au tour suivant. Revenir a "" rejouerait tout l'historique du DM
+ * et renverrait des reponses en double. Sans effet si un autre worker a
+ * avance entre-temps.
  */
-async function releaseMessage(expected: string, claimed: string): Promise<boolean> {
+async function releaseMessage(previous: string, claimed: string): Promise<boolean> {
   try {
     const { mutateJson } = await import("@/lib/storage-core");
     const result = await mutateJson<BotState>(BOT_STATE_FILE, { lastMessageId: "" }, (data) => {
       if ((data.lastMessageId ?? "") !== claimed) return null;
-      data.lastMessageId = expected;
+      data.lastMessageId = previous;
     });
     return result !== null;
   } catch {
@@ -125,9 +130,12 @@ export async function answerIncomingText(message: string): Promise<string> {
   if (!choice) return FALLBACK_REPLY;
 
   try {
-    const { executeTool } = await import("@/lib/chat-tools");
-    const result = await executeTool(choice.tool, choice.args, false);
-    return formatReply(result) || FALLBACK_REPLY;
+    const { runTool } = await import("@/lib/chat-tools");
+    const run = await runTool(choice.tool, choice.args, false);
+    // Statut explicite : on ne renvoie jamais un texte de succès pour un
+    // outil qui a échoué (le bot dirait « voilà » alors que rien n'a été fait).
+    if (run.status === "error") return "Je n'ai pas reussi a repondre (echec de l'outil). Reessaie dans un instant.";
+    return formatReply(run.text) || FALLBACK_REPLY;
   } catch (err) {
     console.warn(
       `[discord-bot] Outil en echec : ${err instanceof Error ? err.message : String(err)}`
@@ -149,13 +157,17 @@ export async function pollDiscordOnce(): Promise<{ handled: number }> {
     if (!channelId || !botUserId) return { handled: 0 };
 
     const state = await readBotState();
+    if (!state) return { handled: 0 };
     const messages = await fetchNewMessages(config, channelId, botUserId, state.lastMessageId);
     if (!messages.length) return { handled: 0 };
 
     let handled = 0;
     for (const message of messages) {
+      // Position du curseur avant cette reservation : c'est elle qu'il faut
+      // restaurer en cas d'echec, pas la chaine vide.
+      const previous = state.lastMessageId;
       // CAS : si un autre worker a déjà traité ce lot, on s'arrête.
-      if (!(await claimMessage(state.lastMessageId, message.id))) break;
+      if (!(await claimMessage(previous, message.id))) break;
       state.lastMessageId = message.id;
 
       let reply: string;
@@ -165,14 +177,19 @@ export async function pollDiscordOnce(): Promise<{ handled: number }> {
         console.warn(
           `[discord-bot] ${err instanceof Error ? err.message : String(err)} — message conserve`
         );
-        await releaseMessage("", message.id);
+        // Le curseur revient avant ce message : il sera retenté, et lui seul.
+        await releaseMessage(previous, message.id);
         break;
       }
 
       handled += 1;
       const sent: DiscordSendResult = await sendPlainMessage(config, reply);
       if (!sent.sent) {
-        console.warn(`[discord-bot] Reponse non envoyee : ${sent.reason ?? "raison inconnue"}`);
+        // Réponse non partie : on rend le message pour le retenter plutôt que
+        // de le perdre (le curseur n'aurait servi à rien).
+        console.warn(`[discord-bot] Reponse non envoyee : ${sent.reason ?? "raison inconnue"} — message retente au prochain tour`);
+        await releaseMessage(previous, message.id);
+        break;
       }
     }
     return { handled };

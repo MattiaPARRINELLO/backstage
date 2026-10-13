@@ -34,6 +34,12 @@ One command (checks prerequisites, clones, installs, generates secrets, starts):
 curl -fsSL https://brain.mprnl.fr/install.sh | bash
 ```
 
+Options: `--node` (start with Node instead of Docker), `--no-start` (prepare
+only), `--help`. Environment: `BACKSTAGE_DIR` (target directory, default
+`./backstage`), `BACKSTAGE_PORT` (local port, default `3000`). The script only
+ever clones the official repo, installs dependencies and generates local
+secrets — no `sudo`, no telemetry.
+
 Prefer to see what happens? Same thing, step by step:
 
 ```bash
@@ -97,7 +103,8 @@ bun run setup
 docker compose up -d --build
 ```
 
-- The app listens on <http://localhost:3000>.
+- The app listens on <http://localhost:3000> — use `BACKSTAGE_PORT=8080
+  docker compose up -d --build` if that port is taken.
 - `compose.yaml` passes every variable of `.env.local` into the container and
   mounts `./data` as a volume, so updates keep your data.
 - Rebuild with `docker compose up -d --build`.
@@ -167,3 +174,5 @@ AI chat only needs the endpoint + key.
 | Chat reports an AI configuration error | `NEXT_PUBLIC_API_URL` / `IA_API_KEY` missing or wrong |
 | Push never arrives | VAPID keys changed between builds, or no `VAPID_SUBJECT` |
 | Passkey fails with a domain error | `WEBAUTHN_ORIGIN` does not match the URL in the browser |
+| `docker compose` fails with "port is already allocated" | another service uses 3000 — run `BACKSTAGE_PORT=8080 docker compose up -d --build` |
+| `bun run setup` cannot find bun | install Bun first (see requirements); the installer never does it for you |

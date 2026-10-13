@@ -1,0 +1,29 @@
+# Backstage — déploiement auto-hébergé
+#
+#   cp .env.example .env.local && bun run setup   # génère les secrets
+#   docker compose up -d --build
+#
+# L'app écoute sur http://localhost:3000. Les données vivent dans ./data
+# (volume) : elles survivent aux rebuilds.
+
+services:
+  backstage:
+    build:
+      context: .
+      args:
+        # Même valeur que NEXT_PUBLIC_VAPID_PUBLIC_KEY de .env.local.
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    # Toutes les variables de .env.local sont passées au conteneur.
+    env_file:
+      - .env.local
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/login"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3

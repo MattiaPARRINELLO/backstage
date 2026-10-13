@@ -65,10 +65,17 @@ Mono-utilisateur, auth par passkey, données en JSON local.
 | Cron rappels     | `bun run cron:reminders`   |
 | Cron daily brief | `bun run cron:daily-brief` |
 | Reset passkey    | `bun run reset:passkey`    |
+| Setup local      | `bun run setup`            |
 | Aperçu cartes    | `bun run discord:preview`  |
 
 ⚠️ `bun build` ≠ `bun run build`. Le premier est le bundler Bun et ne construit
 pas l'app Next.
+
+⚠️ **`bun run setup`** (`scripts/setup.ts`) génère les secrets locaux dans
+`.env.local` (`AUTH_SECRET`, `SETUP_TOKEN`, paire VAPID, `WEBAUTHN_*`). Il est
+idempotent : il n'écrase jamais une valeur déjà renseignée. Indispensable avant
+tout déploiement public, sinon le premier enregistrement passkey est refusé
+(503) en production (`isOpenBootstrapAllowed()` dans `lib/auth.ts`).
 
 ---
 
@@ -611,9 +618,12 @@ l'URL complète (`/v1/chat/completions`), le SDK **Anthropic** ajoute lui-même
 | ------------ | --------------------------------- | --------------------------------------------------- |
 | `README.md`  | présentation, install, structure  | ✅                                                  |
 | `AGENTS.md`  | ce fichier                        | ✅                                                  |
-| `AUDIT.md`   | audit du 12/07/2026               | ✅ ⚠️ périmé (mentionne Capacitor, supprimé depuis) |
+| `docs/self-hosting.md` | auto-hébergement (Docker, vars, HTTPS) | ✅                              |
+| `docs/deploy-cpanel.md` | déploiement mutualisé + crontab  | ✅                                                 |
 | `DESIGN.md`  | palette, typo, composants, motion | ✅                                                  |
 | `PRODUCT.md` | objectif, users, modules, ton     | ✅                                                  |
+
+(`AUDIT.md` a été supprimé : audit périmé qui mentionnait encore Capacitor.)
 
 ---
 
@@ -623,10 +633,11 @@ l'URL complète (`/v1/chat/completions`), le SDK **Anthropic** ajoute lui-même
 
 1. Server Actions non rate-limitées (seul `/api/chat` l'est)
 2. `components/reminders/` et `components/watch-later/` vides
-3. `AUDIT.md` périmé (12/07, mentionne Capacitor)
-4. Route Handlers ↔ Server Actions : recouvrement à maintenir manuellement
+3. Route Handlers ↔ Server Actions : recouvrement à maintenir manuellement
 5. `data/.setup-consumed` : marqueur « bootstrap SETUP_TOKEN consommé » —
     purge via `bun run reset:passkey` uniquement
+6. Docker : `NEXT_PUBLIC_VAPID_PUBLIC_KEY` est inliné au **build** (ARG),
+   pas au démarrage — un rebuild est requis si la clé change
 
 ---
 
@@ -637,7 +648,7 @@ l'URL complète (`/v1/chat/completions`), le SDK **Anthropic** ajoute lui-même
 3. **Pattern d'action** → `app/actions/reminders.ts` (référence canonique)
 4. **Question produit** → `PRODUCT.md` (si présent, sinon demander)
 5. **Question UI** → `DESIGN.md` (si présent, sinon demander)
-6. **Contexte historique** → `AUDIT.md` (⚠️ daté)
+6. **Déployer / héberger** → `docs/self-hosting.md`, `docs/deploy-cpanel.md`
 7. **Pattern inconnu** → lire un fichier voisin et l'imiter
 8. **Test FS** → mock `process.cwd()` **avant** l'import dynamique
 9. **Ambiguïté d'architecture** → demander, ne pas deviner

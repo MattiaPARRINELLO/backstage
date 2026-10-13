@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyRegistrationResponse } from "@simplewebauthn/server";
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
-import { getRpID, getOrigin, saveCredential, hasCredentials, markSetupConsumed } from "@/lib/auth";
+import { getRpID, getOrigin, saveCredential, hasCredentials, markSetupConsumed, isOpenBootstrapAllowed } from "@/lib/auth";
 import { consumeChallenge, createSession, getSession } from "@/lib/session";
 
 export async function POST(request: NextRequest) {
@@ -25,10 +25,23 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
-  } else {
+  } else if (isOpenBootstrapAllowed()) {
+    // Développement local : bootstrap toléré.
     console.warn(
-      "[passkey] SETUP_TOKEN non défini : le premier enregistrement passkey est ouvert à tous. " +
-      "Définissez SETUP_TOKEN avant d'exposer l'app à l'internet."
+      "[passkey] SETUP_TOKEN non défini : le premier enregistrement passkey est ouvert. " +
+        "Définissez SETUP_TOKEN (bun run setup) avant d'exposer l'app."
+    );
+  } else {
+    console.error(
+      "[passkey] SETUP_TOKEN absent en production : enregistrement refusé."
+    );
+    return NextResponse.json(
+      {
+        error:
+          "Enregistrement refuse : definissez SETUP_TOKEN dans l'environnement du serveur " +
+          "pour securiser le premier enregistrement (voir docs/self-hosting.md).",
+      },
+      { status: 503 }
     );
   }
 

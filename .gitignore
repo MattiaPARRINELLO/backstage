@@ -53,5 +53,15 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# build / QA artifacts
+/coverage/
+/test-results/
+/playwright-report/
+/.deploy-tmp/
+/backstage-deploy.tar.gz
+
+# agent tooling local
+/.mimocode/plans/
+
 
 

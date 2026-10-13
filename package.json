@@ -1,6 +1,14 @@
 {
   "name": "backstage",
   "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MattiaPARRINELLO/backstage.git"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -14,7 +22,8 @@
     "cron:reminders": "bun scripts/cron-scheduler.ts reminders",
     "cron:daily-brief": "bun scripts/cron-scheduler.ts daily-brief",
     "discord:preview": "bun scripts/discord-card-preview.tsx",
-    "reset:passkey": "bun scripts/reset-passkey.ts"
+    "reset:passkey": "bun scripts/reset-passkey.ts",
+    "setup": "bun scripts/setup.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.109.1",

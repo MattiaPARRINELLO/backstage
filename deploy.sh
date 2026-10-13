@@ -25,6 +25,9 @@ fi
 : "${SSH_PORT:=22}"
 : "${SSH_TARGET_DIR:=}"
 : "${DEPLOY_METHOD:=rsync}"
+# Environnement Node distant à activer avant `npm install` (cPanel Node
+# Selector). Vide = on suppose que node est déjà dans le PATH du shell SSH.
+: "${DEPLOY_NODEENV:=}"
 
 # ─── 1. Build ──────────────────────────────────────────
 echo -e "${CYAN}══════════════════════════════════════════════════${NC}"
@@ -74,14 +77,30 @@ MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID}
 MICROSOFT_CLIENT_SECRET=${MICROSOFT_CLIENT_SECRET}
 MICROSOFT_REDIRECT_URI=${MICROSOFT_REDIRECT_URI}
 CRON_SECRET=${CRON_SECRET:-}
+CRON_BASE_URL=${CRON_BASE_URL:-}
 CESAR_USERNAME=${CESAR_USERNAME}
 CESAR_PASSWORD=${CESAR_PASSWORD}
+CESAR_BASE=${CESAR_BASE:-}
 DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
 DISCORD_USER_ID=${DISCORD_USER_ID:-}
+SETUP_TOKEN=${SETUP_TOKEN:-}
+WEBAUTHN_RP_ID=${WEBAUTHN_RP_ID:-}
+WEBAUTHN_ORIGIN=${WEBAUTHN_ORIGIN:-}
+GOOGLE_TESTING_EXPIRY=${GOOGLE_TESTING_EXPIRY:-}
 EOF
 
 if [ -z "${CRON_SECRET:-}" ]; then
   echo -e "${YELLOW}⚠  CRON_SECRET non défini dans .deploy.env — les routes /api/cron/* seront refusées en production. Définissez-le (openssl rand -hex 32) et ajoutez le header x-cron-secret à votre crontab.${NC}"
+fi
+
+if [ -z "${SETUP_TOKEN:-}" ]; then
+  echo -e "${YELLOW}⚠  SETUP_TOKEN non défini : le premier enregistrement passkey sera REFUSÉ en production (503).${NC}"
+  echo -e "${YELLOW}   Générez-le avec 'bun run setup', gardez-le le temps du premier login, puis retirez-le du serveur.${NC}"
+fi
+
+if [ -z "${WEBAUTHN_RP_ID:-}" ] || [ -z "${WEBAUTHN_ORIGIN:-}" ]; then
+  echo -e "${YELLOW}⚠  WEBAUTHN_RP_ID / WEBAUTHN_ORIGIN non définis — la passkey se fiera à l'en-tête Host de la requête.${NC}"
+  echo -e "${YELLOW}   Renseignez votre domaine dans .deploy.env pour un comportement stable.${NC}"
 fi
 
 if [ -z "${DISCORD_BOT_TOKEN:-}" ]; then
@@ -105,7 +124,7 @@ if [ -z "$SSH_HOST" ] || [ -z "$SSH_TARGET_DIR" ]; then
   echo -e "${YELLOW}  À faire :${NC}"
   echo -e "  1. Uploader l'archive dans ${SSH_TARGET_DIR:-/le/dossier/cible/}"
   echo -e "  2. $ tar -xzf backstage-deploy.tar.gz"
-  echo -e "  3. Configurer l'App Node.js dans cPanel (→ lire README-cPanel.md)"
+  echo -e "  3. Configurer l'App Node.js dans cPanel (→ lire docs/deploy-cpanel.md)"
   rm -rf "$DEPLOY_TMP"
   exit 0
 fi
@@ -142,8 +161,14 @@ rsync -avz --delete \
 
 # ─── 3.5 Install dependencies ──────────────────────────
 echo -e "\n${CYAN}→ Installation des dépendances sur le serveur…${NC}"
+# `activate` peut être absent (hors cPanel) : on retombe alors sur le node du
+# shell. DEPLOY_NODEENV rend le script utilisable sur n'importe quel hébergeur.
+NODE_ACTIVATE=""
+if [ -n "${DEPLOY_NODEENV}" ]; then
+  NODE_ACTIVATE="source ${DEPLOY_NODEENV} && "
+fi
 ssh -p "$SSH_PORT" "${SSH_USER}@${SSH_HOST}" \
-  "source /home/mattiapa/nodevenv/brain.mprnl.fr/22/bin/activate && cd ${SSH_TARGET_DIR} && npm install --production 2>&1" \
+  "${NODE_ACTIVATE}cd ${SSH_TARGET_DIR} && npm install --production 2>&1" \
   && echo -e "${GREEN}  ✓ Dépendances installées${NC}" \
   || echo -e "${YELLOW}  ⚠  Impossible d'installer les dépendances — à faire manuellement :${NC}"
 

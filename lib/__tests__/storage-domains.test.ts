@@ -629,7 +629,7 @@ describe("storage - demo calls", () => {
       forwardedFor: "203.0.113.10",
       realIp: "",
       userAgent: "test-agent",
-      referer: "https://brain.mprnl.fr/",
+      referer: "https://demo.example.com/",
       model: "deepseek-v4-flash",
       input: "Question de test",
       response: "Réponse de test",

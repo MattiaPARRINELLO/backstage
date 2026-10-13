@@ -30,6 +30,8 @@ describe("proxy — deny-by-default", () => {
       "/sw.js",
       "/manifest.json",
       "/icons/icon-192.png",
+      // Installation en une commande (curl … | bash) : publique.
+      "/install.sh",
     ];
     for (const p of publicPaths) {
       const res = await proxy(makeRequest(p));

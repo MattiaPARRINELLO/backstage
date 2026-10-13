@@ -16,14 +16,25 @@ Two supported paths:
 | Tool | Version | Notes |
 | --- | --- | --- |
 | Node.js | >= 20.9 | production runtime |
-| Bun | 1.x | recommended for dev (`bun install`, `bun run …`); npm works too |
+| Bun | 1.x | required by `bun run setup` and the one-command installer |
 | Git | any | |
 | Docker + Compose | optional | only for the Docker path |
 
 An **OpenAI-compatible API endpoint + key** is required for the chat
 (`NEXT_PUBLIC_API_URL` / `IA_API_KEY`). Everything else is optional.
 
+`/install.sh` is served by every instance at `https://<your-domain>/install.sh`,
+so self-hosters can point the one-liner at their own domain.
+
 ## 2. Install
+
+One command (checks prerequisites, clones, installs, generates secrets, starts):
+
+```bash
+curl -fsSL https://brain.mprnl.fr/install.sh | bash
+```
+
+Prefer to see what happens? Same thing, step by step:
 
 ```bash
 git clone https://github.com/MattiaPARRINELLO/backstage.git

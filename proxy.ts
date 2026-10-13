@@ -24,6 +24,9 @@ const PUBLIC_PATHS = [
   "/offline",
   "/privacy",
   "/",
+  // Script d'installation en une commande (curl … | bash) : doit rester
+  // accessible sans session, comme / et /privacy.
+  "/install.sh",
 ];
 
 const PUBLIC_FILE_EXTENSIONS = [

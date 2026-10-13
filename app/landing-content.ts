@@ -11,6 +11,8 @@ export const GITHUB_URL = "https://github.com/MattiaPARRINELLO/backstage";
 export const SELF_HOST_URL =
   "https://github.com/MattiaPARRINELLO/backstage/blob/main/docs/self-hosting.md";
 export const LICENSE_LABEL = "MIT";
+/** Commande d'installation en une ligne, servie par /install.sh. */
+export const INSTALL_COMMAND = "curl -fsSL https://brain.mprnl.fr/install.sh | bash";
 
 export const NAV_LINKS = [
   { href: "#produit", label: "Produit" },
@@ -328,6 +330,7 @@ export const OPEN_SOURCE = {
     { label: "Next.js · React · TypeScript", role: "stack", desc: "Une architecture inspectable, testée et documentée." },
   ],
   signature: "Licence MIT. Code source public. Développé avec OpenCode.",
+  hint: "Une commande, aucun prérequis à installer à la main",
   cta: "Voir le code sur GitHub",
   selfHostCta: "S'auto-héberger",
 } as const;

@@ -799,6 +799,26 @@
 .opensource__label { letter-spacing: -0.01em; }
 .opensource__desc { font-size: 12.5px; line-height: 1.6; color: #8f91a0; }
 
+/* Bloc de commande prêt à copier (curl … | bash). La commande dépasse la
+   largeur disponible sur mobile : on la laisse défiler plutôt que la couper,
+   pour qu'elle reste lisible et sélectionnable en entier. */
+.install__cmd {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(5, 5, 7, 0.9);
+  color: #c4b5fd;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: left;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.install__cmd::selection { background: rgba(167, 139, 250, 0.3); color: #f5f3f0; }
+
 /* ============================================================
    CTA FINAL
    ============================================================ */

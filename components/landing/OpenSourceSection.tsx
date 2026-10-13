@@ -1,4 +1,5 @@
 import { GITHUB_URL, OPEN_SOURCE, SELF_HOST_URL } from "@/app/landing-content";
+import { InstallCommand } from "./InstallCommand";
 
 /**
  * Section open source — code public, DeepSeek sous le capot,
@@ -16,6 +17,10 @@ export function OpenSourceSection() {
           <p className="mx-auto mt-5 max-w-xl text-[15px] leading-relaxed text-[#a5a7b3]">
             {OPEN_SOURCE.description}
           </p>
+          <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.16em] text-[#6b6d7a]">
+            {OPEN_SOURCE.hint}
+          </p>
+          <InstallCommand />
         </div>
 
         <div className="mx-auto mt-12 grid max-w-4xl grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.04] sm:grid-cols-3">

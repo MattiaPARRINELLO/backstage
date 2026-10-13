@@ -176,7 +176,8 @@ Matcher : tout sauf `_next/static`, `_next/image`, `assets`, `icons`, `images`,
 
 **Publics** :
 
-- Pages : `/`, `/login`, `/notif`, `/offline`, `/privacy` (+ sous-routes)
+- Pages : `/`, `/login`, `/notif`, `/offline`, `/privacy` (+ sous-routes),
+  `/install.sh` (script d'installation en une commande, `curl … | bash`)
 - API : `/api/auth`, `/api/cron`, `/api/push`, `/api/reminders/pending`
 - Fichiers racine : `.js`, `.json`, `.ico`, `.png`, `.svg`, `.webp`, `.txt`
 
@@ -205,6 +206,11 @@ défaut. Testé par `proxy.test.ts` et les E2E (deny-by-default).
   revalidation) ; appelé par le service worker.
 - `/api/schedule` — `GET` = emploi du temps en cache, `POST` = sync CESAR forcée.
   Doublon assumé de `syncScheduleNow` (`app/actions/schedule.ts`).
+- `/install.sh` — `GET` sert `scripts/install.sh` (source unique, versionnée) en
+  `text/x-shellscript`. Public (cf. `PUBLIC_PATHS`). Le fichier est embarqué dans
+  le build standalone via `outputFileTracingIncludes` (`./scripts/*.sh`) : si on
+  déplace le script, mettre à jour `next.config.ts` **et** `app/install.sh/route.ts`.
+  La landing affiche la commande (`INSTALL_COMMAND` dans `app/landing-content.ts`).
 
 ### Statut des outils IA — ne jamais annoncer une action non faite
 

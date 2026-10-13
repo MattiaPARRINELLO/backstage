@@ -38,10 +38,21 @@ intégrations optionnelles.
 ### Déployer en 3 commandes
 
 ```bash
+curl -fsSL https://brain.mprnl.fr/install.sh | bash
+```
+
+Ou à la main :
+
+```bash
 git clone https://github.com/MattiaPARRINELLO/backstage.git && cd backstage
 cp .env.example .env.local && bun install && bun run setup
 docker compose up -d --build     # http://localhost:3000
 ```
+
+Le script d'installation ([`scripts/install.sh`](scripts/install.sh)) vérifie les
+prérequis, clone le dépôt, installe les dépendances, génère les secrets locaux et
+démarre l'app (Docker, ou `--node`). Il ne fait rien d'autre : aucun `sudo`,
+aucune donnée envoyée nulle part.
 
 📘 Guide complet (variables, HTTPS, backups, cPanel) : [docs/self-hosting.md](docs/self-hosting.md)
 · [docs/deploy-cpanel.md](docs/deploy-cpanel.md)

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { PUBLIC_DEMO } from "@/app/landing-content";
+import { GITHUB_URL, PUBLIC_DEMO } from "@/app/landing-content";
 
 type DemoSource = { kind: string; title: string; detail: string };
 
@@ -183,7 +183,7 @@ export function PublicDemo() {
                 {PUBLIC_DEMO.after.loginCta}
               </a>
               <a
-                href="https://github.com/MattiaPARRINELLO/personalbrain"
+                href={GITHUB_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="cta-secondary"

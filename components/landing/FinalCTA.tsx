@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FINAL_CTA } from "@/app/landing-content";
+import { FINAL_CTA, GITHUB_URL } from "@/app/landing-content";
 import { scrollToSection } from "./SmoothScroll";
 
 export function FinalCTA() {
@@ -23,7 +23,7 @@ export function FinalCTA() {
           {FINAL_CTA.secondaryCta}
         </Link>
         <a
-          href="https://github.com/MattiaPARRINELLO/personalbrain"
+          href={GITHUB_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="final__tertiary font-mono"

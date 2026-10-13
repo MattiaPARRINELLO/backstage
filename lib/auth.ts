@@ -11,6 +11,17 @@ const USERS_FILENAME = "users.json";
 // fuit. Seul `bun run reset:passkey` réouvre le bootstrap.
 export const SETUP_CONSUMED_FILE = path.join(process.cwd(), "data", ".setup-consumed");
 
+/**
+ * Le bootstrap passkey peut-il rester ouvert sans SETUP_TOKEN ?
+ *
+ * Hors production uniquement. En production exposée, un bootstrap sans token
+ * laisse n'importe quel visiteur s'enregistrer comme propriétaire du compte :
+ * on refuse plutôt que de compter sur l'administrateur pour lire un warning.
+ */
+export function isOpenBootstrapAllowed(): boolean {
+  return process.env.NODE_ENV !== "production";
+}
+
 export async function markSetupConsumed(): Promise<void> {
   await fs.writeFile(SETUP_CONSUMED_FILE, new Date().toISOString(), "utf-8");
 }

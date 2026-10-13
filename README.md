@@ -1,10 +1,16 @@
 <div align="center">
   <img src="public/backstage-logo.png" alt="BACKSTAGE" width="96" />
   <h1>BACKSTAGE</h1>
-  <p><strong>Second cerveau IA personnel — déployé en production.</strong></p>
+  <p><strong>Second cerveau IA personnel — open source, auto-hébergeable.</strong></p>
   <p>
     Chat IA à mémoire persistante · Passkey (WebAuthn) · Streaming SSE ·
     Rappels synchronisés · Notifications push · PWA installable
+  </p>
+  <p>
+    <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-0f172a?style=flat-square" />
+    <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-000?style=flat-square&logo=nextdotjs" />
+    <img alt="Node >=20.9" src="https://img.shields.io/badge/node-%3E%3D20.9-3c873a?style=flat-square&logo=nodedotjs" />
+    <img alt="Docker" src="https://img.shields.io/badge/docker-ready-2496ed?style=flat-square&logo=docker" />
   </p>
 </div>
 
@@ -16,13 +22,29 @@
 agenda, emploi du temps, mails, watch-later et accréditations photo dans une
 seule interface éditoriale sombre, installable et utilisable hors-ligne.
 
+**Auto-hébergement** — application **mono-utilisateur** (un compte, une passkey,
+données en JSON local). Elle démarre avec une seule variable obligatoire (un
+endpoint IA compatible OpenAI) ; Google, Microsoft, Discord et CESAR sont des
+intégrations optionnelles.
+
 | | |
 | --- | --- |
 | **Échelle** | 32 000 lignes · 25 pages · 34 routes API · 20 Server Actions |
 | **Qualité** | 46 fichiers de tests (Vitest) + E2E Playwright |
 | **Auth** | Passkey WebAuthn + JWT, OAuth Google & Microsoft |
-| **Déploiement** | Build standalone Next.js sur hébergement mutualisé (cPanel) |
+| **Déploiement** | Docker (`compose.yaml`) ou build standalone Next.js (cPanel, VPS) |
 | **Données** | Fichiers JSON avec écritures atomiques, verrous et rotation de backups |
+
+### Déployer en 3 commandes
+
+```bash
+git clone https://github.com/MattiaPARRINELLO/backstage.git && cd backstage
+cp .env.example .env.local && bun install && bun run setup
+docker compose up -d --build     # http://localhost:3000
+```
+
+📘 Guide complet (variables, HTTPS, backups, cPanel) : [docs/self-hosting.md](docs/self-hosting.md)
+· [docs/deploy-cpanel.md](docs/deploy-cpanel.md)
 
 ---
 
@@ -124,20 +146,33 @@ nommé ne signifie pas ce qu'on croit.*
 git clone https://github.com/MattiaPARRINELLO/backstage.git
 cd backstage
 bun install
-cp .env.example .env.local   # renseigner IA_API_KEY, AUTH_SECRET, OAuth Google/Microsoft, VAPID…
+cp .env.example .env.local
+bun run setup            # génère AUTH_SECRET, SETUP_TOKEN, VAPID, WebAuthn
 bun dev
 ```
 
 L'app démarre sur [http://localhost:3000](http://localhost:3000).
+`bun run setup` est idempotent : il ne réécrit jamais une valeur déjà présente.
+
+**Premier login :** ouvrir
+[http://localhost:3000/login?setupToken=…](http://localhost:3000/login) (le token
+est dans `.env.local`). Il ne sert qu'une fois. En production, sans
+`SETUP_TOKEN`, l'enregistrement est refusé (503) — volontairement.
 
 ### Variables d'environnement
 
+Obligatoires : `NEXT_PUBLIC_API_URL`, `IA_API_KEY` (tout endpoint compatible
+OpenAI), `AUTH_SECRET`, `WEBAUTHN_RP_ID` / `WEBAUTHN_ORIGIN`, `SETUP_TOKEN`.
+
 | Var                         | Rôle                                                       |
 | --------------------------- | ---------------------------------------------------------- |
-| `NEXT_PUBLIC_API_URL`       | Base URL de l'API IA (provider OpenCode)                   |
+| `NEXT_PUBLIC_API_URL`       | Base URL de l'API IA (endpoint compatible OpenAI)           |
 | `IA_API_KEY`                | Clé API du provider IA                                     |
 | `AUTH_SECRET`               | Signe les JWT de session (passkey + Google + Microsoft)    |
-| `GOOGLE_CLIENT_ID`          | OAuth Google (Calendar + Gmail)                            |
+| `WEBAUTHN_RP_ID`            | Domaine de la passkey (`localhost` en dev)                 |
+| `WEBAUTHN_ORIGIN`           | Origine WebAuthn (`http://localhost:3000` en dev)          |
+| `SETUP_TOKEN`               | Bootstrap one-time du premier passkey (à retirer ensuite)  |
+| `GOOGLE_CLIENT_ID`          | OAuth Google (Calendar + Gmail) — optionnel                |
 | `GOOGLE_CLIENT_SECRET`      | OAuth Google                                               |
 | `GOOGLE_REDIRECT_URI`       | Callback OAuth Google                                      |
 | `MICROSOFT_CLIENT_ID`       | OAuth Microsoft (sync reminders → Microsoft To Do)         |
@@ -149,14 +184,20 @@ L'app démarre sur [http://localhost:3000](http://localhost:3000).
 | `VAPID_PRIVATE_KEY`         | Paire VAPID Web Push                                       |
 | `VAPID_SUBJECT`             | Contact mailto pour Web Push                               |
 | `CRON_SECRET`               | Protège `/api/cron/*` (obligatoire en prod)                |
-| `SETUP_TOKEN`               | Bootstrap one-time du premier passkey (à retirer ensuite)  |
+| `CRON_BASE_URL`             | URL publique utilisée par les crons                        |
+| `DISCORD_BOT_TOKEN`         | Bot Discord (DM) — optionnel                                |
+| `DISCORD_USER_ID`           | Destinataire des DM Discord                                 |
+| `CESAR_USERNAME`            | Emploi du temps CESAR — optionnel                           |
+| `CESAR_PASSWORD`            | Emploi du temps CESAR                                       |
 
+Liste commentée : [`.env.example`](.env.example).
 ### Commandes
 
 ```bash
 bun dev              # dev server
 bun run build        # production build
 bun run start        # production server
+bun run setup        # génère les secrets locaux (.env.local)
 bun run lint         # eslint (flat config)
 bunx tsc --noEmit    # type-check
 bun run test         # vitest (unit tests)
@@ -212,8 +253,24 @@ public/
   ├─ sw.js             # Service worker
   ├─ manifest.json     # PWA manifest
   └─ icons/            # SVG icons
-scripts/               # cron-scheduler, reset-passkey, QA (playwright)
+scripts/               # cron-scheduler, reset-passkey, setup (secrets locaux), QA
+Dockerfile             # image auto-hébergeable (build standalone)
+compose.yaml           # déploiement Docker prêt à l'emploi
+docs/                  # self-hosting.md, deploy-cpanel.md
 ```
+
+---
+
+## 📄 Licence
+
+[MIT](./LICENSE) © 2026 Mattia Parrinello — libre d'utilisation, de modification
+et de redistribution, sans garantie.
+
+## 🩺 Santé du projet
+
+- CI (GitHub Actions) : lint, typecheck, tests unitaires, build, e2e à chaque push
+- [docs/self-hosting.md](docs/self-hosting.md) — variables, Docker, HTTPS, backups
+- [docs/deploy-cpanel.md](docs/deploy-cpanel.md) — procédure mutualisée + crontab
 
 ---
 

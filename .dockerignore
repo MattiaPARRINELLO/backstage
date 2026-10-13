@@ -1,0 +1,37 @@
+# Dépendances et artefacts de build
+node_modules
+.next
+out
+build
+dist
+
+# Données locales (jamais dans l'image)
+data
+coverage
+test-results
+
+# Secrets et configuration de déploiement
+.env
+.env.*
+!.env.example
+!.env*.example
+.deploy.env
+.deploy-tmp
+*.tar.gz
+
+# Outils et fichiers locaux
+.git
+.github
+.mimocode
+e2e
+Dockerfile
+compose.yaml
+.dockerignore
+*.md
+!README.md
+
+# Divers
+.DS_Store
+*.tsbuildinfo
+playwright-report
+.vercel

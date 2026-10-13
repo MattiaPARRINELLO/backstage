@@ -21,12 +21,12 @@ vi.mock("@/lib/storage", () => mockStorage);
 const mockBuildSystemPrompt = vi.fn();
 vi.mock("@/lib/chat-prompts", () => ({ buildSystemPrompt: mockBuildSystemPrompt }));
 
-const mockExecuteTool = vi.fn();
+const mockRunTool = vi.fn();
 const mockConfirmationMessage = vi.fn();
 vi.mock("@/lib/chat-tools", () => ({
   tools: [],
   REQUIRE_CONFIRMATION: new Set(["send_email_response"]),
-  executeTool: mockExecuteTool,
+  runTool: mockRunTool,
   confirmationMessage: mockConfirmationMessage,
 }));
 
@@ -130,7 +130,7 @@ describe("POST /api/chat", () => {
     expect(text).toContain('"type":"group_confirm"');
     expect(text).toContain('"summary":"Résumé du lot d\'actions"');
     expect(text).toContain("ACTION_BLOCKED");
-    expect(mockExecuteTool).not.toHaveBeenCalled();
+    expect(mockRunTool).not.toHaveBeenCalled();
     expect(mockConfirmationMessage).toHaveBeenCalled();
   });
 
@@ -141,12 +141,16 @@ describe("POST /api/chat", () => {
         { type: "done", content: "" },
       ])
     );
-    mockExecuteTool.mockResolvedValue("résultats web");
+    mockRunTool.mockResolvedValue({
+      status: "ok",
+      text: "résultats web",
+      rendered: "[OK] résultats web",
+    });
     const res = await POST(makeRequest({ messages: [{ role: "user", content: "Cherche" }] }));
     expect(res.status).toBe(200);
     const text = await res.text();
     expect(text).toContain("résultats web");
-    expect(mockExecuteTool).toHaveBeenCalledWith("web_search", { query: "test" });
+    expect(mockRunTool).toHaveBeenCalledWith("web_search", { query: "test" });
   });
 
   it("ne crée pas de carte de confirmation ni d'exécution pour des arguments JSON invalides", async () => {
@@ -166,7 +170,7 @@ describe("POST /api/chat", () => {
     const text = await res.text();
     expect(text).not.toContain('"type":"group_confirm"');
     expect(text).toContain("Erreur: arguments d'outil invalides (JSON)");
-    expect(mockExecuteTool).not.toHaveBeenCalled();
+    expect(mockRunTool).not.toHaveBeenCalled();
   });
 
   it("injecte la règle d'honnêteté quand le dernier résultat d'outil est une erreur", async () => {
@@ -181,7 +185,11 @@ describe("POST /api/chat", () => {
       }
       return fakeStream([{ type: "done", content: "Voilà le résultat." }]);
     });
-    mockExecuteTool.mockResolvedValue("Erreur: boom");
+    mockRunTool.mockResolvedValue({
+      status: "error",
+      text: "Erreur: boom",
+      rendered: "[ERREUR] Erreur: boom",
+    });
     const res = await POST(makeRequest({ messages: [{ role: "user", content: "Cherche" }] }));
     expect(res.status).toBe(200);
     const text = await res.text();
@@ -190,7 +198,7 @@ describe("POST /api/chat", () => {
     const secondCallMessages = mockStream.mock.calls[1][1] as { role: string; content?: string }[];
     const lastMsg = secondCallMessages[secondCallMessages.length - 1];
     expect(lastMsg?.role).toBe("system");
-    expect(lastMsg?.content).toContain("Ne pretend JAMAIS");
+    expect(lastMsg?.content).toContain("[OK]");
   });
 
   it("n'injecte pas la règle d'honnêteté quand le dernier résultat d'outil est un succès", async () => {
@@ -205,7 +213,11 @@ describe("POST /api/chat", () => {
       }
       return fakeStream([{ type: "done", content: "Voilà le résultat." }]);
     });
-    mockExecuteTool.mockResolvedValue("résultats web");
+    mockRunTool.mockResolvedValue({
+      status: "ok",
+      text: "résultats web",
+      rendered: "[OK] résultats web",
+    });
     const res = await POST(makeRequest({ messages: [{ role: "user", content: "Cherche" }] }));
     expect(res.status).toBe(200);
     // Consomme le stream : sans cela, l'itération 2 (appel n°2 de mockStream)

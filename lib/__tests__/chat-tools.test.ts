@@ -43,7 +43,7 @@ vi.mock("@/lib/storage", () => mockStorage);
 vi.mock("@/lib/storage/schedule", () => mockSchedule);
 vi.mock("@/lib/google-actions", () => mockGoogleActions);
 
-const { executeTool, REQUIRE_CONFIRMATION, ACTION_BLOCKED_PREFIX } = await import("@/lib/chat-tools");
+const { executeTool, runTool, REQUIRE_CONFIRMATION, ACTION_BLOCKED_PREFIX } = await import("@/lib/chat-tools");
 
 describe("chat-tools — confirmation des actions IA", () => {
   beforeEach(() => {
@@ -135,6 +135,67 @@ describe("chat-tools — confirmation des actions IA", () => {
   });
 });
 
+
+describe("chat-tools — verification des ecritures", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("add_reminder confirme l'ecriture par relecture", async () => {
+    mockStorage.addReminder.mockResolvedValue({
+      id: "r1",
+      title: "Envoyer le devis",
+      dueAt: "2026-10-20T10:00:00.000Z",
+      status: "pending",
+    });
+    mockStorage.getReminders.mockResolvedValue({ reminders: [{ id: "r1" }] });
+
+    const out = await executeTool("add_reminder", { title: "Envoyer le devis", due_at: "2026-10-20T10:00:00.000Z" });
+
+    expect(out).toContain("Rappel cree");
+  });
+
+  it("add_reminder signale un echec si la relecture ne retrouve pas le rappel", async () => {
+    // Ecriture silencieusement perdue : sans verification, l'agent annoncerait
+    // « rappel cree » alors qu'aucun rappel n'existe.
+    mockStorage.addReminder.mockResolvedValue({
+      id: "r1",
+      title: "Envoyer le devis",
+      dueAt: "2026-10-20T10:00:00.000Z",
+      status: "pending",
+    });
+    mockStorage.getReminders.mockResolvedValue({ reminders: [] });
+
+    const out = await executeTool("add_reminder", { title: "Envoyer le devis", due_at: "2026-10-20T10:00:00.000Z" });
+
+    expect(out).toContain("ecriture non confirmee");
+    expect(out.startsWith("Erreur")).toBe(true);
+  });
+
+  it("runTool renvoie le statut machine du resultat", async () => {
+    mockStorage.addReminder.mockResolvedValue({
+      id: "r1",
+      title: "Rappel",
+      dueAt: "2026-10-20T10:00:00.000Z",
+      status: "pending",
+    });
+    mockStorage.getReminders.mockResolvedValue({ reminders: [{ id: "r1" }] });
+
+    const run = await runTool("add_reminder", { title: "Rappel", due_at: "2026-10-20T10:00:00.000Z" });
+
+    expect(run.status).toBe("ok");
+    expect(run.rendered.startsWith("[OK]")).toBe(true);
+  });
+
+  it("runTool propage une exception en statut error", async () => {
+    mockStorage.addReminder.mockRejectedValue(new Error("disque plein"));
+
+    const run = await runTool("add_reminder", { title: "Rappel", due_at: "2026-10-20T10:00:00.000Z" });
+
+    expect(run.status).toBe("error");
+    expect(run.rendered).toContain("disque plein");
+  });
+});
 
 describe("chat-tools — get_schedule", () => {
   beforeEach(() => {

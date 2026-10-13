@@ -1,3 +1,5 @@
+import type { ToolStatus } from "../tool-result";
+
 export interface UnifiedMessage {
   role: "system" | "user" | "assistant" | "tool";
   content: string | null;
@@ -26,7 +28,7 @@ export type StreamEvent =
   | { type: "reasoning"; content: string }
   | { type: "delta"; content: string }
   | { type: "tool_start"; toolCallId: string; name: string; arguments: string }
-  | { type: "tool_result"; name: string; result: string }
+  | { type: "tool_result"; name: string; result: string; status?: ToolStatus }
   | {
       type: "group_confirm";
       id: string;

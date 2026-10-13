@@ -358,7 +358,11 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
               const resultCount = event.result
                 ? event.result.split("\n").filter(Boolean).length
                 : 0;
-              const isError = event.result.includes("Erreur");
+              // Statut serveur s'il est fourni ; sinon on retombe sur la
+              // détection textuelle (messages d'historique plus anciens).
+              const isError = event.status
+                ? event.status === "error" || event.status === "blocked"
+                : event.result.includes("Erreur");
               if (existing) {
                 activeToolsRef.current = {
                   ...activeToolsRef.current,

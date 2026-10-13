@@ -199,6 +199,30 @@ défaut. Testé par `proxy.test.ts` et les E2E (deny-by-default).
 - `/api/schedule` — `GET` = emploi du temps en cache, `POST` = sync CESAR forcée.
   Doublon assumé de `syncScheduleNow` (`app/actions/schedule.ts`).
 
+### Statut des outils IA — ne jamais annoncer une action non faite
+
+`lib/tool-result.ts` (module **pur**, sans import) définit le statut machine
+d'une exécution d'outil : `ok` / `error` / `empty` / `blocked`.
+
+- `runTool(name, args, confirmed)` (`lib/chat-tools.ts`) est le **point d'entrée
+  unique** : il appelle `executeTool`, classifie le texte (`classifyToolText` :
+  « Erreur », « introuvable », « inconnu », « ACTION_BLOCKED »…) et renvoie
+  `{ status, text, rendered }`. Le texte envoyé au modèle est préfixé
+  `[OK]` / `[ERREUR]` / `[VIDE]` / `[BLOQUE]`.
+- Les écritures locales (rappel, relance, watch-later, mémoire, shooting) sont
+  **vérifiées par relecture** (`verifyWrite`) : si l'élément n'est pas
+  retrouvé après enregistrement, l'outil renvoie une erreur. C'est ce qui
+  empêche l'agent d'annoncer « rappel créé » alors que rien n'a été écrit.
+- `app/api/chat/route.ts` envoie `status` dans l'événement SSE `tool_result`
+  (consommé par `ChatView` / `MessageBlocks`, badge « échec ») et injecte
+  `TOOL_HONESTY_RULE` dès qu'un résultat n'est pas `[OK]`.
+- `/api/chat/confirm-batch` dérive `ok` du **statut**, plus du texte : un
+  résultat « Rappel introuvable. » sans exception est affiché comme un échec.
+
+➡️ Tout nouvel outil d'écriture doit passer par `runTool` et se vérifier par
+relecture. Tout nouvel consommateur doit utiliser le statut, jamais une
+recherche de sous-chaîne dans le texte.
+
 ### Emploi du temps CESAR (`lib/cesar-client.ts`)
 
 ⚠️ **Aucun navigateur en prod** (cPanel `npm install --production`, pas de

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { executeTool, REQUIRE_CONFIRMATION } from "@/lib/chat-tools";
+import { runTool, REQUIRE_CONFIRMATION } from "@/lib/chat-tools";
+import { isFailedStatus } from "@/lib/tool-result";
 import { logActivity } from "@/lib/storage";
 
 // Exécute une action IA qui exige une confirmation utilisateur (outils à
@@ -33,10 +34,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await executeTool(name, args, true);
+    const run = await runTool(name, args, true);
+    if (isFailedStatus(run.status)) {
+      console.error(`[chat/confirm] Échec de ${name}:`, run.text);
+      await logActivity("ai_action", `Action IA échouée : ${name}`, run.text).catch(() => {});
+      return NextResponse.json({ error: run.text }, { status: 500 });
+    }
     const details = JSON.stringify(args).slice(0, 150);
     await logActivity("ai_action", `Action IA exécutée : ${name}`, details).catch(() => {});
-    return NextResponse.json({ ok: true, result });
+    return NextResponse.json({ ok: true, result: run.text, status: run.status });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[chat/confirm] Échec de ${name}:`, message);

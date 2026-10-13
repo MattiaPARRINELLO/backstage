@@ -57,6 +57,12 @@ vi.mock("@/lib/chat-tools", () => ({
     },
   ],
   executeTool: vi.fn(async () => "Prochain cours :\nAnalyse numérique — 10:15 — Amphi B"),
+  // runTool renvoie le statut machine en plus du texte.
+  runTool: vi.fn(async () => ({
+    status: "ok",
+    text: "Prochain cours :\nAnalyse numérique — 10:15 — Amphi B",
+    rendered: `[OK] Prochain cours :\nAnalyse numérique — 10:15 — Amphi B`,
+  })),
   REQUIRE_CONFIRMATION: new Set(["send_email_response"]),
 }));
 
@@ -238,6 +244,29 @@ describe("pollDiscordOnce", () => {
     expect(result.handled).toBe(0);
     expect(sent).toHaveLength(0);
     expect(botState.lastMessageId).toBe(""); // rejoué au tour suivant
+  });
+
+  it("ne rejoue que le message en echec, pas tout le lot deja traite", async () => {
+    stubDiscord();
+    const { chatCompletion } = await import("@/lib/ai-providers");
+    // Discord renvoie le plus recent d'abord : [m3, m2, m1] est traite dans
+    // l'ordre chronologique m1 (succes) puis m2 (le routeur tombe).
+    vi.mocked(chatCompletion)
+      .mockResolvedValueOnce({ content: '{"tool":"get_schedule","args":{}}', toolCalls: [] } as never)
+      .mockRejectedValueOnce(new Error("timeout") as never);
+    messages = [
+      { id: "m3", content: "et la meteo ?", author: { id: "42" } },
+      { id: "m2", content: "et mes rappels ?", author: { id: "42" } },
+      { id: "m1", content: "ma salle ?", author: { id: "42" } },
+    ];
+
+    const result = await pollDiscordOnce();
+
+    expect(result.handled).toBe(1);
+    expect(sent).toHaveLength(1);
+    // Curseur sur m1 : seul m2 est retente. Revenir a "" aurait rejoue m1
+    // (deja traite) et renvoye une deuxieme reponse pour le meme message.
+    expect(botState.lastMessageId).toBe("m1");
   });
 
   it("reste inerte si le bot est désactivé", async () => {

@@ -40,7 +40,7 @@ self.addEventListener("pushsubscriptionchange", (event) => {
       })
   );
 });
-const CACHE = "backstage-v5";
+const CACHE = "backstage-v6";
 const STATIC_ASSETS = [
   "/",
   "/login",
@@ -87,9 +87,13 @@ self.addEventListener("push", (event) => {
       body: payload.body || "",
       icon: payload.icon || "/icons/icon-192.png",
       badge: payload.badge || "/icons/icon-192.png",
+      image: payload.image,
       tag: payload.tag,
       data: payload.data,
       requireInteraction: payload.requireInteraction ?? false,
+      renotify: payload.renotify ?? false,
+      silent: payload.silent ?? false,
+      timestamp: payload.timestamp ?? Date.now(),
       vibrate: payload.vibrate || [200, 100, 200],
       actions: payload.actions || [],
     };

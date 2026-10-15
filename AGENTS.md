@@ -267,6 +267,11 @@ conversationnel) a été **supprimé** — un seul appareil suffit.
 - **Événements** : cours (`checkScheduleNotifs`, −30 min), rappels
   (`checkReminders`), relances (`checkIntentions`), brief du jour
   (`triggerDailyBrief`). Tous passent par `sendPushToAll(payload)`.
+- **Urgence** : toutes les notifs sont envoyées en `urgency: "high"` (livraison
+  immédiate par le push service, pas de regroupement) avec `TTL` 1 h
+  (`lib/send-push.ts`). Côté payload, `requireInteraction`, `renotify`,
+  `silent: false`, `timestamp` et une vibration marquée les rendent persistantes
+  et visibles sur le téléphone. `renotify` **exige** un `tag` (toujours fourni).
 - **`sent`** est vrai dès qu'un appareil abonné a reçu le push — sinon un rappel
   sans appareil abonné serait retenté toutes les 60 s indéfiniment.
 - **Démarrage** : le scheduler ne tourne que si les clés VAPID sont présentes.

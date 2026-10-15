@@ -15,10 +15,20 @@ export function configureVapid() {
   return details;
 }
 
+/**
+ * `urgency: "high"` demande au push service (FCM/APNs/Mozilla) de livrer
+ * immédiatement au lieu de regrouper la notif avec le prochain cycle — c'est ce
+ * qui la fait apparaître sans délai quand le téléphone est en veille. Le TTL
+ * évite qu'un message périmé soit livré des heures plus tard.
+ */
 export async function sendPushNotification(
   endpoint: string,
   keys: { p256dh: string; auth: string },
-  payload: string
+  payload: string,
+  options: { urgency?: "very-low" | "low" | "normal" | "high"; ttl?: number } = {}
 ) {
-  await webpush.sendNotification({ endpoint, keys }, payload);
+  await webpush.sendNotification({ endpoint, keys }, payload, {
+    urgency: options.urgency ?? "high",
+    TTL: options.ttl ?? 3600,
+  });
 }

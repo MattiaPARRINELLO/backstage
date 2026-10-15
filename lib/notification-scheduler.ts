@@ -118,8 +118,11 @@ export async function checkScheduleNotifs(): Promise<void> {
         badge: "/icons/icon-192.png",
         tag: `course-${key}`,
         data: { type: "course", url: "/schedule" },
-        requireInteraction: false,
-        vibrate: [200, 100, 200],
+        requireInteraction: true,
+        renotify: true,
+        silent: false,
+        timestamp: Date.now(),
+        vibrate: [300, 150, 300, 150, 300],
       });
       const { sent } = await sendPushToAll(payload);
       if (sent) {
@@ -229,11 +232,14 @@ export async function checkReminders() {
         tag: "reminder-" + r.id,
         data: { type: "reminder", reminderId: r.id, url: "/reminders", recurrence: r.recurrence },
         requireInteraction: true,
+        renotify: true,
+        silent: false,
+        timestamp: Date.now(),
         actions: [
           { action: "done", title: "✓ Fait" },
           { action: "snooze", title: "⏰ +15 min" },
         ],
-        vibrate: [200, 100, 200],
+        vibrate: [300, 150, 300, 150, 300],
       });
 
       // On marque le rappel notifié SEULEMENT si l'envoi a réussi : sinon il
@@ -266,8 +272,11 @@ export async function checkIntentions() {
         badge: "/icons/icon-192.png",
         tag: "intention-" + it.id,
         data: { type: "intention", intentionId: it.id, url: "/chat" },
-        requireInteraction: false,
-        vibrate: [200, 100, 200],
+        requireInteraction: true,
+        renotify: true,
+        silent: false,
+        timestamp: Date.now(),
+        vibrate: [300, 150, 300, 150, 300],
       });
 
       // Marquée faite UNIQUEMENT si l'envoi a réussi, sinon retentée au tick suivant.
@@ -320,8 +329,11 @@ export async function triggerDailyBrief(
       badge: "/icons/icon-192.png",
       tag: "daily-brief",
       data: { type: "daily-brief", url: "/notif/daily-brief" },
-      requireInteraction: false,
-      vibrate: [100, 50, 100],
+      requireInteraction: true,
+      renotify: true,
+      silent: false,
+      timestamp: Date.now(),
+      vibrate: [300, 150, 300],
     });
 
     // Un seul envoi par jour : le cron cPanel et le scheduler interne peuvent

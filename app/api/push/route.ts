@@ -55,8 +55,11 @@ export async function PUT(request: Request) {
       badge: "/icons/icon-192.png",
       tag: "test-notif",
       data: { type: "test", url: "/reminders" },
-      requireInteraction: false,
-      vibrate: [200, 100, 200],
+      requireInteraction: true,
+      renotify: true,
+      silent: false,
+      timestamp: Date.now(),
+      vibrate: [300, 150, 300, 150, 300],
     });
 
     const results = await Promise.allSettled(

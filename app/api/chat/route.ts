@@ -13,8 +13,12 @@ import {
 import { getModel } from "@/lib/config";
 import { DEFAULT_SESSION_ID } from "@/lib/ai-providers/config";
 import type { ChatMessage, MemoryCategory } from "@/lib/types";
-import { autoExtractMemoryFacts } from "@/app/actions/brain";
 import { getSession } from "@/lib/session";
+import {
+  listFactsForExtractionPrompt,
+  parseExtractedFacts,
+  persistExtractedFacts,
+} from "@/lib/memory-autosave";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { runTool, tools, REQUIRE_CONFIRMATION, confirmationMessage } from "@/lib/chat-tools";
 import type { ToolRunResult } from "@/lib/chat-tools";
@@ -152,16 +156,21 @@ async function extractMemoryFacts(
 Analyse l'echange ci-dessous et extrais UNIQUEMENT les faits durables, stables et utiles a long terme sur l'utilisateur.
 Categories autorisees: dev (preferences/competences techniques), photo (materiel, style, workflow), life (habitudes, contraintes, contexte personnel), preference (preferences generales).
 Exclure: demandes ponctuelles, salutations, questions ephemeres, opinions changeantes.
+Exclure aussi tout fait deja present dans la liste "Deja en memoire" ci-dessous : ne le repete pas.
 Format de sortie STRICT: une ligne par fait au format "- [categorie] [confiance entre 0 et 1] enonce court".
-Si rien n'est memorisable, retourne EXACTEMENT: NONE
+Si rien de nouveau n'est memorisable, retourne EXACTEMENT: NONE
 Pas de markdown, pas de numerotation, pas de preambule.`;
+
+  // Faits deja connus : injectes pour eviter que le modele re-extrait en boucle
+  // la meme information a chaque tour.
+  const knownFacts = await listFactsForExtractionPrompt();
 
   const userPrompt = `Echange recent (les 6 derniers messages) :
 ${transcript
     .slice(-6)
     .map((m) => `${m.role === "user" ? "USER" : "ASSISTANT"}: ${m.content}`)
     .join("\n")}
-
+${knownFacts ? `\nDeja en memoire (ne pas repeter) :\n${knownFacts}\n` : ""}
 Faits a extraire :`;
 
   try {
@@ -176,21 +185,10 @@ Faits a extraire :`;
       undefined,
       sessionId
     );
-    const raw = result.content;
 
-    if (!raw || raw.trim().toUpperCase().startsWith("NONE")) return [];
-    const facts: { content: string; category: MemoryCategory; confidence: number }[] = [];
-    for (const line of raw.split("\n")) {
-      const match = line.match(/^-\s*\[(dev|photo|life|preference)\]\s*\[(0?\.\d+|1(?:\.0+)?)\]\s*(.+)$/i);
-      if (!match) continue;
-      const category = match[1].toLowerCase() as MemoryCategory;
-      const confidence = parseFloat(match[2]);
-      const content = match[3].trim();
-      if (!content || content.length < 3 || content.length > 280) continue;
-      if (Number.isNaN(confidence)) continue;
-      facts.push({ category, confidence, content });
-    }
-    return facts;
+    // Parsing tolerant (puces, gras, virgule decimale, pourcentage) : un
+    // ecart de format du modele ne doit plus faire perdre les faits.
+    return parseExtractedFacts(result.content);
   } catch (err) {
     void serverLog("chat", "error", "Memory extraction failed", err, true);
     return [];
@@ -219,10 +217,13 @@ async function runMemoryExtraction(
     if (!lastAssistant || lastAssistant.content.length < 24) return;
 
     const facts = await extractMemoryFacts(model, transcript, sessionId);
-    if (facts.length > 0) {
-      await autoExtractMemoryFacts({ facts });
-      send?.({ type: "memory_facts", facts });
-    }
+    if (facts.length === 0) return;
+    // Ecriture directe, sans requireSession() : la session est deja validee en
+    // tete de handler, et cette fonction tourne dans une promesse que le
+    // contexte requete Next ne garantit plus (l'appel est await avant la
+    // fermeture du flux, mais un detachement resterait possible).
+    await persistExtractedFacts(facts);
+    send?.({ type: "memory_facts", facts });
   } catch (err) {
     void serverLog("chat", "error", "Memory extraction error", err, true);
   }
@@ -357,6 +358,12 @@ export async function POST(request: NextRequest) {
 
       const maxIterations = 20;
 
+      // Evenement de fermeture dict par le dernier passage du modele : on le
+      // renvoie APRES l'extraction memoire, pour que le flux reste ouvert le
+      // temps d'ecrire les faits (et d'afficher le toast).
+      let pendingDone = "";
+      let pendingError: StreamEvent | null = null;
+
       async function runModel(model: string): Promise<boolean> {
         const generator = streamChatCompletion(model, messages, tools, abortController.signal, sessionId);
         const toolCallsToExecute: { toolCallId: string; name: string; arguments: string }[] = [];
@@ -375,17 +382,14 @@ export async function POST(request: NextRequest) {
 
           if (event.type === "done") {
             if (toolCallsToExecute.length === 0) {
-              send({ type: "done", content: event.content });
-              controller.close();
+              pendingDone = event.content;
               return false;
             }
             continue;
           }
 
           if (event.type === "error") {
-            send(event);
-            send({ type: "done", content: "" });
-            controller.close();
+            pendingError = event;
             return false;
           }
 
@@ -397,8 +401,6 @@ export async function POST(request: NextRequest) {
         }
 
         if (toolCallsToExecute.length === 0) {
-          send({ type: "done", content: "" });
-          controller.close();
           return false;
         }
 
@@ -490,6 +492,20 @@ export async function POST(request: NextRequest) {
 
       let lastAssistantContent = "";
 
+      // Clot un tour : reponse finale, puis extraction memoire, puis fermeture
+      // du flux. L'extraction est ATTENDUE et inconditionnelle — c'est ce qui
+      // garantit que les faits sont ecrits avant que la requete (et son
+      // contexte Next) ne se terminent. Detachee, elle echouait en silence :
+      // requireSession() hors scope requete, ou processus coupe apres la
+      // reponse. Si le client est parti, `send` est un no-op et seule la
+      // notification est perdue, pas l'ecriture.
+      async function finishTurn(): Promise<void> {
+        if (pendingError) send(pendingError);
+        send({ type: "done", content: pendingDone });
+        await runMemoryExtraction(modelName, body.messages, sessionId, send, lastAssistantContent);
+        controller.close();
+      }
+
       try {
         let useFallback = false;
         for (let i = 0; i < maxIterations; i++) {
@@ -498,7 +514,7 @@ export async function POST(request: NextRequest) {
           try {
             const shouldContinue = await runModel(currentModel);
             if (!shouldContinue) {
-              void runMemoryExtraction(modelName, body.messages, sessionId, send, lastAssistantContent);
+              await finishTurn();
               return;
             }
             const lastAssistantMsg = [...messages].reverse().find((m) => m.role === "assistant");
@@ -524,9 +540,7 @@ export async function POST(request: NextRequest) {
           useFallback = false;
         }
 
-        void runMemoryExtraction(modelName, body.messages, sessionId, send, lastAssistantContent);
-        send({ type: "done", content: "" });
-        controller.close();
+        await finishTurn();
       } catch (error) {
         if (streamClosed) return;
         void serverLog("chat", "error", "Chat stream error", error);

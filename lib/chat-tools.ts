@@ -19,6 +19,8 @@ import {
   getWatchLater,
   getMemory,
   addMemoryFact,
+  findSimilarMemoryFacts,
+  touchMemoryFact,
   isSafeFetchUrl,
 } from "@/lib/storage";
 import {
@@ -162,12 +164,21 @@ export const tools: UnifiedTool[] = [  {
   },
   {
     name: "add_memory_fact",
-    description: "Memorise un fait important sur l'utilisateur pour les futures conversations.",
+    description:
+      "Memorise un fait durable et stable sur l'utilisateur (preference, contrainte, materiel, competence, evenement important) pour les futures conversations. " +
+      "A utiliser des que l'utilisateur te confie ce type d'information, MEME S'IL NE LE DEMANDE PAS. " +
+      "Ne pas utiliser pour une demande ponctuelle, une salutation ou une tache deja couverte par un rappel ou un evenement agenda.",
     parameters: {
       type: "object",
       properties: {
         content: { type: "string", description: "Le fait a memoriser, en francais, a la troisieme personne" },
-        category: { type: "string", enum: ["dev", "photo", "life", "preference"], description: "Categorie du fait" },
+        category: {
+          type: "string",
+          enum: ["dev", "photo", "life", "preference"],
+          description:
+            "dev = preferences/competences techniques, photo = materiel/style/workflow, " +
+            "life = habitudes/contraintes/contexte, preference = preferences generales",
+        },
       },
       required: ["content", "category"],
     },
@@ -487,10 +498,18 @@ export async function executeTool(
       return result;
     }
     case "add_memory_fact": {
-      const content = String(args.content ?? "");
+      const content = String(args.content ?? "").trim();
       const category = String(args.category ?? "life") as "dev" | "photo" | "life" | "preference";
       if (!content) return "Erreur : contenu vide.";
-      const fact = await addMemoryFact(content, category);
+      // Dédoublonnage : un fait déjà connu est renforcé, pas recréé. Même
+      // logique que rememberFact et que l'extraction automatique, sinon le
+      // modèle finit par saturer la mémoire de doublons.
+      const existing = await findSimilarMemoryFacts(content, category);
+      if (existing) {
+        await touchMemoryFact(existing.id);
+        return `Fait deja connu, prioritise en memoire : ${existing.content}`;
+      }
+      const fact = await addMemoryFact(content, category, { source: "tool" });
       // Relecture : le fait est-il bien en mémoire ?
       const problem = await verifyWrite("le fait memorise", async () => {
         const after = await getMemory();

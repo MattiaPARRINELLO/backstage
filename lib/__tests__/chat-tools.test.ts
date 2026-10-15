@@ -9,6 +9,7 @@ const mockStorage = {
   getConcerts: vi.fn(),
   getAccreditations: vi.fn(),
   getReminders: vi.fn(),
+  getMemory: vi.fn(),
   addAccreditation: vi.fn(),
   saveAccreditations: vi.fn(),
   prepareConcert: vi.fn(),
@@ -18,6 +19,8 @@ const mockStorage = {
   updatePhotoShoot: vi.fn(),
   addIntention: vi.fn(),
   addMemoryFact: vi.fn(),
+  findSimilarMemoryFacts: vi.fn(),
+  touchMemoryFact: vi.fn(),
   isSafeFetchUrl: vi.fn().mockResolvedValue(true),
 };
 
@@ -170,6 +173,50 @@ describe("chat-tools — verification des ecritures", () => {
 
     expect(out).toContain("ecriture non confirmee");
     expect(out.startsWith("Erreur")).toBe(true);
+  });
+
+  it("add_memory_fact dedoublonne un fait deja connu au lieu de le recreer", async () => {
+    // Sans dedoublonnage, le modele sature la memoire de doublons.
+    mockStorage.findSimilarMemoryFacts.mockResolvedValue({
+      id: "f1",
+      content: "Utilise TypeScript",
+      category: "dev",
+      createdAt: "",
+    });
+
+    const out = await executeTool("add_memory_fact", {
+      content: "Utilise TypeScript au quotidien",
+      category: "dev",
+    });
+
+    expect(mockStorage.addMemoryFact).not.toHaveBeenCalled();
+    expect(mockStorage.touchMemoryFact).toHaveBeenCalledWith("f1");
+    expect(out).toContain("deja connu");
+  });
+
+  it("add_memory_fact cree le fait avec la source tool", async () => {
+    mockStorage.findSimilarMemoryFacts.mockResolvedValue(null);
+    mockStorage.addMemoryFact.mockResolvedValue({
+      id: "f2",
+      content: "Aime photographier en 35mm",
+      category: "photo",
+      createdAt: "",
+    });
+    mockStorage.getMemory.mockResolvedValue({ facts: [{ id: "f2" }], relationships: [], profile: { name: "Mattia", preferences: [] } });
+
+    const out = await executeTool("add_memory_fact", {
+      content: "Aime photographier en 35mm",
+      category: "photo",
+    });
+
+    expect(mockStorage.addMemoryFact).toHaveBeenCalledWith("Aime photographier en 35mm", "photo", { source: "tool" });
+    expect(out).toContain("Fait memorise");
+  });
+
+  it("add_memory_fact refuse un contenu vide", async () => {
+    const out = await executeTool("add_memory_fact", { content: "   ", category: "dev" });
+    expect(out.startsWith("Erreur")).toBe(true);
+    expect(mockStorage.addMemoryFact).not.toHaveBeenCalled();
   });
 
   it("runTool renvoie le statut machine du resultat", async () => {

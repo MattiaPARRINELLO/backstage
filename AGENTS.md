@@ -106,6 +106,7 @@ components/
   brain/            KnowledgeGraph
 lib/
   cesar-client.ts   client CESAR (emploi du temps) — fetch HTTP pur, SANS navigateur
+  memory-autosave.ts  mémoire auto : parsing tolérant de l'extraction + écriture SANS session
   storage/          CRUD par domaine (15 fichiers)
   types/            définitions par domaine (17 fichiers)
   ai-providers/     openai, anthropic, config, types
@@ -233,6 +234,35 @@ d'une exécution d'outil : `ok` / `error` / `empty` / `blocked`.
 ➡️ Tout nouvel outil d'écriture doit passer par `runTool` et se vérifier par
 relecture. Tout nouvel consommateur doit utiliser le statut, jamais une
 recherche de sous-chaîne dans le texte.
+
+### Mémoire automatique — deux chemins, une seule écriture
+
+L'IA alimente `data/memory.json` par **deux** voies, qui partagent le même
+moteur d'écriture (`lib/memory-autosave.ts`) :
+
+| Voie                    | Déclencheur                                            |
+| ----------------------- | ------------------------------------------------------ |
+| Outil `add_memory_fact` | le modèle juge un fait durable, sans qu'on le demande  |
+| `runMemoryExtraction`   | à chaque fin de tour de chat (`app/api/chat/route.ts`) |
+
+- **`lib/memory-autosave.ts` ne vérifie PAS la session** : il est appelé soit
+  depuis une Server Action déjà authentifiée (`app/actions/brain.ts`), soit
+  depuis la route de chat (session vérifiée en tête de handler). Ne jamais y
+  remettre `requireSession()` — hors scope requête Next, ça jette.
+- **Dédoublonnage obligatoire** : `findSimilarMemoryFacts` avant toute
+  création, sinon `touchMemoryFact`. Un fait déjà connu est renforcé, pas
+  recréé. Les sources sont `manual` / `tool` / `auto-extract`.
+- **Le parsing d'extraction est volontairement tolérant** (puce markdown,
+  gras, virgule décimale, pourcentage) mais **exige une confiance explicite** :
+  sans elle, une phrase de commentaire (« Dev : rien à signaler ») deviendrait
+  un fait. Seuil `MIN_FACT_CONFIDENCE` = 0.7, plafond `MAX_FACTS_PER_TURN` = 8.
+- **`runMemoryExtraction` est `await`** dans `finishTurn()` avant
+  `controller.close()`. Ne pas la repasser en `void` : détachée, elle perdait
+  l'écriture en silence. Le client lit le flux jusqu'à sa fermeture, l'événement
+  SSE `memory_facts` (toast « 🧠 N faits mémorisés ») arrive donc bien après le
+  `done`.
+- Le prompt d'extraction reçoit les faits **déjà en mémoire**
+  (`listFactsForExtractionPrompt`) pour ne pas les ré-extraire à chaque tour.
 
 ### Emploi du temps CESAR (`lib/cesar-client.ts`)
 

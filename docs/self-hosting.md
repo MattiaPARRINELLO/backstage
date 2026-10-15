@@ -78,7 +78,7 @@ Full template with comments: [`.env.example`](../.env.example).
 | `SETUP_TOKEN` | one-time protection of the first passkey registration |
 
 **Optional** — Google (Gmail/Calendar), Microsoft To Do, OpenWeatherMap,
-Brave search, Discord bot, CESAR timetable, VAPID push, `CRON_SECRET` +
+Brave search, CESAR timetable, VAPID push, `CRON_SECRET` +
 `CRON_BASE_URL` for `/api/cron/*`.
 
 ### Security notes
@@ -152,7 +152,6 @@ crontab lines for the daily brief and reminders, is documented in
 | Microsoft To Do | Azure app registration | reminders stay local only |
 | Weather | `OPENWEATHERMAP_API_KEY` | daily brief omits the weather block |
 | Web search | `BRAVE_SEARCH_API_KEY` | falls back to DuckDuckGo |
-| Discord DM | `DISCORD_BOT_TOKEN` + `DISCORD_USER_ID` | push notifications only |
 | CESAR timetable | `CESAR_USERNAME` / `CESAR_PASSWORD` | schedule tool says no sync yet |
 
 The app starts and answers on every protected page without any of these; the
@@ -161,7 +160,7 @@ AI chat only needs the endpoint + key.
 ## 5. Backups & updates
 
 - Back up `data/` (it contains `users.json`, OAuth tokens, `memory.json`,
-  `config.json`). The Discord bot cursor and intention list live there too.
+  `config.json`).
 - Update: pull, `bun install`, rebuild, restart. Keep `AUTH_SECRET` and
   `VAPID_PRIVATE_KEY` stable or every session and push subscription is lost.
 

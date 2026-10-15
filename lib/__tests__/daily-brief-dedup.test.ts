@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Le scheduler porte la garde anti-doublon du brief : le cron cPanel et le
 // scheduler interne peuvent tomber sur la meme minute, et sans elle chaque
-// appel renvoyait un DM et un push (constate en production).
+// appel renvoyait un push (constate en production).
 const state = {
   notified: { briefs: [] as { date: string; at: string }[] },
   marks: [] as string[],
@@ -46,19 +46,30 @@ vi.mock("@/lib/storage-core", () => ({
 }));
 
 vi.mock("@/lib/push-subscriptions", () => ({
-  getSubscriptions: vi.fn(async () => []),
+  getSubscriptions: vi.fn(async () => [
+    { endpoint: "https://push.example/1", keys: { p256dh: "x", auth: "y" } },
+  ]),
   removeSubscription: vi.fn(),
+}));
+
+vi.mock("@/lib/send-push", () => ({
+  configureVapid: vi.fn(() => ({
+    subject: "mailto:backstage@localhost",
+    publicKey: "pub",
+    privateKey: "priv",
+  })),
+  getVapidDetails: vi.fn(() => ({
+    subject: "mailto:backstage@localhost",
+    publicKey: "pub",
+    privateKey: "priv",
+  })),
+  sendPushNotification: vi.fn(async () => {
+    state.notifications += 1;
+  }),
 }));
 
 vi.mock("@/lib/config", () => ({
   getConfig: vi.fn(async () => ({ features: { dailyBrief: true } })),
-}));
-
-vi.mock("@/lib/discord/notify", () => ({
-  notifyDiscord: vi.fn(async () => {
-    state.notifications += 1;
-    return { sent: true };
-  }),
 }));
 
 const { triggerDailyBrief } = await import("@/lib/notification-scheduler");
@@ -67,6 +78,7 @@ beforeEach(() => {
   state.notified = { briefs: [] };
   state.marks = [];
   state.notifications = 0;
+  vi.clearAllMocks();
 });
 
 describe("triggerDailyBrief — un seul envoi par jour", () => {
@@ -96,9 +108,9 @@ describe("triggerDailyBrief — un seul envoi par jour", () => {
     expect(state.notifications).toBe(1);
   });
 
-  it("ne marque rien si aucun canal n'a abouti", async () => {
-    const { notifyDiscord } = await import("@/lib/discord/notify");
-    vi.mocked(notifyDiscord).mockResolvedValueOnce({ sent: false, reason: "panne" });
+  it("ne marque rien si aucun envoi n'a abouti", async () => {
+    const { sendPushNotification } = await import("@/lib/send-push");
+    vi.mocked(sendPushNotification).mockRejectedValueOnce(new Error("panne"));
 
     const result = await triggerDailyBrief("cron");
 

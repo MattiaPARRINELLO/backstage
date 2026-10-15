@@ -4,19 +4,14 @@ import { getConfig } from "./config";
 import { configureVapid, getVapidDetails, sendPushNotification } from "./send-push";
 import { serverLog } from "./logger";
 import { markdownToText } from "./utils";
-import type { DiscordEvent } from "./discord/types";
 import type { DailyBrief } from "./types";
 
 let schedulerStarted = false;
 let reminderInterval: ReturnType<typeof setInterval> | null = null;
 let dailyBriefTimeout: ReturnType<typeof setTimeout> | null = null;
 let dailyBriefInterval: ReturnType<typeof setInterval> | null = null;
-let discordPollInterval: ReturnType<typeof setInterval> | null = null;
 
 const REMINDER_INTERVAL_MS = 60_000;
-// Polling du DM : une seule requete toutes les 5 s, largement sous le budget
-// global de l'API Discord (50 requetes/minute pour le token du bot).
-const DISCORD_POLL_MS = 5_000;
 const DAILY_BRIEF_HOUR = 7;
 const NOTIFIED_FILE = "notified-reminders.json";
 const NOTIFIED_COURSES_FILE = "notified-courses.json";
@@ -126,11 +121,7 @@ export async function checkScheduleNotifs(): Promise<void> {
         requireInteraction: false,
         vibrate: [200, 100, 200],
       });
-      const { sent } = await sendPushToAll(payload, `course-${key}`, {
-        kind: "course",
-        course: c,
-        leadMin: COURSE_LEAD_MIN,
-      });
+      const { sent } = await sendPushToAll(payload);
       if (sent) {
         notified.add(key);
         dirty = true;
@@ -163,16 +154,8 @@ export async function syncScheduleIfStale(): Promise<void> {
 }
 
 export async function sendPushToAll(
-  payload: string,
-  _tag?: string,
-  discordEvent?: DiscordEvent
+  payload: string
 ): Promise<{ sent: boolean; devices: number }> {
-  // Discord part en parallele du web push : le rendu de la carte image prend
-  // une centaine de millisecondes, inutile de l'ajouter a la latence du push.
-  const discordTask = discordEvent
-    ? import("./discord/notify").then((m) => m.notifyDiscord(discordEvent))
-    : null;
-
   const subs = await getSubscriptions();
   let webSent = false;
   if (subs.length > 0) {
@@ -212,22 +195,7 @@ export async function sendPushToAll(
     }
   }
 
-  // Un envoi Discord reussi compte comme notifie : sinon un rappel sans
-  // appareil web abonne serait retente indefiniment toutes les 60 s.
-  let discordSent = false;
-  if (discordTask) {
-    try {
-      const result = await discordTask;
-      discordSent = result.sent;
-      if (!result.sent && result.reason) {
-        console.log(`[scheduler] Discord non envoye : ${result.reason}`);
-      }
-    } catch (err) {
-      void serverLog("scheduler", "error", "Envoi Discord echoue", err);
-    }
-  }
-
-  return { sent: webSent || discordSent, devices: subs.length };
+  return { sent: webSent, devices: subs.length };
 }
 
 export async function checkReminders() {
@@ -268,12 +236,9 @@ export async function checkReminders() {
         vibrate: [200, 100, 200],
       });
 
-      // On marque le rappel notifié SEULEMENT si l'envoi a réussi (web ou
-      // Discord) : sinon il sera retenté au prochain tick au lieu d'être perdu.
-      const { sent } = await sendPushToAll(payload, "reminder-" + r.id, {
-        kind: "reminder",
-        reminder: r,
-      });
+      // On marque le rappel notifié SEULEMENT si l'envoi a réussi : sinon il
+      // sera retenté au prochain tick au lieu d'être perdu.
+      const { sent } = await sendPushToAll(payload);
       if (sent) {
         notifiedReminders.add(r.id);
         await markReminderNotified(r.id);
@@ -306,10 +271,7 @@ export async function checkIntentions() {
       });
 
       // Marquée faite UNIQUEMENT si l'envoi a réussi, sinon retentée au tick suivant.
-      const { sent } = await sendPushToAll(payload, "intention-" + it.id, {
-        kind: "intention",
-        intention: it,
-      });
+      const { sent } = await sendPushToAll(payload);
       if (sent) {
         await resolveIntention(it.id, "done");
       }
@@ -369,12 +331,7 @@ export async function triggerDailyBrief(
       return { skipped: "brief deja envoye aujourd'hui" };
     }
 
-    const { digestFromBrief } = await import("./discord/digest");
-    const result = await sendPushToAll(payload, "daily-brief", {
-      kind: "daily-brief",
-      summary: todayBrief.summary,
-      digest: digestFromBrief(todayBrief, todayBrief.summary),
-    });
+    const result = await sendPushToAll(payload);
     if (result.sent) {
       await markBriefSent(today);
     }
@@ -412,18 +369,12 @@ export function startScheduler() {
   if (schedulerStarted) return;
   schedulerStarted = true;
 
-  // Le scheduler porte aussi les DM Discord : il doit tourner meme sans cles
-  // VAPID (web push et Discord sont deux canaux independants).
   const vapidDetails = getVapidDetails();
   const vapidReady = Boolean(vapidDetails.publicKey && vapidDetails.privateKey);
-  const discordReady = Boolean(process.env.DISCORD_BOT_TOKEN);
-  if (!vapidReady && !discordReady) {
-    console.warn("[scheduler] Ni VAPID ni bot Discord configures, notifications desactivees");
+  if (!vapidReady) {
+    console.warn("[scheduler] VAPID absent : notifications web push desactivees");
     schedulerStarted = false;
     return;
-  }
-  if (!vapidReady) {
-    console.log("[scheduler] VAPID absent : notifications web push desactivees");
   }
 
   checkReminders();
@@ -438,18 +389,6 @@ export function startScheduler() {
   }, REMINDER_INTERVAL_MS);
 
   startDailyBrief();
-
-  if (discordReady) {
-    const poll = () => {
-      void import("./discord/bot")
-        .then((m) => m.pollDiscordOnce())
-        .catch((err) => {
-          console.warn(`[scheduler] Bot Discord : ${err instanceof Error ? err.message : String(err)}`);
-        });
-    };
-    poll();
-    discordPollInterval = setInterval(poll, DISCORD_POLL_MS);
-  }
 
   console.log("[scheduler] Started — reminders every 60s, daily brief at", DAILY_BRIEF_HOUR + "h");
 }
@@ -466,10 +405,6 @@ export function stopScheduler() {
   if (dailyBriefInterval) {
     clearInterval(dailyBriefInterval);
     dailyBriefInterval = null;
-  }
-  if (discordPollInterval) {
-    clearInterval(discordPollInterval);
-    discordPollInterval = null;
   }
   schedulerStarted = false;
   console.log("[scheduler] Stopped");

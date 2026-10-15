@@ -120,7 +120,7 @@ async function main() {
   }
   lines.push(
     "# Les autres intégrations (Gmail/Calendar, Microsoft To Do, météo,",
-    "# recherche web, Discord, CESAR) sont optionnelles : voir .env.example.",
+    "# recherche web, CESAR) sont optionnelles : voir .env.example.",
     ""
   );
 

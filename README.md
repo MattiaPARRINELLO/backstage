@@ -24,7 +24,7 @@ seule interface éditoriale sombre, installable et utilisable hors-ligne.
 
 **Auto-hébergement** — application **mono-utilisateur** (un compte, une passkey,
 données en JSON local). Elle démarre avec une seule variable obligatoire (un
-endpoint IA compatible OpenAI) ; Google, Microsoft, Discord et CESAR sont des
+endpoint IA compatible OpenAI) ; Google, Microsoft et CESAR sont des
 intégrations optionnelles.
 
 | | |
@@ -196,8 +196,6 @@ OpenAI), `AUTH_SECRET`, `WEBAUTHN_RP_ID` / `WEBAUTHN_ORIGIN`, `SETUP_TOKEN`.
 | `VAPID_SUBJECT`             | Contact mailto pour Web Push                               |
 | `CRON_SECRET`               | Protège `/api/cron/*` (obligatoire en prod)                |
 | `CRON_BASE_URL`             | URL publique utilisée par les crons                        |
-| `DISCORD_BOT_TOKEN`         | Bot Discord (DM) — optionnel                                |
-| `DISCORD_USER_ID`           | Destinataire des DM Discord                                 |
 | `CESAR_USERNAME`            | Emploi du temps CESAR — optionnel                           |
 | `CESAR_PASSWORD`            | Emploi du temps CESAR                                       |
 

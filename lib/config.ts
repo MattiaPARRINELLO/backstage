@@ -8,8 +8,6 @@ export interface AppConfig {
     generalAlt: string;
     code: string;
     titleModel: string;
-    /** Routeur du bot Discord : le plus petit modèle suffit. */
-    discordBot: string;
   };
   llm: {
     temperature: number;
@@ -18,16 +16,6 @@ export interface AppConfig {
   features: {
     dailyBrief: boolean;
     webSearch: boolean;
-    /** Notifications Discord (cours, rappels, relances, brief du jour). */
-    discordNotifications: boolean;
-  };
-  discord: {
-    /** Destinataire des DM — l'ID utilisateur peut venir de /settings. */
-    userId: string;
-    /** Alertes techniques issues de serverLog. */
-    alerts: boolean;
-    /** Bot conversationnel (lecture seule du DM). */
-    bot: boolean;
   };
   theme: {
     accentColor: string;
@@ -43,7 +31,6 @@ const defaultConfig: AppConfig = {
     generalAlt: "deepseek-v4-flash",
     code: "kimi-k2.7-code",
     titleModel: "deepseek-v4-flash",
-    discordBot: "deepseek-v4.1-flash",
   },
   llm: {
     temperature: 0.7,
@@ -52,12 +39,6 @@ const defaultConfig: AppConfig = {
   features: {
     dailyBrief: true,
     webSearch: true,
-    discordNotifications: true,
-  },
-  discord: {
-    userId: "",
-    alerts: true,
-    bot: true,
   },
   theme: {
     accentColor: "#a5b4fc",
@@ -84,7 +65,6 @@ export async function getConfig(): Promise<AppConfig> {
     models: { ...defaultConfig.models, ...parsed.models },
     llm: { ...defaultConfig.llm, ...parsed.llm },
     features: { ...defaultConfig.features, ...parsed.features },
-    discord: { ...defaultConfig.discord, ...parsed.discord },
     theme: { ...defaultConfig.theme, ...parsed.theme },
   };
   cachedConfig = { data: merged, ts: Date.now() };
@@ -95,7 +75,6 @@ export type ConfigUpdate = {
   models?: Partial<AppConfig["models"]>;
   llm?: Partial<AppConfig["llm"]>;
   features?: Partial<AppConfig["features"]>;
-  discord?: Partial<AppConfig["discord"]>;
   theme?: Partial<AppConfig["theme"]>;
 };
 
@@ -109,7 +88,6 @@ export async function updateConfig(partial: ConfigUpdate): Promise<AppConfig> {
       models: { ...defaultConfig.models, ...current.models, ...partial.models },
       llm: { ...defaultConfig.llm, ...current.llm, ...partial.llm },
       features: { ...defaultConfig.features, ...current.features, ...partial.features },
-      discord: { ...defaultConfig.discord, ...current.discord, ...partial.discord },
       theme: { ...defaultConfig.theme, ...current.theme, ...partial.theme },
     };
   })) ?? defaultConfig;

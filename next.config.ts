@@ -4,11 +4,10 @@ import withBundleAnalyzer from "@next/bundle-analyzer";
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: process.cwd(),
-  // Les cartes Discord (lib/discord/cards.tsx) lisent ces fichiers au runtime :
-  // sans inclusion explicite, le build standalone les omet (lecture via fs,
-  // invisible pour l'analyse statique des imports).
+  // Fichiers lus au runtime par `fs` : sans inclusion explicite, le build
+  // standalone les omet (invisible pour l'analyse statique des imports).
   outputFileTracingIncludes: {
-    "/**": ["./assets/fonts/*.ttf", "./public/icons/icon-192.png", "./scripts/*.sh"],
+    "/**": ["./public/icons/icon-192.png", "./scripts/*.sh"],
   },
   async headers() {
     const headers = [

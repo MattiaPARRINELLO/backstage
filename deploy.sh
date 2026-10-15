@@ -81,8 +81,6 @@ CRON_BASE_URL=${CRON_BASE_URL:-}
 CESAR_USERNAME=${CESAR_USERNAME}
 CESAR_PASSWORD=${CESAR_PASSWORD}
 CESAR_BASE=${CESAR_BASE:-}
-DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
-DISCORD_USER_ID=${DISCORD_USER_ID:-}
 SETUP_TOKEN=${SETUP_TOKEN:-}
 WEBAUTHN_RP_ID=${WEBAUTHN_RP_ID:-}
 WEBAUTHN_ORIGIN=${WEBAUTHN_ORIGIN:-}
@@ -101,10 +99,6 @@ fi
 if [ -z "${WEBAUTHN_RP_ID:-}" ] || [ -z "${WEBAUTHN_ORIGIN:-}" ]; then
   echo -e "${YELLOW}⚠  WEBAUTHN_RP_ID / WEBAUTHN_ORIGIN non définis — la passkey se fiera à l'en-tête Host de la requête.${NC}"
   echo -e "${YELLOW}   Renseignez votre domaine dans .deploy.env pour un comportement stable.${NC}"
-fi
-
-if [ -z "${DISCORD_BOT_TOKEN:-}" ]; then
-  echo -e "${YELLOW}⚠  DISCORD_BOT_TOKEN non défini dans .deploy.env — les DM Discord (brief du jour, cours, rappels) resteront inactifs en production.${NC}"
 fi
 
 echo -e "${GREEN}✓ Standalone prêt dans ${DEPLOY_TMP}${NC}"

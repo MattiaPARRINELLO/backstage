@@ -34,9 +34,6 @@ ENV NODE_ENV=production \
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --from=build --chown=node:node /app/public ./public
-# Touche les assets lus au runtime par `fs` (cartes Discord) au cas où le
-# file tracing ne les aurait pas embarqués.
-COPY --from=build --chown=node:node /app/assets ./assets
 
 # Données persistantes (gitignorées : créées à l'exécution si absentes).
 RUN mkdir -p /app/data && chown -R node:node /app/data

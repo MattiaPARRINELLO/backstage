@@ -30,8 +30,12 @@ vi.mock("@/lib/chat-tools", () => ({
   confirmationMessage: mockConfirmationMessage,
 }));
 
-const mockAutoExtractMemoryFacts = vi.fn().mockResolvedValue(undefined);
-vi.mock("@/app/actions/brain", () => ({ autoExtractMemoryFacts: mockAutoExtractMemoryFacts }));
+const mockPersistExtractedFacts = vi.fn().mockResolvedValue([]);
+// Parsing et liste des faits restent reels : seule l'ecriture est simulee.
+vi.mock("@/lib/memory-autosave", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/memory-autosave")>();
+  return { ...actual, persistExtractedFacts: mockPersistExtractedFacts };
+});
 
 const mockStream = vi.fn();
 const mockChatCompletion = vi.fn();
@@ -98,6 +102,56 @@ describe("POST /api/chat", () => {
       expect.anything(),
       "personalbrain"
     );
+  });
+
+  it("memorise les faits extraits et les signale apres la reponse finale", async () => {
+    // L'extraction doit etre ATTENDUE (pas de `void`) : c'est ce qui garantit
+    // l'ecriture avant la fin de la requete.
+    mockChatCompletion.mockResolvedValue({
+      content: "- [dev] [0.9] Utilise TypeScript",
+      toolCalls: [],
+    });
+    mockPersistExtractedFacts.mockImplementation(async (facts) => facts);
+
+    const res = await POST(
+      makeRequest({
+        messages: [
+          { role: "user", content: "Je code en TypeScript tous les jours pour mes projets" },
+          { role: "assistant", content: "Note, je garde ca en tete pour la suite." },
+        ],
+      })
+    );
+    const text = await res.text();
+
+    expect(mockPersistExtractedFacts).toHaveBeenCalledWith([
+      { content: "Utilise TypeScript", category: "dev", confidence: 0.9 },
+    ]);
+    // L'evenement arrive apres le done : le flux reste ouvert le temps d'ecrire.
+    expect(text.indexOf('"type":"memory_facts"')).toBeGreaterThan(text.indexOf('"type":"done"'));
+  });
+
+  it("n'emet rien quand l'extraction ne trouve aucun fait", async () => {
+    mockChatCompletion.mockResolvedValue({ content: "NONE", toolCalls: [] });
+    const res = await POST(makeRequest({ messages: [{ role: "user", content: "Bonjour" }] }));
+    const text = await res.text();
+    expect(mockPersistExtractedFacts).not.toHaveBeenCalled();
+    expect(text).not.toContain("memory_facts");
+  });
+
+  it("ecrit les faits meme si le client coupe le flux (seul le toast est perdu)", async () => {
+    // Une deconnexion apres la reponse ne doit pas faire perdre l'ecriture.
+    mockChatCompletion.mockResolvedValue({ content: "- [dev] [0.9] Fait durable", toolCalls: [] });
+    const res = await POST(
+      makeRequest({
+        messages: [
+          { role: "user", content: "Je code en TypeScript tous les jours pour mes projets" },
+          { role: "assistant", content: "Note, je garde ca en tete pour la suite." },
+        ],
+      })
+    );
+    await res.body?.cancel();
+    await new Promise((r) => setTimeout(r, 30));
+    expect(mockPersistExtractedFacts).toHaveBeenCalled();
   });
 
   it("transmet le sessionId de la conversation au provider IA", async () => {

@@ -15,6 +15,7 @@ import {
   updateMemoryFact,
   logActivity,
 } from "@/lib/storage";
+import { persistExtractedFacts } from "@/lib/memory-autosave";
 import type { MemoryCategory, MemoryData, MemoryFact, MemoryRelationship, MemorySource } from "@/lib/types";
 
 const memoryCategorySchema = z.enum(["dev", "photo", "life", "preference"]);
@@ -90,22 +91,9 @@ export async function autoExtractMemoryFacts(
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message ?? "Payload invalide");
   }
-  const saved: MemoryFact[] = [];
-  for (const f of parsed.data.facts) {
-    if (f.confidence < 0.7) continue;
-    const existing = await findSimilarMemoryFacts(f.content, f.category);
-    if (existing) {
-      await touchMemoryFact(existing.id);
-      saved.push(existing);
-      continue;
-    }
-    const fact = await addMemoryFact(f.content, f.category, {
-      source: "auto-extract",
-      confidence: f.confidence,
-    });
-    await logActivity("memory_added", `Mémorisé : ${f.content.slice(0, 80)}`, f.category);
-    saved.push(fact);
-  }
+  // La persistance est mutualisee avec la route de chat : meme dedoublonnage,
+  // meme seuil, meme journalisation (lib/memory-autosave.ts).
+  const saved = await persistExtractedFacts(parsed.data.facts);
   if (saved.length > 0) revalidatePath("/brain");
   return saved;
 }

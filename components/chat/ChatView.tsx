@@ -18,6 +18,14 @@ import {
   activeToolsList,
   toolMeta,
 } from "@/components/chat/chat-data";
+import {
+  getLiveRun,
+  subscribeLiveRun,
+  startLiveRun,
+  abortLiveRun,
+  resumeLiveRun,
+  clearLiveRun,
+} from "@/components/chat/live-run";
 import { formatTime } from "@/lib/date";
 import { MessageBlock, ToolCallTray, ThinkingIndicator, AssistantAvatar, GroupActionCard } from "@/components/chat/MessageBlocks";
 import { KeyboardSafe } from "@/components/ui/KeyboardSafe";
@@ -86,7 +94,6 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   const [sessionId, setSessionId] = useState<string>(() => generateId());
   const [sessionTitle, setSessionTitle] = useState<string>("");
 
-  const abortRef = useRef<(() => void) | null>(null);
   const loadSeqRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -94,6 +101,17 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   const hasTitleRef = useRef(false);
   const prevExternalSessionIdRef = useRef<string>("");
   const prevSessionIdRef = useRef(sessionId);
+  // État du tour en cours, en refs : il doit survivre aux re-rendus et être
+  // rejouable tel quel quand on se réattache à une génération.
+  const bufferRef = useRef("");
+  const finishedToolsRef = useRef<ToolCall[]>([]);
+  const appliedEventsRef = useRef(0);
+  const turnStartRef = useRef(0);
+  const messagesRef = useRef<Message[]>(messages);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   // Consentement IA : rien n'est envoyé au provider tant que l'utilisateur
   // n'a pas accepté l'écran de consentement (voir /privacy).
@@ -138,12 +156,9 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     return restored.length > 0 ? restored : [welcomeMessage];
   }
 
-  useEffect(() => {
-    // Abort du streaming en cours si le composant est démonté (navigation).
-    return () => {
-      if (abortRef.current) abortRef.current();
-    };
-  }, []);
+  // Démonter la vue (changement de page) n'annule PLUS la génération : elle est
+  // portée par `live-run.ts`, hors React, et le serveur la poursuit de toute
+  // façon. Seuls Stop / Esc / « nouvelle conversation » l'interrompent.
 
   useEffect(() => {
     if (externalSessionId && externalSessionId !== prevExternalSessionIdRef.current) {
@@ -156,25 +171,49 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
           if (seq !== loadSeqRef.current) return;
           const session = history.sessions.find((s) => s.id === externalSessionId);
           if (session) {
+            const restored = restoreMessages(session.messages);
+            // Le message utilisateur du tour en cours peut ne pas encore être
+            // dans l'historique (sauvegarde client différée de 2 s, ou onglet
+            // fermé juste après l'envoi) : le gestionnaire de génération le
+            // détient, on le réinjecte pour ne pas le perdre à l'écran.
+            const live = getLiveRun(session.id);
+            let display = restored;
+            if (live?.userMessage && !restored.some((m) => m.id === live.userMessage!.id)) {
+              const base = restored.length === 1 && restored[0].id === "welcome" ? [] : restored;
+              display = [...base, live.userMessage];
+            }
             setSessionId(session.id);
             setSessionTitle(session.title || "");
             hasTitleRef.current = true;
-            setMessages(restoreMessages(session.messages));
+            setMessages(display);
             setInput("");
+            bufferRef.current = "";
+            finishedToolsRef.current = [];
+            appliedEventsRef.current = 0;
             setStreamingContent("");
             setStreamingActive(false);
+            streamingActiveRef.current = false;
             setLoading(false);
             setError(null);
+            setActionCards([]);
+            setPendingGroups([]);
             activeToolsRef.current = {};
             chatCtx.clearActiveTools();
+            // Si une génération tourne encore pour cette conversation, on s'y
+            // réattache : le serveur rejoue un instantané puis la suite.
+            void resumeLiveRun(session.id);
           }
         });
       });
     }
+    // chatCtx est volontairement omis : sa valeur change à chaque outil actif
+    // et rechargerait l'historique en écrasant les messages affichés.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalSessionId]);
 
   useEffect(() => {
     if (resetSignal === 0) return;
+    const previousSessionId = prevSessionIdRef.current;
     const newId = generateId();
     prevSessionIdRef.current = newId;
     // Reset complet de la conversation déclenché par une prop externe (resetSignal) :
@@ -184,15 +223,21 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     hasTitleRef.current = false;
     setMessages([welcomeMessage]);
     setInput("");
+    bufferRef.current = "";
+    finishedToolsRef.current = [];
+    appliedEventsRef.current = 0;
     setStreamingContent("");
     setStreamingActive(false);
+    streamingActiveRef.current = false;
     setLoading(false);
     setError(null);
     activeToolsRef.current = {};
     chatCtx.clearActiveTools();
-    if (abortRef.current) {
-      abortRef.current();
-      abortRef.current = null;
+    // « Nouvelle conversation » est une action explicite : on arrête le tour
+    // en cours de l'ancienne.
+    if (previousSessionId) {
+      abortLiveRun(previousSessionId);
+      clearLiveRun(previousSessionId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetSignal]);
@@ -263,6 +308,231 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     }
   }, [messages, streamingContent]);
 
+  // Enregistre la réponse assistant en fin de tour. Idempotent : si la réponse
+  // est déjà là (historique relu, serveur qui a persisté), on la remplace au
+  // lieu d'en ajouter une seconde.
+  const finishAssistant = useCallback((content: string) => {
+    const toolCalls = finishedToolsRef.current;
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last && last.role === "assistant") {
+        return [
+          ...prev.slice(0, -1),
+          { ...last, content, toolCalls: toolCalls.length > 0 ? toolCalls : last.toolCalls },
+        ];
+      }
+      return [
+        ...prev,
+        {
+          id: generateId(),
+          role: "assistant",
+          content,
+          timestamp: new Date().toISOString(),
+          toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        },
+      ];
+    });
+    activeToolsRef.current = {};
+    finishedToolsRef.current = [];
+    bufferRef.current = "";
+    setStreamingContent("");
+    streamingActiveRef.current = false;
+    setStreamingActive(false);
+    setLoading(false);
+
+    if (hasTitleRef.current) {
+      const firstUserMsg = messagesRef.current.find((m) => m.role === "user");
+      if (firstUserMsg && firstUserMsg.content) {
+        import("@/app/actions/chat-history").then(({ generateConversationTitle }) => {
+          const fullText = firstUserMsg.content + "\n" + content;
+          generateConversationTitle(fullText).then((aiTitle) => {
+            if (aiTitle && aiTitle.length > 3) {
+              setSessionTitle(aiTitle);
+            }
+          });
+        });
+      }
+    }
+  }, []);
+
+  // Applique un évènement du flux à l'état affiché. Extrait de `send` pour être
+  // rejoué à l'identique quand on se réattache à une génération en cours.
+  const applyEvent = useCallback(
+    (event: ChatStreamEvent) => {
+      if (event.type === "delta") {
+        bufferRef.current += event.content;
+        setStreamingContent(bufferRef.current);
+        if (!streamingActiveRef.current) {
+          streamingActiveRef.current = true;
+          setStreamingActive(true);
+        }
+      } else if (event.type === "tool_start") {
+        activeToolsRef.current = {
+          ...activeToolsRef.current,
+          [event.toolCallId]: {
+            id: event.toolCallId,
+            name: event.name,
+            arguments: event.arguments,
+            status: "running",
+          },
+        };
+        chatCtx.registerToolStart({ id: event.toolCallId, name: event.name, arguments: event.arguments });
+        if (!streamingActiveRef.current) {
+          forceRender((n) => n + 1);
+        }
+      } else if (event.type === "tool_result") {
+        const toolEnd = Date.now();
+        const key = Object.keys(activeToolsRef.current).find(
+          (k) => activeToolsRef.current[k].name === event.name
+        );
+        const existing = key ? activeToolsRef.current[key] : null;
+        const duration = (toolEnd - turnStartRef.current) / 1000;
+        const resultCount = event.result
+          ? event.result.split("\n").filter(Boolean).length
+          : 0;
+        // Statut serveur s'il est fourni ; sinon on retombe sur la
+        // détection textuelle (messages d'historique plus anciens).
+        const isError = event.status
+          ? event.status === "error" || event.status === "blocked"
+          : event.result.includes("Erreur");
+        if (existing) {
+          const remaining = { ...activeToolsRef.current };
+          delete remaining[key!];
+          activeToolsRef.current = remaining;
+          finishedToolsRef.current = [
+            ...finishedToolsRef.current,
+            {
+              ...existing,
+              result: event.result,
+              status: isError ? "error" : "success",
+              duration,
+              resultCount: resultCount || 1,
+            },
+          ];
+        }
+        chatCtx.registerToolResult(event.name, event.result, isError, duration);
+        if (!isError) {
+          setActionCards((prev) => [
+            ...prev,
+            {
+              id: `action-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              toolName: event.name,
+              result: event.result,
+              timestamp: new Date().toISOString(),
+            },
+          ]);
+        }
+        forceRender((n) => n + 1);
+      } else if (event.type === "group_confirm") {
+        setPendingGroups((prev) => [
+          ...prev,
+          {
+            id: event.id,
+            summary: event.summary,
+            tools: event.tools.map((t) => {
+              let args: Record<string, unknown> = {};
+              try { args = JSON.parse(t.arguments); } catch { args = {}; }
+              return {
+                toolCallId: t.toolCallId,
+                name: t.name,
+                args,
+                argsLabel: describeAction(t.name, args),
+              };
+            }),
+          },
+        ]);
+      } else if (event.type === "error") {
+        setError(event.message);
+      } else if (event.type === "memory_facts") {
+        const count = event.facts.length;
+        if (count > 0) {
+          toast.show({
+            message: `🧠 ${count} fait${count > 1 ? "s" : ""} mémorisé${count > 1 ? "s" : ""}`,
+            tone: "info",
+            duration: 3000,
+          });
+        }
+      } else if (event.type === "snapshot") {
+        // Reprise après navigation / réouverture d'onglet : on reconstruit
+        // l'état affiché à partir de l'instantané serveur.
+        bufferRef.current = event.content;
+        finishedToolsRef.current = event.tools.map((t) => ({
+          ...t,
+          status: t.status ?? "success",
+        }));
+        activeToolsRef.current = Object.fromEntries(
+          event.activeTools.map((t) => [t.id, { ...t, status: "running" as const }])
+        );
+        chatCtx.clearActiveTools();
+        for (const t of event.activeTools) {
+          chatCtx.registerToolStart({
+            id: t.id,
+            name: t.name,
+            arguments: t.arguments ?? "",
+          });
+        }
+        setStreamingContent(event.content);
+        streamingActiveRef.current = event.content.length > 0;
+        setStreamingActive(event.content.length > 0);
+        setPendingGroups(
+          event.groups.map((g) => ({
+            id: g.id,
+            summary: g.summary,
+            tools: g.tools.map((t) => {
+              let args: Record<string, unknown> = {};
+              try { args = JSON.parse(t.arguments); } catch { args = {}; }
+              return {
+                toolCallId: t.toolCallId,
+                name: t.name,
+                args,
+                argsLabel: describeAction(t.name, args),
+              };
+            }),
+          }))
+        );
+        if (event.error) setError(event.error);
+        if (event.finished) {
+          setLoading(false);
+          finishAssistant(event.doneContent ?? event.content);
+        } else {
+          setLoading(true);
+        }
+      } else if (event.type === "done") {
+        finishAssistant(bufferRef.current || event.content || "");
+      }
+    },
+    [chatCtx, toast, finishAssistant]
+  );
+
+  // Abonnement au gestionnaire de génération : les évènements arrivent même
+  // quand la vue vient d'être remontée (rejeu complet depuis le début du tour).
+  // `applyEvent` passe par une ref : sa valeur change à chaque outil actif, et
+  // re-souscrire à ce moment-là rejouerait tout le tampon (texte dupliqué).
+  const applyEventRef = useRef(applyEvent);
+  useEffect(() => {
+    applyEventRef.current = applyEvent;
+  }, [applyEvent]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    appliedEventsRef.current = 0;
+    const apply = () => {
+      const run = getLiveRun(sessionId);
+      if (!run) return;
+      if (appliedEventsRef.current > run.events.length) appliedEventsRef.current = 0;
+      while (appliedEventsRef.current < run.events.length) {
+        applyEventRef.current(run.events[appliedEventsRef.current]);
+        appliedEventsRef.current += 1;
+      }
+      if (run.status !== "running" && appliedEventsRef.current >= run.events.length) {
+        clearLiveRun(sessionId);
+      }
+    };
+    const unsubscribe = subscribeLiveRun(sessionId, apply);
+    apply();
+    return unsubscribe;
+  }, [sessionId]);
+
   const send = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
@@ -298,11 +568,15 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       setInput("");
       setError(null);
       activeToolsRef.current = {};
+      finishedToolsRef.current = [];
+      bufferRef.current = "";
+      turnStartRef.current = Date.now();
       chatCtx.clearActiveTools();
       setStreamingContent("");
       setActionCards([]);
       setPendingGroups([]);
       setLoading(true);
+      streamingActiveRef.current = false;
       setStreamingActive(false);
 
       const next = [...messages.filter((m) => m.id !== "welcome"), userMsg];
@@ -315,182 +589,23 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
           content: m.content,
         }));
 
-      const startTime = Date.now();
-      let buffer = "";
-
-      // Le bouton Stop / Esc / reset / unmount appelle abortRef.current(),
-      // ce qui annule le fetch SSE ET la requête IA côté serveur.
-      const controller = new AbortController();
-      abortRef.current = () => controller.abort();
-
-      try {
-        await api.chat.stream(
-          apiMessages,
-          (event: ChatStreamEvent) => {
-            if (event.type === "delta") {
-              buffer += event.content;
-              setStreamingContent(buffer);
-              if (!streamingActiveRef.current) {
-                streamingActiveRef.current = true;
-                setStreamingActive(true);
-              }
-            } else if (event.type === "tool_start") {
-              activeToolsRef.current = {
-                ...activeToolsRef.current,
-                [event.toolCallId]: {
-                  id: event.toolCallId,
-                  name: event.name,
-                  arguments: event.arguments,
-                  status: "running",
-                },
-              };
-              chatCtx.registerToolStart({ id: event.toolCallId, name: event.name, arguments: event.arguments });
-              if (!streamingActiveRef.current) {
-                forceRender((n) => n + 1);
-              }
-            } else if (event.type === "tool_result") {
-              const toolEnd = Date.now();
-              const key = Object.keys(activeToolsRef.current).find(
-                (k) => activeToolsRef.current[k].name === event.name
-              );
-              const existing = key ? activeToolsRef.current[key] : null;
-              const duration = (toolEnd - startTime) / 1000;
-              const resultCount = event.result
-                ? event.result.split("\n").filter(Boolean).length
-                : 0;
-              // Statut serveur s'il est fourni ; sinon on retombe sur la
-              // détection textuelle (messages d'historique plus anciens).
-              const isError = event.status
-                ? event.status === "error" || event.status === "blocked"
-                : event.result.includes("Erreur");
-              if (existing) {
-                activeToolsRef.current = {
-                  ...activeToolsRef.current,
-                  [key!]: {
-                    ...existing,
-                    result: event.result,
-                    status: isError ? "error" : "success",
-                    duration,
-                    resultCount: resultCount || 1,
-                  },
-                };
-                if (key) delete activeToolsRef.current[key];
-              }
-              chatCtx.registerToolResult(event.name, event.result, isError, duration);
-              if (!isError) {
-                setActionCards((prev) => [
-                  ...prev,
-                  {
-                    id: `action-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-                    toolName: event.name,
-                    result: event.result,
-                    timestamp: new Date().toISOString(),
-                  },
-                ]);
-              }
-              forceRender((n) => n + 1);
-            } else if (event.type === "group_confirm") {
-              setPendingGroups((prev) => [
-                ...prev,
-                {
-                  id: event.id,
-                  summary: event.summary,
-                  tools: event.tools.map((t) => {
-                    let args: Record<string, unknown> = {};
-                    try { args = JSON.parse(t.arguments); } catch { args = {}; }
-                    return {
-                      toolCallId: t.toolCallId,
-                      name: t.name,
-                      args,
-                      argsLabel: describeAction(t.name, args),
-                    };
-                  }),
-                },
-              ]);
-            } else if (event.type === "error") {
-              setError(event.message);
-            } else if (event.type === "memory_facts") {
-              const count = event.facts.length;
-              if (count > 0) {
-                toast.show({
-                  message: `🧠 ${count} fait${count > 1 ? "s" : ""} mémorisé${count > 1 ? "s" : ""}`,
-                  tone: "info",
-                  duration: 3000,
-                });
-              }
-            } else if (event.type === "done") {
-              const content = buffer || event.content || "";
-              const toolCalls = Object.values(activeToolsRef.current).filter(
-                (t) => t.status === "success" || t.status === "error"
-              ) as ToolCall[];
-              setMessages((prev) => {
-                const last = prev[prev.length - 1];
-                if (last && last.role === "assistant") {
-                  return [
-                    ...prev.slice(0, -1),
-                    { ...last, content, toolCalls: toolCalls.length > 0 ? toolCalls : undefined },
-                  ];
-                }
-                return [
-                  ...prev,
-                  {
-                    id: generateId(),
-                    role: "assistant",
-                    content,
-                    timestamp: new Date().toISOString(),
-                    toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
-                  },
-                ];
-              });
-              activeToolsRef.current = {};
-              buffer = "";
-              setStreamingContent("");
-              streamingActiveRef.current = false;
-              setStreamingActive(false);
-              setLoading(false);
-
-              if (hasTitleRef.current) {
-                const firstUserMsg = messages.find((m) => m.role === "user");
-                if (firstUserMsg && firstUserMsg.content) {
-                  import("@/app/actions/chat-history").then(({ generateConversationTitle }) => {
-                    const fullText = firstUserMsg.content + "\n" + content;
-                    generateConversationTitle(fullText).then((aiTitle) => {
-                      if (aiTitle && aiTitle.length > 3) {
-                        setSessionTitle(aiTitle);
-                      }
-                    });
-                  });
-                }
-              }
-            }
-          },
-          controller.signal,
-          sessionId
-        );
-      } catch (err) {
-        if ((err as Error).name !== "AbortError") {
-          setError(err instanceof Error ? err.message : "Erreur réseau");
-        }
-      } finally {
-        abortRef.current = null;
-        setLoading(false);
-        streamingActiveRef.current = false;
-        setStreamingActive(false);
-        setStreamingContent("");
-      }
+      // La génération est portée par `live-run.ts` (hors React) : un changement
+      // de page ne l'interrompt plus. Le serveur la poursuit même si l'onglet
+      // est fermé, et GET /api/chat/stream permet de s'y réattacher.
+      startLiveRun({ sessionId, userMessage: userMsg, messages: apiMessages });
     },
     [loading, messages, sessionId, onSessionChange, chatCtx, consent]
   );
 
   const stop = useCallback(() => {
-    if (abortRef.current) {
-      abortRef.current();
-      abortRef.current = null;
-    }
+    abortLiveRun(sessionId);
+    bufferRef.current = "";
+    activeToolsRef.current = {};
+    finishedToolsRef.current = [];
     setLoading(false);
     streamingActiveRef.current = false;
     setStreamingActive(false);
-  }, []);
+  }, [sessionId]);
 
   const confirmGroup = useCallback(
     async (group: { id: string; tools: { name: string; args: Record<string, unknown>; argsLabel: string }[] }) => {

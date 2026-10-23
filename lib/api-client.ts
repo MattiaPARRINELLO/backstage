@@ -7,6 +7,7 @@ import type {
 } from "./types";
 import type { GoogleAccountHealth } from "./google-health";
 import type { StreamEvent } from "./ai-providers/types";
+import type { ChatRunSnapshotEvent } from "./chat-run-types";
 
 export type { GmailMessage, CalendarEvent, MicrosoftTodoList, MicrosoftTodoTask, ScheduleCourse };
 
@@ -45,6 +46,46 @@ async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const text = await res.text();
   if (!text) return null as T;
   return JSON.parse(text) as T;
+}
+
+async function readError(res: Response): Promise<string> {
+  let message = `Erreur ${res.status}`;
+  try {
+    const body = await res.json();
+    if (body?.error) message = body.error;
+  } catch {
+    // Corps non JSON : on garde le message par défaut.
+  }
+  return message;
+}
+
+// Lecture d'un flux SSE `data: {...}\n\n`.
+async function readSse(
+  res: Response,
+  onEvent: (event: ChatStreamEvent) => void
+): Promise<void> {
+  if (!res.body) throw new Error("Reponse vide du serveur");
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6).trim();
+      if (!payload) continue;
+      try {
+        const event = JSON.parse(payload) as ChatStreamEvent;
+        onEvent(event);
+      } catch {
+        // skip malformed
+      }
+    }
+  }
 }
 
 export const api = {
@@ -126,36 +167,40 @@ export const api = {
         signal,
       });
       if (!res.ok) {
-        let msg = `Erreur ${res.status}`;
-        try {
-          const body = await res.json();
-          if (body?.error) msg = body.error;
-        } catch {}
-        throw new Error(msg);
+        throw new Error(await readError(res));
       }
-      if (!res.body) throw new Error("Reponse vide du serveur");
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const payload = line.slice(6).trim();
-          if (!payload) continue;
-          try {
-            const event = JSON.parse(payload) as ChatStreamEvent;
-            onEvent(event);
-          } catch {
-            // skip malformed
-          }
-        }
-      }
+      await readSse(res, onEvent);
     },
+
+    // Se réattache à une génération encore active côté serveur.
+    // Retourne false si aucune génération n'est en cours pour cette session.
+    resume: async (
+      sessionId: string,
+      onEvent: (event: ChatStreamEvent) => void,
+      signal?: AbortSignal
+    ): Promise<boolean> => {
+      const res = await fetch(
+        `/api/chat/stream?sessionId=${encodeURIComponent(sessionId)}`,
+        { credentials: "same-origin", signal }
+      );
+      if (res.status === 204) return false;
+      if (!res.ok) throw new Error(await readError(res));
+      await readSse(res, onEvent);
+      return true;
+    },
+
+    // Arrête explicitement la génération côté serveur (bouton Stop).
+    stop: (sessionId: string) =>
+      fetch("/api/chat/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+        credentials: "same-origin",
+        keepalive: true,
+      }).catch(() => {
+        // L'arrêt est déjà appliqué localement ; un échec réseau ne doit pas
+        // faire remonter d'erreur à l'utilisateur.
+      }),
 
     // Exécute une action IA bloquée en attente de confirmation utilisateur.
     confirmAction: (name: string, args: Record<string, unknown>) =>
@@ -177,5 +222,5 @@ export const api = {
   },
 };
 
-// Les événements SSE du chat sont exactement les StreamEvent du provider.
-export type ChatStreamEvent = StreamEvent;
+// Les évènements SSE du chat : ceux du provider + l'instantané de reprise.
+export type ChatStreamEvent = StreamEvent | ChatRunSnapshotEvent;

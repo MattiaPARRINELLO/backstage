@@ -1,16 +1,42 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChatView } from "@/components/chat/ChatView";
 import { SessionSidebar } from "@/components/chat/SessionSidebar";
 import { ContextPanel } from "@/components/layout/ContextPanel";
 import { ChatProvider } from "@/lib/chat-context";
 import { MessageSquare } from "lucide-react";
 
+// Conversation active mémorisée pour la session du navigateur : revenir sur
+// /chat après une navigation restaure la conversation (et permet de se
+// réattacher à une génération en cours) au lieu d'afficher un écran vide.
+const ACTIVE_SESSION_KEY = "pb:active-chat-session";
+
 export function ChatLayout() {
   const [activeSessionId, setActiveSessionId] = useState<string>("");
   const [resetSignal, setResetSignal] = useState(0);
   const [mobileSessionsOpen, setMobileSessionsOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(ACTIVE_SESSION_KEY);
+      // Synchronisation légitime avec un système externe (sessionStorage) au
+      // montage : le rendu serveur ne peut pas le lire.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (saved) setActiveSessionId(saved);
+    } catch {
+      // sessionStorage indisponible (mode privé strict) : sans conséquence.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (activeSessionId) sessionStorage.setItem(ACTIVE_SESSION_KEY, activeSessionId);
+      else sessionStorage.removeItem(ACTIVE_SESSION_KEY);
+    } catch {
+      // idem
+    }
+  }, [activeSessionId]);
 
   const handleSelectSession = useCallback(
     (session: {

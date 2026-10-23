@@ -105,6 +105,7 @@ components/
   landing/          composants de la page publique
   brain/            KnowledgeGraph
 lib/
+  chat-runs.ts      registre serveur des générations de chat en cours
   cesar-client.ts   client CESAR (emploi du temps) — fetch HTTP pur, SANS navigateur
   memory-autosave.ts  mémoire auto : parsing tolérant de l'extraction + écriture SANS session
   storage/          CRUD par domaine (15 fichiers)
@@ -200,6 +201,12 @@ défaut. Testé par `proxy.test.ts` et les E2E (deny-by-default).
   requise ; seuls les outils listés dans `REQUIRE_CONFIRMATION`
   (`lib/chat-tools.ts`) sont exécutables ; journalise dans `activity.json`
   (`ai_action`). Le modèle ne peut jamais s'auto-confirmer.
+- `/api/chat/stream` — `GET ?sessionId=` se **réattache** à une génération en
+  cours : instantané (`snapshot`) puis suite du flux en direct. `204` si aucune
+  génération active. Utilisé au retour sur une conversation.
+- `/api/chat/stop` — `POST { sessionId }` arrête explicitement la génération
+  (bouton Stop / Esc). Seul chemin qui annule la requête IA : une simple
+  déconnexion du client ne l'annule plus (cf. ci-dessous).
 - `/api/auth/set-session` — **supprimé** (reliquat Capacitor, 0 appelant).
 - `/api/reminders/[id]/done` — reproduit `markReminderStatus` (push MS +
   revalidation) ; appelé par le service worker.
@@ -210,6 +217,31 @@ défaut. Testé par `proxy.test.ts` et les E2E (deny-by-default).
   le build standalone via `outputFileTracingIncludes` (`./scripts/*.sh`) : si on
   déplace le script, mettre à jour `next.config.ts` **et** `app/install.sh/route.ts`.
   La landing affiche la commande (`INSTALL_COMMAND` dans `app/landing-content.ts`).
+
+### Génération de chat survivant à la navigation (`lib/chat-runs.ts`)
+
+Le tour de chat **n'est plus possédé par la page**. Trois pièces :
+
+| Pièce | Rôle |
+| ----- | ---- |
+| `lib/chat-runs.ts` (serveur) | Registre en mémoire d'un run par `sessionId` : instantané (texte accumulé, outils, lots à confirmer), abonnés, `AbortController`. Purge 10 min après la fin, 20 runs max. |
+| `components/chat/live-run.ts` (client) | Le `fetch` SSE vit **hors React** : changer de page démonte `ChatView` sans couper la requête ; les évènements sont bufferisés et rejoués au retour. |
+| `ChatLayout` | Mémorise la conversation active dans `sessionStorage` (`pb:active-chat-session`) pour rouvrir la bonne conversation au retour sur `/chat`. |
+
+- **`cancel()` du flux ne coupe plus la génération.** Une déconnexion (navigation,
+  onglet fermé) détache seulement le listener ; la boucle IA continue.
+- **La réponse est écrite côté serveur** (`appendAssistantTurn`) avant
+  l'extraction mémoire, donc même onglet fermé la réponse est dans
+  `chat-history.json` au retour. L'écriture est idempotente : si le client a
+  déjà sauvegardé la même réponse, aucun doublon n'est créé.
+- **Arrêt explicite uniquement** via `POST /api/chat/stop` (bouton Stop / Esc) :
+  sans ça, un Stop serait indiscernable d'une fermeture d'onglet. La réponse
+  partielle déjà streamée est conservée.
+- L'évènement `done` marque le run `finished` **avant** l'écriture disque : un
+  client qui se réattache dans l'intervalle n'attend pas indéfiniment.
+- ⚠️ Le registre est **en mémoire, process unique** (comme le scheduler et le
+  rate-limit). Un redéploiement en cours de génération la perd ; un déploiement
+  multi-instance nécessiterait un stockage partagé.
 
 ### Statut des outils IA — ne jamais annoncer une action non faite
 

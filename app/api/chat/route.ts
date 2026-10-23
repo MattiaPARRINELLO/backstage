@@ -9,7 +9,9 @@ import {
 import {
   fetchPageMeta,
   autoSummarize,
+  appendAssistantTurn,
 } from "@/lib/storage";
+import { createRun, publish, subscribe, finishRun } from "@/lib/chat-runs";
 import { getModel } from "@/lib/config";
 import { DEFAULT_SESSION_ID } from "@/lib/ai-providers/config";
 import type { ChatMessage, MemoryCategory } from "@/lib/types";
@@ -340,27 +342,58 @@ export async function POST(request: NextRequest) {
   ];
 
   const encoder = new TextEncoder();
-  // AbortController local : aborté quand le client se déconnecte (cancel()),
-  // ce qui annule aussi la requête IA en cours côté serveur.
-  const abortController = new AbortController();
+  // Registre serveur : la génération survit à la déconnexion du client. Le
+  // flux HTTP peut être annulé (navigation, onglet fermé), la boucle IA
+  // continue et écrit la réponse dans l'historique.
+  const run = createRun(sessionId);
+  const abortController = run.controller;
+  const lastUserContent =
+    [...body.messages].reverse().find((m) => m.role === "user")?.content ?? "";
   let streamClosed = false;
+  let generationStarted = false;
+  let unsubscribe: (() => void) | null = null;
 
   const stream = new ReadableStream({
     async start(controller) {
-      function send(data: StreamEvent) {
+      generationStarted = true;
+      // Abonnement du flux HTTP courant. `replay: false` : le client qui vient
+      // d'envoyer la requête n'a pas besoin de l'instantané initial.
+      unsubscribe = subscribe(
+        run,
+        (event) => {
+          if (streamClosed) return;
+          try {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+          } catch {
+            streamClosed = true;
+          }
+        },
+        false
+      );
+
+      function closeStream() {
+        unsubscribe?.();
+        unsubscribe = null;
         if (streamClosed) return;
+        streamClosed = true;
         try {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+          controller.close();
         } catch {
-          // Le flux a été fermé entre le check et l'enqueue : on ignore.
+          // Déjà fermé côté client : sans conséquence.
         }
+      }
+
+      function send(data: StreamEvent) {
+        // Met à jour l'instantané serveur puis diffuse aux abonnés (flux HTTP
+        // courant et éventuels clients réattachés).
+        publish(run, data);
       }
 
       const maxIterations = 20;
 
-      // Evenement de fermeture dict par le dernier passage du modele : on le
-      // renvoie APRES l'extraction memoire, pour que le flux reste ouvert le
-      // temps d'ecrire les faits (et d'afficher le toast).
+      // Evenement de fermeture dicte par le dernier passage du modele.
+      // Envoye AVANT l'ecriture disque et l'extraction memoire : le tour est
+      // termine pour le client, qui peut lire la reponse sans attendre.
       let pendingDone = "";
       let pendingError: StreamEvent | null = null;
 
@@ -492,18 +525,39 @@ export async function POST(request: NextRequest) {
 
       let lastAssistantContent = "";
 
-      // Clot un tour : reponse finale, puis extraction memoire, puis fermeture
-      // du flux. L'extraction est ATTENDUE et inconditionnelle — c'est ce qui
-      // garantit que les faits sont ecrits avant que la requete (et son
-      // contexte Next) ne se terminent. Detachee, elle echouait en silence :
-      // requireSession() hors scope requete, ou processus coupe apres la
-      // reponse. Si le client est parti, `send` est un no-op et seule la
-      // notification est perdue, pas l'ecriture.
+      // Clot un tour : reponse finale, ecriture serveur, puis extraction
+      // memoire. L'ecriture est faite AVANT l'extraction et sans dependre du
+      // client : c'est ce qui rend la reponse recuperable si l'onglet a ete
+      // ferme en cours de generation.
       async function finishTurn(): Promise<void> {
         if (pendingError) send(pendingError);
         send({ type: "done", content: pendingDone });
+
+        const finalContent = run.content || pendingDone || lastAssistantContent;
+        await persistTurn(finalContent);
+        finishRun(run, finalContent);
+        // L'extraction memoire reste ATTENDUE et inconditionnelle : c'est ce
+        // qui garantit que les faits sont ecrits avant la fin de la requete.
+        // Le flux HTTP reste ouvert jusque-la pour le toast « faits memorises ».
         await runMemoryExtraction(modelName, body.messages, sessionId, send, lastAssistantContent);
-        controller.close();
+        closeStream();
+      }
+
+      // Ecriture de la reponse dans l'historique. Tolerance aux erreurs : un
+      // echec de persistance ne doit pas transformer une generation reussie en
+      // erreur affichee a l'utilisateur.
+      async function persistTurn(content: string): Promise<void> {
+        if (!content.trim() && run.tools.length === 0) return;
+        try {
+          await appendAssistantTurn({
+            sessionId,
+            userContent: lastUserContent,
+            assistantContent: content,
+            toolCalls: run.tools,
+          });
+        } catch (err) {
+          void serverLog("chat", "error", "Persist turn failed", err, true);
+        }
       }
 
       try {
@@ -528,7 +582,9 @@ export async function POST(request: NextRequest) {
               messages.push({ role: "system", content: RESULT_HONESTY_RULE });
             }
           } catch (err) {
-            if (streamClosed) throw err; // client parti : pas de fallback inutile
+            // Arrêt explicite (bouton Stop, nouvelle requête) : plus de
+            // fallback inutile.
+            if (run.aborted) throw err;
             void serverLog("chat", "error", `runModel(${currentModel}) failed`, err);
             // Pas de fallback réel si le modèle de secours est identique au
             // principal : remonter l'erreur d'origine plutôt qu'un faux
@@ -542,20 +598,32 @@ export async function POST(request: NextRequest) {
 
         await finishTurn();
       } catch (error) {
-        if (streamClosed) return;
+        // Arrêt explicite : on conserve la réponse partielle déjà streamée.
+        if (run.aborted) {
+          await persistTurn(run.content);
+          finishRun(run, run.content);
+          closeStream();
+          return;
+        }
         void serverLog("chat", "error", "Chat stream error", error);
         const message = error instanceof Error ? error.message : "Erreur inconnue";
         send({ type: "error", message });
         send({ type: "done", content: "" });
-        controller.close();
+        finishRun(run, run.content);
+        closeStream();
       }
     },
     cancel() {
-      // Le client a fermé la connexion (bouton Stop, navigation, erreur
-      // réseau) : on marque le flux comme fermé et on annule la requête IA
-      // pour libérer les ressources côté serveur.
+      // Le client a fermé la connexion (navigation, onglet fermé, réseau) :
+      // on ne coupe PAS la génération. Elle continue côté serveur, écrit sa
+      // réponse dans l'historique et reste récupérable via
+      // GET /api/chat/stream. Seul /api/chat/stop l'interrompt.
       streamClosed = true;
-      abortController.abort();
+      unsubscribe?.();
+      unsubscribe = null;
+      // Le flux a été annulé avant même que la génération démarre : aucun tour
+      // ne viendra le clôturer, on libère le run tout de suite.
+      if (!generationStarted) finishRun(run);
     },
   });
 

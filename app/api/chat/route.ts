@@ -350,10 +350,12 @@ export async function POST(request: NextRequest) {
   const lastUserContent =
     [...body.messages].reverse().find((m) => m.role === "user")?.content ?? "";
   let streamClosed = false;
+  let generationStarted = false;
   let unsubscribe: (() => void) | null = null;
 
   const stream = new ReadableStream({
     async start(controller) {
+      generationStarted = true;
       // Abonnement du flux HTTP courant. `replay: false` : le client qui vient
       // d'envoyer la requête n'a pas besoin de l'instantané initial.
       unsubscribe = subscribe(
@@ -619,6 +621,9 @@ export async function POST(request: NextRequest) {
       streamClosed = true;
       unsubscribe?.();
       unsubscribe = null;
+      // Le flux a été annulé avant même que la génération démarre : aucun tour
+      // ne viendra le clôturer, on libère le run tout de suite.
+      if (!generationStarted) finishRun(run);
     },
   });
 

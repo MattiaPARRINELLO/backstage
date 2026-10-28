@@ -30,6 +30,9 @@ describe("proxy — deny-by-default", () => {
       "/sw.js",
       "/manifest.json",
       "/icons/icon-192.png",
+      // Captures de la landing (servies par /showcase) : sans l'extension
+      // .jpg, elles etaient redirigees vers /login et cassees en prod.
+      "/screenshots/hero-chat.jpg",
       // Installation en une commande (curl … | bash) : publique.
       "/install.sh",
     ];

@@ -50,7 +50,11 @@ shopt -u dotglob
 mkdir -p "${DEPLOY_TMP}/.next/static"
 cp -r "${BUILD_DIR}/static/"* "${DEPLOY_TMP}/.next/static/"
 
-# Dossier public
+# Dossier public. Le standalone embarque déjà un public/ (file tracing de
+# `outputFileTracingIncludes`) : sans le rm -rf, le cp copierait DANS ce
+# dossier et créerait public/public/, rendant tous les assets 404 en prod
+# (logos, manifest, service worker, captures de la landing).
+rm -rf "${DEPLOY_TMP}/public"
 cp -r "${SCRIPT_DIR}/public" "${DEPLOY_TMP}/public"
 
 # Dossier data (si pas déjà sur le serveur). Le standalone embarque déjà un

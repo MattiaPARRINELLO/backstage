@@ -371,9 +371,16 @@ En production seulement : `HSTS` + `CSP`.
 ⚠️ La CSP autorise `script-src 'unsafe-inline'` — requis par les scripts inline
 de préchargement RSC de Next. Ne pas « corriger » sans vérifier que l'app démarre.
 
-⚠️ `outputFileTracingIncludes` embarque les icônes et les scripts shell dans le
-build standalone : ces fichiers sont lus au runtime (`fs` / exécution shell),
-donc l'analyse statique des imports ne les voit pas.
+⚠️ `outputFileTracingIncludes` embarque les icônes, les scripts shell **et
+`sharp`** dans le build standalone : ces fichiers sont lus au runtime (`fs`,
+exécution shell, `require()` dynamique), donc l'analyse statique des imports ne
+les voit pas. Sans `sharp`, `/_next/image` répond `500` (« Module sharp not
+found ») et **toutes** les images `next/image` sont cassées en production.
+
+⚠️ Toujours copier `public/` **après l'avoir supprimé** dans un déploiement
+standalone : `.next/standalone` embarque déjà un `public/` partiel (tracing), et
+un `cp -r public "$DEPLOY/public"` créerait `public/public/` → tous les assets
+(logos, `manifest.json`, `sw.js`, captures) en **404**. Même piège que `data/`.
 
 ---
 

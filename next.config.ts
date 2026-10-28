@@ -6,8 +6,18 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
   // Fichiers lus au runtime par `fs` : sans inclusion explicite, le build
   // standalone les omet (invisible pour l'analyse statique des imports).
+  //
+  // `sharp` est chargé par un `require()` dynamique depuis l'optimiseur
+  // d'images de Next : le tracing n'en embarque que le package.json, d'où un
+  // `/_next/image` en 500 (« Module sharp not found ») et des images cassées
+  // en production. On force donc le package complet + les binaires natifs.
   outputFileTracingIncludes: {
-    "/**": ["./public/icons/icon-192.png", "./scripts/*.sh"],
+    "/**": [
+      "./public/icons/icon-192.png",
+      "./scripts/*.sh",
+      "./node_modules/sharp/**/*",
+      "./node_modules/@img/**/*",
+    ],
   },
   async headers() {
     const headers = [

@@ -34,6 +34,8 @@ const PUBLIC_FILE_EXTENSIONS = [
   ".json",
   ".ico",
   ".png",
+  ".jpg",
+  ".jpeg",
   ".svg",
   ".webp",
   ".txt",

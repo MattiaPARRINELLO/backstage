@@ -28,6 +28,12 @@ export const metadata: Metadata = {
   description:
     "Second cerveau IA pour le code, la photo et la mémoire.",
   manifest: "/manifest.json",
+  // Le favicon vient de `app/favicon.ico` (convention Next, multi-tailles).
+  // Ne jamais remettre de <link rel="icon"> manuel : il avait priorite sur
+  // l'icone .ico et servait un PNG 540x880, donc un favicon ecrase.
+  icons: {
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -59,8 +65,6 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="application-name" content="BACKSTAGE" />
-        <link rel="icon" type="image/png" href="/backstage-logo-simple.png" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body className="min-h-full relative font-sans">
         <PwaLoader />

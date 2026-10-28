@@ -29,6 +29,28 @@ fi
 # Selector). Vide = on suppose que node est déjà dans le PATH du shell SSH.
 : "${DEPLOY_NODEENV:=}"
 
+# ─── 0. Garde : déploiement depuis main uniquement ──────
+# Le déploiement pousse l'arbre de travail vers la prod : le lancer depuis une
+# branche de travail déploierait du code non revu. On refuse tout ce qui n'est
+# pas la branche main (sans échappatoire volontaire).
+if CURRENT_BRANCH="$(git -C "$SCRIPT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null)"; then
+  if [ "$CURRENT_BRANCH" != "main" ]; then
+    echo -e "${RED}✗ Déploiement refusé : branche courante « ${CURRENT_BRANCH} », attendu « main ».${NC}"
+    echo -e "${YELLOW}  Fusionne d'abord ta PR puis : git checkout main && git pull${NC}"
+    exit 1
+  fi
+  if [ -n "$(git -C "$SCRIPT_DIR" status --porcelain)" ]; then
+    echo -e "${RED}✗ Déploiement refusé : working tree non propre sur main.${NC}"
+    echo -e "${YELLOW}  Commit ou stash tes changements avant de déployer.${NC}"
+    exit 1
+  fi
+  MAIN_SHA="$(git -C "$SCRIPT_DIR" rev-parse --short HEAD)"
+  echo -e "${GREEN}✓ Branche main (${MAIN_SHA}), working tree propre${NC}"
+else
+  echo -e "${RED}✗ Déploiement refusé : ${SCRIPT_DIR} n'est pas un dépôt git.${NC}"
+  exit 1
+fi
+
 # ─── 1. Build ──────────────────────────────────────────
 echo -e "${CYAN}══════════════════════════════════════════════════${NC}"
 echo -e "${CYAN}  Build Next.js (standalone)${NC}"

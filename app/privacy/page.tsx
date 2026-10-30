@@ -46,7 +46,7 @@ export default function PrivacyPage() {
         </Link>
         <Link
           href="/login"
-          className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-200"
+          className="text-[11px] font-mono  text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-200"
         >
           Connexion
         </Link>
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
               key={s.title}
               className="rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/60 p-6"
             >
-              <h2 className="text-[13px] font-semibold text-[var(--text-1)] font-mono uppercase tracking-wider">
+              <h2 className="text-[13px] font-semibold text-[var(--text-1)] font-mono ">
                 {s.title}
               </h2>
               <p className="mt-2 text-[13px] text-[var(--text-3)] leading-relaxed">{s.body}</p>
@@ -76,7 +76,7 @@ export default function PrivacyPage() {
           ))}
         </div>
 
-        <p className="mt-12 text-[11px] text-[var(--text-4)] font-mono uppercase tracking-wider">
+        <p className="mt-12 text-[11px] text-[var(--text-4)] font-mono ">
           Contact : gestion du compte directement dans l'application (Réglages).
         </p>
       </section>

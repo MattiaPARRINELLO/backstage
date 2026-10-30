@@ -149,10 +149,10 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewSession,
         mobileOpen && "fixed inset-y-0 left-0 z-40 flex"
       )}
     >
-      <header className="panel-sheen shrink-0 flex items-center gap-2.5 px-3 h-14 border-b border-[var(--border-1)]">
+      <header className="shrink-0 flex items-center gap-2.5 px-3 h-14 border-b border-[var(--border-1)]">
         <div className="relative shrink-0 w-8 h-8 flex items-center justify-center">
           <span
-            className="home-halo absolute inset-[-4px] rounded-full bg-[var(--accent)]/25 blur-[10px]"
+            
             aria-hidden
           />
           <span className="relative w-8 h-8 rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
@@ -188,7 +188,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewSession,
       <div className="shrink-0 px-3 py-3 space-y-2">
         <button
           onClick={onNewSession}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-[var(--accent)] bg-[var(--accent)]/10 border border-[var(--accent)]/30 rounded-lg hover:bg-[var(--accent)]/15 hover:border-[var(--accent)]/50 transition-colors duration-200"
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] font-mono  text-[var(--accent)] bg-[var(--accent)]/10 border border-[var(--accent)]/30 rounded-lg hover:bg-[var(--accent)]/15 hover:border-[var(--accent)]/50 transition-colors duration-200"
         >
           <Plus className="w-3.5 h-3.5" />
           Nouvelle conversation

@@ -94,13 +94,13 @@ export function FocusTimer({ initialState }: { initialState: FocusState }) {
             <p className="text-5xl font-medium text-[var(--text-1)] font-mono tabular-nums">
               {formatRemaining(remaining ?? 0)}
             </p>
-            <p className="mt-1 text-[10px] font-mono uppercase tracking-wider text-[var(--text-4)]">
+            <p className="mt-1 text-[10px] font-mono  text-[var(--text-4)]">
               {state.durationMin} min
             </p>
           </div>
         </div>
 
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--danger)]/30 bg-[var(--danger)]/5 text-[11px] font-mono uppercase tracking-wider text-[var(--danger)] mb-8">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--danger)]/30 bg-[var(--danger)]/5 text-[11px] font-mono  text-[var(--danger)] mb-8">
           Notifications coupées
         </div>
 

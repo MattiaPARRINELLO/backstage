@@ -41,7 +41,7 @@ export function OfflineBanner() {
         animation: show ? "slide-up 280ms ease-out" : "fade-out 300ms ease-in forwards",
       }}
     >
-      {online ? "🟢 Connecté" : "🟡 Mode hors-ligne — les données sont en cache"}
+      {online ? "Connecté" : "Mode hors-ligne — les données sont en cache"}
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { ACCENT_PALETTE } from "./ThemeApplier";
 
 export function AccentPicker() {
   const [current, setCurrent] = useState(() =>
-    typeof window !== "undefined" ? localStorage.getItem("brain-accent") || "#a5b4fc" : "#a5b4fc"
+    typeof window !== "undefined" ? localStorage.getItem("brain-accent") || "#e0a45e" : "#e0a45e"
   );
 
   function apply(color: string) {

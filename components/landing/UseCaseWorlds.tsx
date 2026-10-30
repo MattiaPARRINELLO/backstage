@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { USE_CASES } from "@/app/landing-content";
 
 /**
- * Trois univers d'usage — un sélecteur sobre et une fiche par usage.
+ * Acte V — trois univers d'usage.
  */
 export function UseCaseWorlds() {
   const [active, setActive] = useState(0);
@@ -22,18 +22,20 @@ export function UseCaseWorlds() {
   };
 
   return (
-    <section id="usages" className="section section--deep worlds relative">
-      <div className="container">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="section__head">
-            <p className="section-label">05 — Usages</p>
-            <h2 className="section-title">{USE_CASES.title}</h2>
+    <section id="usages" className="worlds relative py-24 sm:py-32">
+      <div className="mx-auto max-w-5xl px-5 sm:px-8">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="section-label">· Usages ·</p>
+            <h2 className="mt-4 max-w-lg text-balance font-display text-3xl font-bold tracking-tight text-[#f5f3f0] sm:text-4xl">
+              {USE_CASES.title}
+            </h2>
           </div>
 
           <div
             role="tablist"
             aria-label="Choisir un usage"
-            className="segmented"
+            className="worlds__tabs"
             onKeyDown={onKeyDown}
           >
             {USE_CASES.cases.map((c, i) => (
@@ -46,7 +48,7 @@ export function UseCaseWorlds() {
                 aria-controls={`usecase-panel-${c.key}`}
                 tabIndex={i === active ? 0 : -1}
                 onClick={() => setActive(i)}
-                className="segmented__tab"
+                className="worlds__tab"
                 data-active={i === active}
               >
                 {c.tab}
@@ -62,19 +64,21 @@ export function UseCaseWorlds() {
             id={`usecase-panel-${c.key}`}
             aria-labelledby={`usecase-tab-${c.key}`}
             hidden={i !== active}
-            className="mt-10"
+            className="worlds__panel mt-10"
           >
             <div className="worlds__card">
-              <p className="worlds__mission">« {c.query} »</p>
+              <p className="worlds__mission font-display text-xl font-semibold text-[#f5f3f0] sm:text-2xl">
+                « {c.query} »
+              </p>
 
-              <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-[1fr_1.1fr]">
+              <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-[1fr_1.2fr]">
                 {/* Fragments mobilisés */}
                 <div>
-                  <p className="worlds__deliverables-label">Fragments reliés</p>
-                  <ul className="mt-2">
+                  <p className="worlds__deliverables-label font-mono">Fragments reliés</p>
+                  <ul className="mt-3 space-y-2">
                     {c.fragments.map((f) => (
                       <li key={f.text} className="worlds__fragment">
-                        <span className="worlds__fragment-kind">{f.kind}</span>
+                        <span className="worlds__fragment-kind font-mono">{f.kind}</span>
                         <span className="worlds__fragment-text">{f.text}</span>
                       </li>
                     ))}
@@ -83,12 +87,12 @@ export function UseCaseWorlds() {
 
                 {/* Réponse */}
                 <div className="worlds__answer">
-                  <p className="worlds__answer-label">Réponse contextualisée</p>
-                  <p className="worlds__answer-text">{c.answer}</p>
+                  <p className="worlds__answer-label font-mono">Réponse contextualisée</p>
+                  <p className="worlds__answer-text mt-3">{c.answer}</p>
                 </div>
               </div>
 
-              <p className="worlds__note">{c.note}</p>
+              <p className="worlds__note mt-6 font-mono">{c.note}</p>
             </div>
           </div>
         ))}

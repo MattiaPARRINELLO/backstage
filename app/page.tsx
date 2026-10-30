@@ -46,22 +46,20 @@ export default function Home() {
     <>
       <InstalledRedirect />
       <SmoothScroll>
-        <div className="landing-page">
-          <LandingHeader />
-          <main id="main" className="landing relative z-10">
-            <HeroSection />
-            <ProblemSection />
-            <MemorySection />
-            <DayStory />
-            <PublicDemo />
-            <UseCaseWorlds />
-            <PrivacySection />
-            <OpenSourceSection />
-            <FinalCTA />
-          </main>
-          <div className="relative z-10">
-            <LandingFooter />
-          </div>
+        <LandingHeader />
+        <main id="main" className="landing relative z-10">
+          <HeroSection />
+          <ProblemSection />
+          <MemorySection />
+          <DayStory />
+          <PublicDemo />
+          <UseCaseWorlds />
+          <PrivacySection />
+          <OpenSourceSection />
+          <FinalCTA />
+        </main>
+        <div className="relative z-10">
+          <LandingFooter />
         </div>
       </SmoothScroll>
     </>

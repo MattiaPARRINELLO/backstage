@@ -25,28 +25,21 @@ export const NAV_LINKS = [
 // --- Hero -----------------------------------------------------
 
 export const HERO = {
-  title: "Vos mails, vos cours, vos photos. Un seul contexte.",
+  eyebrow: "Votre second cerveau personnel",
+  title: "Votre journée, enfin reliée.",
   description:
-    "Backstage relie vos conversations, votre mémoire, votre emploi du temps et vos mails. Ce que vous confiez reste là, et revient au bon moment.",
+    "Vos conversations, votre mémoire et vos outils, reliés dans un même espace — sans repartir de zéro.",
+  // Extrait de contexte illustratif (fictif) — une seule carte cohérente.
+  contextLabel: "Contexte relié",
+  fragments: [
+    { kind: "Événement", text: "Shooting — jeudi 20:30" },
+    { kind: "Mémoire", text: "Claire V. — attachée de presse" },
+    { kind: "Information", text: "Accréditation à retirer sur place" },
+  ],
   primaryCta: "Essayer la démo",
   secondaryCta: "Découvrir Backstage",
   loginCta: "Se connecter",
   note: "Démonstration publique limitée · Application complète en accès privé",
-  // Fiche de contexte illustrative (fictive) — montre la forme réelle
-  // d'une réponse : une question, les fragments reliés, la réponse.
-  context: {
-    label: "Contexte relié",
-    question: "Qu'est-ce que je dois préparer pour mon shooting de demain ?",
-    fragments: [
-      { kind: "Agenda", text: "Shooting — jeudi 20:30, Le Transbordeur" },
-      { kind: "Mail", text: "Claire V. — accréditation à retirer sur place" },
-      { kind: "Note", text: "Fosse : 3 titres, puis côté scène" },
-      { kind: "Rappel", text: "Charger batteries et cartes CF ce soir" },
-    ],
-    answer:
-      "Jeudi 20:30 au Transbordeur. L'accréditation est au nom du média, à retirer sur place ; accès fosse sur les 3 premiers titres, puis côté scène. Batteries et cartes CF à charger ce soir.",
-    foot: "Réponse construite à partir de 4 éléments de votre espace",
-  },
 } as const;
 
 // --- Problème ---------------------------------------------------

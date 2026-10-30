@@ -326,7 +326,7 @@ export function CommandPalette() {
                   }}
                   onMouseEnter={() => setSelectedIdx(idx)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150",
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors duration-150",
                     selected
                       ? "bg-[var(--accent)]/10 text-[var(--accent)] ring-1 ring-[var(--accent)]/20"
                       : "text-[var(--text-1)] hover:bg-[var(--surface-2)]"
@@ -365,7 +365,7 @@ export function CommandPalette() {
         {/* Empty state : no input  */}
         {!input.trim() && results.length === 0 && (
           <div className="p-3">
-            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-4)] font-mono">
+            <p className="px-3 pb-2 text-[10px] font-semibold  text-[var(--text-4)] font-mono">
               Commandes disponibles
             </p>
             {COMMANDS.map((cmd) => {
@@ -377,7 +377,7 @@ export function CommandPalette() {
                     setInput(cmd.prefix + " ");
                     inputRef.current?.focus();
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 text-[var(--text-1)] hover:bg-[var(--surface-2)] group"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors duration-150 text-[var(--text-1)] hover:bg-[var(--surface-2)] group"
                 >
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-[var(--border-1)] bg-[var(--surface-2)] shrink-0 group-hover:border-[var(--border-2)] transition-colors">
                     <Icon className="w-4 h-4 text-[var(--text-3)]" />

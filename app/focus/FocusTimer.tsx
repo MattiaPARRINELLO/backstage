@@ -91,7 +91,7 @@ export function FocusTimer({ initialState }: { initialState: FocusState }) {
             />
           </svg>
           <div>
-            <p className="text-5xl font-black text-[var(--text-1)] font-mono tabular-nums">
+            <p className="text-5xl font-medium text-[var(--text-1)] font-mono tabular-nums">
               {formatRemaining(remaining ?? 0)}
             </p>
             <p className="mt-1 text-[10px] font-mono uppercase tracking-wider text-[var(--text-4)]">
@@ -141,7 +141,7 @@ export function FocusTimer({ initialState }: { initialState: FocusState }) {
       </div>
       <button
         onClick={() => void handleStart(25)}
-        className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--accent)] text-[#0a0a0b] font-medium text-[13px] hover:brightness-110 active:brightness-95 transition-all duration-200"
+        className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--accent)] text-[#0a0a0b] font-medium text-[13px] hover:brightness-110 active:brightness-95 transition-colors duration-200"
       >
         <Play className="w-4 h-4" />
         Démarrer 25 min

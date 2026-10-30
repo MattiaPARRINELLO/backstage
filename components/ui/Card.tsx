@@ -53,7 +53,7 @@ export function CardHeader({
     >
       <div className="min-w-0 flex-1">
         {title && (
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-3)] font-mono truncate">
+          <h3 className="text-[11px] font-semibold  text-[var(--text-3)] font-mono truncate">
             {title}
           </h3>
         )}

@@ -6,7 +6,7 @@ import type { MemoryFact } from "@/lib/types";
 
 export function FactRow({ fact, onEdit, onDelete }: { fact: MemoryFact; onEdit: () => void; onDelete: () => void }) {
   return (
-    <div className="group flex items-start gap-3 p-4 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/40 hover:border-[var(--border-2)] hover:bg-[var(--surface-2)]/50 transition-all duration-200">
+    <div className="group flex items-start gap-3 p-4 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/40 hover:border-[var(--border-2)] hover:bg-[var(--surface-2)]/50 transition-colors duration-200">
       <span className="shrink-0 w-1 self-stretch rounded-full bg-[var(--accent)]/30" />
       <div className="flex-1 min-w-0">
         <p className="text-[13.5px] text-[var(--text-1)] leading-relaxed">

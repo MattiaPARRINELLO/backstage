@@ -40,7 +40,7 @@ export default function PrivacyPage() {
       <header className="max-w-3xl mx-auto w-full px-6 py-8 flex items-center justify-between">
         <Link
           href="/"
-          className="text-[12px] font-black tracking-[0.25em] uppercase text-[var(--text-1)] font-mono hover:opacity-80 transition-opacity duration-200"
+          className="text-[12px] font-medium  text-[var(--text-1)] font-mono hover:opacity-80 transition-opacity duration-200"
         >
           BACKSTAGE
         </Link>
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
       </header>
 
       <section className="max-w-3xl mx-auto w-full px-6 pt-10 pb-20">
-        <h1 className="text-3xl sm:text-4xl font-black tracking-[0.1em] uppercase text-[var(--text-1)] font-mono">
+        <h1 className="text-3xl sm:text-4xl font-medium  text-[var(--text-1)] font-mono">
           Vie privée & <span className="gradient-text-ai">données</span>
         </h1>
         <p className="mt-3 text-[13px] text-[var(--text-3)] leading-relaxed">

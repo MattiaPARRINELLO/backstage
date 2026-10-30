@@ -36,7 +36,7 @@ export function ItemCard({
       onDrop={onDrop}
       onDragEnd={onDragEnd}
       className={cn(
-        "group relative flex flex-col rounded-2xl border bg-[var(--surface-1)]/40 hover:bg-[var(--surface-2)]/60 transition-all duration-200 overflow-hidden cursor-grab active:cursor-grabbing",
+        "group relative flex flex-col rounded-2xl border bg-[var(--surface-1)]/40 hover:bg-[var(--surface-2)]/60 transition-colors duration-200 overflow-hidden cursor-grab active:cursor-grabbing",
         isDragging
           ? "opacity-40 border-[var(--accent)]/40"
           : isDragOver

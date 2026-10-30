@@ -289,7 +289,7 @@ export default function BrainPage() {
                       <section key={cat}>
                         <div className="flex items-center gap-2 mb-3">
                           <Icon className="w-3.5 h-3.5 text-[var(--text-3)]" />
-                          <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-3)] font-mono">
+                          <h2 className="text-[10px] font-semibold  text-[var(--text-3)] font-mono">
                             {meta.label}
                           </h2>
                           <span className="text-[10px] text-[var(--text-4)] font-mono">

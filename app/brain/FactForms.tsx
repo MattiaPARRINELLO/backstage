@@ -87,7 +87,7 @@ export function AddFactForm({
 
   return (
     <div className="mb-6 p-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 fade-in">
-      <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-mono mb-3">
+      <p className="text-[10px]  text-[var(--accent)] font-mono mb-3">
         Nouveau fait à mémoriser
       </p>
       <Textarea

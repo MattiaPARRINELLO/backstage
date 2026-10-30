@@ -282,7 +282,7 @@ export function GroupActionCard({
         <button
           onClick={onConfirm}
           disabled={busy}
-          className="px-3 py-1.5 rounded-md bg-[var(--warm)] text-[#0a0a0b] font-medium text-[11px] uppercase tracking-wider hover:brightness-110 active:brightness-95 disabled:opacity-50 transition-all duration-200"
+          className="px-3 py-1.5 rounded-md bg-[var(--warm)] text-[#0a0a0b] font-medium text-[11px] uppercase tracking-wider hover:brightness-110 active:brightness-95 disabled:opacity-50 transition-colors duration-200"
         >
           {busy ? "Exécution…" : tools.length > 1 ? "Confirmer tout" : "Confirmer"}
         </button>

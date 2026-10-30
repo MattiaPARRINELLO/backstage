@@ -171,7 +171,7 @@ export function ChatComposer({
           <button
             onClick={onSubmit}
             disabled={!displayValue.trim()}
-            className="shrink-0 w-10 h-10 rounded-full bg-[var(--accent)] text-[#0a0a0b] flex items-center justify-center hover:brightness-110 transition-all disabled:opacity-25 disabled:cursor-not-allowed"
+            className="shrink-0 w-10 h-10 rounded-full bg-[var(--accent)] text-[#0a0a0b] flex items-center justify-center hover:brightness-110 transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
             title="Envoyer"
             aria-label="Envoyer"
           >

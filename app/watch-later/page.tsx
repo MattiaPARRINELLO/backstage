@@ -184,7 +184,7 @@ export default function WatchLaterPage() {
                     key={id}
                     onClick={() => setFilter(id)}
                     className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium font-mono uppercase tracking-wider transition-all duration-200 shrink-0",
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium font-mono uppercase tracking-wider transition-colors duration-200 shrink-0",
                       active
                         ? "bg-[var(--surface-3)] text-[var(--text-1)]"
                         : "text-[var(--text-3)] hover:text-[var(--text-1)]"

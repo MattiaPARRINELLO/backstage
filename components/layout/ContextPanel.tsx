@@ -110,7 +110,7 @@ export function ContextPanel() {
       >
         <header className="shrink-0 border-b border-[var(--border-1)]">
           <div className="panel-sheen flex items-center gap-2 h-11 px-3">
-            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--text-3)]">
+            <span className="text-[10px] font-mono  text-[var(--text-3)]">
               {activeContext ? CONTEXT_LABELS[activeContext]?.title ?? "Contexte" : "Panneau"}
             </span>
             {now > 0 && (
@@ -214,7 +214,7 @@ function ViewSwitcher({ view, onChange }: { view: View; onChange: (v: View) => v
             aria-selected={active}
             onClick={() => onChange(t.id)}
             className={cn(
-              "flex-1 min-w-0 px-1.5 py-1.5 rounded-md text-[10px] font-medium font-mono uppercase tracking-wider transition-all duration-200",
+              "flex-1 min-w-0 px-1.5 py-1.5 rounded-md text-[10px] font-medium font-mono uppercase tracking-wider transition-colors duration-200",
               active
                 ? "bg-[var(--surface-3)] text-[var(--text-1)] border border-[var(--border-2)]"
                 : "text-[var(--text-3)] border border-transparent hover:text-[var(--text-1)]"

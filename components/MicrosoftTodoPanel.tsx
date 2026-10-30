@@ -128,7 +128,7 @@ export function MicrosoftTodoPanel() {
                   type="button"
                   onClick={() => handleSelectList(l.id)}
                   className={cn(
-                    "px-2.5 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider border transition-colors",
+                    "px-2.5 py-1 rounded-full text-[10px] font-mono  border transition-colors",
                     activeListId === l.id
                       ? "border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--accent)]/10"
                       : "border-[var(--border-1)] text-[var(--text-3)] hover:text-[var(--text-1)]"

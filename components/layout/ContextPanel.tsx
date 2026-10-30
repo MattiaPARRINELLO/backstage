@@ -89,7 +89,7 @@ export function ContextPanel() {
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
-          className="xl:hidden fixed bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] right-3 z-30 w-11 h-11 rounded-full bg-[var(--accent)]/20 border border-[var(--accent)]/40 text-[var(--accent-soft)] flex items-center justify-center backdrop-blur"
+          className="xl:hidden fixed bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] right-3 z-30 w-11 h-11 rounded-full bg-[var(--surface-2)] border border-[var(--border-2)] text-[var(--text-2)] flex items-center justify-center"
           aria-label="Ouvrir le contexte"
         >
           <Sparkles className="w-4 h-4 animate-pulse" />
@@ -99,7 +99,7 @@ export function ContextPanel() {
       <aside
         aria-label="Panneau de contexte"
         className={cn(
-          "flex flex-col shrink-0 h-full border-l border-[var(--border-1)] bg-[var(--surface-1)]/40 backdrop-blur transition-[width,transform] duration-300 ease-out",
+          "flex flex-col shrink-0 h-full border-l border-[var(--border-1)] bg-[var(--surface-1)] transition-[width,transform] duration-300 ease-out",
           "xl:relative xl:translate-x-0",
           collapsed ? "xl:w-12" : "xl:w-[340px]",
           mobileOpen
@@ -109,7 +109,7 @@ export function ContextPanel() {
         )}
       >
         <header className="shrink-0 border-b border-[var(--border-1)]">
-          <div className="panel-sheen flex items-center gap-2 h-11 px-3">
+          <div className="flex items-center gap-2 h-11 px-3">
             <span className="text-[10px] font-mono  text-[var(--text-3)]">
               {activeContext ? CONTEXT_LABELS[activeContext]?.title ?? "Contexte" : "Panneau"}
             </span>
@@ -191,7 +191,7 @@ function ContextBadge({ contextKey, running }: { contextKey: string; running: bo
   return (
     <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/30">
       <Icon className={cn("w-3 h-3 text-[var(--accent-soft)]", running && "animate-pulse")} />
-      <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--accent-soft)]">
+      <span className="text-[10px] font-mono  text-[var(--accent-soft)]">
         {meta.title}
       </span>
     </div>
@@ -214,7 +214,7 @@ function ViewSwitcher({ view, onChange }: { view: View; onChange: (v: View) => v
             aria-selected={active}
             onClick={() => onChange(t.id)}
             className={cn(
-              "flex-1 min-w-0 px-1.5 py-1.5 rounded-md text-[10px] font-medium font-mono uppercase tracking-wider transition-colors duration-200",
+              "flex-1 min-w-0 px-1.5 py-1.5 rounded-md text-[10px] font-medium font-mono  transition-colors duration-200",
               active
                 ? "bg-[var(--surface-3)] text-[var(--text-1)] border border-[var(--border-2)]"
                 : "text-[var(--text-3)] border border-transparent hover:text-[var(--text-1)]"
@@ -255,13 +255,13 @@ function ContextualView({
 
       {lastTool && runningTools.length === 0 && (
         <div className="flex items-center gap-3 pt-1">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-4)]">
+          <span className="text-[10px] font-mono  text-[var(--text-4)]">
             Dernier résultat
           </span>
           <span className="flex-1 h-px bg-[var(--border-1)]" />
           <button
             onClick={onDismissLast}
-            className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-200"
+            className="text-[10px] font-mono  text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-200"
           >
             Réinitialiser
           </button>
@@ -274,7 +274,7 @@ function ContextualView({
 function RunningToolsCard({ tools }: { tools: ContextTool[] }) {
   return (
     <div className="rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-2.5 space-y-1.5">
-      <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-[var(--accent-soft)]">
+      <div className="flex items-center gap-1.5 text-[10px] font-mono  text-[var(--accent-soft)]">
         <Loader2 className="w-3 h-3 animate-spin" />
         <span>Outils en cours</span>
       </div>
@@ -343,7 +343,7 @@ function ToolResultCard({
     <div className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)] p-3 space-y-2">
       <div className="flex items-center gap-1.5">
         <Icon className={cn("w-3.5 h-3.5", iconClass)} />
-        <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-3)]">
+        <span className="text-[10px] font-mono  text-[var(--text-3)]">
           {title}
         </span>
       </div>

@@ -209,7 +209,7 @@ export default function CalendarPage() {
                     {DAYS.map((d) => (
                       <div
                         key={d}
-                        className="px-2 py-2 text-[9px] font-semibold uppercase tracking-wider text-[var(--text-4)] font-mono text-center"
+                        className="px-2 py-2 text-[9px] font-semibold  text-[var(--text-4)] font-mono text-center"
                       >
                         {d}
                       </div>
@@ -394,7 +394,7 @@ export default function CalendarPage() {
               </Field>
 
               <div>
-                <label className="block text-[10px] font-mono uppercase tracking-wider text-[var(--text-3)] mb-2">
+                <label className="block text-[10px] font-mono  text-[var(--text-3)] mb-2">
                   Couleur
                 </label>
                 <div className="flex flex-wrap gap-2">

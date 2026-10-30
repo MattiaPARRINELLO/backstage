@@ -72,7 +72,7 @@ export function ChatComposer({
     <div className="relative">
       {showMentionMenu && (
         <div className="absolute bottom-full left-2 mb-2 w-56 rounded-xl border border-[var(--border-2)] bg-[var(--surface-1)] p-1 z-50">
-          <p className="px-2.5 pt-1.5 pb-1 text-[10px] font-mono uppercase tracking-widest text-[var(--text-4)]">
+          <p className="px-2.5 pt-1.5 pb-1 text-[10px] font-mono  text-[var(--text-4)]">
             Mentionner un module
           </p>
           {[

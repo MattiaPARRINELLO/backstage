@@ -13,7 +13,7 @@ export function FactRow({ fact, onEdit, onDelete }: { fact: MemoryFact; onEdit: 
           {fact.content}
         </p>
         {fact.source === "auto-extract" && fact.confidence !== undefined && (
-          <p className="text-[10px] text-[var(--text-4)] font-mono mt-1.5 uppercase tracking-wider">
+          <p className="text-[10px] text-[var(--text-4)] font-mono mt-1.5 ">
             mémorisé auto · confiance {Math.round(fact.confidence * 100)}%
           </p>
         )}

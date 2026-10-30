@@ -60,7 +60,7 @@ export function AddItemForm({
                 key={c}
                 onClick={() => setCategory(c)}
                 className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider border transition-colors",
+                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono  border transition-colors",
                   category === c
                     ? "border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--accent)]/10"
                     : "border-[var(--border-1)] text-[var(--text-3)] hover:text-[var(--text-1)]"

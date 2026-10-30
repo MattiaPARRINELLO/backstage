@@ -145,7 +145,7 @@ export function ShootCard({
                 }
               }}
             >
-              <span className="text-[10px] font-mono uppercase tracking-wider">{STATUS_FLOW.find((s) => s.key === nextStatus)?.label}</span>
+              <span className="text-[10px] font-mono ">{STATUS_FLOW.find((s) => s.key === nextStatus)?.label}</span>
             </Button>
           )}
         </div>

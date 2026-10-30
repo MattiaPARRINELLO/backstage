@@ -65,14 +65,14 @@ export function ReminderRow({
             {new Date(reminder.dueAt).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
           </span>
           {reminder.recurrence && (
-            <span className="text-[10px] text-[var(--text-3)] font-mono uppercase tracking-wider inline-flex items-center gap-1">
+            <span className="text-[10px] text-[var(--text-3)] font-mono  inline-flex items-center gap-1">
               <RotateCcw className="w-2.5 h-2.5" />
               {RECURRENCE_META[reminder.recurrence].label}
             </span>
           )}
           {msLinked && reminder.status === "pending" && !reminder.microsoftTaskId && (
             <span
-              className="text-[10px] text-[var(--text-3)] font-mono uppercase tracking-wider inline-flex items-center gap-1"
+              className="text-[10px] text-[var(--text-3)] font-mono  inline-flex items-center gap-1"
               title="Non synchronisé avec Microsoft To Do (sync échouée ou rappel créé avant la liaison)"
             >
               <CloudOff className="w-2.5 h-2.5" />

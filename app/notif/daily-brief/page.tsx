@@ -60,7 +60,7 @@ export default function DailyBriefPage() {
     <>
       <Link
         href="/chat"
-        className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[var(--text-4)] hover:text-[var(--text-2)] transition-colors duration-200 mb-8"
+        className="inline-flex items-center gap-2 text-xs font-mono  text-[var(--text-4)] hover:text-[var(--text-2)] transition-colors duration-200 mb-8"
       >
         <ArrowLeft className="w-3 h-3" />
         BACKSTAGE
@@ -69,11 +69,11 @@ export default function DailyBriefPage() {
       <header className="mb-10">
         <div className="flex items-center gap-3 mb-3">
           <CalendarDays className="w-5 h-5 text-[var(--accent-cool)]" />
-          <h1 className="text-lg font-mono uppercase tracking-wider text-[var(--text-1)]">
+          <h1 className="text-lg font-mono  text-[var(--text-1)]">
             Brief du jour
           </h1>
         </div>
-        <p className="text-xs font-mono text-[var(--text-3)] uppercase tracking-widest">
+        <p className="text-xs font-mono text-[var(--text-3)] ">
           {formatRelative(brief.date)}
         </p>
       </header>
@@ -162,7 +162,7 @@ export default function DailyBriefPage() {
       )}
 
       <div className="mt-10 pt-6 border-t border-[var(--border-1)]">
-        <p className="text-xs font-mono text-[var(--text-4)] uppercase tracking-widest">
+        <p className="text-xs font-mono text-[var(--text-4)] ">
           Généré à {new Date(brief.generatedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
         </p>
       </div>
@@ -183,7 +183,7 @@ function Section({
     <div className="mb-6">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-[var(--accent-cool)]">{icon}</span>
-        <h2 className="text-xs font-mono uppercase tracking-wider text-[var(--text-3)]">
+        <h2 className="text-xs font-mono  text-[var(--text-3)]">
           {label}
         </h2>
       </div>

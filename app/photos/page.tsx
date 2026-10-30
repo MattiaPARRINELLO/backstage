@@ -268,7 +268,7 @@ export default function PhotoShootsPage() {
                           className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
                           style={{ backgroundColor: col.color }}
                         />
-                        <h3 className="text-[11px] font-mono uppercase tracking-widest text-[var(--text-2)]">
+                        <h3 className="text-[11px] font-mono  text-[var(--text-2)]">
                           {col.label}
                         </h3>
                         <span className="text-[10px] text-[var(--text-4)] font-mono ml-auto">{items.length}</span>
@@ -276,7 +276,7 @@ export default function PhotoShootsPage() {
 
                       <div className="flex-1 overflow-y-auto p-3 space-y-3">
                         {items.length === 0 && (
-                          <div className="flex items-center justify-center h-24 border-2 border-dashed border-[var(--border-1)] rounded-lg text-[11px] text-[var(--text-4)] font-mono uppercase tracking-wider">
+                          <div className="flex items-center justify-center h-24 border-2 border-dashed border-[var(--border-1)] rounded-lg text-[11px] text-[var(--text-4)] font-mono ">
                             Déposer ici
                           </div>
                         )}

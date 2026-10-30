@@ -124,8 +124,9 @@ scripts/            cron-scheduler, reset-passkey, cesar-smoke, scripts de QA/sc
   avec les widgets du panneau de droite (`CALENDAR_CACHE_KEY`, `GMAIL_CACHE_KEY`
   exportés par `components/widgets/`). ➡️ Ne jamais dupliquer ces fetchers : réutiliser
   les mêmes clés, sinon l'accueil déclenche des requêtes réseau en double.
-  Exception visuelle assumée (dégradés radiaux, sheen, animations d'inactivité) :
-  cf. `DESIGN.md > Console IA`.
+  L'ancienne exception visuelle (dégradés radiaux, sheen, particules,
+  animations d'inactivité) est **supprimée** : l'accueil suit la direction
+  commune (cf. `DESIGN.md > Console IA`).
   ⚠️ La composition d'accueil est **ancrée en haut** et le conteneur de
   `ChatView.tsx` n'a **pas** de padding haut dans ce cas : c'est ce qui amène le
   tour de cou du badge détaillé (`/backstage-logo.png`) jusqu'au bord supérieur

@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { Markdown } from "@/components/ui/Markdown";
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { HomeHero } from "@/components/chat/HomeHero";
-import { HomeAmbience } from "@/components/chat/HomeAmbience";
 import { useChatContext } from "@/lib/chat-context";
 import { useToast } from "@/components/ui/Toast";
 import type { Message, ToolCall } from "@/components/chat/types";
@@ -447,7 +446,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
         const count = event.facts.length;
         if (count > 0) {
           toast.show({
-            message: `🧠 ${count} fait${count > 1 ? "s" : ""} mémorisé${count > 1 ? "s" : ""}`,
+            message: `${count} fait${count > 1 ? "s" : ""} mémorisé${count > 1 ? "s" : ""}`,
             tone: "info",
             duration: 3000,
           });
@@ -698,7 +697,6 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
 
   return (
     <div className="flex flex-col h-full min-h-0 relative">
-      {isWelcome && <HomeAmbience />}
       {consent.loaded && !consent.accepted && (
         <div className="shrink-0 px-4 py-3 border-b border-[var(--border-1)] bg-[var(--surface-2)]/80 backdrop-blur fade-in">
           <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
@@ -714,7 +712,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
             <div className="flex items-center gap-2 shrink-0">
               <a
                 href="/privacy"
-                className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-200"
+                className="text-[11px] font-mono  text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-200"
               >
                 Vie privée
               </a>
@@ -763,7 +761,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
                           ? "bg-[var(--accent-cool)]"
                           : "bg-[var(--success)]"
                       )} />
-                      <span className="text-[var(--text-3)] uppercase tracking-wider">{toolMeta[ac.toolName]?.label || ac.toolName}</span>
+                      <span className="text-[var(--text-3)] ">{toolMeta[ac.toolName]?.label || ac.toolName}</span>
                       <span className="text-[var(--text-2)] max-w-[360px] truncate">{ac.result}</span>
                       <span className="text-[var(--text-4)]">{formatTime(ac.timestamp)}</span>
                     </div>

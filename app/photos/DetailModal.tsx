@@ -139,11 +139,11 @@ export function DetailModal({
         <div className="p-5 space-y-4 overflow-y-auto overscroll-contain min-h-0">
           <div className="flex items-center gap-4 text-[12px] font-mono text-[var(--text-2)]">
             <div className="flex items-center gap-1.5">
-              <span className="text-[var(--text-4)] uppercase tracking-wider">Date</span>
+              <span className="text-[var(--text-4)] ">Date</span>
               <span>{formatDate(shoot.date)}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[var(--text-4)] uppercase tracking-wider">Client</span>
+              <span className="text-[var(--text-4)] ">Client</span>
               <span>{shoot.client}</span>
             </div>
             <div className="flex items-center gap-1.5 ml-auto">
@@ -215,7 +215,7 @@ export function DetailModal({
             <>
               {shoot.notes && (
                 <div>
-                  <h4 className="text-[10px] font-mono uppercase tracking-wider text-[var(--text-4)] mb-1.5">Notes</h4>
+                  <h4 className="text-[10px] font-mono  text-[var(--text-4)] mb-1.5">Notes</h4>
                   <p className="text-[13px] text-[var(--text-2)] leading-relaxed whitespace-pre-wrap">{shoot.notes}</p>
                 </div>
               )}

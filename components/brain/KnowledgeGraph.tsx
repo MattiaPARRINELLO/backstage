@@ -174,9 +174,9 @@ export function KnowledgeGraph({ facts, relationships, onEditFact }: KnowledgeGr
   }, []);
 
   const categoryLabels: Record<string, string> = {
-    dev: "💻 Dev",
-    photo: "📸 Photo",
-    life: "❤️ Vie",
+    dev: "Dev",
+    photo: "Photo",
+    life: "Vie",
     preference: "⭐ Préférence",
   };
 

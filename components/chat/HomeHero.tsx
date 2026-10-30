@@ -395,7 +395,6 @@ export function HomeHero({
           <div
             className={cn(
               "relative flex items-start gap-3.5 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3.5 overflow-hidden",
-              focus.live && "home-glow"
             )}
           >
             <span

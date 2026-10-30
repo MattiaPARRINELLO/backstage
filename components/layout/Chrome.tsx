@@ -298,7 +298,7 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <nav className="lg:hidden flex items-stretch h-16 border-t border-[var(--border-1)] bg-[var(--surface-1)]/90 backdrop-blur px-1 pb-[env(safe-area-inset-bottom)] shrink-0">
+      <nav className="lg:hidden flex items-stretch h-16 border-t border-[var(--border-1)] bg-[var(--surface-1)] px-1 pb-[env(safe-area-inset-bottom)] shrink-0">
         {mobileNavItems.map((item) => {
           const active = item.exact
             ? pathname === item.href

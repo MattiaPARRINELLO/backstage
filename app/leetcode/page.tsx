@@ -232,20 +232,20 @@ export default function LeetcodePage() {
                 </div>
                 <div className="space-y-2 text-[11px]">
                   <div className="flex items-center justify-between">
-                    <span className="text-[var(--text-3)] font-mono uppercase tracking-wider text-[10px]">
+                    <span className="text-[var(--text-3)] font-mono  text-[10px]">
                       Participations
                     </span>
                     <span className="font-mono tabular-nums text-[var(--text-1)]">{contest.attended}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[var(--text-3)] font-mono uppercase tracking-wider text-[10px]">
+                    <span className="text-[var(--text-3)] font-mono  text-[10px]">
                       Top
                     </span>
                     <span className="font-mono tabular-nums text-[var(--text-1)]">{contest.topPercentage}%</span>
                   </div>
                   {contest.globalRanking > 0 && (
                     <div className="flex items-center justify-between">
-                      <span className="text-[var(--text-3)] font-mono uppercase tracking-wider text-[10px]">
+                      <span className="text-[var(--text-3)] font-mono  text-[10px]">
                         Rang global
                       </span>
                       <span className="font-mono tabular-nums text-[var(--text-1)]">
@@ -359,7 +359,7 @@ function DifficultyBar({
   return (
     <div>
       <div className="flex items-baseline justify-between text-[11px] mb-1.5">
-        <span className="text-[var(--text-3)] font-mono uppercase tracking-wider text-[10px]">
+        <span className="text-[var(--text-3)] font-mono  text-[10px]">
           {label}
         </span>
         <span className="font-mono tabular-nums text-[var(--text-1)]">

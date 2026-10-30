@@ -284,6 +284,17 @@ moteur d'écriture (`lib/memory-autosave.ts`) :
 - **Dédoublonnage obligatoire** : `findSimilarMemoryFacts` avant toute
   création, sinon `touchMemoryFact`. Un fait déjà connu est renforcé, pas
   recréé. Les sources sont `manual` / `tool` / `auto-extract`.
+- **Garde anti-perte** (`lib/memory-dedup.ts`, module pur) : un fait qui apporte
+  une entité absente du fait existant (nom propre, chiffre, URL, pseudo) n'est
+  PAS un doublon — il est créé. Sans elle, « collabore avec Rapstar, portfolio
+  photo.mprnl.fr » était absorbé par « Est photographe live & concert » et
+  l'information était perdue en silence. La garde est appliquée aux **quatre**
+  chemins d'écriture (`add_memory_fact`, `rememberFact`,
+  `/api/memory/remember`, `persistExtractedFacts`).
+- **Un dédoublonnage n'est pas un succès** : `add_memory_fact` répond
+  « Rien de nouveau : deja en memoire -> … », classé `empty` par
+  `classifyToolText`. En `ok`, le modèle annonçait « c'est retenu » alors que
+  rien n'avait été écrit.
 - **Le parsing d'extraction est volontairement tolérant** (puce markdown,
   gras, virgule décimale, pourcentage) mais **exige une confiance explicite** :
   sans elle, une phrase de commentaire (« Dev : rien à signaler ») deviendrait

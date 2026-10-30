@@ -1,6 +1,7 @@
 "use server";
 
 import { requireSession } from "@/lib/session";
+import { hasNewInformation } from "@/lib/memory-dedup";
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -69,7 +70,10 @@ export async function rememberFact(
     throw new Error(parsed.error.issues[0]?.message ?? "Payload invalide");
   }
   const existing = await findSimilarMemoryFacts(parsed.data.content, parsed.data.category);
-  if (existing) {
+  // Un fait enrichi (nom propre, chiffre, URL absent du fait existant) n'est pas
+  // un doublon : sans cette garde, l'information nouvelle était perdue en
+  // silence et l'UI renvoyait l'ancien fait comme s'il venait d'être ajouté.
+  if (existing && !hasNewInformation(parsed.data.content, existing.content)) {
     await touchMemoryFact(existing.id);
     revalidatePath("/brain");
     return existing;

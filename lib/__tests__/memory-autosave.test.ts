@@ -116,6 +116,27 @@ describe("persistExtractedFacts", () => {
     expect(mockStorage.touchMemoryFact).toHaveBeenCalledWith("existing");
   });
 
+  it("enregistre un fait enrichi malgre un noyau commun", async () => {
+    // Cas reel : le media Rapstar et l'URL du portfolio doivent survivre.
+    mockStorage.findSimilarMemoryFacts.mockResolvedValue({
+      id: "existing",
+      content: "Est photographe live & concert",
+      category: "photo",
+      createdAt: "",
+    });
+    mockStorage.addMemoryFact.mockResolvedValue({
+      id: "new",
+      content: "Portfolio : photo.mprnl.fr",
+      category: "photo",
+      createdAt: "",
+    });
+    const saved = await persistExtractedFacts([
+      { content: "Portfolio : photo.mprnl.fr", category: "photo", confidence: 0.9 },
+    ]);
+    expect(saved[0]?.id).toBe("new");
+    expect(mockStorage.touchMemoryFact).not.toHaveBeenCalled();
+  });
+
   it("journalise chaque fait reellement ajoute", async () => {
     mockStorage.findSimilarMemoryFacts.mockResolvedValue(null);
     await persistExtractedFacts([{ content: "Nouveau fait", category: "dev", confidence: 0.9 }]);

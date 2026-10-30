@@ -32,6 +32,16 @@ describe("classifyToolText", () => {
     expect(classifyToolText("Pas de cours demain.")).toBe("empty");
     expect(classifyToolText("")).toBe("empty");
   });
+
+  it("classe un dedoublonnage memoire en vide, pas en succes", () => {
+    // « deja connu » n'est pas une action : le modele s'en servait pour dire
+    // « c'est retenu » alors que rien n'avait ete ecrit.
+    expect(classifyToolText("Rien de nouveau : deja en memoire -> Est photographe live & concert")).toBe(
+      "empty"
+    );
+    expect(classifyToolText("Fait deja connu, prioritise en memoire : X")).toBe("empty");
+    expect(classifyToolText("Deja memorise.")).toBe("empty");
+  });
 });
 
 describe("renderToolText / parseToolText", () => {

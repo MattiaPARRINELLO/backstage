@@ -157,11 +157,11 @@ export default async function WeekPage() {
                         <p className="text-[13px] font-semibold text-[var(--text-1)]">
                           {isToday ? "Aujourd'hui" : DAY_NAMES[date.getDay()]}
                         </p>
-                        <p className="text-[11px] text-[var(--text-3)] font-mono uppercase tracking-wider">
+                        <p className="text-[11px] text-[var(--text-3)] font-mono ">
                           {date.getDate()} {MONTH_NAMES[date.getMonth()]}
                         </p>
                       </div>
-                      <span className={`text-[10px] font-mono uppercase tracking-wider ${charge.cls}`}>
+                      <span className={`text-[10px] font-mono  ${charge.cls}`}>
                         {charge.text} · {items.length} élément{items.length > 1 ? "s" : ""}
                       </span>
                     </div>
@@ -181,7 +181,7 @@ export default async function WeekPage() {
                               className="flex items-start gap-2.5 rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)]/40 px-3 py-2"
                             >
                               <span
-                                className={`shrink-0 mt-0.5 text-[9px] font-mono uppercase tracking-wider border rounded px-1.5 py-0.5 ${badge.cls}`}
+                                className={`shrink-0 mt-0.5 text-[9px] font-mono  border rounded px-1.5 py-0.5 ${badge.cls}`}
                               >
                                 {badge.label}
                               </span>

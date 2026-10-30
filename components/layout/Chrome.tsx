@@ -127,7 +127,7 @@ export function LeftNav() {
               title={item.label}
               aria-label={item.label}
               className={cn(
-                "group relative w-11 h-11 rounded-lg flex items-center justify-center transition-all duration-200",
+                "group relative w-11 h-11 rounded-lg flex items-center justify-center transition-colors duration-200",
                 active
                   ? "bg-[var(--surface-2)] text-[var(--accent)] border border-[var(--border-2)]"
                   : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] border border-transparent"
@@ -148,7 +148,7 @@ export function LeftNav() {
           title="Toutes les pages"
           aria-label="Toutes les pages"
           className={cn(
-            "group relative w-11 h-11 rounded-lg flex items-center justify-center transition-all duration-200",
+            "group relative w-11 h-11 rounded-lg flex items-center justify-center transition-colors duration-200",
             !primaryNavItems.some((p) => p.exact ? pathname === p.href : pathname === p.href || pathname.startsWith(`${p.href}/`))
               ? "bg-[var(--surface-2)] text-[var(--accent)] border border-[var(--border-2)]"
               : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] border border-transparent"
@@ -166,7 +166,7 @@ export function LeftNav() {
           href="/settings"
           title="Paramètres"
           className={cn(
-            "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200",
+            "w-9 h-9 rounded-lg flex items-center justify-center transition-colors duration-200",
             pathname === "/settings"
               ? "text-[var(--accent)]"
               : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)]"
@@ -298,7 +298,7 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <nav className="lg:hidden flex items-stretch h-16 border-t border-[var(--border-1)] bg-[var(--surface-1)]/90 backdrop-blur px-1 pb-[env(safe-area-inset-bottom)] shrink-0">
+      <nav className="lg:hidden flex items-stretch h-16 border-t border-[var(--border-1)] bg-[var(--surface-1)] px-1 pb-[env(safe-area-inset-bottom)] shrink-0">
         {mobileNavItems.map((item) => {
           const active = item.exact
             ? pathname === item.href
@@ -355,7 +355,7 @@ function MobileMoreSheet({ open, onClose }: { open: boolean; onClose: () => void
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="absolute inset-x-0 bottom-0 max-h-[82vh] rounded-t-2xl border-t border-[var(--border-1)] bg-[var(--surface-1)] flex flex-col pb-[env(safe-area-inset-bottom)] fade-in-up">
         <div className="flex items-center justify-between h-12 px-4 border-b border-[var(--border-1)] shrink-0">
-          <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-[var(--text-3)]">
+          <span className="text-[11px] font-mono  text-[var(--text-3)]">
             Toutes les pages
           </span>
           <button
@@ -434,11 +434,11 @@ export function PageHeader({
     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-8 pb-6 border-b border-[var(--border-1)]">
       <div className="min-w-0">
         {eyebrow && (
-          <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-[var(--accent)] mb-2">
+          <p className="text-[10px] font-mono  text-[var(--accent)] mb-2">
             {eyebrow}
           </p>
         )}
-        <h1 className="text-[30px] sm:text-[34px] font-display font-black tracking-tight text-[var(--text-1)] text-balance leading-[1.08]">
+        <h1 className="text-[30px] sm:text-[34px] font-display font-medium tracking-tight text-[var(--text-1)] text-balance leading-[1.08]">
           {title}
         </h1>
         {description && (

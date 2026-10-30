@@ -72,7 +72,7 @@ export function ChatComposer({
     <div className="relative">
       {showMentionMenu && (
         <div className="absolute bottom-full left-2 mb-2 w-56 rounded-xl border border-[var(--border-2)] bg-[var(--surface-1)] p-1 z-50">
-          <p className="px-2.5 pt-1.5 pb-1 text-[10px] font-mono uppercase tracking-widest text-[var(--text-4)]">
+          <p className="px-2.5 pt-1.5 pb-1 text-[10px] font-mono  text-[var(--text-4)]">
             Mentionner un module
           </p>
           {[
@@ -171,7 +171,7 @@ export function ChatComposer({
           <button
             onClick={onSubmit}
             disabled={!displayValue.trim()}
-            className="shrink-0 w-10 h-10 rounded-full bg-[var(--accent)] text-[#0a0a0b] flex items-center justify-center hover:brightness-110 transition-all disabled:opacity-25 disabled:cursor-not-allowed"
+            className="shrink-0 w-10 h-10 rounded-full bg-[var(--accent)] text-[#0a0a0b] flex items-center justify-center hover:brightness-110 transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
             title="Envoyer"
             aria-label="Envoyer"
           >

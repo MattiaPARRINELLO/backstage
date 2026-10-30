@@ -38,7 +38,7 @@ export function Field({
   return (
     <label className={cn("block", className)}>
       {label && (
-        <span className="block mb-1.5 text-[10px] font-mono uppercase tracking-[0.18em] text-[var(--text-3)]">
+        <span className="block mb-1.5 text-[10px] font-mono  text-[var(--text-3)]">
           {label}
         </span>
       )}

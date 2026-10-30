@@ -79,7 +79,7 @@ export function LeetCodeWidget() {
           <div className="mt-3 pt-2.5 border-t border-[var(--border-1)] space-y-1.5">
             <div className="flex items-center gap-1.5">
               <Trophy className="w-3 h-3 text-[var(--warm)]" />
-              <span className="text-[10px] font-mono text-[var(--text-3)] uppercase tracking-wider">
+              <span className="text-[10px] font-mono text-[var(--text-3)] ">
                 Rang
               </span>
               <span className="text-[10px] font-mono text-[var(--text-1)] ml-auto tabular-nums">
@@ -89,7 +89,7 @@ export function LeetCodeWidget() {
             {(data.totalSubmissions ?? 0) > 0 && (
               <div className="flex items-center gap-1.5">
                 <Zap className="w-3 h-3 text-[var(--accent-cool)]" />
-                <span className="text-[10px] font-mono text-[var(--text-3)] uppercase tracking-wider">
+                <span className="text-[10px] font-mono text-[var(--text-3)] ">
                   Soumissions
                 </span>
                 <span className="text-[10px] font-mono text-[var(--text-1)] ml-auto tabular-nums">
@@ -154,7 +154,7 @@ function StreakGauge({ streak }: { streak: number }) {
 function StatRow({ label, value, tone }: { label: string; value: number; tone: string }) {
   return (
     <div className="flex items-center justify-between text-[11px]">
-      <span className="text-[var(--text-3)] font-mono uppercase tracking-wider text-[10px]">
+      <span className="text-[var(--text-3)] font-mono  text-[10px]">
         {label}
       </span>
       <span className={`font-mono tabular-nums font-medium ${tone}`}>{value}</span>

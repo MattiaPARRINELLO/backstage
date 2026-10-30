@@ -178,7 +178,7 @@ export default function SchedulePage() {
           )}
 
           <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
-            <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--text-3)]">
+            <p className="text-[11px] font-mono  text-[var(--text-3)]">
               {weekLabel}
             </p>
             <p className="text-[12px] text-[var(--text-3)]">
@@ -218,7 +218,7 @@ export default function SchedulePage() {
                       <div className="flex items-baseline justify-between gap-2 mb-1">
                         <h2
                           className={cn(
-                            "text-[11px] font-mono uppercase tracking-[0.16em]",
+                            "text-[11px] font-mono ",
                             isToday ? "text-[var(--accent)]" : "text-[var(--text-3)]"
                           )}
                         >

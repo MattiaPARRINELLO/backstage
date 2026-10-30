@@ -34,7 +34,7 @@ function SectionTitle({
 }) {
   return (
     <div className="flex items-center justify-between mb-3">
-      <h2 className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--text-3)]">
+      <h2 className="flex items-center gap-2 text-[11px] font-mono  text-[var(--text-3)]">
         <span className="text-[var(--accent)]">{icon}</span>
         {children}
       </h2>
@@ -69,7 +69,7 @@ function Row({
       )}
       <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--text-1)]">{title}</span>
       {late && (
-        <span className="shrink-0 text-[9px] font-mono uppercase tracking-wider text-[var(--danger)] border border-[var(--danger)]/30 rounded px-1.5 py-0.5">
+        <span className="shrink-0 text-[9px] font-mono  text-[var(--danger)] border border-[var(--danger)]/30 rounded px-1.5 py-0.5">
           En retard
         </span>
       )}

@@ -1,133 +1,114 @@
-# DESIGN.md — PersonalBrain
+# DESIGN.md — BACKSTAGE
 
 ## Direction
-Warm brutalist editor. A single dark canvas that feels like a high-end IDE mixed with a contact sheet light table. Muted, slightly desaturated, with one warm accent for action and one cool accent for AI.
+
+La régie d'une salle, la nuit. Ramp neutre chaude (rideau, flight case), une
+seule lumière de travail ambre, les heures et les chiffres en mono.
+Rien ne brille, rien ne flotte : la richesse est dans les données réelles
+(fiche de contexte, ligne de temps, mémoire), pas dans le chrome.
+
+Cette direction est commune à la landing et à l'application. Un seul jeu de
+tokens dans `app/globals.css`.
 
 ## Palette
-- **Background**: `#0a0a0a` (near-black, warm undertone)
-- **Surface**: `#141414` / `#1a1a1a`
-- **Surface hover**: `#1f1f1f`
-- **Border**: `#262626`
-- **Border hover**: `#333333`
-- **Text primary**: `#e5e5e5`
-- **Text secondary**: `#8a8a8a`
-- **Text tertiary**: `#525252`
-- **Accent warm**: `#d4a373` (amber/tan — used for active states, streak, photo kanban)
-- **Accent cool**: `#7aa2f7` (soft blue — used for AI, code, focus)
-- **Accent danger/muted**: `#f38ba8` very sparingly
 
-No gradients on backgrounds. Gradients allowed only on the streak gauge ring.
+- **Background**: `#0d0c0b`
+- **Surface**: `#121110` / `#191715` / `#201d1a`
+- **Border**: `rgba(239, 233, 222, .08)` / `.13` / `.20`
+- **Text primary**: `#efe9de`
+- **Text secondary**: `#aba49a`
+- **Text muted**: `#8a8279` / `#6f6a63`
+- **Accent ambre**: `#e0a45e` (`--accent-soft` `#f0c08a` pour le texte sur fond sombre)
+- **Success**: `#9bbf8a` · **Danger**: `#d98878`
 
-## Typography
-- **Sans**: Geist Sans
-- **Mono**: Space Mono
-- Labels, metadata, timestamps, buttons: mono uppercase, letter-spacing widened.
-- Body: sans, 13–14px, leading-relaxed.
+Règles :
 
-## Elevation
-No box-shadows. Depth via 1px borders and subtle background shifts only.
+- Un seul accent, rare : action primaire, sélection, chiffre qui compte.
+- Les surfaces restent neutres, même dans un tableau de bord. Pas de fond
+  teinté orange/bleu/vert.
+- Pas de dégradé de teinte, de texte en dégradé, de halo coloré, ni d'ombre
+  colorée. La profondeur vient des paliers de surface et des hairlines.
+- Un dégradé n'est admis que comme variation d'un même neutre.
 
-## Components
+## Typographie
+
+- **Sans** : Inter (`--font-inter`) — interface.
+- **Mono** : JetBrains Mono (`--font-jetbrains-mono`) — heures, chiffres,
+  libellés de données, `tabular-nums`.
+- **Éditorial** : Instrument Serif (`--font-editorial`) — hero de la landing,
+  salutation de l'accueil, mot BACKSTAGE du login. Nulle part ailleurs.
+- **Display** : Space Grotesk (`--font-display`) — titres de page.
+- Casse normale partout. **Plus de majuscules à tracking large.**
+- Deux poids : 400 et 500 (600 rare). La hiérarchie vient de la taille et de
+  la couleur, pas du poids.
+- Petits textes : jamais de tracking négatif.
+
+## Composants
 
 ### Cards
-- Background: surface color
-- Border: 1px solid border color
-- Border-radius: 8px
-- Hover: border hover color, no transform
-- No badges, no icons inside content unless functional
+- Surface `--surface-1` ou `--surface-2`
+- Hairline `--border-1` (ou `--border-2` pour une carte active)
+- Radius 12 px (panneaux 16), radius imbriqué = extérieur − padding
+- Hover : changement de bordure/fond, aucun `scale`, aucun glow
 
-### Buttons
-- Primary: transparent background, border, mono uppercase label, warm accent on hover
-- Icon buttons: square, border, hover background shift
+### Boutons
+- Primaire : fond ambre, texte `#17110a`, radius 8, hauteur 44
+- Secondaire : hairline, texte `--text-1`
+- Press : `scale(0.98)`, 120 ms
 
 ### Inputs
-- Background: surface
-- Border: border color
-- Focus: border accent cool
-- No glowing rings
+- Fond `--surface-1`, hairline `--border-2`
+- Focus : anneau `--accent` 2 px, offset 2 (jamais de glow)
 
-### Sidebar / panels
-- Fixed/docked panels separated by 1px vertical borders
-- Collapsible with a simple bar icon
+### Sidebar / panneaux
+- Panneaux pleins, séparés par une hairline verticale
+- Rail desktop 68 px, panneau de contexte 340 px repliable
+- Mobile : barre supérieure + bottom nav, contenu empilé
 
 ## Layout
-- Desktop: narrow left icon rail (68px), main content area, right AI panel (340px collapsible)
-- Mobile: icon rail hidden, top tab bar, content stacks, chat as full panel
+
+- Desktop : rail icônes (68 px) · contenu fluide · panneau de contexte (340 px)
+- Les applications remplissent le viewport, pas de colonne centrée étroite
+- Espacement sur la grille de 4 px ; navigation 32–36 px de haut
+- `/chat` accueil : composition ancrée en haut, badge détaillé au bord supérieur
 
 ## Motion
-- Transitions: `transition-colors duration-200` for color/border, `transition-all duration-300` for width/height
-- Loading: single small spinner or 3-dot pulse, never more than 2s loops
-- No parallax, no infinite floating, no background shimmer — **sauf sur la console IA**, voir ci-dessous
 
-## Chat style
-- Terminal transcript: `assistant` / `toi` labels
-- AI messages: left cool accent dot
-- User messages: right warm accent dot
-- Input: single-line auto-growing textarea, submit on Enter, Shift+Enter newline
+- Une seule courbe : `cubic-bezier(.22, 1, .36, 1)` (`--ease`)
+- Durées : 120 ms (press), 150–200 ms (couleur), 300–620 ms (entrée)
+- Animations nommées uniquement (`transition-colors`, `transition-[transform,opacity]`)
+- Aucun mouvement en boucle décoratif : pas de shimmer de titre, pas de halo,
+  pas de balancement, pas de particules. Restent autorisés : spinner de
+  chargement, curseur qui clignote (l'IA attend), point « en cours ».
+- Une seule entrée au chargement, courte (fade + 6–12 px), petit échelonnement.
 
-### Console IA — exception assumée
-La console IA est la seule zone autorisée à déroger aux règles « pas de dégradé
-en fond », « pas de box-shadow » et « pas d'animation infinie ». Elle couvre
-trois surfaces : l'accueil du chat (`components/chat/HomeHero.tsx`), le panneau
-de flux (`components/layout/ContextPanel.tsx` + `FluxTimeline.tsx`) et
-l'historique (`components/chat/SessionSidebar.tsx`). Le reste de l'app garde les
-contraintes d'origine.
+## Console IA
 
-**Ambiance** (`components/chat/HomeAmbience.tsx`, accueil uniquement)
-- Dégradés radiaux très basse opacité (`--accent` 22 %, `--accent-cool` /
-  `--accent-warm` 13 %). Le dégradé s'éteint **avant** les bords du conteneur —
-  jamais de liseré rectangulaire — et ne se met pas à l'échelle (seule l'opacité
-  respire, 28 s).
-- Trame de 56 px masquée en cercle, qui dérive d'une cellule en 60 s
-  (`background-position`, pour que le masque reste fixe).
-- 12 particules montantes (18–29 s, dérive latérale ±20 px, opacité ≤ 0,5).
-  **Valeurs figées**, jamais tirées au hasard : le rendu serveur et le premier
-  rendu client doivent coïncider (pas d'erreur d'hydratation).
+L'ancienne « exception assumée » (dégradés radiaux, halos, sheen, particules)
+est **supprimée**. L'accueil du chat garde :
 
-**Inactivité (idle)**
-- Balancement de pendule du badge d'accueil (`.home-swing`, ±0,8° en 9,5 s).
-  L'origine de rotation est le bord **haut** de la boîte, c'est-à-dire la ligne de
-  coupe : le balancement se lit donc comme celui d'un badge accroché au-dessus de
-  l'écran, sans jamais déplacer le point d'attache.
-- Halo derrière le badge qui respire sur 9 s.
-- Lueur qui respire (5,5 s) **réservée aux éléments vivants** : rendez-vous en
-  cours, rappel en retard. Jamais plus d'une poignée à l'écran.
-- Curseur de veille clignotant (1,15 s) en fin de ligne de briefing : l'IA
-  attend une instruction.
-- Balayage lumineux (13 s) sur les en-têtes de la console, un seul à l'écran.
-  Le sheen de la carte principale de l'accueil reste à 9 s.
-- Changement de vue du panneau : remontage par clé React + `flux-enter` (340 ms),
-  donc l'animation rejoue à chaque bascule.
+- le badge logo détaillé (`/backstage-logo.png`), ancré au bord supérieur
+- la salutation en Instrument Serif
+- la fiche du prochain rendez-vous (donnée réelle, filet ambre 2 px)
+- les puces de contexte et 4 raccourcis
 
-**Composition**
-- Accueil : contenu **ancré en haut** (pas de padding haut sur le conteneur),
-  `max-w-lg`. Le badge est le logo **détaillé** (`/backstage-logo.png`, tour de
-  cou + carte de scène), 176 px en mobile / 240 px au-delà de `sm`. Le tour de
-  cou va jusqu'au bord supérieur de la fenêtre et c'est ce bord qui fait ligne de
-  coupe : **rien n'est rogné sur desktop**. En mobile seulement, une marge
-  négative rogne son haut (hauteur utile trop rare pour la garder entière). Le
-  logo **simple** (`/backstage-logo-simple.png`) reste l'icône partout ailleurs
-  (favicon, rail, avatars, en-têtes). Puis : eyebrow date + heure → salutation →
-  briefing → carte du prochain rendez-vous → puces de contexte → 4 raccourcis.
-  Entrée échelonnée 620 ms (délais inline 60 → 330 ms).
-- Panneau : en-tête sur deux lignes (titre + heure live + repli, puis sélecteur
-  segmenté de 5 vues). Vue « Flux » = une ligne de temps unique qui fusionne
-  cours, événements agenda et rappels, groupée par jour avec une puce
-  « maintenant » ; puis inbox / code / photos en dessous. Un bloc « En retard »
-  rouge plafonné à 4 entrées précède la ligne de temps.
-- Historique : en-tête compact (badge 32 px + titre + sous-titre), action
-  principale teintée à la place du bouton en pointillés, groupes par jour avec
-  compteur, session active marquée d'une barre d'accent, bandeau de 3 compteurs
-  en pied de panneau.
-- Le repli et le mobile restent inchangés ; `prefers-reduced-motion` neutralise
-  déjà toutes ces animations globalement (`app/globals.css`).
+Le panneau de flux reste une ligne de temps unique (cours + agenda + rappels)
+groupée par jour, avec un bloc « En retard » plafonné à 4 entrées.
 
-## Kanban style
-- Columns separated by consistent 1px vertical borders
-- Column headers: mono uppercase + small square accent marker
-- Cards: minimal metadata (artist, venue, date)
-- Add card button: dashed border, centered + icon
+## Kanban (photos)
 
-## LeetCode style
-- Two-column layout on desktop: streak gauge left, editor + response right
-- Response block: surface background, top bar with cool dot and "Reponse" label
+- Colonnes séparées par des hairlines
+- En-têtes de colonne en mono, casse normale
+- Cartes : métadonnées minimales (artiste, salle, date)
+- Bouton d'ajout : bordure pointillée centrée
+
+## LeetCode
+
+- Deux colonnes sur desktop : jauge de série à gauche, éditeur + réponse à droite
+- Réponse : surface, barre de titre, point ambre et libellé « Réponse »
+
+## Accessibilité
+
+- Focus visible `outline: 2px solid var(--accent); outline-offset: 2px`
+- Contraste minimum 4.5:1 pour le texte principal et le texte sur ambre
+- `prefers-reduced-motion` neutralise toutes les animations (`app/globals.css`)

@@ -125,7 +125,7 @@ function ToastView({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
             toast.action?.onClick();
             onDismiss();
           }}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium uppercase tracking-wider text-[var(--accent-soft)] hover:bg-[var(--accent)]/15 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium  text-[var(--accent-soft)] hover:bg-[var(--accent)]/15 transition-colors"
         >
           <Undo2 className="w-3 h-3" />
           {toast.action.label}

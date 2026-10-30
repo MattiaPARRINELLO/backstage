@@ -269,7 +269,7 @@ function NowMarker() {
     <div className="flex items-center gap-3 py-1.5">
       <span className="w-10 shrink-0" />
       <span className="flux-now relative z-10 w-[9px] h-[9px] rounded-full bg-[var(--accent)]" />
-      <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-[var(--accent)]">
+      <span className="text-[9px] font-mono  text-[var(--accent)]">
         maintenant
       </span>
       <span className="flex-1 h-px bg-[var(--accent)]/25" />
@@ -281,7 +281,7 @@ function Tag({ tone, children }: { tone: "accent" | "danger"; children: React.Re
   return (
     <span
       className={cn(
-        "shrink-0 mt-px text-[9px] font-mono uppercase tracking-[0.14em]",
+        "shrink-0 mt-px text-[9px] font-mono ",
         tone === "accent" ? "text-[var(--accent)]" : "text-[var(--danger)]"
       )}
     >
@@ -296,7 +296,7 @@ function LateBlock({ items, total }: { items: { title: string; dueAt: string }[]
     <section className="rounded-xl border border-[var(--danger)]/25 bg-[var(--danger)]/5 overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--danger)]/20">
         <AlertTriangle className="w-3 h-3 text-[var(--danger)] shrink-0" />
-        <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-[var(--danger)]">
+        <span className="text-[10px] font-mono  text-[var(--danger)]">
           En retard
         </span>
         <span className="ml-auto text-[10px] font-mono tabular-nums text-[var(--text-3)]">
@@ -324,7 +324,7 @@ function LateBlock({ items, total }: { items: { title: string; dueAt: string }[]
       {total > shown.length && (
         <Link
           href="/reminders"
-          className="block px-3 py-1.5 text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--text-4)] hover:text-[var(--text-1)] border-t border-[var(--danger)]/15 transition-colors duration-150"
+          className="block px-3 py-1.5 text-[10px] font-mono  text-[var(--text-4)] hover:text-[var(--text-1)] border-t border-[var(--danger)]/15 transition-colors duration-150"
         >
           + {total - shown.length} autres
         </Link>
@@ -337,7 +337,7 @@ function LateBlock({ items, total }: { items: { title: string; dueAt: string }[]
 function SectionHeading({ label, count, live }: { label: string; count?: number; live?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <span className="flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-[0.18em] text-[var(--text-4)]">
+      <span className="flex items-center gap-1.5 text-[9px] font-mono  text-[var(--text-4)]">
         {live && (
           <span className="relative flex w-1.5 h-1.5">
             <span className="absolute inset-0 rounded-full bg-[var(--accent)] animate-pulse-dot" />

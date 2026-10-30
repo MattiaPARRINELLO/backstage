@@ -28,7 +28,7 @@ export default async function ReminderNotifPage({
     <>
       <Link
         href="/reminders"
-        className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[var(--text-4)] hover:text-[var(--text-2)] transition-colors duration-200 mb-8"
+        className="inline-flex items-center gap-2 text-xs font-mono  text-[var(--text-4)] hover:text-[var(--text-2)] transition-colors duration-200 mb-8"
       >
         <ArrowLeft className="w-3 h-3" />
         Rappels
@@ -51,7 +51,7 @@ export default async function ReminderNotifPage({
           <div>
             <h1
               className={cn(
-                "text-lg font-mono uppercase tracking-wider",
+                "text-lg font-mono ",
                 isDone ? "text-[var(--text-3)] line-through" : "text-[var(--text-1)]"
               )}
             >
@@ -64,7 +64,7 @@ export default async function ReminderNotifPage({
               </span>
               <span
                 className={cn(
-                  "text-xs font-mono uppercase px-2 py-0.5 rounded-full border",
+                  "text-xs font-mono px-2 py-0.5 rounded-full border",
                   isDone
                     ? "border-[var(--border-1)] text-[var(--text-4)] bg-transparent"
                     : overdue

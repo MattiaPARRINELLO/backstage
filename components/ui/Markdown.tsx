@@ -68,7 +68,7 @@ export const Markdown = memo(function Markdown({ children, className }: Markdown
           </div>
         ),
         th: ({ children }) => (
-          <th className="text-left font-mono text-[11px] uppercase tracking-wider text-[var(--text-3)] px-3 py-2 border-b border-[var(--border-1)] bg-[var(--surface-2)]">
+          <th className="text-left font-mono text-[11px]  text-[var(--text-3)] px-3 py-2 border-b border-[var(--border-1)] bg-[var(--surface-2)]">
             {children}
           </th>
         ),

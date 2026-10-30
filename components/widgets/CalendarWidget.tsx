@@ -101,7 +101,7 @@ export function CalendarWidget() {
               >
                 <div className="flex items-start gap-3">
                   <div className="shrink-0 w-12 text-right">
-                    <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--accent)]">
+                    <div className="text-[10px] font-mono  text-[var(--accent)]">
                       {dayLabel(evt.start)}
                     </div>
                     <div className="text-[10px] text-[var(--text-3)] font-mono mt-0.5">

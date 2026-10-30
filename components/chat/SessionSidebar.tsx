@@ -149,10 +149,10 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewSession,
         mobileOpen && "fixed inset-y-0 left-0 z-40 flex"
       )}
     >
-      <header className="panel-sheen shrink-0 flex items-center gap-2.5 px-3 h-14 border-b border-[var(--border-1)]">
+      <header className="shrink-0 flex items-center gap-2.5 px-3 h-14 border-b border-[var(--border-1)]">
         <div className="relative shrink-0 w-8 h-8 flex items-center justify-center">
           <span
-            className="home-halo absolute inset-[-4px] rounded-full bg-[var(--accent)]/25 blur-[10px]"
+            
             aria-hidden
           />
           <span className="relative w-8 h-8 rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] flex items-center justify-center overflow-hidden">
@@ -167,7 +167,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewSession,
           </span>
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-[11px] font-black tracking-[0.22em] uppercase text-[var(--text-1)] font-mono leading-none">
+          <h1 className="text-[11px] font-medium  text-[var(--text-1)] font-mono leading-none">
             Backstage
           </h1>
           <p className="mt-1 text-[10px] text-[var(--text-3)] font-mono truncate leading-none">
@@ -188,7 +188,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewSession,
       <div className="shrink-0 px-3 py-3 space-y-2">
         <button
           onClick={onNewSession}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-[var(--accent)] bg-[var(--accent)]/10 border border-[var(--accent)]/30 rounded-lg hover:bg-[var(--accent)]/15 hover:border-[var(--accent)]/50 transition-colors duration-200"
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] font-mono  text-[var(--accent)] bg-[var(--accent)]/10 border border-[var(--accent)]/30 rounded-lg hover:bg-[var(--accent)]/15 hover:border-[var(--accent)]/50 transition-colors duration-200"
         >
           <Plus className="w-3.5 h-3.5" />
           Nouvelle conversation
@@ -231,7 +231,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewSession,
             {Array.from(grouped.entries()).map(([group, groupSessions]) => (
               <section key={group}>
                 <div className="flex items-center gap-2 mb-1.5 px-1">
-                  <h3 className="text-[9px] font-mono uppercase tracking-[0.18em] text-[var(--text-4)]">
+                  <h3 className="text-[9px] font-mono  text-[var(--text-4)]">
                     {group}
                   </h3>
                   <span className="text-[9px] font-mono tabular-nums text-[var(--text-4)]/70">
@@ -285,7 +285,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewSession,
                           onClick={() => void handleDelete(s.id)}
                           title="Supprimer"
                           aria-label={`Supprimer ${s.title}`}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center text-[var(--text-4)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--danger)] hover:bg-[var(--surface-3)] transition-all duration-150"
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center text-[var(--text-4)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--danger)] hover:bg-[var(--surface-3)] transition-colors duration-150"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>

@@ -261,7 +261,7 @@ export function GroupActionCard({
           return <Icon className="w-3.5 h-3.5 shrink-0 text-[var(--warm)]" />;
         })() : null}
         <span className="font-medium">Actions à confirmer</span>
-        <span className="text-[var(--text-4)] font-mono text-[10px] uppercase tracking-wider">
+        <span className="text-[var(--text-4)] font-mono text-[10px] ">
           {tools.length > 1 ? `${tools.length} actions` : "1 action"}
         </span>
       </div>
@@ -282,14 +282,14 @@ export function GroupActionCard({
         <button
           onClick={onConfirm}
           disabled={busy}
-          className="px-3 py-1.5 rounded-md bg-[var(--warm)] text-[#0a0a0b] font-medium text-[11px] uppercase tracking-wider hover:brightness-110 active:brightness-95 disabled:opacity-50 transition-all duration-200"
+          className="px-3 py-1.5 rounded-md bg-[var(--warm)] text-[#0a0a0b] font-medium text-[11px]  hover:brightness-110 active:brightness-95 disabled:opacity-50 transition-colors duration-200"
         >
           {busy ? "Exécution…" : tools.length > 1 ? "Confirmer tout" : "Confirmer"}
         </button>
         <button
           onClick={onCancel}
           disabled={busy}
-          className="px-3 py-1.5 rounded-md border border-[var(--border-2)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] text-[11px] uppercase tracking-wider disabled:opacity-50 transition-colors duration-200"
+          className="px-3 py-1.5 rounded-md border border-[var(--border-2)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] text-[11px]  disabled:opacity-50 transition-colors duration-200"
         >
           Annuler
         </button>

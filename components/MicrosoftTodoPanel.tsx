@@ -85,7 +85,7 @@ export function MicrosoftTodoPanel() {
     <section className="mt-12">
       <div className="flex items-center gap-2 mb-3">
         <ListTodo className="w-3.5 h-3.5 text-[var(--text-3)]" />
-        <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-3)] font-mono">
+        <h2 className="text-[10px] font-semibold  text-[var(--text-3)] font-mono">
           Microsoft To Do
         </h2>
         <span className="text-[10px] text-[var(--text-4)] font-mono">Samsung Reminder</span>
@@ -128,7 +128,7 @@ export function MicrosoftTodoPanel() {
                   type="button"
                   onClick={() => handleSelectList(l.id)}
                   className={cn(
-                    "px-2.5 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider border transition-colors",
+                    "px-2.5 py-1 rounded-full text-[10px] font-mono  border transition-colors",
                     activeListId === l.id
                       ? "border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--accent)]/10"
                       : "border-[var(--border-1)] text-[var(--text-3)] hover:text-[var(--text-1)]"

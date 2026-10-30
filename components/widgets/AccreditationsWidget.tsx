@@ -91,7 +91,7 @@ export function AccreditationsWidget() {
                 <Link
                   key={shoot.id}
                   href="/photos"
-                  className="block p-2.5 rounded-lg border border-[var(--border-1)] hover:border-[var(--border-2)] hover:bg-[var(--surface-2)]/50 transition-all duration-200"
+                  className="block p-2.5 rounded-lg border border-[var(--border-1)] hover:border-[var(--border-2)] hover:bg-[var(--surface-2)]/50 transition-colors duration-200"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">

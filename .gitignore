@@ -68,3 +68,6 @@ next-env.d.ts
 
 # Rendu intermédiaire du story unslop
 unslop-story/.story-frames/
+
+# Rendu vidéo unslop (frames intermédiaires)
+unslop-story/.story-frames/

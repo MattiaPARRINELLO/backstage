@@ -28,15 +28,15 @@ export function InstallCommand() {
   };
 
   return (
-    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-      <code className="install__cmd">{INSTALL_COMMAND}</code>
+    <div className="mx-auto mt-8 flex max-w-2xl flex-col items-center gap-3 sm:flex-row">
+      <code className="install__cmd font-mono">{INSTALL_COMMAND}</code>
       <button
         type="button"
         onClick={() => void copy()}
         className="cta-secondary shrink-0"
         aria-label={copied ? "Commande copiée" : "Copier la commande d'installation"}
       >
-        {copied ? <Check className="h-4 w-4" strokeWidth={1.5} /> : <Copy className="h-4 w-4" strokeWidth={1.5} />}
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
         {copied ? "Copié" : "Copier"}
       </button>
     </div>

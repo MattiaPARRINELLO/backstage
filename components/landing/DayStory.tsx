@@ -10,10 +10,9 @@ const BEATS = DAY_STORY.beats;
 type Outcome = "confirm" | "dismiss";
 
 /**
- * Scrollytelling « Une journée avec Backstage ».
- * Le temps AVANCE à chaque étape (08:42 → lendemain 09:30) : on suit
- * une personne fictive dont le contexte se constitue et se relie au
- * fil de la journée. Données fictives, signalées comme telles.
+ * Scrollytelling « Une journée avec Backstage » — une feuille de service.
+ * Le temps avance à chaque étape (08:42 → lendemain 09:30) : on suit une
+ * personne fictive dont le contexte se relie au fil de la journée.
  */
 export function DayStory() {
   const rootRef = useRef<HTMLElement>(null);
@@ -58,22 +57,20 @@ export function DayStory() {
   // ----- Version statique (reduced motion) : toutes les étapes -----
   if (reduced) {
     return (
-      <section className="daystory daystory--static relative py-24 sm:py-32">
-        <div className="mx-auto max-w-3xl px-5 sm:px-8">
-          <p className="section-label">· Une journée avec Backstage ·</p>
-          <h2 className="mt-4 font-display text-3xl font-bold tracking-tight text-[#f5f3f0] sm:text-4xl">
-            Même contexte, du matin à la sélection.
-          </h2>
-          <p className="mt-4 text-[14px] text-[#a5a7b3]">{DAY_STORY.disclaimer}</p>
+      <section className="daystory daystory--static relative">
+        <div className="container container--narrow">
+          <p className="section-label">03 — Une journée avec Backstage</p>
+          <h2 className="section-title mt-4">Même contexte, du matin à la sélection.</h2>
+          <p className="section-lead mt-4">{DAY_STORY.disclaimer}</p>
 
           <ol className="mt-12 space-y-10">
             {BEATS.map((b) => (
               <li key={b.time} className="daystory__static-beat">
                 <div className="flex items-baseline gap-3">
                   <span className="daystory__time">{b.time}</span>
-                  <span className="daystory__when font-mono">{b.when}</span>
+                  <span className="daystory__when">{b.when}</span>
                 </div>
-                <p className="daystory__query mt-3">« {b.query} »</p>
+                <p className="daystory__query">« {b.query} »</p>
                 <ul className="daystory__connections mt-4">
                   {b.connections.map((c) => (
                     <li key={c.text} className="daystory__connection" data-ready="true">
@@ -86,9 +83,7 @@ export function DayStory() {
               </li>
             ))}
           </ol>
-          <p className="mt-12 border-t border-white/[0.06] pt-6 text-[14px] text-[#c9cbd6]">
-            {DAY_STORY.outro}
-          </p>
+          <p className="daystory__outro">{DAY_STORY.outro}</p>
         </div>
       </section>
     );
@@ -100,7 +95,7 @@ export function DayStory() {
 
   return (
     <section ref={rootRef} className="daystory relative flex items-center overflow-hidden">
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-10 px-5 sm:px-8 lg:grid-cols-[200px_1fr]">
+      <div className="container grid w-full grid-cols-1 gap-10 lg:grid-cols-[200px_minmax(0,1fr)]">
         {/* Frise chronologique */}
         <ol className="daystory__rail" aria-hidden="true">
           {BEATS.map((b, i) => (
@@ -111,7 +106,7 @@ export function DayStory() {
               data-past={i < step}
             >
               <span className="daystory__rail-dot" />
-              <span className="daystory__rail-time font-mono">{b.time}</span>
+              <span className="daystory__rail-time">{b.time}</span>
               <span className="daystory__rail-when">{b.when}</span>
             </li>
           ))}
@@ -119,20 +114,18 @@ export function DayStory() {
 
         {/* Étape active */}
         <div className="daystory__beat" key={step}>
-          <p className="section-label">· Une journée avec Backstage ·</p>
-          <div className="daystory__time-row mt-3">
+          <p className="section-label">03 — Une journée avec Backstage</p>
+          <div className="daystory__time-row mt-4">
             <p className="daystory__time">{beat.time}</p>
-            <p className="daystory__when font-mono">{beat.when}</p>
+            <p className="daystory__when">{beat.when}</p>
           </div>
-          <h2 className="daystory__query mt-4 text-balance font-display text-2xl font-bold leading-snug tracking-tight text-[#f5f3f0] sm:text-3xl">
-            « {beat.query} »
-          </h2>
+          <h2 className="daystory__query mt-4">« {beat.query} »</h2>
 
           <div className="daystory__panel mt-8">
-            <p className="daystory__panel-label font-mono">
+            <p className="daystory__panel-label">
               Contexte mobilisé · étape {step + 1}/{BEATS.length}
             </p>
-            <ul className="daystory__connections mt-4">
+            <ul>
               {beat.connections.map((connection, i) => (
                 <li
                   key={connection.text}
@@ -140,21 +133,21 @@ export function DayStory() {
                   data-ready="true"
                   style={{ ["--conn-i" as string]: i }}
                 >
-                  <span className="daystory__connection-kind font-mono">{connection.kind}</span>
+                  <span className="daystory__connection-kind">{connection.kind}</span>
                   <span className="daystory__connection-text">{connection.text}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="daystory__answer mt-7">
-            <p className="daystory__answer-label font-mono">Réponse contextualisée</p>
-            <p className="daystory__answer-text mt-3">{beat.answer}</p>
+          <div className="daystory__answer">
+            <p className="daystory__answer-label">Réponse contextualisée</p>
+            <p className="daystory__answer-text">{beat.answer}</p>
           </div>
 
-          <div className="daystory__next mt-6">
-            <p className="daystory__next-label font-mono">{beat.nextStep.label}</p>
-            <p className="mt-2 text-[14px] text-[#c9cbd6]">{beat.nextStep.text}</p>
+          <div className="daystory__next">
+            <p className="daystory__next-label">{beat.nextStep.label}</p>
+            <p className="daystory__next-text">{beat.nextStep.text}</p>
             {outcome === undefined ? (
               <div className="mt-4 flex flex-wrap gap-2.5">
                 <button type="button" onClick={() => setOutcome("confirm")} className="daystory__confirm">
@@ -165,17 +158,13 @@ export function DayStory() {
                 </button>
               </div>
             ) : (
-              <p className="daystory__outcome mt-4" aria-live="polite">
+              <p className="daystory__outcome" aria-live="polite">
                 {outcome === "confirm" ? beat.nextStep.confirmed : beat.nextStep.dismissed}
               </p>
             )}
           </div>
 
-          {step === BEATS.length - 1 && (
-            <p className="daystory__outro mt-8 border-t border-white/[0.06] pt-6 text-[14px] leading-relaxed text-[#c9cbd6]">
-              {DAY_STORY.outro}
-            </p>
-          )}
+          {step === BEATS.length - 1 && <p className="daystory__outro">{DAY_STORY.outro}</p>}
         </div>
       </div>
 

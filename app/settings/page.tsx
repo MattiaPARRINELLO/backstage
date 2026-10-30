@@ -227,7 +227,7 @@ export default function SettingsPage() {
                 ) : (
                   <div className="space-y-3">
                     <label className="block">
-                      <span className="block mb-1.5 text-[10px] font-mono uppercase tracking-[0.18em] text-[var(--text-3)]">
+                      <span className="block mb-1.5 text-[10px] font-mono  text-[var(--text-3)]">
                         Modèle principal
                       </span>
                       <select
@@ -245,7 +245,7 @@ export default function SettingsPage() {
                     </label>
 
                     <label className="block">
-                      <span className="block mb-1.5 text-[10px] font-mono uppercase tracking-[0.18em] text-[var(--text-3)]">
+                      <span className="block mb-1.5 text-[10px] font-mono  text-[var(--text-3)]">
                         Modèle de secours
                       </span>
                       <select
@@ -263,7 +263,7 @@ export default function SettingsPage() {
                     </label>
 
                     <label className="block">
-                      <span className="block mb-1.5 text-[10px] font-mono uppercase tracking-[0.18em] text-[var(--text-3)]">
+                      <span className="block mb-1.5 text-[10px] font-mono  text-[var(--text-3)]">
                         Modèle code
                       </span>
                       <select

@@ -167,7 +167,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewSession,
           </span>
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-[11px] font-black tracking-[0.22em] uppercase text-[var(--text-1)] font-mono leading-none">
+          <h1 className="text-[11px] font-medium  text-[var(--text-1)] font-mono leading-none">
             Backstage
           </h1>
           <p className="mt-1 text-[10px] text-[var(--text-3)] font-mono truncate leading-none">
@@ -231,7 +231,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewSession,
             {Array.from(grouped.entries()).map(([group, groupSessions]) => (
               <section key={group}>
                 <div className="flex items-center gap-2 mb-1.5 px-1">
-                  <h3 className="text-[9px] font-mono uppercase tracking-[0.18em] text-[var(--text-4)]">
+                  <h3 className="text-[9px] font-mono  text-[var(--text-4)]">
                     {group}
                   </h3>
                   <span className="text-[9px] font-mono tabular-nums text-[var(--text-4)]/70">
@@ -285,7 +285,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewSession,
                           onClick={() => void handleDelete(s.id)}
                           title="Supprimer"
                           aria-label={`Supprimer ${s.title}`}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center text-[var(--text-4)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--danger)] hover:bg-[var(--surface-3)] transition-all duration-150"
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center text-[var(--text-4)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--danger)] hover:bg-[var(--surface-3)] transition-colors duration-150"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>

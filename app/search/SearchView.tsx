@@ -116,7 +116,7 @@ export function SearchView() {
                 return (
                   <section key={key}>
                     <h3 className={cn(
-                      "flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] font-mono mb-2",
+                      "flex items-center gap-2 text-[10px] font-semibold  font-mono mb-2",
                       COLORS[key]
                     )}>
                       <Icon className="w-3 h-3" />

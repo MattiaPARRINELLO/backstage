@@ -110,7 +110,7 @@ export function ActivityView({ entries: initial }: { entries: ActivityEntry[] })
           <div className="space-y-8">
             {Array.from(groups.entries()).map(([date, dayEntries]) => (
               <section key={date}>
-                <h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-4)] font-mono mb-3 px-1">
+                <h3 className="text-[10px] font-semibold  text-[var(--text-4)] font-mono mb-3 px-1">
                   {date}
                 </h3>
                 <div className="space-y-0.5">

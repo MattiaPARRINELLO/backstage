@@ -404,10 +404,10 @@ export default function CalendarPage() {
                       onClick={() => setEditForm((f) => ({ ...f, colorId: id }))}
                       title={c.name}
                       className={cn(
-                        "w-8 h-8 rounded-full border-2 transition-all duration-200",
+                        "w-8 h-8 rounded-full border-2 transition-colors duration-200",
                         editForm.colorId === id
                           ? "border-[var(--text-1)] scale-110"
-                          : "border-transparent hover:scale-110"
+                          : "border-transparent"
                       )}
                       style={{ backgroundColor: c.bg }}
                     />
@@ -416,10 +416,10 @@ export default function CalendarPage() {
                     onClick={() => setEditForm((f) => ({ ...f, colorId: "" }))}
                     title="Aucune couleur"
                     className={cn(
-                      "w-8 h-8 rounded-full border-2 border-dashed transition-all duration-200 flex items-center justify-center text-[9px]",
+                      "w-8 h-8 rounded-full border-2 border-dashed transition-colors duration-200 flex items-center justify-center text-[9px]",
                       !editForm.colorId
                         ? "border-[var(--text-1)] scale-110"
-                        : "border-[var(--border-2)] hover:scale-110"
+                        : "border-[var(--border-2)]"
                     )}
                     style={{ backgroundColor: "var(--surface-2)" }}
                   >

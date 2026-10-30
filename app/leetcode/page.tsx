@@ -184,7 +184,7 @@ export default function LeetcodePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="p-5 lg:col-span-2">
             <div className="flex items-baseline justify-between mb-4 gap-3">
-              <h3 className="text-[11px] font-mono uppercase tracking-[0.16em] text-[var(--text-3)]">
+              <h3 className="text-[11px] font-mono  text-[var(--text-3)]">
                 Activité — {WEEKS} dernières semaines
               </h3>
               <span className="text-[11px] font-mono text-[var(--text-3)] tabular-nums shrink-0">
@@ -219,7 +219,7 @@ export default function LeetcodePage() {
           </Card>
 
           <Card className="p-5">
-            <h3 className="text-[11px] font-mono uppercase tracking-[0.16em] text-[var(--text-3)] mb-4">
+            <h3 className="text-[11px] font-mono  text-[var(--text-3)] mb-4">
               Contest
             </h3>
             {contest ? (
@@ -266,7 +266,7 @@ export default function LeetcodePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-5">
-            <h3 className="text-[11px] font-mono uppercase tracking-[0.16em] text-[var(--text-3)] mb-4">
+            <h3 className="text-[11px] font-mono  text-[var(--text-3)] mb-4">
               Répartition par difficulté
             </h3>
             <div className="space-y-3">
@@ -292,7 +292,7 @@ export default function LeetcodePage() {
           </Card>
 
           <Card className="p-5">
-            <h3 className="text-[11px] font-mono uppercase tracking-[0.16em] text-[var(--text-3)] mb-4">
+            <h3 className="text-[11px] font-mono  text-[var(--text-3)] mb-4">
               Créneau du jour
             </h3>
             <p className="text-sm text-[var(--text-3)] leading-relaxed mb-3">
@@ -313,7 +313,7 @@ export default function LeetcodePage() {
 
         {exercises.length > 0 && (
           <Card className="p-5">
-            <h3 className="text-[11px] font-mono uppercase tracking-[0.16em] text-[var(--text-3)] mb-4">
+            <h3 className="text-[11px] font-mono  text-[var(--text-3)] mb-4">
               Exercices enregistrés
             </h3>
             <div className="space-y-2">

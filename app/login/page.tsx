@@ -14,10 +14,10 @@ type Phase = "checking" | "idle" | "scanning" | "verified" | "error";
 const RING_R = 95;
 
 const PHASE_STATUS: Record<Phase, string> = {
-  checking: "VÉRIFICATION DE TA CLÉ…",
-  idle: "SYSTÈME PRÊT — TOUCHE L'EMPREINTE",
-  scanning: "SCAN EN COURS…",
-  verified: "CLÉ VÉRIFIÉE — OUVERTURE…",
+  checking: "Vérification de la clé",
+  idle: "Système prêt — touche l'empreinte",
+  scanning: "Lecture en cours",
+  verified: "Clé vérifiée — ouverture",
   error: "",
 };
 
@@ -29,13 +29,6 @@ const PHASE_LIGHT: Record<Phase, string> = {
   error: "var(--danger)",
 };
 
-const TICKS = [
-  "top-0 left-0 border-t-2 border-l-2 rounded-tl",
-  "top-0 right-0 border-t-2 border-r-2 rounded-tr",
-  "bottom-0 left-0 border-b-2 border-l-2 rounded-bl",
-  "bottom-0 right-0 border-b-2 border-r-2 rounded-br",
-];
-
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,8 +39,6 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [verified, setVerified] = useState(false);
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const burstAnchor = useRef<HTMLButtonElement | null>(null);
-  const [burstOrigin, setBurstOrigin] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(
     () => () => {
@@ -89,17 +80,9 @@ function LoginForm() {
 
   const completeAuth = useCallback(() => {
     setVerified(true);
-    setBurstOrigin(null);
-    if (burstAnchor.current) {
-      const rect = burstAnchor.current.getBoundingClientRect();
-      setBurstOrigin({
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-      });
-    }
     redirectTimer.current = setTimeout(() => {
       router.replace("/chat");
-    }, 1500);
+    }, 900);
   }, [router]);
 
   async function handleRegister() {
@@ -184,38 +167,25 @@ function LoginForm() {
       : "Se connecter avec Face ID / Touch ID";
 
   return (
-    <div className="relative z-10 flex min-h-screen items-center justify-center px-4 overflow-hidden">
-      {/* Repères de tirage */}
-      <div className="fixed inset-4 pointer-events-none z-0" aria-hidden>
-        {TICKS.map((tick) => (
-          <span
-            key={tick}
-            className={`login-tick absolute w-3.5 h-3.5 border-[var(--border-3)] ${tick}`}
-          />
-        ))}
-      </div>
-
+    <div className="relative z-10 flex min-h-screen items-center justify-center px-4">
       <div className="login-load relative z-10 flex flex-col items-center w-full max-w-sm text-center">
         {/* En-tête */}
-        <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-[var(--text-4)]">
-          — Accès privé —
-        </p>
-        <h1 className="mt-4 font-mono font-black tracking-[0.28em] text-[17px] gradient-text-ai">
+        <p className="text-[11px] font-mono text-[var(--text-3)]">Accès privé</p>
+        <h1 className="mt-3 font-editorial text-[40px] leading-none text-[var(--text-1)]">
           BACKSTAGE
         </h1>
-        <p className="mt-2.5 text-[12.5px] leading-relaxed text-[var(--text-3)]">
+        <p className="mt-3 text-[13px] leading-relaxed text-[var(--text-3)]">
           Ton visage, ta clé. Aucun mot de passe à retenir.
         </p>
 
-        {/* L'anneau biométrique — la signature */}
+        {/* L'anneau biométrique — le seul moment lumineux de l'écran */}
         <button
           type="button"
-          ref={burstAnchor}
           aria-label={label}
           onClick={() => (needsRegistration ? handleRegister() : handleAuthenticate())}
           disabled={isBusy || needsRegistration === null}
           data-phase={phase}
-          className="login-ring relative mt-12 w-48 h-48 rounded-full disabled:cursor-not-allowed hover:scale-[1.03] active:scale-95 transition-transform duration-300"
+          className="login-ring relative mt-10 w-44 h-44 rounded-full disabled:cursor-not-allowed transition-colors duration-200"
         >
           <svg viewBox="0 0 200 200" className="w-full h-full" aria-hidden>
             <circle
@@ -223,9 +193,9 @@ function LoginForm() {
               cy="100"
               r={RING_R}
               fill="none"
-              strokeWidth="1.5"
+              strokeWidth="1"
               stroke="currentColor"
-              opacity="0.12"
+              opacity="0.14"
             />
             <circle
               cx="100"
@@ -239,9 +209,6 @@ function LoginForm() {
             />
           </svg>
 
-          <span className="login-scan-beam" aria-hidden />
-          <span className="login-shockwave" aria-hidden />
-
           <span className="absolute inset-0 flex items-center justify-center">
             <span className="login-fingerprint">
               <Fingerprint className="w-11 h-11" strokeWidth={1.25} />
@@ -252,25 +219,10 @@ function LoginForm() {
           </span>
         </button>
 
-        {/* Explosion d'accès — ancre au centre de l'anneau (hors du bouton :
-            un transform sur l'ancêtre casserait le position: fixed) */}
-        {burstOrigin && (
-          <span
-            className="login-burst"
-            style={{ top: burstOrigin.y, left: burstOrigin.x }}
-            aria-hidden
-          >
-            <span className="login-burst-flash" />
-            <span className="login-burst-ring" />
-            <span className="login-burst-ring" />
-            <span className="login-burst-ring" />
-          </span>
-        )}
-
         {/* Ligne de statut */}
-        <div className="mt-9 min-h-[22px] flex items-center justify-center gap-2.5 px-4">
+        <div className="mt-8 min-h-[22px] flex items-center justify-center gap-2.5 px-4">
           <span
-            className="w-1.5 h-1.5 shrink-0 transition-colors duration-300"
+            className="w-1.5 h-1.5 shrink-0 rounded-full transition-colors duration-300"
             style={{ backgroundColor: PHASE_LIGHT[phase] }}
             aria-hidden
           />
@@ -281,12 +233,10 @@ function LoginForm() {
             </span>
           ) : (
             <span
-              className={`text-[10.5px] font-mono uppercase tracking-[0.2em] ${
+              className={`text-[12px] ${
                 phase === "scanning" || phase === "verified"
                   ? "text-[var(--accent)]"
-                  : phase === "checking"
-                    ? "text-[var(--text-4)]"
-                    : "text-[var(--text-3)]"
+                  : "text-[var(--text-3)]"
               }`}
             >
               {PHASE_STATUS[phase]}
@@ -294,32 +244,20 @@ function LoginForm() {
           )}
         </div>
 
-        {phase === "idle" && (
-          <p className="mt-2 text-[10px] font-mono uppercase tracking-[0.18em] text-[var(--text-4)] fade-in">
-            Face ID · Touch ID · Clé de sécurité
-          </p>
-        )}
-
-        {/* Action secondaire */}
-        <button
-          type="button"
-          onClick={() => (needsRegistration ? handleRegister() : handleAuthenticate())}
-          disabled={isBusy || needsRegistration === null}
-          className="mt-8 px-7 py-3 border border-[var(--border-2)] text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--text-2)] hover:border-[var(--border-3)] hover:text-[var(--text-1)] hover:border-[var(--warm)]/60 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {isBusy ? (
+        <p className="mt-2 text-[11px] font-mono text-[var(--text-4)]">
+          {isBusy && !verified ? (
             <span className="inline-flex items-center gap-2">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              {verified ? "Ouverture…" : label}
+              {label}
             </span>
           ) : (
-            label
+            "Face ID · Touch ID · Clé de sécurité"
           )}
-        </button>
+        </p>
 
-        <p className="text-[9.5px] text-[var(--text-4)] mt-10 text-center font-mono uppercase tracking-[0.2em]">
-          <ShieldCheck className="w-3 h-3 inline-block mr-1.5 -mt-0.5" />
-          Clé d&apos;accès WebAuthn · Sans mot de passe
+        <p className="text-[11px] text-[var(--text-4)] mt-12 text-center">
+          <ShieldCheck className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
+          Clé d&apos;accès WebAuthn
         </p>
       </div>
     </div>

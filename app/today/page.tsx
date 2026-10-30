@@ -34,7 +34,7 @@ function SectionTitle({
 }) {
   return (
     <div className="flex items-center justify-between mb-3">
-      <h2 className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.18em] text-[var(--text-3)]">
+      <h2 className="flex items-center gap-2 text-[11px] font-mono  text-[var(--text-3)]">
         <span className="text-[var(--accent)]">{icon}</span>
         {children}
       </h2>

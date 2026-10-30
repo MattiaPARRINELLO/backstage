@@ -158,24 +158,24 @@ export function DemoCallsView({ initialCalls }: { initialCalls: DemoCallEntry[] 
                         <Meta label="Referer" value={call.referer} />
                       </div>
                       <div>
-                        <p className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--text-4)]"><Activity className="h-3.5 w-3.5" /> Question reçue</p>
+                        <p className="mb-2 flex items-center gap-2 font-mono text-[10px]  text-[var(--text-4)]"><Activity className="h-3.5 w-3.5" /> Question reçue</p>
                         <pre className="whitespace-pre-wrap rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)]/60 p-3 text-[12px] leading-relaxed text-[var(--text-1)]">{call.input ?? "—"}</pre>
                       </div>
                       {call.response && (
                         <div>
-                          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--text-4)]">Réponse IA</p>
+                          <p className="mb-2 font-mono text-[10px]  text-[var(--text-4)]">Réponse IA</p>
                           <pre className="whitespace-pre-wrap rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)]/60 p-3 text-[12px] leading-relaxed text-[var(--text-1)]">{call.response}</pre>
                         </div>
                       )}
                       {call.error && (
                         <div className="rounded-lg border border-[var(--danger)]/25 bg-[var(--danger)]/8 p-3 text-[12px] text-[var(--danger)]">
-                          <p className="mb-1 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em]"><ShieldAlert className="h-3.5 w-3.5" /> Erreur</p>
+                          <p className="mb-1 flex items-center gap-2 font-mono text-[10px] "><ShieldAlert className="h-3.5 w-3.5" /> Erreur</p>
                           {call.error}
                         </div>
                       )}
                       {call.sources.length > 0 && (
                         <div>
-                          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--text-4)]">Sources sélectionnées</p>
+                          <p className="mb-2 font-mono text-[10px]  text-[var(--text-4)]">Sources sélectionnées</p>
                           <div className="flex flex-wrap gap-2">
                             {call.sources.map((source) => <span key={`${source.kind}-${source.title}`} className="rounded-md border border-[var(--border-1)] bg-[var(--surface-2)] px-2 py-1 text-[10px] text-[var(--text-2)]">{source.kind} · {source.title}</span>)}
                           </div>
@@ -196,7 +196,7 @@ export function DemoCallsView({ initialCalls }: { initialCalls: DemoCallEntry[] 
 function Meta({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="min-w-0">
-      <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--text-4)]">{label}</p>
+      <p className="font-mono text-[9px]  text-[var(--text-4)]">{label}</p>
       <p className={cn("mt-1 truncate text-[11px] text-[var(--text-2)]", mono && "font-mono")} title={value}>{value}</p>
     </div>
   );

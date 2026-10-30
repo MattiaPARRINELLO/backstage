@@ -24,10 +24,10 @@ export function AccentPicker() {
           onClick={() => apply(color)}
           title={name}
           className={cn(
-            "w-7 h-7 rounded-full border transition-all duration-200",
+            "w-7 h-7 rounded-full border transition-colors duration-200",
             current === color
               ? "border-[var(--text-1)] scale-110 ring-2 ring-[var(--accent)]/30"
-              : "border-[var(--border-2)] hover:scale-110"
+              : "border-[var(--border-2)]"
           )}
           style={{ backgroundColor: color }}
           aria-label={name}

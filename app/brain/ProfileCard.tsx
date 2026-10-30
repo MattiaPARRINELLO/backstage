@@ -11,7 +11,7 @@ export function ProfileCard({ profile }: { profile: MemoryData["profile"] }) {
           {profile.name.slice(0, 1).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-3)] font-mono">Profil</p>
+          <p className="text-[10px]  text-[var(--text-3)] font-mono">Profil</p>
           <h3 className="text-[15px] font-medium text-[var(--text-1)] mt-0.5">{profile.name}</h3>
           {profile.preferences.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2.5">

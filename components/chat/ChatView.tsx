@@ -720,7 +720,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
               </a>
               <button
                 onClick={() => void acceptConsent()}
-                className="px-3.5 py-2 rounded-lg bg-[var(--accent)] text-[#0a0a0b] font-medium text-[12px] hover:brightness-110 active:brightness-95 transition-all duration-200"
+                className="px-3.5 py-2 rounded-lg bg-[var(--accent)] text-[#0a0a0b] font-medium text-[12px] hover:brightness-110 active:brightness-95 transition-colors duration-200"
               >
                 J&apos;accepte
               </button>

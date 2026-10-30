@@ -338,11 +338,7 @@ export function HomeHero({
           manger la hauteur utile. Le pivot du balancement est le bord haut de la
           boîte, c'est-à-dire exactement cette ligne de coupe. */}
       <div className="home-rise relative flex justify-center -mt-9 sm:mt-0">
-        <div
-          className="home-halo absolute top-16 w-44 h-44 rounded-full bg-[var(--accent)]/10 blur-[64px]"
-          aria-hidden
-        />
-        <div className="home-swing relative w-[176px] sm:w-[240px]">
+        <div className="relative w-[176px] sm:w-[240px]">
           <Image
             src="/backstage-logo.png"
             alt="BACKSTAGE"
@@ -357,18 +353,15 @@ export function HomeHero({
       </div>
 
       <p
-        className="home-rise mt-7 flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--text-3)]"
+        className="home-rise mt-7 flex items-center gap-2 text-[10px] font-mono  text-[var(--text-3)]"
         style={{ animationDelay: "60ms" }}
       >
-        <span className="relative flex w-1.5 h-1.5">
-          <span className="absolute inset-0 rounded-full bg-[var(--accent)] animate-pulse-dot" />
-          <span className="relative w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
-        </span>
+        <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
         {eyebrow || "Backstage"}
       </p>
 
       <h1
-        className="home-rise mt-3.5 text-[26px] sm:text-[34px] font-display font-bold tracking-tight text-[var(--text-1)] text-balance"
+        className="home-rise mt-3 text-[32px] sm:text-[42px] font-editorial leading-[1.05] text-[var(--text-1)] text-balance"
         style={{ animationDelay: "110ms" }}
       >
         {now > 0 ? (
@@ -396,12 +389,12 @@ export function HomeHero({
 
       {focus && (
         <div
-          className="home-rise home-sheen mt-8 w-full max-w-lg text-left"
+          className="home-rise mt-8 w-full max-w-lg text-left"
           style={{ animationDelay: "220ms" }}
         >
           <div
             className={cn(
-              "relative flex items-start gap-3.5 rounded-2xl border border-[var(--border-2)] bg-[var(--surface-1)]/70 backdrop-blur px-4 py-3.5 overflow-hidden",
+              "relative flex items-start gap-3.5 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3.5 overflow-hidden",
               focus.live && "home-glow"
             )}
           >
@@ -410,7 +403,7 @@ export function HomeHero({
               aria-hidden
             />
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.16em] text-[var(--text-3)]">
+              <p className="flex items-center gap-2 text-[10px] font-mono  text-[var(--text-3)]">
                 <span className={focus.live ? TONE_TEXT.danger : TONE_TEXT.accent}>
                   {focus.live
                     ? "En cours"
@@ -462,13 +455,13 @@ export function HomeHero({
             const content = (
               <>
                 <c.icon className={cn("w-3 h-3 shrink-0", TONE_TEXT[c.tone])} />
-                <span className="text-[var(--text-2)] font-mono text-[10px] uppercase tracking-[0.12em]">
+                <span className="text-[var(--text-2)] font-mono text-[10px] ">
                   {c.label}
                 </span>
               </>
             );
             const cls =
-              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[var(--border-1)] bg-[var(--surface-1)]/60 backdrop-blur transition-colors duration-200";
+              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[var(--border-1)] bg-[var(--surface-1)] transition-colors duration-200";
             return c.href ? (
               <Link key={c.label} href={c.href} className={cn(cls, "hover:border-[var(--border-3)]")}>
                 {content}
@@ -488,7 +481,7 @@ export function HomeHero({
         style={{ animationDelay: "330ms" }}
       >
         <div className="flex items-center gap-3 mb-3 px-0.5">
-          <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--text-4)]">
+          <span className="text-[10px] font-mono  text-[var(--text-4)]">
             Raccourcis
           </span>
           <span className="flex-1 h-px bg-[var(--border-1)]" />
@@ -499,11 +492,11 @@ export function HomeHero({
               key={s.label}
               onClick={() => void onPrompt(s.label)}
               disabled={disabled}
-              className="group relative flex items-start gap-3 px-4 py-3.5 text-left text-[13px] text-[var(--text-2)] bg-[var(--surface-1)] border border-[var(--border-1)] rounded-xl hover:border-[var(--border-3)] hover:bg-[var(--surface-2)] hover:text-[var(--text-1)] transition-all duration-200 disabled:opacity-40"
+              className="group relative flex items-start gap-3 px-4 py-3.5 text-left text-[13px] text-[var(--text-2)] bg-[var(--surface-1)] border border-[var(--border-1)] rounded-xl hover:border-[var(--border-3)] hover:bg-[var(--surface-2)] hover:text-[var(--text-1)] transition-colors duration-200 disabled:opacity-40"
             >
               <s.icon className="w-4 h-4 shrink-0 mt-0.5 text-[var(--text-3)] group-hover:text-[var(--accent)] transition-colors duration-200" />
               <span className="leading-relaxed line-clamp-2">{s.label}</span>
-              <ArrowUpRight className="w-3.5 h-3.5 shrink-0 mt-0.5 ml-auto self-center text-[var(--text-4)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
+              <ArrowUpRight className="w-3.5 h-3.5 shrink-0 mt-0.5 ml-auto self-center text-[var(--text-4)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-colors duration-200" />
             </button>
           ))}
         </div>

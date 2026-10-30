@@ -32,37 +32,44 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), var(--font-geist-mono), ui-monospace, monospace;
   --font-display: var(--font-display), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-editorial: var(--font-serif), ui-serif, Georgia, serif;
 }
 
+/* Direction (partagée avec la landing) : la régie d'une salle, la nuit.
+   Ramp neutre chaude (rideau, flight case), une seule lumière de travail
+   ambre, les heures et les chiffres en mono. Rien ne brille, rien ne flotte. */
 :root {
-  --background: #0a0a0b;
-  --foreground: #f5f5f4;
+  --background: #0d0c0b;
+  --foreground: #efe9de;
 
-  --surface-1: #0e0e11;
-  --surface-2: #141418;
-  --surface-3: #1a1a20;
+  --surface-1: #121110;
+  --surface-2: #191715;
+  --surface-3: #201d1a;
 
-  --border-1: #1d1d22;
-  --border-2: #26262d;
-  --border-3: #34343c;
+  --border-1: rgba(239, 233, 222, 0.08);
+  --border-2: rgba(239, 233, 222, 0.13);
+  --border-3: rgba(239, 233, 222, 0.2);
 
-  --text-1: #f5f5f4;
-  --text-2: #a1a1aa;
-  --text-3: #8b8b94;
-  --text-4: #787880;
+  --text-1: #efe9de;
+  --text-2: #aba49a;
+  --text-3: #8a8279;
+  --text-4: #6f6a63;
 
-  --accent: #a5b4fc;
-  --accent-soft: #c7d2fe;
-  --warm: #fbbf24;
-  --success: #4ade80;
-  --danger: #f87171;
-  --violet-deep: #1e1b4b;
+  --accent: #e0a45e;
+  --accent-soft: #f0c08a;
+  --warm: #e0a45e;
+  --success: #9bbf8a;
+  --danger: #d98878;
+  --violet-deep: #201d1a;
 
-  --accent-warm: #d4a373;
-  --accent-cool: #7aa2f7;
-  --accent-success: #9ece6a;
-  --ai-thinking: #bb9af7;
-  --ai-tool-call: #7dcfff;
+  /* Alias historiques : une seule lumière, pas de second accent froid. */
+  --accent-warm: #e0a45e;
+  --accent-cool: #c9b8a0;
+  --accent-success: #9bbf8a;
+  --ai-thinking: #c9b8a0;
+  --ai-tool-call: #c9b8a0;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * {
@@ -107,33 +114,12 @@ body {
   position: relative;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 60% 40% at 30% 0%, rgba(165, 180, 252, 0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 30% at 80% 100%, rgba(251, 191, 36, 0.025) 0%, transparent 60%);
-}
-
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.012) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 90%);
-}
+/* Aucun lavage de couleur ni trame décorative derrière le contenu : la lumière
+   vient des surfaces et de l'accent, jamais d'un halo radial. */
 
 ::selection {
-  background: rgba(165, 180, 252, 0.25);
-  color: #fafaf9;
+  background: rgba(224, 164, 94, 0.28);
+  color: #f6f1e8;
 }
 
 button,
@@ -163,13 +149,7 @@ textarea::placeholder {
   }
 
   .glass {
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.015) 0%,
-      rgba(255, 255, 255, 0.005) 100%
-    );
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--surface-2);
   }
 
   .surface-1 {
@@ -213,33 +193,14 @@ textarea::placeholder {
     box-shadow: 0 0 0 1px var(--accent);
   }
 
-  .gradient-aurora {
-    background: linear-gradient(135deg, #a5b4fc 0%, #c4b5fd 50%, #fbbf24 100%);
-  }
-
+  /* Plus de dégradé de teinte : un seul aplat ambre, lisible et calme. */
+  .gradient-aurora,
   .gradient-ai {
-    background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 100%);
+    background: var(--accent);
   }
 
   .gradient-text-ai {
-    background: linear-gradient(135deg, #a5b4fc 0%, #c4b5fd 50%, #fde68a 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  .dot-grid {
-    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0);
-    background-size: 16px 16px;
-  }
-
-  .dot-grid-row {
-    opacity: 0.05;
-    transition: opacity 600ms ease;
-  }
-
-  .dot-grid-row-on {
-    opacity: 0.5;
+    color: var(--accent);
   }
 
   .shimmer {

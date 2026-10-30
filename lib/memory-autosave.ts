@@ -14,6 +14,7 @@ import {
   touchMemoryFact,
 } from "./storage";
 import type { MemoryCategory, MemoryFact } from "./types";
+import { hasNewInformation } from "./memory-dedup";
 
 export interface ExtractedFact {
   content: string;
@@ -107,7 +108,9 @@ export async function persistExtractedFacts(facts: ExtractedFact[]): Promise<Mem
     if (fact.confidence < MIN_FACT_CONFIDENCE) continue;
 
     const existing = await findSimilarMemoryFacts(fact.content, fact.category);
-    if (existing) {
+    // Meme garde que les autres chemins d'ecriture : un fait qui apporte une
+    // entite absente du fait existant est un enrichissement, pas un doublon.
+    if (existing && !hasNewInformation(fact.content, existing.content)) {
       await touchMemoryFact(existing.id);
       saved.push(existing);
       continue;

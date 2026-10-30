@@ -3,6 +3,7 @@ import { z } from "zod";
 import { addMemoryFact, findSimilarMemoryFacts, logActivity } from "@/lib/storage";
 import { safeErrorMessage } from "@/lib/utils";
 import { requireSession } from "@/lib/session";
+import { hasNewInformation } from "@/lib/memory-dedup";
 
 const bodySchema = z.object({
   content: z.string().trim().min(1, "Le contenu est requis").max(500),
@@ -27,7 +28,9 @@ export async function POST(request: NextRequest) {
     const { content, category, confidence } = parsed.data;
 
     const existing = await findSimilarMemoryFacts(content, category);
-    if (existing) {
+    // Un fait enrichi (nom propre, chiffre, URL absent) n'est pas un doublon :
+    // le perdre ferait perdre l'information que le client voulait enregistrer.
+    if (existing && !hasNewInformation(content, existing.content)) {
       return NextResponse.json({ fact: existing, alreadyExisted: true });
     }
 

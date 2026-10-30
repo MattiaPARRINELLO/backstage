@@ -24,7 +24,13 @@ const ERROR_PATTERN =
 
 // Résultat nominal mais vide : la source répond, il n'y a simplement rien.
 // Ce n'est pas un échec, mais ce n'est pas un succès exploitable non plus.
-const EMPTY_PATTERN = /^(aucun|aucune|pas de|rien)\b/i;
+//
+// « Rien de nouveau / déjà en mémoire » en fait partie : un dédoublonnage ne
+// prouve pas que l'information demandée a été enregistrée. Classé en succès,
+// il laissait le modèle annoncer « c'est retenu » alors que rien n'avait été
+// écrit. En `empty`, la règle d'honnêteté (TOOL_HONESTY_RULE) s'applique.
+const EMPTY_PATTERN =
+  /^(aucun|aucune|pas de|rien|fait deja connu|deja connu|deja memorise|deja en memoire)\b/i;
 
 /**
  * Déduit le statut d'un texte de résultat. `blocked` est détecté avant tout

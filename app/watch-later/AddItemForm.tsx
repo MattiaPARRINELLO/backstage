@@ -27,7 +27,7 @@ export function AddItemForm({
 
   return (
     <div className="mb-6 p-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 fade-in">
-      <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-mono mb-3">
+      <p className="text-[10px]  text-[var(--accent)] font-mono mb-3">
         Nouveau lien
       </p>
       <div className="space-y-2.5">
@@ -60,7 +60,7 @@ export function AddItemForm({
                 key={c}
                 onClick={() => setCategory(c)}
                 className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider border transition-colors",
+                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono  border transition-colors",
                   category === c
                     ? "border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--accent)]/10"
                     : "border-[var(--border-1)] text-[var(--text-3)] hover:text-[var(--text-1)]"

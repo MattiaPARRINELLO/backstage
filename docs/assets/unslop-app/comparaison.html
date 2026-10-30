@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>BACKSTAGE — avant / après (captures réelles)</title>
+<style>
+  :root { --bg:#0d0c0b; --s1:#121110; --line:rgba(239,233,222,.10); --ink:#efe9de; --ink2:#aba49a; --ink3:#8a8279; --amber:#e0a45e; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:Inter,ui-sans-serif,system-ui,sans-serif; padding:56px 40px 80px; }
+  main { max-width:1200px; margin:0 auto; }
+  h1 { font:400 44px/1.05 Georgia,"Times New Roman",serif; margin:0 0 10px; }
+  p.lead { color:var(--ink2); font-size:14px; margin:0 0 40px; max-width:640px; line-height:1.65; }
+  h2 { font-size:13px; font-weight:500; color:var(--ink); margin:48px 0 12px; }
+  .pair { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  figure { margin:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--s1); }
+  figure img { display:block; width:100%; height:auto; }
+  figcaption { padding:9px 12px; font:500 11px/1.4 ui-monospace,monospace; color:var(--ink3); border-top:1px solid var(--line); }
+  figcaption b { color:var(--ink2); font-weight:500; }
+  .note { color:var(--ink3); font-size:12px; margin-top:10px; line-height:1.6; }
+  .tag { display:inline-block; padding:3px 8px; border-radius:999px; border:1px solid var(--line); color:var(--amber); font:500 10px/1.4 ui-monospace,monospace; }
+</style>
+</head>
+<body>
+<main>
+  <span class="tag">captures réelles · 1440×900</span>
+  <h1 style="margin-top:14px">Avant / après</h1>
+  <p class="lead">
+    Même application, même données, même largeur de fenêtre. « Avant » = <code>main</code> avant la refonte,
+    « après » = branche <code>feat/unslop-rest-of-site</code>. Aucune maquette.
+  </p>
+
+  <h2>Console IA</h2>
+  <div class="pair">
+    <figure><img src="before-chat.png" alt="Console avant"><figcaption><b>Avant</b> — accent violet, lavage radial, libellés en majuscules espacées</figcaption></figure>
+    <figure><img src="after-chat.png" alt="Console après"><figcaption><b>Après</b> — ramp chaude, accent ambre, salutation en Instrument Serif</figcaption></figure>
+  </div>
+
+  <h2>Rappels</h2>
+  <div class="pair">
+    <figure><img src="before-reminders.png" alt="Rappels avant"><figcaption><b>Avant</b> — boutons indigo, titres 800, eyebrows en capitales</figcaption></figure>
+    <figure><img src="after-reminders.png" alt="Rappels après"><figcaption><b>Après</b> — un seul accent ambre, casse normale, hiérarchie par la taille</figcaption></figure>
+  </div>
+
+  <h2>Connexion</h2>
+  <div class="pair">
+    <figure><img src="before-login.png" alt="Connexion avant"><figcaption><b>Avant</b> — wordmark bleuté, tout en majuscules, deux actions</figcaption></figure>
+    <figure><img src="after-login.png" alt="Connexion après"><figcaption><b>Après</b> — wordmark éditorial, une seule action, statut en casse normale</figcaption></figure>
+  </div>
+
+  <h2>Réglages</h2>
+  <div class="pair">
+    <figure><img src="before-settings.png" alt="Réglages avant"><figcaption><b>Avant</b></figcaption></figure>
+    <figure><img src="after-settings.png" alt="Réglages après"><figcaption><b>Après</b></figcaption></figure>
+  </div>
+
+  <h2>Photos</h2>
+  <div class="pair">
+    <figure><img src="before-photos.png" alt="Photos avant"><figcaption><b>Avant</b></figcaption></figure>
+    <figure><img src="after-photos.png" alt="Photos après"><figcaption><b>Après</b></figcaption></figure>
+  </div>
+
+  <h2>Aujourd'hui</h2>
+  <div class="pair">
+    <figure><img src="before-today.png" alt="Aujourd'hui avant"><figcaption><b>Avant</b></figcaption></figure>
+    <figure><img src="after-today.png" alt="Aujourd'hui après"><figcaption><b>Après</b></figcaption></figure>
+  </div>
+
+  <p class="note">
+    Les captures ont été prises sur deux serveurs de développement lancés côte à côte, avec la même session et les mêmes
+    données locales. L'indicateur de développement Next a été retiré des images.
+  </p>
+</main>
+</body>
+</html>

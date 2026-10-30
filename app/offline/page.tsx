@@ -9,7 +9,7 @@ export default function OfflinePage() {
   return (
     <div className="min-h-dvh flex items-center justify-center bg-[var(--background)] px-6 pb-[env(safe-area-inset-bottom)]">
       <div className="text-center max-w-sm">
-        <div className="text-4xl mb-6 font-mono font-black tracking-tight text-[var(--accent)]">
+        <div className="text-4xl mb-6 font-mono font-medium tracking-tight text-[var(--accent)]">
           BACKSTAGE
         </div>
         <div className="w-12 h-px bg-[var(--border-2)] mx-auto mb-6" />

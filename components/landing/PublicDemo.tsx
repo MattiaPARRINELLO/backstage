@@ -72,16 +72,12 @@ export function PublicDemo() {
   };
 
   return (
-    <section id="demo" className="pubdemo relative py-24 sm:py-32">
-      <div className="mx-auto max-w-3xl px-5 sm:px-8">
-        <div className="text-center">
-          <p className="section-label">· Démonstration ·</p>
-          <h2 className="mt-4 text-balance font-display text-3xl font-bold tracking-tight text-[#f5f3f0] sm:text-4xl">
-            {PUBLIC_DEMO.title}
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-[#a5a7b3]">
-            {PUBLIC_DEMO.description}
-          </p>
+    <section id="demo" className="section pubdemo relative">
+      <div className="container container--narrow">
+        <div className="section__head">
+          <p className="section-label">04 — Démonstration</p>
+          <h2 className="section-title">{PUBLIC_DEMO.title}</h2>
+          <p className="section-lead">{PUBLIC_DEMO.description}</p>
         </div>
 
         <form onSubmit={onSubmit} className="pubdemo__field mt-10">
@@ -115,7 +111,8 @@ export function PublicDemo() {
         </form>
 
         {/* Suggestions */}
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <span className="section-label">Ou demandez</span>
           {PUBLIC_DEMO.suggestions.map((suggestion) => (
             <button
               key={suggestion}
@@ -134,7 +131,7 @@ export function PublicDemo() {
 
         {/* Erreur */}
         {status === "error" && (
-          <p className="pubdemo__error mt-6 text-center" role="alert">
+          <p className="pubdemo__error mt-6" role="alert">
             {error}
           </p>
         )}
@@ -142,16 +139,16 @@ export function PublicDemo() {
         {/* Réponse */}
         {reply && (
           <div ref={resultRef} className="pubdemo__result mt-8" aria-live="polite">
-            <p className="pubdemo__question font-mono">{question}</p>
-            <p className="pubdemo__reply mt-4">{reply}</p>
+            <p className="pubdemo__question">{question}</p>
+            <p className="pubdemo__reply">{reply}</p>
 
             {sources.length > 0 && (
-              <div className="pubdemo__sources mt-6">
-                <p className="pubdemo__sources-label font-mono">{PUBLIC_DEMO.contextLabel}</p>
+              <div className="mt-6">
+                <p className="pubdemo__sources-label">{PUBLIC_DEMO.contextLabel}</p>
                 <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
                   {sources.map((source) => (
                     <li key={source.title} className="pubdemo__source">
-                      <span className="pubdemo__source-kind font-mono">{source.kind}</span>
+                      <span className="pubdemo__source-kind">{source.kind}</span>
                       <p className="pubdemo__source-title">{source.title}</p>
                       <p className="pubdemo__source-detail">{source.detail}</p>
                     </li>
@@ -162,24 +159,17 @@ export function PublicDemo() {
           </div>
         )}
 
-        <p className="pubdemo__disclaimer mt-10 text-center font-mono" role="note">
+        <p className="pubdemo__disclaimer mt-8" role="note">
           {PUBLIC_DEMO.disclaimer}
         </p>
 
         {/* Après la démonstration */}
         {status === "done" && (
-          <div className="pubdemo__after mt-14 text-center">
-            <h3 className="font-display text-2xl font-bold tracking-tight text-[#f5f3f0]">
-              {PUBLIC_DEMO.after.title}
-            </h3>
-            <p className="mx-auto mt-3 max-w-md text-[14px] leading-relaxed text-[#a5a7b3]">
-              {PUBLIC_DEMO.after.text}
-            </p>
-            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <a
-                href="/login"
-                className="cta-secondary cta-secondary--solid"
-              >
+          <div className="pubdemo__after mt-12">
+            <h3 className="section-title">{PUBLIC_DEMO.after.title}</h3>
+            <p className="section-lead mt-3">{PUBLIC_DEMO.after.text}</p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <a href="/login" className="cta-primary">
                 {PUBLIC_DEMO.after.loginCta}
               </a>
               <a
@@ -191,9 +181,7 @@ export function PublicDemo() {
                 {PUBLIC_DEMO.after.githubCta}
               </a>
             </div>
-            <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.16em] text-[#6b6d7a]">
-              {PUBLIC_DEMO.after.note}
-            </p>
+            <p className="pubdemo__disclaimer mt-5">{PUBLIC_DEMO.after.note}</p>
           </div>
         )}
       </div>

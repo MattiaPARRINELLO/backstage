@@ -216,7 +216,7 @@ export default function RemindersPage() {
                               : "border-[var(--border-3)] bg-[var(--surface-2)]"
                         )}
                       />
-                      <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-2)] font-mono capitalize">
+                      <h2 className="text-[11px] font-semibold  text-[var(--text-2)] font-mono capitalize">
                         {bucket.label}
                       </h2>
                       <span className="text-[10px] text-[var(--text-4)] font-mono">
@@ -252,7 +252,7 @@ export default function RemindersPage() {
                 <section className="mt-12">
                   <div className="flex items-center gap-2 mb-3">
                     <Check className="w-3.5 h-3.5 text-[var(--success)]" />
-                    <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-3)] font-mono">
+                    <h2 className="text-[10px] font-semibold  text-[var(--text-3)] font-mono">
                       Terminés
                     </h2>
                     <span className="text-[10px] text-[var(--text-4)] font-mono">{completed.length}</span>

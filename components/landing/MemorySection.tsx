@@ -4,53 +4,47 @@ import { MEMORY } from "@/app/landing-content";
 
 /**
  * Section mémoire — se souvenir, relier, garder le contrôle.
- * Les trois principes correspondent aux capacités réelles du
- * produit (faits mémorisés listés, éditables, supprimables).
+ * Trois principes en liste numérotée, puis l'aperçu de la mémoire
+ * réelle : chaque fait est éditable et supprimable.
  */
 export function MemorySection() {
   return (
-    <section id="memoire" className="memory relative py-24 sm:py-32">
-      <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="max-w-2xl">
-          <p className="section-label">· Mémoire ·</p>
-          <h2 className="mt-4 text-balance font-display text-3xl font-bold tracking-tight text-[#f5f3f0] sm:text-5xl">
-            {MEMORY.title}
-          </h2>
-          <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-[#a5a7b3]">
-            {MEMORY.description}
-          </p>
+    <section id="memoire" className="section section--deep memory relative">
+      <div className="container">
+        <div className="section__head">
+          <p className="section-label">02 — Mémoire</p>
+          <h2 className="section-title">{MEMORY.title}</h2>
+          <p className="section-lead">{MEMORY.description}</p>
         </div>
 
-        <div className="mt-14 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.04] md:grid-cols-3">
+        <div className="principle-list">
           {MEMORY.principles.map((principle) => (
-            <article key={principle.n} className="memory__card">
-              <span className="memory__card-n font-mono">{principle.n}</span>
-              <h3 className="memory__card-title">{principle.title}</h3>
-              <p className="memory__card-desc">{principle.desc}</p>
+            <article key={principle.n} className="principle">
+              <span className="principle__n">{principle.n}</span>
+              <div>
+                <h3 className="principle__title">{principle.title}</h3>
+                <p className="principle__desc">{principle.desc}</p>
+              </div>
             </article>
           ))}
         </div>
 
-        {/* Aperçu mémoire — interface fictive illustrative */}
-        <div className="memory__preview mx-auto mt-12 max-w-2xl" aria-hidden="true">
-          <div className="memory__preview-bar">
-            <span className="memory__preview-dot" />
-            <span className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-[#6b6d7c]">
-              Mémoire — aperçu illustratif
-            </span>
+        {/* Aperçu mémoire — données fictives, signalées comme telles */}
+        <div className="memory__preview panel">
+          <div className="panel__bar">
+            <span>Mémoire — aperçu fictif</span>
+            <span>3 faits</span>
           </div>
-          <ul className="memory__preview-list">
+          <ul>
             {[
               { cat: "Contact", text: "Claire V. — attachée de presse, contact accréditations" },
               { cat: "Préférence", text: "Objectif lumineux privilégié en fosse" },
               { cat: "Projet", text: "Série « Scène 2025 » — livraison en cours" },
             ].map((fact) => (
-              <li key={fact.text} className="memory__fact">
-                <span className="memory__fact-cat font-mono">{fact.cat}</span>
-                <span className="memory__fact-text">{fact.text}</span>
-                <span className="memory__fact-actions font-mono" title="Chaque fait est éditable ou supprimable">
-                  éditer · supprimer
-                </span>
+              <li key={fact.text} className="panel__row">
+                <span className="panel__cat">{fact.cat}</span>
+                <span className="panel__text">{fact.text}</span>
+                <span className="panel__actions">modifier · supprimer</span>
               </li>
             ))}
           </ul>

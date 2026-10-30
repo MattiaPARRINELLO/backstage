@@ -22,7 +22,7 @@ function CategoryPicker({
           key={c}
           onClick={() => onSelect(c)}
           className={cn(
-            "px-2.5 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider border transition-colors",
+            "px-2.5 py-1 rounded-full text-[10px] font-mono  border transition-colors",
             selected === c
               ? "border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--accent)]/10"
               : "border-[var(--border-1)] text-[var(--text-3)] hover:text-[var(--text-1)]"
@@ -87,7 +87,7 @@ export function AddFactForm({
 
   return (
     <div className="mb-6 p-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 fade-in">
-      <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-mono mb-3">
+      <p className="text-[10px]  text-[var(--accent)] font-mono mb-3">
         Nouveau fait à mémoriser
       </p>
       <Textarea

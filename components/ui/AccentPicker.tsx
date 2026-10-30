@@ -6,7 +6,7 @@ import { ACCENT_PALETTE } from "./ThemeApplier";
 
 export function AccentPicker() {
   const [current, setCurrent] = useState(() =>
-    typeof window !== "undefined" ? localStorage.getItem("brain-accent") || "#a5b4fc" : "#a5b4fc"
+    typeof window !== "undefined" ? localStorage.getItem("brain-accent") || "#e0a45e" : "#e0a45e"
   );
 
   function apply(color: string) {
@@ -24,10 +24,10 @@ export function AccentPicker() {
           onClick={() => apply(color)}
           title={name}
           className={cn(
-            "w-7 h-7 rounded-full border transition-all duration-200",
+            "w-7 h-7 rounded-full border transition-colors duration-200",
             current === color
               ? "border-[var(--text-1)] scale-110 ring-2 ring-[var(--accent)]/30"
-              : "border-[var(--border-2)] hover:scale-110"
+              : "border-[var(--border-2)]"
           )}
           style={{ backgroundColor: color }}
           aria-label={name}

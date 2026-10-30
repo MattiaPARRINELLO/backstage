@@ -28,7 +28,7 @@ export function StatCard({
         <Icon className="w-4 h-4" />
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-3)] font-mono">
+        <p className="text-[10px]  text-[var(--text-3)] font-mono">
           {label}
         </p>
         <p className="text-[18px] font-semibold text-[var(--text-1)] leading-tight tabular-nums">

@@ -24,7 +24,7 @@ export function ReminderRow({
   return (
     <li
       className={cn(
-        "group flex items-start gap-3 p-4 rounded-xl border transition-all duration-200",
+        "group flex items-start gap-3 p-4 rounded-xl border transition-colors duration-200",
         reminder.status === "done"
           ? "border-[var(--border-1)] bg-[var(--surface-1)]/40"
           : overdue
@@ -35,7 +35,7 @@ export function ReminderRow({
       <button
         onClick={onToggle}
         className={cn(
-          "shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 mt-0.5",
+          "shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors duration-200 mt-0.5",
           reminder.status === "done"
             ? "bg-[var(--success)] border-[var(--success)] text-[#0a0a0b]"
             : "border-[var(--border-2)] hover:border-[var(--accent)]"
@@ -65,14 +65,14 @@ export function ReminderRow({
             {new Date(reminder.dueAt).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
           </span>
           {reminder.recurrence && (
-            <span className="text-[10px] text-[var(--text-3)] font-mono uppercase tracking-wider inline-flex items-center gap-1">
+            <span className="text-[10px] text-[var(--text-3)] font-mono  inline-flex items-center gap-1">
               <RotateCcw className="w-2.5 h-2.5" />
               {RECURRENCE_META[reminder.recurrence].label}
             </span>
           )}
           {msLinked && reminder.status === "pending" && !reminder.microsoftTaskId && (
             <span
-              className="text-[10px] text-[var(--text-3)] font-mono uppercase tracking-wider inline-flex items-center gap-1"
+              className="text-[10px] text-[var(--text-3)] font-mono  inline-flex items-center gap-1"
               title="Non synchronisé avec Microsoft To Do (sync échouée ou rappel créé avant la liaison)"
             >
               <CloudOff className="w-2.5 h-2.5" />

@@ -38,7 +38,7 @@ export function ReminderForm({
 
   return (
     <div className="mb-6 p-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 fade-in">
-      <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)] font-mono mb-3">
+      <p className="text-[10px]  text-[var(--accent)] font-mono mb-3">
         {initial ? "Modifier le rappel" : "Nouveau rappel"}
       </p>
       <div className="space-y-2.5">
@@ -60,7 +60,7 @@ export function ReminderForm({
         <div className="flex items-center gap-2">
           <label
             htmlFor="reminder-due"
-            className="text-[11px] text-[var(--text-3)] font-mono uppercase tracking-wider shrink-0"
+            className="text-[11px] text-[var(--text-3)] font-mono  shrink-0"
           >
             Échéance
           </label>
@@ -73,7 +73,7 @@ export function ReminderForm({
           />
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <label className="text-[11px] text-[var(--text-3)] font-mono uppercase tracking-wider shrink-0">
+          <label className="text-[11px] text-[var(--text-3)] font-mono  shrink-0">
             Récurrence
           </label>
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="Récurrence">
@@ -81,7 +81,7 @@ export function ReminderForm({
               type="button"
               onClick={() => setRecurrence(undefined)}
               className={cn(
-                "px-2.5 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider border transition-colors",
+                "px-2.5 py-1 rounded-full text-[10px] font-mono  border transition-colors",
                 !recurrence
                   ? "border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--accent)]/10"
                   : "border-[var(--border-1)] text-[var(--text-3)] hover:text-[var(--text-1)]"
@@ -95,7 +95,7 @@ export function ReminderForm({
                 type="button"
                 onClick={() => setRecurrence(r)}
                 className={cn(
-                  "px-2.5 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider border transition-colors",
+                  "px-2.5 py-1 rounded-full text-[10px] font-mono  border transition-colors",
                   recurrence === r
                     ? "border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--accent)]/10"
                     : "border-[var(--border-1)] text-[var(--text-3)] hover:text-[var(--text-1)]"

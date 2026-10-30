@@ -11,7 +11,7 @@ export default function GlobalError({
 }) {
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center px-6 text-center bg-[var(--background)]">
-      <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-[var(--accent)] mb-4">
+      <p className="text-[10px] font-mono  text-[var(--accent)] mb-4">
         BACKSTAGE
       </p>
       <h1 className="text-[22px] font-display font-bold text-[var(--text-1)] mb-3">
@@ -24,7 +24,7 @@ export default function GlobalError({
       </p>
       <button
         onClick={reset}
-        className="px-4 py-2 rounded-lg bg-[var(--accent)] text-[#0a0a0b] font-medium text-[12px] hover:brightness-110 active:brightness-95 transition-all duration-200"
+        className="px-4 py-2 rounded-lg bg-[var(--accent)] text-[#0a0a0b] font-medium text-[12px] hover:brightness-110 active:brightness-95 transition-colors duration-200"
       >
         Réessayer
       </button>

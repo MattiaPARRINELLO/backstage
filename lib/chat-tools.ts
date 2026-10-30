@@ -28,6 +28,7 @@ import {
   renderToolText,
   type ToolStatus,
 } from "@/lib/tool-result";
+import { hasNewInformation } from "@/lib/memory-dedup";
 import type { PhotoShootStatus, Accreditation } from "@/lib/types";
 import { invalidateServerCachePattern } from "@/lib/server-cache";
 import {
@@ -504,10 +505,17 @@ export async function executeTool(
       // Dédoublonnage : un fait déjà connu est renforcé, pas recréé. Même
       // logique que rememberFact et que l'extraction automatique, sinon le
       // modèle finit par saturer la mémoire de doublons.
+      //
+      // Mais un fait qui ajoute une entité (nom propre, chiffre, URL, pseudo)
+      // absente du fait existant n'est PAS un doublon : c'est un enrichissement,
+      // et le perdre fait mentir la mémoire (cf. `hasNewInformation`).
       const existing = await findSimilarMemoryFacts(content, category);
-      if (existing) {
+      if (existing && !hasNewInformation(content, existing.content)) {
         await touchMemoryFact(existing.id);
-        return `Fait deja connu, prioritise en memoire : ${existing.content}`;
+        // Volontairement pas « Fait memorise » : rien de nouveau n'a été écrit.
+        // Le statut `empty` qui en découle empêche le modèle d'annoncer que
+        // c'est retenu.
+        return `Rien de nouveau : deja en memoire -> ${existing.content}`;
       }
       const fact = await addMemoryFact(content, category, { source: "tool" });
       // Relecture : le fait est-il bien en mémoire ?

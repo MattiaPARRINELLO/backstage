@@ -191,7 +191,44 @@ describe("chat-tools — verification des ecritures", () => {
 
     expect(mockStorage.addMemoryFact).not.toHaveBeenCalled();
     expect(mockStorage.touchMemoryFact).toHaveBeenCalledWith("f1");
-    expect(out).toContain("deja connu");
+    // Rien de nouveau ecrit : le texte ne doit pas ressembler a un succes.
+    expect(out).toContain("deja en memoire");
+    expect(out).not.toContain("Fait memorise");
+  });
+
+  it("add_memory_fact enregistre un fait enrichi au lieu de le perdre dans le dedoublonnage", async () => {
+    // Cas reel : « retiens que je bosse avec Rapstar, mon portfolio c'est
+    // photo.mprnl.fr » ne doit pas etre absorbe par « Est photographe live &
+    // concert » sous pretexte que les deux parlent de photo.
+    mockStorage.findSimilarMemoryFacts.mockResolvedValue({
+      id: "f1",
+      content: "Est photographe live & concert",
+      category: "photo",
+      createdAt: "",
+    });
+    mockStorage.addMemoryFact.mockResolvedValue({
+      id: "f9",
+      content: "Collaboré avec Rapstar (@rapstar_france, ~21k abonnés)",
+      category: "photo",
+      createdAt: "",
+    });
+    mockStorage.getMemory.mockResolvedValue({
+      facts: [{ id: "f9" }],
+      relationships: [],
+      profile: { name: "Mattia", preferences: [] },
+    });
+
+    const out = await executeTool("add_memory_fact", {
+      content: "Collaboré avec Rapstar (@rapstar_france, ~21k abonnés)",
+      category: "photo",
+    });
+
+    expect(mockStorage.addMemoryFact).toHaveBeenCalledWith(
+      "Collaboré avec Rapstar (@rapstar_france, ~21k abonnés)",
+      "photo",
+      { source: "tool" }
+    );
+    expect(out).toContain("Fait memorise");
   });
 
   it("add_memory_fact cree le fait avec la source tool", async () => {

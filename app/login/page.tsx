@@ -179,13 +179,10 @@ function LoginForm() {
         </p>
 
         {/* L'anneau biométrique — le seul moment lumineux de l'écran */}
-        <button
-          type="button"
-          aria-label={label}
-          onClick={() => (needsRegistration ? handleRegister() : handleAuthenticate())}
-          disabled={isBusy || needsRegistration === null}
+        <div
+          aria-hidden="true"
           data-phase={phase}
-          className="login-ring relative mt-10 w-44 h-44 rounded-full disabled:cursor-not-allowed transition-colors duration-200"
+          className="login-ring relative mt-10 w-44 h-44 rounded-full transition-colors duration-200"
         >
           <svg viewBox="0 0 200 200" className="w-full h-full" aria-hidden>
             <circle
@@ -217,7 +214,7 @@ function LoginForm() {
               <Check className="w-10 h-10" strokeWidth={1.5} />
             </span>
           </span>
-        </button>
+        </div>
 
         {/* Ligne de statut */}
         <div className="mt-8 min-h-[22px] flex items-center justify-center gap-2.5 px-4">
@@ -244,15 +241,24 @@ function LoginForm() {
           )}
         </div>
 
-        <p className="mt-2 text-[11px] font-mono text-[var(--text-4)]">
+        <button
+          type="button"
+          onClick={() => (needsRegistration ? handleRegister() : handleAuthenticate())}
+          disabled={isBusy || needsRegistration === null}
+          className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-6 text-[13px] font-medium text-[#17110a] transition-colors duration-150 hover:bg-[#ebb275] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[var(--accent)]"
+        >
           {isBusy && !verified ? (
-            <span className="inline-flex items-center gap-2">
+            <>
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
               {label}
-            </span>
+            </>
           ) : (
-            "Face ID · Touch ID · Clé de sécurité"
+            label
           )}
+        </button>
+
+        <p className="mt-3 text-[11px] font-mono text-[var(--text-4)]">
+          Face ID · Touch ID · Clé de sécurité
         </p>
 
         <p className="text-[11px] text-[var(--text-4)] mt-12 text-center">

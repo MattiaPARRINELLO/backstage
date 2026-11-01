@@ -87,7 +87,7 @@ export function PublicDemo() {
           </p>
         </div>
 
-        <div {...reveal(90)}>
+        <div className="demo__form" {...reveal(90)}>
           <form onSubmit={onSubmit} className="demo__field">
             <label htmlFor="demo-input" className="sr-only">
               Votre question pour la démonstration

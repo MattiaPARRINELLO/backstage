@@ -4,10 +4,8 @@ import { InstalledRedirect } from "@/components/landing/InstalledRedirect";
 import { ScrollReveal } from "@/components/landing/ScrollReveal";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { HeroSection } from "@/components/landing/HeroSection";
-import { ContextSection } from "@/components/landing/ContextSection";
-import { BoardSection } from "@/components/landing/BoardSection";
-import { MemorySection } from "@/components/landing/MemorySection";
 import { DayStory } from "@/components/landing/DayStory";
+import { MemorySection } from "@/components/landing/MemorySection";
 import { PublicDemo } from "@/components/landing/PublicDemo";
 import { SelfHostSection } from "@/components/landing/SelfHostSection";
 import { FinalCTA } from "@/components/landing/FinalCTA";
@@ -28,7 +26,7 @@ export const metadata: Metadata = {
     siteName: "Backstage",
     title: "Backstage — Votre second cerveau personnel",
     description:
-      "Backstage réunit vos mails, vos cours, votre agenda, vos photos et une IA qui s'en souvient. Un espace personnel privé, installé chez vous.",
+      "Backstage réunit vos mails, vos cours, votre agenda, vos photos et une IA qui s'en souvient.",
     images: [{ url: "/backstage-logo.png", width: 1280, height: 1280, alt: "Backstage" }],
   },
   twitter: {
@@ -49,10 +47,8 @@ export default function Home() {
         <LandingHeader />
         <main id="main" className="landing">
           <HeroSection />
-          <ContextSection />
-          <BoardSection />
-          <MemorySection />
           <DayStory />
+          <MemorySection />
           <PublicDemo />
           <SelfHostSection />
           <FinalCTA />

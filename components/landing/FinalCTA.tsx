@@ -4,8 +4,8 @@ import { reveal } from "./reveal";
 import { HeroDemoLink } from "./HeroDemoLink";
 
 /**
- * Clôture : le nom à l'échelle de l'affiche, puis la phrase et les
- * actions. La page se referme sur la marque, pas sur un sitemap.
+ * Clôture : le nom à l'échelle de l'affiche, une phrase, trois actions.
+ * La page se referme sur la marque.
  */
 export function FinalCTA() {
   return (
@@ -21,9 +21,9 @@ export function FinalCTA() {
             <p className="close__note">{FINAL_CTA.note}</p>
           </div>
 
-          <div className="close__actions" {...reveal(140)}>
+          <div className="close__actions" {...reveal(130)}>
             <HeroDemoLink label={FINAL_CTA.primaryCta} />
-            <Link href="/login" className="btn btn--quiet">
+            <Link href="/login" className="btn btn--ghost">
               {FINAL_CTA.secondaryCta}
             </Link>
             <a

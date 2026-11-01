@@ -73,21 +73,26 @@ export function PublicDemo() {
   };
 
   return (
-    <section id="demo" className="sec sec--panel">
-      <div className="wrap demo">
-        <div>
-          <h2 className="h2" {...reveal(0)}>
-            {PUBLIC_DEMO.title}
-          </h2>
-          <p className="lead mt-5" {...reveal(70)}>
-            {PUBLIC_DEMO.description}
-          </p>
-          <p className="demo__disclaimer" {...reveal(120)}>
-            {PUBLIC_DEMO.disclaimer}
-          </p>
-        </div>
+    <section id="demo" className="sec">
+      <div className="wrap">
+        <div className="demo">
+          <div className="demo__grid">
+            <div>
+              <span className="tag" {...reveal(0)}>
+                Démonstration
+              </span>
+              <h2 className="h2 mt-5" {...reveal(40)}>
+                {PUBLIC_DEMO.title}
+              </h2>
+              <p className="lead mt-4" {...reveal(90)}>
+                {PUBLIC_DEMO.description}
+              </p>
+              <p className="demo__disclaimer" {...reveal(130)}>
+                {PUBLIC_DEMO.disclaimer}
+              </p>
+            </div>
 
-        <div className="demo__form" {...reveal(90)}>
+            <div {...reveal(80)}>
           <form onSubmit={onSubmit} className="demo__field">
             <label htmlFor="demo-input" className="sr-only">
               Votre question pour la démonstration
@@ -118,7 +123,7 @@ export function PublicDemo() {
             </button>
           </form>
 
-          <div className="demo__suggestions">
+          <div className="demo__chips">
             {PUBLIC_DEMO.suggestions.map((suggestion) => (
               <button
                 key={suggestion}
@@ -175,7 +180,7 @@ export function PublicDemo() {
                   href={GITHUB_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn btn--quiet"
+                  className="btn btn--ghost"
                 >
                   {PUBLIC_DEMO.after.githubCta}
                 </a>
@@ -183,6 +188,8 @@ export function PublicDemo() {
               <p className="small mt-5">{PUBLIC_DEMO.after.note}</p>
             </div>
           )}
+            </div>
+          </div>
         </div>
       </div>
     </section>

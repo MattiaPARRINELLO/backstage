@@ -15,7 +15,7 @@ export const LICENSE_LABEL = "MIT";
 export const INSTALL_COMMAND = "curl -fsSL https://brain.mprnl.fr/install.sh | bash";
 
 export const NAV_LINKS = [
-  { href: "#produit", label: "Produit" },
+  { href: "#hero", label: "Produit" },
   { href: "#memoire", label: "Mémoire" },
   { href: "#journee", label: "Une journée" },
   { href: "#demo", label: "Démo" },
@@ -42,6 +42,7 @@ export const HERO = {
 // --- Contexte relié -------------------------------------------
 
 export const CONTEXT = {
+  label: "Contexte relié",
   title: "Une question. Quatre morceaux s'assemblent.",
   lead: "Backstage ne fouille pas un seul dossier : il réunit ce que l'agenda, la boîte mail, les notes et les rappels savent déjà, puis il répond.",
   question: "Qu'est-ce que je dois préparer pour mon shooting de demain ?",
@@ -60,9 +61,9 @@ export const CONTEXT = {
 
 export type ModuleItem = {
   name: string;
+  /** Deux ou trois mots, pour l'index du premier écran. */
+  short: string;
   line: string;
-  /** Capture réelle de l'application (facultative). */
-  shot?: { src: string; alt: string };
 };
 
 export const MODULES = {
@@ -71,35 +72,33 @@ export const MODULES = {
   items: [
     {
       name: "Mails",
+      short: "Boîte résumée",
       line: "La boîte Gmail résumée dans la conversation, sans changer d'onglet.",
-      shot: {
-        src: "/screenshots/hero-chat.jpg",
-        alt: "Le chat de Backstage, sans conversation ouverte, avec ses raccourcis et le compteur de mails non lus en pied.",
-      },
     },
     {
-      name: "Agenda, cours, rappels",
+      name: "Agenda",
+      short: "Cours, rappels",
       line: "Une seule ligne de temps, groupée par jour, avec un bloc pour ce qui est en retard.",
     },
     {
-      name: "Emploi du temps",
-      line: "Les cours CESAR synchronisés, une notification 30 minutes avant chaque séance.",
-    },
-    {
       name: "Mémoire",
+      short: "Faits éditables",
       line: "Ce que l'IA a retenu, fait par fait : chaque ligne est modifiable et supprimable.",
     },
     {
       name: "Shootings",
+      short: "Shoot → livraison",
       line: "Salles, accréditations, contacts et séries, du jour du shoot à la livraison.",
     },
     {
-      name: "Pratique du code",
-      line: "Un problème par jour, et une aide qui connaît déjà votre niveau et vos objectifs.",
-      shot: {
-        src: "/screenshots/panneau-code.jpg",
-        alt: "Le panneau Code de Backstage : série de jours, problème du jour et réponse de l'assistant.",
-      },
+      name: "Code",
+      short: "Un problème par jour",
+      line: "Un problème quotidien, et une aide qui connaît déjà votre niveau et vos objectifs.",
+    },
+    {
+      name: "Chez vous",
+      short: "Fichiers locaux",
+      line: "Les données vivent dans un dossier local. Pas de compte à créer chez un tiers.",
     },
   ] satisfies ModuleItem[],
 } as const;
@@ -107,7 +106,13 @@ export const MODULES = {
 // --- Mémoire ----------------------------------------------------
 
 export const MEMORY = {
-  title: "Elle s'en souvient, et vous pouvez le vérifier.",
+  factsLabel: "Mémoire · 3 faits",
+  facts: [
+    { kind: "Contact", text: "Claire V., attachée de presse — accréditations" },
+    { kind: "Préférence", text: "Objectif lumineux privilégié en fosse" },
+    { kind: "Projet", text: "Série « Scène 2025 », livraison en cours" },
+  ],
+  title: "Elle se souvient. Vous pouvez vérifier.",
   lead: "Une conversation ne s'arrête plus à sa dernière ligne. Les faits utiles sont écrits, dédoublonnés, puis relus : ce qui est retenu reste visible et corrigeable.",
   principles: [
     {
@@ -131,7 +136,7 @@ export const MEMORY = {
 // 08:42 la veille du shooting jusqu'au lendemain matin.
 
 export const DAY_STORY = {
-  title: "Une journée, cinq fois le même contexte.",
+  title: "Cinq fois le même contexte.",
   lead: "De la veille au lendemain matin : chaque heure retrouve ce qui a déjà été dit.",
   disclaimer: "Exemple illustratif, données fictives.",
   beats: [
@@ -317,7 +322,7 @@ export const FINAL_CTA = {
 export const FOOTER = {
   tagline: "Un espace personnel qui comprend le contexte.",
   links: [
-    { href: "#produit", label: "Produit" },
+    { href: "#hero", label: "Produit" },
     { href: "#memoire", label: "Mémoire" },
     { href: "#journee", label: "Une journée" },
     { href: "#chez-vous", label: "Auto-hébergement" },

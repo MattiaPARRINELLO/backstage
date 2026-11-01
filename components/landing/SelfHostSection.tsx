@@ -3,37 +3,43 @@ import { reveal } from "./reveal";
 import { InstallCommand } from "./InstallCommand";
 
 /**
- * Chez vous : ce que c'est, où tourne la commande, ce que ça garantit.
- * Composition verticale volontaire — une colonne à moitié vide serait
- * un trou, pas une respiration. Le monospace n'apparaît qu'ici.
+ * Chez vous : les quatre garanties à gauche, la commande d'installation
+ * dans un bloc sombre à droite. Le seul monospace de la page qui ne soit
+ * pas une étiquette — c'est du vrai code.
  */
 export function SelfHostSection() {
   return (
     <section id="chez-vous" className="sec">
       <div className="wrap self">
-        <div className="sec__head">
-          <h2 className="h2" {...reveal(0)}>
+        <div>
+          <span className="tag" {...reveal(0)}>
+            Auto-hébergement
+          </span>
+          <h2 className="h2 mt-5" {...reveal(60)}>
             {SELF_HOST.title}
           </h2>
-          <p className="lead" {...reveal(70)}>
+          <p className="lead mt-4" {...reveal(110)}>
             {SELF_HOST.lead}
           </p>
+
         </div>
 
-        <div className="self__terminal" {...reveal(60)}>
+        <div {...reveal(90)}>
           <InstallCommand />
         </div>
+      </div>
 
+      <div className="wrap">
         <div className="self__facts">
           {SELF_HOST.facts.map((fact, i) => (
-            <article key={fact.title} className="fact" {...reveal(60 + i * 60)}>
-              <h3 className="fact__title">{fact.title}</h3>
-              <p className="fact__desc">{fact.desc}</p>
+            <article key={fact.title} className="mini" {...reveal(60 + i * 50)}>
+              <h3 className="mini__title">{fact.title}</h3>
+              <p className="mini__desc">{fact.desc}</p>
             </article>
           ))}
         </div>
 
-        <div className="self__actions" {...reveal(120)}>
+        <div className="self__actions" {...reveal(80)}>
           <a
             href={SELF_HOST_URL}
             target="_blank"
@@ -46,7 +52,7 @@ export function SelfHostSection() {
             href={GITHUB_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn--quiet"
+            className="btn btn--ghost"
           >
             {SELF_HOST.codeCta}
           </a>

@@ -1,53 +1,43 @@
-"use client";
-
+import Image from "next/image";
 import { MEMORY } from "@/app/landing-content";
+import { reveal } from "./reveal";
 
 /**
- * Section mémoire — se souvenir, relier, garder le contrôle.
- * Trois principes en liste numérotée, puis l'aperçu de la mémoire
- * réelle : chaque fait est éditable et supprimable.
+ * La mémoire : l'écran réel du « Cerveau » à gauche, les trois
+ * promesses à droite. L'image porte la preuve, le texte la tient.
  */
 export function MemorySection() {
   return (
-    <section id="memoire" className="section section--deep memory relative">
-      <div className="container">
-        <div className="section__head">
-          <p className="section-label">02 — Mémoire</p>
-          <h2 className="section-title">{MEMORY.title}</h2>
-          <p className="section-lead">{MEMORY.description}</p>
+    <section id="memoire" className="sec sec--panel">
+      <div className="wrap mem">
+        <div {...reveal(0)}>
+          <div className="mem__shot">
+            <Image
+              src="/screenshots/brain.jpg"
+              alt="L'écran Cerveau de Backstage : les faits mémorisés, classés par thème, avec un compteur par catégorie."
+              width={2880}
+              height={1800}
+              sizes="(min-width: 960px) 58vw, 100vw"
+            />
+          </div>
         </div>
 
-        <div className="principle-list">
-          {MEMORY.principles.map((principle) => (
-            <article key={principle.n} className="principle">
-              <span className="principle__n">{principle.n}</span>
-              <div>
+        <div>
+          <h2 className="h2" {...reveal(60)}>
+            {MEMORY.title}
+          </h2>
+          <p className="lead mt-5" {...reveal(120)}>
+            {MEMORY.lead}
+          </p>
+
+          <div className="mem__principles">
+            {MEMORY.principles.map((principle, i) => (
+              <article key={principle.title} className="principle" {...reveal(160 + i * 70)}>
                 <h3 className="principle__title">{principle.title}</h3>
                 <p className="principle__desc">{principle.desc}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        {/* Aperçu mémoire — données fictives, signalées comme telles */}
-        <div className="memory__preview panel">
-          <div className="panel__bar">
-            <span>Mémoire — aperçu fictif</span>
-            <span>3 faits</span>
-          </div>
-          <ul>
-            {[
-              { cat: "Contact", text: "Claire V. — attachée de presse, contact accréditations" },
-              { cat: "Préférence", text: "Objectif lumineux privilégié en fosse" },
-              { cat: "Projet", text: "Série « Scène 2025 » — livraison en cours" },
-            ].map((fact) => (
-              <li key={fact.text} className="panel__row">
-                <span className="panel__cat">{fact.cat}</span>
-                <span className="panel__text">{fact.text}</span>
-                <span className="panel__actions">modifier · supprimer</span>
-              </li>
+              </article>
             ))}
-          </ul>
+          </div>
         </div>
       </div>
     </section>

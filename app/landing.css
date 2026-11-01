@@ -457,20 +457,40 @@
 @media (min-width: 720px) {
   .tile { grid-column: span 6; }
 }
+@media (min-width: 720px) and (max-width: 1023px) {
+  /* Sept blocs sur deux colonnes : le dernier ferme la planche. */
+  .tile--note { grid-column: span 12; }
+}
+
 @media (min-width: 1024px) {
   .tile--mails { grid-column: span 5; }
   .tile--flux { grid-column: span 4; }
   .tile--cours { grid-column: span 3; }
   .tile--memoire { grid-column: span 7; }
   .tile--photos { grid-column: span 5; }
-  .tile--code { grid-column: span 8; }
-  .tile--note { grid-column: span 4; }
+  .tile--code { grid-column: span 12; }
+  .tile--note { grid-column: span 12; }
 }
 
 .tile--shot {
   padding: 0;
   gap: 0;
   background: var(--stage-1);
+}
+
+@media (min-width: 900px) {
+  .tile--wide {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    align-items: stretch;
+  }
+  .tile--wide .tile__shot { height: 100%; }
+  .tile--wide .tile__shot img {
+    height: 100%;
+    aspect-ratio: auto;
+    object-position: 50% 30%;
+  }
+  .tile--wide .tile__body { justify-content: center; padding: 36px; }
 }
 
 .tile__shot {
@@ -486,6 +506,17 @@
   object-fit: cover;
   object-position: 50% 42%;
   aspect-ratio: 16 / 9;
+}
+
+/* La tuile la plus étroite zoome dans l'échange : lisible en vignette. */
+@media (min-width: 720px) {
+  .tile--mails .tile__shot img {
+    transform: scale(1.7);
+    transform-origin: 50% 36%;
+  }
+}
+@media (min-width: 1024px) {
+  .tile--mails .tile__shot img { transform: scale(1.9); }
 }
 
 .tile__body {
@@ -508,10 +539,35 @@
   color: var(--ink-2);
 }
 
+.tile__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.tile--note {
+  display: grid;
+  gap: 18px;
+  align-items: center;
+  min-height: 0;
+}
+@media (min-width: 900px) {
+  .tile--note {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 6fr) auto auto;
+    gap: 32px;
+    padding: 26px 30px;
+  }
+  .tile--note .tile__line { max-width: 44ch; }
+  .tile--note .tile__tags { margin-top: 0; padding-top: 0; }
+}
+
 .tile--accent {
   background: var(--amber);
   color: var(--amber-ink);
 }
+.tile--accent .small { color: var(--amber-ink); }
 .tile__cmd {
   display: inline-block;
   align-self: flex-start;
@@ -532,17 +588,26 @@
   grid-template-columns: minmax(0, 1fr);
 }
 @media (min-width: 960px) {
-  .mem { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: start; }
+  .mem { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; }
+}
+
+.mem__media { height: 100%; }
+@media (max-width: 959px) {
+  .mem__media { height: auto; }
 }
 
 .mem__shot {
   overflow: hidden;
+  height: 100%;
+  min-height: 280px;
   background: var(--stage-1);
 }
 .mem__shot img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 0;
 }
 
 .mem__principles {
@@ -686,8 +751,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 6px 6px 20px;
+  padding: 6px 6px 6px 18px;
   background: var(--stage-0);
+}
+@media (max-width: 559px) {
+  .demo__field { padding-left: 14px; gap: 6px; }
+  .demo__submit { min-width: 104px; padding-inline: 14px; }
 }
 
 .demo__input {

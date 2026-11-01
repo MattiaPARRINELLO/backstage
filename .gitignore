@@ -71,3 +71,6 @@ unslop-story/.story-frames/
 
 # Rendu vidéo unslop (frames intermédiaires)
 unslop-story/.story-frames/
+
+# Artefacts de la revue design (tasteskill)
+.taste-skill/

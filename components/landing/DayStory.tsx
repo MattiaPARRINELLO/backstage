@@ -1,176 +1,94 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { DAY_STORY } from "@/app/landing-content";
-import { getGsap } from "@/lib/landing/gsap";
-import { useReducedMotion } from "./hooks";
+import { reveal } from "./reveal";
 
 const BEATS = DAY_STORY.beats;
 
 type Outcome = "confirm" | "dismiss";
 
 /**
- * Scrollytelling « Une journée avec Backstage » — une feuille de service.
- * Le temps avance à chaque étape (08:42 → lendemain 09:30) : on suit une
- * personne fictive dont le contexte se relie au fil de la journée.
+ * Une journée, cinq heures : chaque ligne retrouve le contexte déjà
+ * constitué. Plus de section épinglée — on lit, on peut confirmer ou
+ * écarter l'action suggérée, et rien d'autre ne bouge.
  */
 export function DayStory() {
-  const rootRef = useRef<HTMLElement>(null);
-  const reduced = useReducedMotion();
-  const [step, setStep] = useState(0);
   const [outcomes, setOutcomes] = useState<Record<number, Outcome>>({});
-  const lastStep = useRef(0);
-
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root || reduced) return;
-
-    const { gsap } = getGsap();
-    const ctx = gsap.context(() => {
-      gsap.timeline({
-        scrollTrigger: {
-          trigger: root,
-          start: "top top",
-          end: `+=${(BEATS.length + 0.5) * window.innerHeight}`,
-          scrub: 0.6,
-          pin: true,
-          anticipatePin: 1,
-          onUpdate: (self) => {
-            const idx = Math.min(
-              BEATS.length - 1,
-              Math.floor(self.progress * BEATS.length)
-            );
-            if (idx !== lastStep.current) {
-              lastStep.current = idx;
-              setStep(idx);
-            }
-          },
-        },
-      });
-    }, root);
-
-    return () => ctx.revert();
-  }, [reduced]);
-
-  const beat = BEATS[step];
-
-  // ----- Version statique (reduced motion) : toutes les étapes -----
-  if (reduced) {
-    return (
-      <section className="daystory daystory--static relative">
-        <div className="container container--narrow">
-          <p className="section-label">03 — Une journée avec Backstage</p>
-          <h2 className="section-title mt-4">Même contexte, du matin à la sélection.</h2>
-          <p className="section-lead mt-4">{DAY_STORY.disclaimer}</p>
-
-          <ol className="mt-12 space-y-10">
-            {BEATS.map((b) => (
-              <li key={b.time} className="daystory__static-beat">
-                <div className="flex items-baseline gap-3">
-                  <span className="daystory__time">{b.time}</span>
-                  <span className="daystory__when">{b.when}</span>
-                </div>
-                <p className="daystory__query">« {b.query} »</p>
-                <ul className="daystory__connections mt-4">
-                  {b.connections.map((c) => (
-                    <li key={c.text} className="daystory__connection" data-ready="true">
-                      <span className="daystory__connection-kind">{c.kind}</span>
-                      <span className="daystory__connection-text">{c.text}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="daystory__answer-text mt-4">{b.answer}</p>
-              </li>
-            ))}
-          </ol>
-          <p className="daystory__outro">{DAY_STORY.outro}</p>
-        </div>
-      </section>
-    );
-  }
-
-  const outcome = outcomes[step];
-  const setOutcome = (o: Outcome) =>
-    setOutcomes((prev) => ({ ...prev, [step]: o }));
 
   return (
-    <section ref={rootRef} className="daystory relative flex items-center overflow-hidden">
-      <div className="container grid w-full grid-cols-1 gap-10 lg:grid-cols-[200px_minmax(0,1fr)]">
-        {/* Frise chronologique */}
-        <ol className="daystory__rail" aria-hidden="true">
-          {BEATS.map((b, i) => (
-            <li
-              key={b.time}
-              className="daystory__rail-item"
-              data-active={i === step}
-              data-past={i < step}
-            >
-              <span className="daystory__rail-dot" />
-              <span className="daystory__rail-time">{b.time}</span>
-              <span className="daystory__rail-when">{b.when}</span>
-            </li>
-          ))}
-        </ol>
-
-        {/* Étape active */}
-        <div className="daystory__beat" key={step}>
-          <p className="section-label">03 — Une journée avec Backstage</p>
-          <div className="daystory__time-row mt-4">
-            <p className="daystory__time">{beat.time}</p>
-            <p className="daystory__when">{beat.when}</p>
-          </div>
-          <h2 className="daystory__query mt-4">« {beat.query} »</h2>
-
-          <div className="daystory__panel mt-8">
-            <p className="daystory__panel-label">
-              Contexte mobilisé · étape {step + 1}/{BEATS.length}
-            </p>
-            <ul>
-              {beat.connections.map((connection, i) => (
-                <li
-                  key={connection.text}
-                  className="daystory__connection"
-                  data-ready="true"
-                  style={{ ["--conn-i" as string]: i }}
-                >
-                  <span className="daystory__connection-kind">{connection.kind}</span>
-                  <span className="daystory__connection-text">{connection.text}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="daystory__answer">
-            <p className="daystory__answer-label">Réponse contextualisée</p>
-            <p className="daystory__answer-text">{beat.answer}</p>
-          </div>
-
-          <div className="daystory__next">
-            <p className="daystory__next-label">{beat.nextStep.label}</p>
-            <p className="daystory__next-text">{beat.nextStep.text}</p>
-            {outcome === undefined ? (
-              <div className="mt-4 flex flex-wrap gap-2.5">
-                <button type="button" onClick={() => setOutcome("confirm")} className="daystory__confirm">
-                  {beat.nextStep.confirm}
-                </button>
-                <button type="button" onClick={() => setOutcome("dismiss")} className="daystory__dismiss">
-                  {beat.nextStep.dismiss}
-                </button>
-              </div>
-            ) : (
-              <p className="daystory__outcome" aria-live="polite">
-                {outcome === "confirm" ? beat.nextStep.confirmed : beat.nextStep.dismissed}
-              </p>
-            )}
-          </div>
-
-          {step === BEATS.length - 1 && <p className="daystory__outro">{DAY_STORY.outro}</p>}
+    <section id="journee" className="sec">
+      <div className="wrap">
+        <div className="sec__head">
+          <h2 className="h2" {...reveal(0)}>
+            {DAY_STORY.title}
+          </h2>
+          <p className="lead" {...reveal(70)}>
+            {DAY_STORY.lead}
+          </p>
         </div>
-      </div>
 
-      {/* Filet de progression bas */}
-      <div className="daystory__progress" aria-hidden="true">
-        <span className="daystory__progress-bar" style={{ width: `${((step + 1) / BEATS.length) * 100}%` }} />
+        <div className="day__list">
+          {BEATS.map((beat, i) => {
+            const outcome = outcomes[i];
+            return (
+              <article key={beat.time} className="beat" {...reveal(i * 50)}>
+                <div>
+                  <p className="beat__time">{beat.time}</p>
+                  <p className="beat__when">{beat.when}</p>
+                </div>
+
+                <div>
+                  <p className="beat__query">« {beat.query} »</p>
+                  <ul className="beat__connections">
+                    {beat.connections.map((connection) => (
+                      <li key={connection.text} className="beat__conn">
+                        <span className="beat__conn-kind">{connection.kind}</span>
+                        <span className="beat__conn-text">{connection.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <p className="beat__answer">{beat.answer}</p>
+                  <div className="beat__next">
+                    <span className="beat__next-text">{beat.nextStep.text}</span>
+                    {outcome ? (
+                      <p className="beat__outcome" role="status">
+                        {outcome === "confirm"
+                          ? beat.nextStep.confirmed
+                          : beat.nextStep.dismissed}
+                      </p>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="beat__confirm"
+                          onClick={() => setOutcomes((o) => ({ ...o, [i]: "confirm" }))}
+                        >
+                          {beat.nextStep.confirm}
+                        </button>
+                        <button
+                          type="button"
+                          className="beat__dismiss"
+                          onClick={() => setOutcomes((o) => ({ ...o, [i]: "dismiss" }))}
+                        >
+                          {beat.nextStep.dismiss}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <p className="lead mt-10" {...reveal(0)}>
+          {DAY_STORY.outro}
+        </p>
+        <p className="small mt-3">{DAY_STORY.disclaimer}</p>
       </div>
     </section>
   );

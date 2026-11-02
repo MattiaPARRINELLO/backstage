@@ -698,27 +698,27 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   return (
     <div className="flex flex-col h-full min-h-0 relative">
       {consent.loaded && !consent.accepted && (
-        <div className="shrink-0 px-4 py-3 border-b border-[var(--border-1)] bg-[var(--surface-2)]/80 backdrop-blur fade-in">
+        <div className="shrink-0 pl-14 pr-4 py-3 lg:px-4 bg-[var(--surface-2)] fade-in">
           <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-medium text-[var(--text-1)]">
+              <p className="text-[length:var(--t-small)] font-medium text-[var(--text-1)]">
                 Tes messages seront envoyés à une IA
               </p>
-              <p className="text-[11px] text-[var(--text-3)] mt-0.5 leading-relaxed">
+              <p className="text-[length:var(--t-small)] text-[var(--text-3)] mt-1 leading-relaxed">
                 Ils servent uniquement à te répondre, jamais à entraîner un modèle.
                 Tu peux tout exporter ou tout supprimer à tout moment.
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-3 shrink-0">
               <a
                 href="/privacy"
-                className="text-[11px] font-mono  text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-200"
+                className="ui-mono text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-150"
               >
                 Vie privée
               </a>
               <button
                 onClick={() => void acceptConsent()}
-                className="px-3.5 py-2 rounded-lg bg-[var(--accent)] text-[#0a0a0b] font-medium text-[12px] hover:brightness-110 active:brightness-95 transition-colors duration-200"
+                className="ui-btn ui-btn--primary h-9! px-4!"
               >
                 J&apos;accepte
               </button>
@@ -752,16 +752,16 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
               {actionCards.length > 0 && !streamingActive && (
                 <div className="flex flex-col items-center gap-1.5 fade-in-up">
                   {actionCards.map((ac) => (
-                    <div key={ac.id} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border-2)] bg-[var(--surface-2)]/80 text-[11px] font-mono">
+                    <div key={ac.id} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--surface-1)] border border-[var(--line)] ui-mono">
                       <span className={cn(
                         "w-1.5 h-1.5 rounded-full shrink-0",
                         ac.toolName === "add_reminder" || ac.toolName === "update_reminder"
-                          ? "bg-[var(--warm)]"
+                          ? "bg-[var(--accent)]"
                           : ac.toolName === "add_watch_later"
-                          ? "bg-[var(--accent-cool)]"
+                          ? "bg-[var(--success)]"
                           : "bg-[var(--success)]"
                       )} />
-                      <span className="text-[var(--text-3)] ">{toolMeta[ac.toolName]?.label || ac.toolName}</span>
+                      <span className="text-[var(--text-3)]">{toolMeta[ac.toolName]?.label || ac.toolName}</span>
                       <span className="text-[var(--text-2)] max-w-[360px] truncate">{ac.result}</span>
                       <span className="text-[var(--text-4)]">{formatTime(ac.timestamp)}</span>
                     </div>
@@ -772,7 +772,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
                 <div key="streaming" className="flex gap-3 scale-in">
                   <AssistantAvatar />
                   <div className="min-w-0 flex-1 pt-0.5">
-                    <div className="text-[15px] leading-[1.75] text-[var(--text-1)]">
+                    <div className="text-[length:var(--t-body)] leading-[1.75] text-[var(--text-1)]">
                       <Markdown>{streamingContent}</Markdown>
                       <span className="blink-cursor">█</span>
                     </div>
@@ -794,7 +794,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
           )}
 
           {error && (
-            <div className="mt-6 flex items-start gap-2.5 text-[12px] text-[var(--danger)] px-3 py-2.5 rounded-md bg-[var(--danger)]/8 border border-[var(--danger)]/20 fade-in">
+            <div className="mt-6 flex items-start gap-2.5 text-[length:var(--t-small)] text-[var(--danger)] px-3 py-2.5 rounded-[var(--r-sm)] bg-[var(--danger)]/5 fade-in">
               <span className="w-1 h-1 rounded-full bg-[var(--danger)] mt-1.5 shrink-0" />
               <span className="leading-relaxed">{error}</span>
             </div>
@@ -829,7 +829,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
               onKey={handleKey}
             />
           </KeyboardSafe>
-          <p className="hidden sm:block text-[10px] text-[var(--text-4)] mt-2.5 text-center font-mono tracking-wide">
+          <p className="hidden sm:block ui-mono text-[var(--text-4)] mt-2.5 text-center">
             Entrée envoie · Shift+Entrée nouvelle ligne · Ctrl+L effacer · Esc arrêter
           </p>
         </div>

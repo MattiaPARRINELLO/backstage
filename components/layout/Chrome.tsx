@@ -103,8 +103,8 @@ export function LeftNav() {
   };
 
   return (
-    <aside aria-label="Navigation" className="hidden lg:flex flex-col w-[68px] shrink-0 h-full border-r border-[var(--border-1)] bg-[var(--surface-1)]/40" style={{ viewTransitionName: "sidebar" }}>
-      <div className="flex items-center justify-center h-16 border-b border-[var(--border-1)]">
+    <aside aria-label="Navigation" className="hidden lg:flex flex-col w-[72px] shrink-0 h-full bg-transparent" style={{ viewTransitionName: "sidebar" }}>
+      <div className="flex items-center justify-center h-16">
         <Image
           src="/backstage-logo-simple.png"
           alt="BACKSTAGE"
@@ -114,7 +114,7 @@ export function LeftNav() {
         />
       </div>
 
-      <nav className="flex-1 flex flex-col items-center gap-1 py-4 overflow-y-auto min-h-0">
+      <nav className="flex-1 flex flex-col items-center gap-1.5 py-3 overflow-y-auto min-h-0">
         {primaryNavItems.map((item) => {
           const active = item.exact
             ? pathname === item.href
@@ -127,17 +127,14 @@ export function LeftNav() {
               title={item.label}
               aria-label={item.label}
               className={cn(
-                "group relative w-11 h-11 rounded-lg flex items-center justify-center transition-colors duration-200",
+                "group relative w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-150",
                 active
-                  ? "bg-[var(--surface-2)] text-[var(--accent)] border border-[var(--border-2)]"
-                  : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] border border-transparent"
+                  ? "bg-[var(--accent)]/12 text-[var(--accent)]"
+                  : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)]"
               )}
             >
-              <Icon className="w-[18px] h-[18px]" strokeWidth={1.75} />
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-[var(--accent)]" />
-              )}
-              <span className="pointer-events-none absolute left-full ml-3 px-2 py-1 rounded-md bg-[var(--surface-3)] border border-[var(--border-2)] text-[11px] text-[var(--text-1)] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50">
+              <Icon className="w-[18px] h-[18px]" strokeWidth={1.6} />
+              <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1 rounded-[var(--r-sm)] bg-[var(--surface-3)] border border-[var(--line)] text-[length:var(--t-small)] text-[var(--text-1)] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50">
                 {item.label}
               </span>
             </Link>
@@ -148,27 +145,27 @@ export function LeftNav() {
           title="Toutes les pages"
           aria-label="Toutes les pages"
           className={cn(
-            "group relative w-11 h-11 rounded-lg flex items-center justify-center transition-colors duration-200",
+            "group relative w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-150",
             !primaryNavItems.some((p) => p.exact ? pathname === p.href : pathname === p.href || pathname.startsWith(`${p.href}/`))
-              ? "bg-[var(--surface-2)] text-[var(--accent)] border border-[var(--border-2)]"
-              : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] border border-transparent"
+              ? "bg-[var(--accent)]/12 text-[var(--accent)]"
+              : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)]"
           )}
         >
-          <MoreHorizontal className="w-[18px] h-[18px]" strokeWidth={1.75} />
-          <span className="pointer-events-none absolute left-full ml-3 px-2 py-1 rounded-md bg-[var(--surface-3)] border border-[var(--border-2)] text-[11px] text-[var(--text-1)] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50">
+          <MoreHorizontal className="w-[18px] h-[18px]" strokeWidth={1.6} />
+          <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1 rounded-[var(--r-sm)] bg-[var(--surface-3)] border border-[var(--line)] text-[length:var(--t-small)] text-[var(--text-1)] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50">
             Toutes les pages
           </span>
         </button>
       </nav>
 
-      <div className="flex flex-col items-center gap-2 py-4 border-t border-[var(--border-1)]">
+      <div className="flex flex-col items-center gap-1.5 py-4">
         <Link
           href="/settings"
           title="Paramètres"
           className={cn(
-            "w-9 h-9 rounded-lg flex items-center justify-center transition-colors duration-200",
+            "w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-150",
             pathname === "/settings"
-              ? "text-[var(--accent)]"
+              ? "bg-[var(--accent)]/12 text-[var(--accent)]"
               : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)]"
           )}
         >
@@ -177,7 +174,8 @@ export function LeftNav() {
         <button
           onClick={handleLogout}
           title="Déconnexion"
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-[var(--text-3)] hover:text-[var(--danger)] hover:bg-[var(--surface-2)] transition-colors duration-200"
+          aria-label="Déconnexion"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--text-3)] hover:text-[var(--danger)] hover:bg-[var(--surface-2)] transition-colors duration-150"
         >
           <LogOut className="w-4 h-4" />
         </button>
@@ -192,10 +190,10 @@ export function MobileTopBar() {
   };
 
   return (
-    <div className="lg:hidden shrink-0 pt-[env(safe-area-inset-top)] bg-[var(--surface-1)]">
-      <div className="flex items-center justify-between h-12 px-3 border-b border-[var(--border-1)]">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-6 h-6 rounded-md border border-[var(--border-2)] flex items-center justify-center bg-[var(--surface-2)] overflow-hidden shrink-0">
+    <div className="lg:hidden shrink-0 pt-[env(safe-area-inset-top)] bg-[var(--background)]">
+      <div className="flex items-center justify-between h-14 px-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-full bg-[var(--surface-2)] flex items-center justify-center overflow-hidden shrink-0">
             <Image
               src="/backstage-logo-simple.png"
               alt="BACKSTAGE"
@@ -204,12 +202,12 @@ export function MobileTopBar() {
               className="w-4 h-4 object-contain"
             />
           </div>
-          <span className="text-[11px] font-semibold tracking-wide text-[var(--text-1)] truncate">BACKSTAGE</span>
+          <span className="font-display font-semibold tracking-[-0.03em] text-[length:var(--t-body)] text-[var(--text-1)] truncate">BACKSTAGE</span>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={openPalette}
-            className="w-10 h-10 -mr-1 rounded-lg flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
+            className="w-10 h-10 -mr-1 rounded-full flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
             title="Palette de commandes"
             aria-label="Palette de commandes"
           >
@@ -217,7 +215,7 @@ export function MobileTopBar() {
           </button>
           <Link
             href="/settings"
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
             title="Paramètres"
             aria-label="Paramètres"
           >
@@ -242,7 +240,7 @@ function GoogleMobileStatus() {
       {status.gmail && status.calendar ? (
         <a
           href="/api/auth/google?type=gmail"
-          className="w-9 h-9 rounded-lg flex items-center justify-center border border-[var(--success)]/30 text-[var(--success)]"
+          className="w-9 h-9 rounded-full flex items-center justify-center bg-[var(--success)]/10 text-[var(--success)]"
           title="Gmail + Calendrier liés"
         >
           <Check className="w-4 h-4" />
@@ -252,10 +250,10 @@ function GoogleMobileStatus() {
           <a
             href="/api/auth/google?type=gmail"
             className={cn(
-              "w-9 h-9 rounded-lg flex items-center justify-center border transition-colors",
+              "w-9 h-9 rounded-full flex items-center justify-center transition-colors",
               status.gmail
-                ? "border-[var(--success)]/30 text-[var(--success)]"
-                : "border-[var(--border-2)] text-[var(--text-3)]"
+                ? "bg-[var(--success)]/10 text-[var(--success)]"
+                : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)]"
             )}
             title={status.gmail ? "Gmail lié" : "Lier Gmail"}
           >
@@ -264,10 +262,10 @@ function GoogleMobileStatus() {
           <a
             href="/api/auth/google?type=calendar"
             className={cn(
-              "w-9 h-9 rounded-lg flex items-center justify-center border transition-colors",
+              "w-9 h-9 rounded-full flex items-center justify-center transition-colors",
               status.calendar
-                ? "border-[var(--success)]/30 text-[var(--success)]"
-                : "border-[var(--border-2)] text-[var(--text-3)]"
+                ? "bg-[var(--success)]/10 text-[var(--success)]"
+                : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)]"
             )}
             title={status.calendar ? "Calendrier lié" : "Lier Calendrier"}
           >
@@ -298,7 +296,7 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <nav className="lg:hidden flex items-stretch h-16 border-t border-[var(--border-1)] bg-[var(--surface-1)] px-1 pb-[env(safe-area-inset-bottom)] shrink-0">
+      <nav className="lg:hidden flex items-stretch h-16 bg-[var(--background)] px-1 pb-[env(safe-area-inset-bottom)] shrink-0">
         {mobileNavItems.map((item) => {
           const active = item.exact
             ? pathname === item.href
@@ -309,26 +307,26 @@ export function MobileBottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 transition-colors duration-200",
+                "flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-colors duration-150",
                 active ? "text-[var(--accent)]" : "text-[var(--text-3)] hover:text-[var(--text-1)]"
               )}
             >
-              <Icon className="w-5 h-5" strokeWidth={1.75} />
-              <span className="text-[10px] font-medium tracking-wide truncate max-w-full px-0.5">{item.label}</span>
+              <Icon className="w-5 h-5" strokeWidth={1.6} />
+              <span className="text-[length:var(--t-small)] truncate max-w-full px-0.5">{item.label}</span>
             </Link>
           );
         })}
         <button
           onClick={() => setMoreOpen(true)}
           className={cn(
-            "flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 transition-colors duration-200",
+            "flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-colors duration-150",
             !coreActive ? "text-[var(--accent)]" : "text-[var(--text-3)] hover:text-[var(--text-1)]"
           )}
           aria-label="Plus d'options"
           aria-expanded={moreOpen}
         >
-          <MoreHorizontal className="w-5 h-5" strokeWidth={1.75} />
-          <span className="text-[10px] font-medium tracking-wide">Plus</span>
+          <MoreHorizontal className="w-5 h-5" strokeWidth={1.6} />
+          <span className="text-[length:var(--t-small)]">Plus</span>
         </button>
       </nav>
       <MobileMoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />
@@ -352,21 +350,21 @@ function MobileMoreSheet({ open, onClose }: { open: boolean; onClose: () => void
 
   return (
     <div className="fixed inset-0 z-[95]" role="dialog" aria-modal="true" aria-label="Menu">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="absolute inset-x-0 bottom-0 max-h-[82vh] rounded-t-2xl border-t border-[var(--border-1)] bg-[var(--surface-1)] flex flex-col pb-[env(safe-area-inset-bottom)] fade-in-up">
-        <div className="flex items-center justify-between h-12 px-4 border-b border-[var(--border-1)] shrink-0">
-          <span className="text-[11px] font-mono  text-[var(--text-3)]">
+      <div className="absolute inset-0 bg-[var(--background)]/70" onClick={onClose} />
+      <div className="absolute inset-x-0 bottom-0 max-h-[82vh] rounded-t-[var(--r-card)] bg-[var(--surface-1)] shadow-[var(--shadow-float)] flex flex-col pb-[env(safe-area-inset-bottom)] fade-in-up">
+        <div className="flex items-center justify-between h-14 px-4 shrink-0">
+          <span className="ui-mono text-[var(--text-3)]">
             Toutes les pages
           </span>
           <button
             onClick={onClose}
             aria-label="Fermer"
-            className="w-10 h-10 -mr-2 rounded-lg flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
+            className="w-10 h-10 -mr-2 rounded-full flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
           >
             <XIcon className="w-4 h-4" />
           </button>
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-2">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-1">
           {mobileMoreItems.map((item) => {
             const active = item.exact
               ? pathname === item.href
@@ -378,39 +376,39 @@ function MobileMoreSheet({ open, onClose }: { open: boolean; onClose: () => void
                 href={item.href}
                 onClick={onClose}
                 className={cn(
-                  "flex items-center gap-3 px-4 min-h-12 text-[13px] transition-colors duration-150",
+                  "flex items-center gap-3 mx-2 px-3 min-h-12 rounded-[var(--r-sm)] text-[length:var(--t-body)] transition-colors duration-150",
                   active
-                    ? "text-[var(--accent)] bg-[var(--accent)]/8"
+                    ? "text-[var(--text-1)] bg-[var(--surface-2)]"
                     : "text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)]"
                 )}
               >
-                <Icon className="w-4 h-4 shrink-0 text-[var(--text-3)]" strokeWidth={1.75} />
+                <Icon className="w-4 h-4 shrink-0 text-[var(--text-3)]" strokeWidth={1.6} />
                 <span className="truncate">{item.label}</span>
                 {active && <Check className="w-3.5 h-3.5 ml-auto shrink-0 text-[var(--accent)]" />}
               </Link>
             );
           })}
         </div>
-        <div className="shrink-0 border-t border-[var(--border-1)] py-2">
+        <div className="shrink-0 py-2">
           <Link
             href="/settings"
             onClick={onClose}
             className={cn(
-              "flex items-center gap-3 px-4 min-h-12 text-[13px] transition-colors duration-150",
+              "flex items-center gap-3 mx-2 px-3 min-h-12 rounded-[var(--r-sm)] text-[length:var(--t-body)] transition-colors duration-150",
               pathname === "/settings"
-                ? "text-[var(--accent)] bg-[var(--accent)]/8"
+                ? "text-[var(--text-1)] bg-[var(--surface-2)]"
                 : "text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)]"
             )}
           >
-            <Settings className="w-4 h-4 shrink-0 text-[var(--text-3)]" strokeWidth={1.75} />
+            <Settings className="w-4 h-4 shrink-0 text-[var(--text-3)]" strokeWidth={1.6} />
             <span>Paramètres</span>
             {pathname === "/settings" && <Check className="w-3.5 h-3.5 ml-auto shrink-0 text-[var(--accent)]" />}
           </Link>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 min-h-12 text-[13px] text-[var(--danger)] hover:bg-[var(--danger)]/8 transition-colors duration-150"
+            className="w-[calc(100%-1rem)] mx-2 flex items-center gap-3 px-3 min-h-12 rounded-[var(--r-sm)] text-[length:var(--t-body)] text-[var(--danger)] hover:bg-[var(--danger)]/8 transition-colors duration-150"
           >
-            <LogOut className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+            <LogOut className="w-4 h-4 shrink-0" strokeWidth={1.6} />
             <span>Déconnexion</span>
           </button>
         </div>
@@ -431,18 +429,18 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-8 pb-6 border-b border-[var(--border-1)]">
+    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-8">
       <div className="min-w-0">
         {eyebrow && (
-          <p className="text-[10px] font-mono  text-[var(--accent)] mb-2">
+          <p className="ui-mono text-[var(--text-3)] mb-2">
             {eyebrow}
           </p>
         )}
-        <h1 className="text-[30px] sm:text-[34px] font-display font-medium tracking-tight text-[var(--text-1)] text-balance leading-[1.08]">
+        <h1 className="font-display font-semibold tracking-[-0.03em] text-[length:var(--t-head)] leading-[1.02] text-[var(--text-1)] text-balance">
           {title}
         </h1>
         {description && (
-          <p className="text-[14px] text-[var(--text-2)] mt-2.5 max-w-2xl leading-relaxed">
+          <p className="text-[length:var(--t-body)] text-[var(--text-2)] mt-3 max-w-[34rem] leading-relaxed">
             {description}
           </p>
         )}
@@ -464,15 +462,15 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center text-center px-6 py-16 border border-dashed border-[var(--border-1)] rounded-2xl bg-[var(--surface-1)]/40">
+    <div className="flex flex-col items-center justify-center text-center px-6 py-16">
       {icon && (
-        <div className="w-12 h-12 rounded-xl border border-[var(--border-2)] bg-[var(--surface-2)] flex items-center justify-center mb-4 text-[var(--text-3)]">
+        <div className="mb-4 text-[var(--text-3)]">
           {icon}
         </div>
       )}
-      <h3 className="text-[14px] font-medium text-[var(--text-1)] mb-1.5">{title}</h3>
+      <h3 className="font-display font-semibold tracking-[-0.03em] text-[length:var(--t-lead)] text-[var(--text-1)] mb-1.5">{title}</h3>
       {description && (
-        <p className="text-[12px] text-[var(--text-3)] max-w-sm leading-relaxed">{description}</p>
+        <p className="text-[length:var(--t-small)] text-[var(--text-3)] max-w-[28rem] leading-relaxed">{description}</p>
       )}
       {action && <div className="mt-5">{action}</div>}
     </div>
@@ -484,7 +482,7 @@ export function CloseButton({ onClick, label = "Fermer" }: { onClick: () => void
     <button
       onClick={onClick}
       aria-label={label}
-      className="w-9 h-9 rounded-md flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
+      className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
     >
       <XIcon className="w-3.5 h-3.5" />
     </button>

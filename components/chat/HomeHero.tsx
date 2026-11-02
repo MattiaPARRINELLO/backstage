@@ -52,15 +52,10 @@ interface Chip {
 }
 
 const TONE_TEXT: Record<Chip["tone"], string> = {
-  accent: "text-[var(--accent)]",
-  cool: "text-[var(--accent-cool)]",
-  warm: "text-[var(--accent-warm)]",
+  accent: "text-[var(--text-3)]",
+  cool: "text-[var(--text-3)]",
+  warm: "text-[var(--text-3)]",
   danger: "text-[var(--danger)]",
-};
-
-const TONE_BAR: Record<Focus["origin"], string> = {
-  course: "bg-[var(--accent)]",
-  event: "bg-[var(--accent-cool)]",
 };
 
 function greeting(hour: number): string {
@@ -353,7 +348,7 @@ export function HomeHero({
       </div>
 
       <p
-        className="home-rise mt-7 flex items-center gap-2 text-[10px] font-mono  text-[var(--text-3)]"
+        className="home-rise mt-7 flex items-center gap-2 ui-mono text-[var(--text-3)]"
         style={{ animationDelay: "60ms" }}
       >
         <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
@@ -361,7 +356,7 @@ export function HomeHero({
       </p>
 
       <h1
-        className="home-rise mt-3 text-[32px] sm:text-[42px] font-editorial leading-[1.05] text-[var(--text-1)] text-balance"
+        className="home-rise mt-3 font-display font-semibold tracking-[-0.03em] text-[length:var(--t-head)] leading-[1.02] text-[var(--text-1)] text-balance"
         style={{ animationDelay: "110ms" }}
       >
         {now > 0 ? (
@@ -376,7 +371,7 @@ export function HomeHero({
 
       <p
         key={briefing}
-        className="home-rise mt-3 text-[13px] sm:text-[14px] text-[var(--text-3)] max-w-md leading-relaxed balance"
+        className="home-rise mt-3 text-[length:var(--t-body)] text-[var(--text-2)] max-w-[32rem] leading-relaxed balance"
         style={{ animationDelay: "160ms" }}
       >
         {briefing}
@@ -392,43 +387,39 @@ export function HomeHero({
           className="home-rise mt-8 w-full max-w-lg text-left"
           style={{ animationDelay: "220ms" }}
         >
-          <div
-            className={cn(
-              "relative flex items-start gap-3.5 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3.5 overflow-hidden",
-            )}
-          >
-            <span
-              className={cn("absolute left-0 top-0 bottom-0 w-[2px]", TONE_BAR[focus.origin])}
-              aria-hidden
-            />
+          <div className="relative ui-plate flex items-start gap-4 px-5 py-4">
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-2 text-[10px] font-mono  text-[var(--text-3)]">
-                <span className={focus.live ? TONE_TEXT.danger : TONE_TEXT.accent}>
-                  {focus.live
-                    ? "En cours"
-                    : `${countdown(focus.start, now)} · ${dayLabel(focus.start, now)}${timeRange(focus.start, focus.end)}`}
-                </span>
+              <p className="flex flex-wrap items-center gap-2 ui-mono text-[var(--plate-3)]">
+                {focus.live ? (
+                  <span className="rounded-full px-2 py-0.5 bg-[var(--plate-acc-bg)] text-[var(--plate-acc-ink)]">
+                    en cours
+                  </span>
+                ) : (
+                  <span className="text-[var(--plate-acc-ink)]">
+                    {countdown(focus.start, now)} · {dayLabel(focus.start, now)}{timeRange(focus.start, focus.end)}
+                  </span>
+                )}
                 {focus.live && (
-                  <span className="text-[var(--text-4)]">{timeRange(focus.start, focus.end)}</span>
+                  <span>{timeRange(focus.start, focus.end)}</span>
                 )}
               </p>
-              <p className="mt-1.5 text-[15px] font-medium text-[var(--text-1)] truncate">
+              <p className="mt-2 font-display font-semibold tracking-[-0.03em] text-[length:var(--t-lead)] leading-[1.05] text-[var(--plate-ink)] truncate">
                 {focus.title}
               </p>
-              <p className="mt-1 flex items-center gap-2.5 text-[11px] text-[var(--text-3)]">
+              <p className="mt-2 flex items-center gap-2.5 text-[length:var(--t-small)] text-[var(--plate-3)]">
                 {focus.location && (
-                  <span className="flex items-center gap-1 truncate">
+                  <span className="flex items-center gap-1.5 truncate">
                     {focus.remote ? <Video className="w-3 h-3 shrink-0" /> : <MapPin className="w-3 h-3 shrink-0" />}
                     <span className="truncate">{focus.location}</span>
                   </span>
                 )}
                 {focus.remote && !focus.location && (
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1.5">
                     <Video className="w-3 h-3" />
                     Distanciel
                   </span>
                 )}
-                <span className="flex items-center gap-1 text-[var(--text-4)]">
+                <span className="flex items-center gap-1.5">
                   <Clock className="w-3 h-3" />
                   {formatDuration(focus.end - focus.start)}
                 </span>
@@ -436,10 +427,10 @@ export function HomeHero({
             </div>
             <Link
               href={focus.href}
-              className="shrink-0 mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-4)] hover:text-[var(--accent)] hover:bg-[var(--surface-3)] transition-colors duration-200"
+              className="shrink-0 mt-0.5 w-8 h-8 rounded-full flex items-center justify-center text-[var(--plate-3)] hover:text-[var(--plate-acc-ink)] hover:bg-[var(--plate-acc-bg)] transition-colors duration-150"
               title="Ouvrir"
             >
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              <ArrowUpRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -454,19 +445,17 @@ export function HomeHero({
             const content = (
               <>
                 <c.icon className={cn("w-3 h-3 shrink-0", TONE_TEXT[c.tone])} />
-                <span className="text-[var(--text-2)] font-mono text-[10px] ">
+                <span className={c.tone === "danger" ? "text-[var(--danger)]" : "text-[var(--text-2)]"}>
                   {c.label}
                 </span>
               </>
             );
-            const cls =
-              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[var(--border-1)] bg-[var(--surface-1)] transition-colors duration-200";
             return c.href ? (
-              <Link key={c.label} href={c.href} className={cn(cls, "hover:border-[var(--border-3)]")}>
+              <Link key={c.label} href={c.href} className="ui-chip transition-colors duration-150">
                 {content}
               </Link>
             ) : (
-              <span key={c.label} className={cls}>
+              <span key={c.label} className="ui-chip">
                 {content}
               </span>
             );
@@ -480,22 +469,22 @@ export function HomeHero({
         style={{ animationDelay: "330ms" }}
       >
         <div className="flex items-center gap-3 mb-3 px-0.5">
-          <span className="text-[10px] font-mono  text-[var(--text-4)]">
+          <span className="ui-mono text-[var(--text-3)]">
             Raccourcis
           </span>
-          <span className="flex-1 h-px bg-[var(--border-1)]" />
+          <span className="flex-1 h-px bg-[var(--line)]" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {shortcuts.map((s) => (
             <button
               key={s.label}
               onClick={() => void onPrompt(s.label)}
               disabled={disabled}
-              className="group relative flex items-start gap-3 px-4 py-3.5 text-left text-[13px] text-[var(--text-2)] bg-[var(--surface-1)] border border-[var(--border-1)] rounded-xl hover:border-[var(--border-3)] hover:bg-[var(--surface-2)] hover:text-[var(--text-1)] transition-colors duration-200 disabled:opacity-40"
+              className="ui-chip group w-full items-start! justify-start! gap-2.5! rounded-[var(--r-tile)]! px-3.5! py-3! text-left transition-colors duration-150 disabled:opacity-40"
             >
-              <s.icon className="w-4 h-4 shrink-0 mt-0.5 text-[var(--text-3)] group-hover:text-[var(--accent)] transition-colors duration-200" />
-              <span className="leading-relaxed line-clamp-2">{s.label}</span>
-              <ArrowUpRight className="w-3.5 h-3.5 shrink-0 mt-0.5 ml-auto self-center text-[var(--text-4)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-colors duration-200" />
+              <s.icon className="w-4 h-4 shrink-0 mt-0.5 text-[var(--text-3)] group-hover:text-[var(--accent)] transition-colors duration-150" />
+              <span className="leading-relaxed line-clamp-2 text-[var(--text-2)]">{s.label}</span>
+              <ArrowUpRight className="w-3.5 h-3.5 shrink-0 mt-0.5 ml-auto self-center text-[var(--text-4)] opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
             </button>
           ))}
         </div>

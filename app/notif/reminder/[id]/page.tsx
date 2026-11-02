@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getReminders } from "@/lib/storage";
 import { formatRelative, isOverdue } from "@/lib/date";
-import { ArrowLeft, Bell, Clock } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const metadata = {
@@ -28,59 +28,44 @@ export default async function ReminderNotifPage({
     <>
       <Link
         href="/reminders"
-        className="inline-flex items-center gap-2 text-xs font-mono  text-[var(--text-4)] hover:text-[var(--text-2)] transition-colors duration-200 mb-8"
+        className="ui-btn ui-btn--text mb-10 text-[var(--t-small)]"
       >
-        <ArrowLeft className="w-3 h-3" />
+        <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.6} aria-hidden />
         Rappels
       </Link>
 
-      <div className={cn("p-6 rounded-2xl border bg-[var(--surface-1)]", isDone ? "border-[var(--border-1)]" : overdue ? "border-[var(--warm)]" : "border-[var(--border-2)]")}>
-        <div className="flex items-center gap-3 mb-4">
-          <div
-            className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-              isDone
-                ? "bg-[var(--surface-2)] text-[var(--text-4)]"
+      <div className={cn("ui-card p-6", !isDone && overdue && "border-[var(--danger)]")}>
+        <h1
+          className={cn(
+            "font-display text-[28px] font-semibold leading-[1.08] tracking-[-0.03em]",
+            isDone ? "text-[var(--text-3)] line-through" : "text-[var(--text-1)]"
+          )}
+        >
+          {reminder.title}
+        </h1>
+
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span className="ui-mono inline-flex items-center gap-2 text-[var(--text-3)]">
+            <Clock className="w-3.5 h-3.5" strokeWidth={1.6} aria-hidden />
+            {formatRelative(reminder.dueAt)}
+          </span>
+          <span
+            className="ui-mono"
+            style={{
+              color: isDone
+                ? "var(--text-3)"
                 : overdue
-                  ? "bg-[var(--warm)]/10 text-[var(--warm)]"
-                  : "bg-[var(--accent-cool)]/10 text-[var(--accent-cool)]"
-            )}
+                  ? "var(--danger)"
+                  : "var(--text-2)",
+            }}
           >
-            {isDone ? <Bell className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
-          </div>
-          <div>
-            <h1
-              className={cn(
-                "text-lg font-mono ",
-                isDone ? "text-[var(--text-3)] line-through" : "text-[var(--text-1)]"
-              )}
-            >
-              {reminder.title}
-            </h1>
-            <div className="flex items-center gap-3 mt-1">
-              <span className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-3)]">
-                <Clock className="w-3 h-3" />
-                {formatRelative(reminder.dueAt)}
-              </span>
-              <span
-                className={cn(
-                  "text-xs font-mono px-2 py-0.5 rounded-full border",
-                  isDone
-                    ? "border-[var(--border-1)] text-[var(--text-4)] bg-transparent"
-                    : overdue
-                      ? "border-[var(--warm)]/30 text-[var(--warm)] bg-[var(--warm)]/5"
-                      : "border-[var(--accent-cool)]/30 text-[var(--accent-cool)] bg-[var(--accent-cool)]/5"
-                )}
-              >
-                {isDone ? "Terminé" : overdue ? "En retard" : reminder.status === "snoozed" ? "Repoussé" : "À venir"}
-              </span>
-            </div>
-          </div>
+            {isDone ? "Terminé" : overdue ? "En retard" : reminder.status === "snoozed" ? "Repoussé" : "À venir"}
+          </span>
         </div>
 
         {reminder.notes && (
-          <div className="mt-5 pt-5 border-t border-[var(--border-1)]">
-            <p className="text-sm leading-relaxed text-[var(--text-2)]">{reminder.notes}</p>
+          <div className="mt-6 border-t border-[var(--line)] pt-5">
+            <p className="text-[var(--t-body)] leading-relaxed text-[var(--text-2)]">{reminder.notes}</p>
           </div>
         )}
       </div>

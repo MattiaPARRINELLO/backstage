@@ -1,22 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, ArrowUpRight, Music, Brain, Mail, Bell, Bookmark, ShieldCheck } from "lucide-react";
+import { Search, ArrowUpRight } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { EmptyState } from "@/components/layout/Chrome";
-import { Input } from "@/components/ui/Input";
-import { cn } from "@/lib/utils";
 import { unifiedSearch, type UnifiedSearchResult } from "@/app/actions/search";
 import type { ConcertEvent, MemoryFact, Email, Reminder, WatchLaterItem, Accreditation } from "@/lib/types";
-
-const ICONS = {
-  concerts: Music,
-  facts: Brain,
-  emails: Mail,
-  reminders: Bell,
-  watchLater: Bookmark,
-  accreditations: ShieldCheck,
-} as const;
 
 const LABELS: Record<keyof UnifiedSearchResult, string> = {
   concerts: "Concerts",
@@ -25,15 +13,6 @@ const LABELS: Record<keyof UnifiedSearchResult, string> = {
   reminders: "Rappels",
   watchLater: "À voir",
   accreditations: "Accréditations",
-};
-
-const COLORS: Record<keyof UnifiedSearchResult, string> = {
-  concerts: "text-[var(--warm)]",
-  facts: "text-[var(--success)]",
-  emails: "text-[var(--accent)]",
-  reminders: "text-[var(--accent)]",
-  watchLater: "text-[var(--accent-soft)]",
-  accreditations: "text-[var(--accent)]",
 };
 
 function countResults(r: UnifiedSearchResult): number {
@@ -72,67 +51,76 @@ export function SearchView() {
 
   return (
     <AppShell>
-      <div className="flex-1 min-w-0 flex flex-col h-full min-h-0">
-        <div className="shrink-0 p-4 sm:p-6 border-b border-[var(--border-1)]">
-          <div className="relative max-w-2xl">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-3)] pointer-events-none" />
-            <Input
+      <div className="flex-1 min-w-0 overflow-y-auto">
+        <div className="mx-auto w-full max-w-2xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
+          <h1 className="font-display text-[30px] font-semibold leading-[1.05] tracking-[-0.03em] text-[var(--text-1)] sm:text-[34px]">
+            Recherche
+          </h1>
+          <p className="mt-2.5 max-w-xl text-[var(--t-body)] leading-relaxed text-[var(--text-2)]">
+            Une requête, toutes les données de BACKSTAGE.
+          </p>
+
+          <div className="ui-field mt-7 h-12 w-full gap-2.5">
+            <Search
+              className="h-4 w-4 shrink-0 text-[var(--text-3)]"
+              strokeWidth={1.6}
+              aria-hidden
+            />
+            <input
               ref={inputRef}
               type="text"
               value={query}
               onChange={(e) => handleChange(e.target.value)}
-              placeholder="Rechercher dans les concerts, emails, rappels, mémoire, accréditations, watch-later…"
-              className="h-11 pl-10 pr-4 rounded-xl text-[13px] bg-[var(--surface-2)] focus:border-[var(--accent)]"
+              placeholder="Concerts, emails, rappels, mémoire, accréditations…"
+              aria-label="Rechercher dans BACKSTAGE"
+              className="w-full min-w-0 bg-transparent text-[var(--t-body)] text-[var(--text-1)] outline-none placeholder:text-[var(--text-3)]"
             />
             {loading && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border border-[var(--accent)] border-r-transparent animate-spin" />
+              <span
+                className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border border-[var(--accent)] border-r-transparent"
+                aria-label="Recherche en cours"
+              />
             )}
           </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {!results && !loading && (
-            <EmptyState
-              icon={<Search className="w-5 h-5" />}
-              title="Recherche unifiée"
-              description="Tape une requête pour chercher dans toutes les données de BACKSTAGE."
-            />
-          )}
+          <div className="mt-10">
+            {!results && !loading && (
+              <p className="text-[var(--t-body)] text-[var(--text-3)]">
+                Tape une requête pour chercher dans toutes les données de BACKSTAGE.
+              </p>
+            )}
 
-          {results && countResults(results) === 0 && !loading && (
-            <EmptyState
-              icon={<Search className="w-5 h-5" />}
-              title="Aucun résultat"
-              description={`Rien trouvé pour "${query}". Essaie d'autres mots-clés.`}
-            />
-          )}
+            {results && countResults(results) === 0 && !loading && (
+              <div>
+                <p className="text-[var(--t-body)] text-[var(--text-1)]">Aucun résultat</p>
+                <p className="mt-1 text-[var(--t-small)] text-[var(--text-3)]">
+                  Rien trouvé pour « {query} ». Essaie d&apos;autres mots-clés.
+                </p>
+              </div>
+            )}
 
-          {results && countResults(results) > 0 && (
-            <div className="max-w-2xl space-y-6">
-              {(Object.keys(LABELS) as (keyof UnifiedSearchResult)[]).map((key) => {
-                const items = results[key];
-                if (items.length === 0) return null;
-                const Icon = ICONS[key];
-                return (
-                  <section key={key}>
-                    <h3 className={cn(
-                      "flex items-center gap-2 text-[10px] font-semibold  font-mono mb-2",
-                      COLORS[key]
-                    )}>
-                      <Icon className="w-3 h-3" />
-                      {LABELS[key]}
-                      <span className="text-[var(--text-4)] font-normal normal-case ml-1">({items.length})</span>
-                    </h3>
-                    <div className="space-y-0.5">
-                      {items.map((item) => (
-                        <ResultRow key={item.id} item={item} type={key} />
-                      ))}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
-          )}
+            {results && countResults(results) > 0 && (
+              <div className="space-y-10">
+                {(Object.keys(LABELS) as (keyof UnifiedSearchResult)[]).map((key) => {
+                  const items = results[key];
+                  if (items.length === 0) return null;
+                  return (
+                    <section key={key}>
+                      <h2 className="flex items-baseline gap-2 font-display text-[17px] font-semibold tracking-[-0.02em] text-[var(--text-1)]">
+                        {LABELS[key]}
+                        <span className="ui-mono text-[var(--text-3)]">{items.length}</span>
+                      </h2>
+                      <div className="mt-3 border-t border-[var(--line)]">
+                        {items.map((item) => (
+                          <ResultRow key={item.id} item={item} type={key} />
+                        ))}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </AppShell>
@@ -158,11 +146,21 @@ function ResultRow({ item, type }: { item: SearchItem; type: string }) {
   return (
     <a
       href={getHref(item, type)}
-      className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--surface-2)] transition-colors group"
+      className="group flex items-center gap-4 border-b border-[var(--line)] py-3 transition-colors last:border-0 hover:bg-[var(--surface-2)]"
     >
-      <span className="text-[13px] text-[var(--text-1)] flex-1 min-w-0 truncate">{String(title)}</span>
-      {sub && <span className="text-[11px] text-[var(--text-3)] shrink-0 hidden sm:block truncate max-w-[200px]">{sub}</span>}
-      <ArrowUpRight className="w-3 h-3 text-[var(--text-4)] group-hover:text-[var(--text-1)] shrink-0 transition-colors" />
+      <span className="min-w-0 flex-1 truncate text-[15px] text-[var(--text-1)]">
+        {String(title)}
+      </span>
+      {sub && (
+        <span className="ui-mono hidden max-w-[220px] shrink-0 truncate text-[var(--text-3)] sm:block">
+          {sub}
+        </span>
+      )}
+      <ArrowUpRight
+        className="h-3.5 w-3.5 shrink-0 text-[var(--text-4)] transition-colors group-hover:text-[var(--text-1)]"
+        strokeWidth={1.6}
+        aria-hidden
+      />
     </a>
   );
 }

@@ -37,9 +37,9 @@ export function GmailWidget() {
     <Card className="h-full">
       <CardHeader className="flex items-center justify-between py-3 px-4">
         <div className="flex items-center gap-2">
-          <span className="text-[12px] font-semibold text-[var(--text-1)]">Gmail</span>
+          <span className="text-[length:var(--t-small)] font-semibold text-[var(--text-1)]">Gmail</span>
           {!loading && visible.length > 0 && (
-            <span className="text-[10px] font-mono text-[var(--text-3)]">{visible.length}</span>
+            <span className="text-[length:var(--t-small)] ui-mono text-[var(--text-3)]">{visible.length}</span>
           )}
         </div>
         <a
@@ -53,7 +53,7 @@ export function GmailWidget() {
       </CardHeader>
       <CardBody className="p-2">
         {error && visible.length === 0 && (
-          <div className="text-[11px] text-[var(--danger)] px-3 py-2.5 rounded-md bg-[var(--danger)]/8 border border-[var(--danger)]/20">
+          <div className="text-[length:var(--t-small)] text-[var(--danger)] px-3 py-2.5 rounded-[var(--r-sm)] bg-[var(--danger)]/8 border border-[var(--danger)]/20">
             {error.message}
           </div>
         )}
@@ -69,7 +69,7 @@ export function GmailWidget() {
         {!loading && visible.length === 0 && (
           <div className="px-3 py-6 text-center">
             <Inbox className="w-6 h-6 text-[var(--text-4)] mx-auto mb-2" />
-            <p className="text-[11px] text-[var(--text-3)] font-mono">Boîte vide</p>
+            <p className="text-[length:var(--t-small)] text-[var(--text-3)] ui-mono">Boîte vide</p>
           </div>
         )}
 
@@ -83,7 +83,7 @@ export function GmailWidget() {
             {visible.map((msg) => (
               <li
                 key={msg.id}
-                className="group px-3 py-2.5 rounded-md hover:bg-[var(--surface-2)] transition-colors duration-150"
+                className="group px-3 py-2.5 rounded-[var(--r-sm)] hover:bg-[var(--surface-2)] transition-colors duration-150"
               >
                 <div className="flex items-start gap-2.5">
                   <span
@@ -98,26 +98,26 @@ export function GmailWidget() {
                       <p
                         className={
                           msg.unread
-                            ? "text-[12px] font-medium text-[var(--text-1)] truncate"
-                            : "text-[12px] text-[var(--text-2)] truncate"
+                            ? "text-[length:var(--t-small)] font-medium text-[var(--text-1)] truncate"
+                            : "text-[length:var(--t-small)] text-[var(--text-2)] truncate"
                         }
                       >
                         {extractName(msg.from)}
                       </p>
-                      <span className="shrink-0 text-[10px] text-[var(--text-3)] font-mono">
+                      <span className="shrink-0 text-[length:var(--t-small)] text-[var(--text-3)] ui-mono">
                         {formatDateShort(msg.date)}
                       </span>
                     </div>
                     <p
                       className={
                         msg.unread
-                          ? "text-[11px] text-[var(--text-1)] truncate"
-                          : "text-[11px] text-[var(--text-2)] truncate"
+                          ? "text-[length:var(--t-small)] text-[var(--text-1)] truncate"
+                          : "text-[length:var(--t-small)] text-[var(--text-2)] truncate"
                       }
                     >
                       {msg.subject || "(Sans objet)"}
                     </p>
-                    <p className="text-[10px] text-[var(--text-3)] truncate mt-0.5">
+                    <p className="text-[length:var(--t-small)] text-[var(--text-3)] truncate mt-0.5">
                       {msg.snippet}
                     </p>
                   </div>

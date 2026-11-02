@@ -40,23 +40,23 @@ export default function PrivacyPage() {
       <header className="max-w-3xl mx-auto w-full px-6 py-8 flex items-center justify-between">
         <Link
           href="/"
-          className="text-[12px] font-medium  text-[var(--text-1)] font-mono hover:opacity-80 transition-opacity duration-200"
+          className="text-[length:var(--t-small)] font-medium  text-[var(--text-1)] ui-mono hover:opacity-80 transition-opacity duration-200"
         >
           BACKSTAGE
         </Link>
         <Link
           href="/login"
-          className="text-[11px] font-mono  text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-200"
+          className="text-[length:var(--t-small)] ui-mono  text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-200"
         >
           Connexion
         </Link>
       </header>
 
       <section className="max-w-3xl mx-auto w-full px-6 pt-10 pb-20">
-        <h1 className="text-3xl sm:text-4xl font-medium  text-[var(--text-1)] font-mono">
-          Vie privée & <span className="gradient-text-ai">données</span>
+        <h1 className="text-3xl sm:text-4xl font-medium  text-[var(--text-1)] ui-mono">
+          Vie privée & <span className="text-[var(--accent)]">données</span>
         </h1>
-        <p className="mt-3 text-[13px] text-[var(--text-3)] leading-relaxed">
+        <p className="mt-3 text-[length:var(--t-small)] text-[var(--text-3)] leading-relaxed">
           BACKSTAGE est un espace personnel : tes données sont stockées sur ton
           propre serveur, jamais revendues, jamais utilisées pour entraîner un
           modèle. Dernière mise à jour : août 2026.
@@ -66,17 +66,17 @@ export default function PrivacyPage() {
           {SECTIONS.map((s) => (
             <div
               key={s.title}
-              className="rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/60 p-6"
+              className="rounded-[var(--r-tile)] border border-[var(--border-1)] bg-[var(--surface-1)]/60 p-6"
             >
-              <h2 className="text-[13px] font-semibold text-[var(--text-1)] font-mono ">
+              <h2 className="text-[length:var(--t-small)] font-semibold text-[var(--text-1)] ui-mono ">
                 {s.title}
               </h2>
-              <p className="mt-2 text-[13px] text-[var(--text-3)] leading-relaxed">{s.body}</p>
+              <p className="mt-2 text-[length:var(--t-small)] text-[var(--text-3)] leading-relaxed">{s.body}</p>
             </div>
           ))}
         </div>
 
-        <p className="mt-12 text-[11px] text-[var(--text-4)] font-mono ">
+        <p className="mt-12 text-[length:var(--t-small)] text-[var(--text-4)] ui-mono ">
           Contact : gestion du compte directement dans l'application (Réglages).
         </p>
       </section>

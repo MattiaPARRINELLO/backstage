@@ -1,6 +1,5 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/Chrome";
-import { Card, CardBody } from "@/components/ui/Card";
 import { getConcerts, getReminders, getIntentions } from "@/lib/storage";
 import { fetchGoogleCalendarEvents } from "@/lib/google-actions";
 import { CancelIntentionButton } from "./CancelIntention";
@@ -27,24 +26,25 @@ function toDayKey(value: string): string | null {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function loadBadge(kind: WeekItem["kind"]): { label: string; cls: string } {
+/** Nature de l'entrée : etiquette de donnee, pas de pastille ni de couleur. */
+function kindLabel(kind: WeekItem["kind"]): string {
   switch (kind) {
     case "evenement":
-      return { label: "ÉVÉNEMENT", cls: "text-[var(--accent-cool)] border-[var(--accent-cool)]/30 bg-[var(--accent-cool)]/5" };
+      return "événement";
     case "concert":
-      return { label: "CONCERT", cls: "text-[var(--accent-warm)] border-[var(--accent-warm)]/30 bg-[var(--accent-warm)]/5" };
+      return "concert";
     case "rappel":
-      return { label: "RAPPEL", cls: "text-[var(--warm)] border-[var(--warm)]/30 bg-[var(--warm)]/5" };
+      return "rappel";
     case "relance":
-      return { label: "RELANCE", cls: "text-[var(--success)] border-[var(--success)]/30 bg-[var(--success)]/5" };
+      return "relance";
   }
 }
 
-function chargeLabel(count: number): { text: string; cls: string } {
-  if (count === 0) return { text: "libre", cls: "text-[var(--text-4)]" };
-  if (count <= 2) return { text: "léger", cls: "text-[var(--success)]" };
-  if (count <= 4) return { text: "moyen", cls: "text-[var(--accent-warm)]" };
-  return { text: "chargé", cls: "text-[var(--danger)]" };
+function chargeLabel(count: number): string {
+  if (count === 0) return "libre";
+  if (count <= 2) return "léger";
+  if (count <= 4) return "moyen";
+  return "chargé";
 }
 
 export default async function WeekPage() {
@@ -135,77 +135,80 @@ export default async function WeekPage() {
   return (
     <AppShell>
       <div className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+        <div className="mx-auto max-w-5xl px-5 pb-[88px] pt-12 sm:px-6 sm:pt-[104px]">
           <PageHeader
-            eyebrow="Les 7 prochains jours"
             title="Semaine"
             description="Ta charge, d'un coup d'œil : événements, concerts, rappels et relances."
           />
 
-          <div className="space-y-4">
+          {/* Grille de semaine : sept colonnes, un seul filet en haut de chaque
+              jour, l'aujourd'hui porte un aplat d'accent. */}
+          <div className="grid grid-cols-1 sm:grid-cols-7">
             {days.map(({ key, date }, idx) => {
               const items = (itemsByDay.get(key) ?? []).sort((a, b) =>
                 a.dueAt.localeCompare(b.dueAt)
               );
-              const charge = chargeLabel(items.length);
               const isToday = idx === 0;
               return (
-                <Card key={key}>
-                  <CardBody>
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <p className="text-[13px] font-semibold text-[var(--text-1)]">
-                          {isToday ? "Aujourd'hui" : DAY_NAMES[date.getDay()]}
-                        </p>
-                        <p className="text-[11px] text-[var(--text-3)] font-mono ">
-                          {date.getDate()} {MONTH_NAMES[date.getMonth()]}
-                        </p>
-                      </div>
-                      <span className={`text-[10px] font-mono  ${charge.cls}`}>
-                        {charge.text} · {items.length} élément{items.length > 1 ? "s" : ""}
-                      </span>
-                    </div>
+                <section
+                  key={key}
+                  aria-current={isToday ? "date" : undefined}
+                  className={`border-t border-[var(--line)] px-0 py-6 sm:px-4 ${
+                    isToday ? "bg-[var(--accent-soft)]/10" : ""
+                  }`}
+                >
+                  <header>
+                    <h2 className="font-display text-[0.9375rem] font-semibold tracking-[-0.02em] text-[var(--text-1)]">
+                      {isToday ? "Aujourd'hui" : DAY_NAMES[date.getDay()]}
+                    </h2>
+                    <p className="ui-mono text-[var(--text-3)]">
+                      {date.getDate()} {MONTH_NAMES[date.getMonth()]}
+                    </p>
+                    <p className="ui-mono mt-1 text-[var(--text-2)]">
+                      {chargeLabel(items.length)} · {items.length}
+                    </p>
+                  </header>
 
-                    {items.length === 0 ? (
-                      <p className="text-[11px] text-[var(--text-4)] font-mono">
-                        — rien de prévu —
-                      </p>
-                    ) : (
-                      <ul className="space-y-1.5">
-                        {items.map((item, i) => {
-                          const badge = loadBadge(item.kind);
-                          const time = toDayKey(item.dueAt) === key ? new Date(item.dueAt) : null;
-                          return (
-                            <li
-                              key={`${item.kind}-${i}`}
-                              className="flex items-start gap-2.5 rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)]/40 px-3 py-2"
-                            >
-                              <span
-                                className={`shrink-0 mt-0.5 text-[9px] font-mono  border rounded px-1.5 py-0.5 ${badge.cls}`}
-                              >
-                                {badge.label}
+                  {items.length === 0 ? (
+                    <p className="mt-3 text-[length:var(--t-small)] text-[var(--text-3)]">
+                      Rien de prévu
+                    </p>
+                  ) : (
+                    <ul className="mt-3">
+                      {items.map((item, i) => {
+                        const time = toDayKey(item.dueAt) === key ? new Date(item.dueAt) : null;
+                        return (
+                          <li
+                            key={`${item.kind}-${i}`}
+                            className="flex flex-col gap-1 border-t border-[var(--line)] py-3 first:border-t-0 first:pt-0"
+                          >
+                            <div className="flex items-baseline justify-between gap-2">
+                              <span className="ui-mono text-[var(--text-3)]">
+                                {kindLabel(item.kind)}
                               </span>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-[12.5px] text-[var(--text-1)] truncate">{item.label}</p>
-                                {item.detail && (
-                                  <p className="text-[11px] text-[var(--text-3)] truncate">{item.detail}</p>
-                                )}
-                                {time && !Number.isNaN(time.getTime()) && (
-                                  <p className="text-[10px] font-mono text-[var(--text-4)] mt-0.5">
-                                    {time.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                                  </p>
-                                )}
-                              </div>
-                              {item.kind === "relance" && item.intentionId && (
-                                <CancelIntentionButton id={item.intentionId} />
+                              {time && !Number.isNaN(time.getTime()) && (
+                                <span className="ui-mono shrink-0 text-[var(--text-2)]">
+                                  {time.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                                </span>
                               )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </CardBody>
-                </Card>
+                            </div>
+                            <p className="text-[0.9375rem] leading-snug text-[var(--text-1)]">
+                              {item.label}
+                            </p>
+                            {item.detail && (
+                              <p className="text-[length:var(--t-small)] leading-snug text-[var(--text-2)]">
+                                {item.detail}
+                              </p>
+                            )}
+                            {item.kind === "relance" && item.intentionId && (
+                              <CancelIntentionButton id={item.intentionId} />
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </section>
               );
             })}
           </div>

@@ -13,7 +13,7 @@ interface MarkdownProps {
 // conversation à chaque frappe pendant la saisie).
 export const Markdown = memo(function Markdown({ children, className }: MarkdownProps) {
   return (
-    <div className={cn("text-[15px] leading-[1.75] text-[var(--text-1)]", className)}>
+    <div className={cn("text-[length:var(--t-body)] leading-[1.75] text-[var(--text-1)]", className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -34,15 +34,15 @@ export const Markdown = memo(function Markdown({ children, className }: Markdown
           const isInline = !className;
           return isInline ? (
             <code
-              className="px-1.5 py-0.5 rounded-md bg-[var(--surface-3)] text-[var(--accent-soft)] font-mono text-[13px]"
+              className="px-1.5 py-0.5 rounded-[var(--r-sm)] bg-[var(--surface-3)] text-[var(--accent-soft)] ui-mono text-[length:var(--t-small)]"
               {...props}
             >
               {children}
             </code>
           ) : (
-            <pre className="my-4 p-4 rounded-xl bg-[#0b0b0d] border border-[var(--border-1)] overflow-x-auto">
+            <pre className="my-4 p-4 rounded-[var(--r-tile)] bg-[var(--surface-2)] border border-[var(--border-1)] overflow-x-auto">
               <code
-                className="font-mono text-[12.5px] leading-relaxed text-[var(--text-1)]"
+                className="ui-mono text-[length:var(--t-small)] leading-relaxed text-[var(--text-1)]"
                 {...props}
               >
                 {children}
@@ -53,9 +53,9 @@ export const Markdown = memo(function Markdown({ children, className }: Markdown
         ul: ({ children }) => <ul className="mb-3.5 pl-5 list-disc marker:text-[var(--text-3)]">{children}</ul>,
         ol: ({ children }) => <ol className="mb-3.5 pl-5 list-decimal marker:text-[var(--text-3)]">{children}</ol>,
         li: ({ children }) => <li className="mb-1.5">{children}</li>,
-        h1: ({ children }) => <h1 className="text-[18px] font-bold mb-3 mt-6 first:mt-0 tracking-tight">{children}</h1>,
-        h2: ({ children }) => <h2 className="text-[16px] font-bold mb-3 mt-6 first:mt-0 tracking-tight">{children}</h2>,
-        h3: ({ children }) => <h3 className="text-[15px] font-semibold mb-2 mt-5 first:mt-0">{children}</h3>,
+        h1: ({ children }) => <h1 className="text-[length:var(--t-body)] font-bold mb-3 mt-6 first:mt-0 tracking-tight">{children}</h1>,
+        h2: ({ children }) => <h2 className="text-[length:var(--t-body)] font-bold mb-3 mt-6 first:mt-0 tracking-tight">{children}</h2>,
+        h3: ({ children }) => <h3 className="text-[length:var(--t-body)] font-semibold mb-2 mt-5 first:mt-0">{children}</h3>,
         blockquote: ({ children }) => (
           <blockquote className="border-l-2 border-[var(--accent)]/50 pl-4 my-4 text-[var(--text-2)] italic">
             {children}
@@ -63,12 +63,12 @@ export const Markdown = memo(function Markdown({ children, className }: Markdown
         ),
         hr: () => <hr className="my-5 border-[var(--border-1)]" />,
         table: ({ children }) => (
-          <div className="my-4 overflow-x-auto rounded-lg border border-[var(--border-1)]">
-            <table className="w-full text-[13px] border-collapse">{children}</table>
+          <div className="my-4 overflow-x-auto rounded-[var(--r-sm)] border border-[var(--border-1)]">
+            <table className="w-full text-[length:var(--t-small)] border-collapse">{children}</table>
           </div>
         ),
         th: ({ children }) => (
-          <th className="text-left font-mono text-[11px]  text-[var(--text-3)] px-3 py-2 border-b border-[var(--border-1)] bg-[var(--surface-2)]">
+          <th className="text-left ui-mono text-[length:var(--t-small)]  text-[var(--text-3)] px-3 py-2 border-b border-[var(--border-1)] bg-[var(--surface-2)]">
             {children}
           </th>
         ),

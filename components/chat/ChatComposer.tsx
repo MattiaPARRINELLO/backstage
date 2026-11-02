@@ -68,11 +68,14 @@ export function ChatComposer({
     setShowMentionMenu(/@[a-z]*$/i.test(v) && !v.endsWith(" "));
   };
 
+  const iconButton =
+    "shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] transition-colors duration-150";
+
   return (
     <div className="relative">
       {showMentionMenu && (
-        <div className="absolute bottom-full left-2 mb-2 w-56 rounded-xl border border-[var(--border-2)] bg-[var(--surface-1)] p-1 z-50">
-          <p className="px-2.5 pt-1.5 pb-1 text-[10px] font-mono  text-[var(--text-4)]">
+        <div className="absolute bottom-full left-2 mb-2 w-60 rounded-[var(--r-tile)] border border-[var(--line)] bg-[var(--surface-1)] shadow-[var(--shadow-float)] p-1 z-50">
+          <p className="px-2.5 pt-1.5 pb-1 ui-mono text-[var(--text-4)]">
             Mentionner un module
           </p>
           {[
@@ -83,20 +86,18 @@ export function ChatComposer({
             <button
               key={m.label}
               onClick={() => insertMention(m.label)}
-              className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--surface-2)] transition-colors duration-150"
+              className="w-full text-left px-3 py-2 rounded-[var(--r-sm)] hover:bg-[var(--surface-2)] transition-colors duration-150"
             >
-              <span className="text-[13px] text-[var(--accent-cool)] font-mono">{m.label}</span>
-              <span className="block text-[11px] text-[var(--text-4)]">{m.desc}</span>
+              <span className="text-[length:var(--t-small)] text-[var(--accent)] ui-mono">{m.label}</span>
+              <span className="block text-[length:var(--t-small)] text-[var(--text-3)]">{m.desc}</span>
             </button>
           ))}
         </div>
       )}
       <div
         className={cn(
-          "flex items-end gap-1 rounded-[24px] border bg-[var(--surface-2)]/70 backdrop-blur px-2 py-2 transition-colors duration-200",
-          dragOver
-            ? "border-[var(--accent-cool)] bg-[var(--accent-cool)]/5"
-            : "border-[var(--border-2)] focus-within:border-[var(--accent)]/40"
+          "ui-field ui-field--area gap-0 px-2 py-1.5",
+          dragOver && "border-[var(--accent)]"
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -106,15 +107,13 @@ export function ChatComposer({
           <button
             onClick={() => setShowMentionMenu(!showMentionMenu)}
             className={cn(
-              "shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200",
-              showMentionMenu
-                ? "bg-[var(--accent)]/12 text-[var(--accent)]"
-                : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)]"
+              iconButton,
+              showMentionMenu && "bg-[var(--accent)]/10 text-[var(--accent)]"
             )}
             title="Mentionner un module (@gmail, @calendar, @memory)"
             aria-label="Mentionner un module"
           >
-            <AtSign className="w-[18px] h-[18px]" />
+            <AtSign className="w-[18px] h-[18px]" strokeWidth={1.6} />
           </button>
         </div>
 
@@ -129,11 +128,11 @@ export function ChatComposer({
         />
         <button
           onClick={handleFileUpload}
-          className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] transition-colors duration-200"
+          className={iconButton}
           title="Uploader un fichier"
           aria-label="Uploader un fichier"
         >
-          <Plus className="w-[18px] h-[18px]" />
+          <Plus className="w-[18px] h-[18px]" strokeWidth={1.6} />
         </button>
         <input
           ref={fileInputRef}
@@ -156,12 +155,12 @@ export function ChatComposer({
           onKeyDown={onKey}
           placeholder={voiceActive ? "Parle maintenant…" : "Écris un message…"}
           rows={1}
-          className="flex-1 bg-transparent text-[16px] text-[var(--text-1)] placeholder:text-[var(--text-4)] outline-none resize-none font-sans px-2 py-2.5 max-h-[200px]"
+          className="flex-1 bg-transparent text-[length:var(--t-body)] text-[var(--text-1)] placeholder:text-[var(--text-3)] outline-none resize-none font-sans px-2 py-2.5 max-h-[200px]"
         />
         {isLoading ? (
           <button
             onClick={onStop}
-            className="shrink-0 w-10 h-10 rounded-full bg-[var(--danger)]/15 border border-[var(--danger)]/30 text-[var(--danger)] flex items-center justify-center hover:bg-[var(--danger)]/25 transition-colors"
+            className="ui-btn ui-btn--ghost ui-btn--icon shrink-0 text-[var(--danger)]"
             title="Arrêter"
             aria-label="Arrêter"
           >
@@ -171,7 +170,7 @@ export function ChatComposer({
           <button
             onClick={onSubmit}
             disabled={!displayValue.trim()}
-            className="shrink-0 w-10 h-10 rounded-full bg-[var(--accent)] text-[#0a0a0b] flex items-center justify-center hover:brightness-110 transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
+            className="ui-btn ui-btn--primary ui-btn--icon shrink-0"
             title="Envoyer"
             aria-label="Envoyer"
           >
@@ -180,8 +179,8 @@ export function ChatComposer({
         )}
       </div>
       {dragOver && (
-        <div className="absolute inset-0 rounded-[24px] flex items-center justify-center bg-[var(--surface-2)]/90 border-2 border-dashed border-[var(--accent-cool)] z-10">
-          <span className="text-[12px] font-mono text-[var(--accent-cool)]">
+        <div className="absolute inset-0 rounded-[var(--r-card)] flex items-center justify-center bg-[var(--surface-1)]/95 border border-[var(--accent)] z-10">
+          <span className="ui-mono text-[var(--accent)]">
             Déposer le fichier
           </span>
         </div>

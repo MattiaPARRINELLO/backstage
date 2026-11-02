@@ -99,11 +99,11 @@ function ToastView({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
     <div
       role="status"
       className={cn(
-        "pointer-events-auto toast-slide-in flex items-center gap-3 px-3.5 py-2.5 rounded-xl border backdrop-blur min-w-[280px] max-w-[92vw]",
+        "pointer-events-auto toast-slide-in flex items-center gap-3 px-3.5 py-2.5 rounded-[var(--r-tile)] border backdrop-blur min-w-[280px] max-w-[92vw]",
         toast.tone === "success" && "border-[var(--accent-success)]/40 bg-[var(--accent-success)]/10 text-[var(--text-1)]",
         toast.tone === "danger" && "border-[var(--danger)]/40 bg-[var(--danger)]/10 text-[var(--text-1)]",
-        toast.tone === "warning" && "border-[var(--warm)]/40 bg-[var(--warm)]/10 text-[var(--text-1)]",
-        toast.tone === "info" && "border-[var(--accent-cool)]/40 bg-[var(--accent-cool)]/10 text-[var(--text-1)]",
+        toast.tone === "warning" && "border-[var(--warning)]/40 bg-[var(--warning)]/10 text-[var(--text-1)]",
+        toast.tone === "info" && "border-[var(--text-3)]/40 bg-[var(--text-3)]/10 text-[var(--text-1)]",
         toast.tone === "default" && "border-[var(--border-2)] bg-[var(--surface-2)]/90 text-[var(--text-1)]"
       )}
       style={{ animationFillMode: "both" }}
@@ -113,19 +113,19 @@ function ToastView({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
           "w-3.5 h-3.5 shrink-0",
           toast.tone === "success" && "text-[var(--accent-success)]",
           toast.tone === "danger" && "text-[var(--danger)]",
-          toast.tone === "warning" && "text-[var(--warm)]",
-          toast.tone === "info" && "text-[var(--accent-cool)]",
+          toast.tone === "warning" && "text-[var(--warning)]",
+          toast.tone === "info" && "text-[var(--text-3)]",
           toast.tone === "default" && "text-[var(--text-2)]"
         )}
       />
-      <span className="text-[12.5px] leading-snug flex-1 min-w-0 whitespace-pre-line">{toast.message}</span>
+      <span className="text-[length:var(--t-small)] leading-snug flex-1 min-w-0 whitespace-pre-line">{toast.message}</span>
       {toast.action && (
         <button
           onClick={() => {
             toast.action?.onClick();
             onDismiss();
           }}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium  text-[var(--accent-soft)] hover:bg-[var(--accent)]/15 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-[var(--r-sm)] text-[length:var(--t-small)] font-medium  text-[var(--accent-soft)] hover:bg-[var(--accent)]/15 transition-colors"
         >
           <Undo2 className="w-3 h-3" />
           {toast.action.label}
@@ -133,7 +133,7 @@ function ToastView({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
       )}
       <button
         onClick={onDismiss}
-        className="shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] transition-colors"
+        className="shrink-0 w-8 h-8 rounded-[var(--r-sm)] flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] transition-colors"
         aria-label="Fermer"
       >
         <X className="w-3 h-3" />

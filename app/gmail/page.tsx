@@ -1,13 +1,13 @@
 "use client";
 
-import { Mail, ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader, EmptyState } from "@/components/layout/Chrome";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Card, CardBody } from "@/components/ui/Card";
 import { api, type GmailMessage } from "@/lib/api-client";
 import { useCachedFetch } from "@/lib/cache";
 import { formatDateShort } from "@/lib/date";
+import { cn } from "@/lib/utils";
 
 function extractName(from: string): string {
   const match = from.match(/^"?(.+?)"?\s*</);
@@ -30,35 +30,46 @@ export default function GmailPage() {
   );
 
   const visible = messages ?? [];
+  const unread = visible.filter((m) => m.unread).length;
 
   return (
     <AppShell>
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
         <PageHeader
-          eyebrow="Boîte de réception"
           title="Gmail"
           actions={
             <a
               href="https://mail.google.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[11px] text-[var(--text-2)] hover:text-[var(--accent)] transition-colors"
+              className="ui-btn ui-btn--text"
             >
               Ouvrir Gmail
-              <ExternalLink className="w-3.5 h-3.5" />
+              <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
             </a>
           }
         />
 
         <div className="mt-6">
           {error && visible.length === 0 && (
-            <Card variant="ghost" className="mb-6">
-              <CardBody>
-                <div className="text-[11px] text-[var(--danger)] px-3 py-2.5 rounded-md bg-[var(--danger)]/8 border border-[var(--danger)]/20">
-                  {error.message}
-                </div>
-              </CardBody>
-            </Card>
+            <div className="mb-6 rounded-[var(--r-sm)] border-l-2 border-[var(--danger)] bg-[var(--danger)]/8 px-3 py-2 text-[length:var(--t-small)] text-[var(--danger)]">
+              {error.message}
+            </div>
+          )}
+
+          {visible.length > 0 && (
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <span className="ui-mono text-[var(--text-3)]">
+                {unread} non lu{unread > 1 ? "s" : ""} · {visible.length} message
+                {visible.length > 1 ? "s" : ""}
+              </span>
+              {loading && (
+                <span className="ui-mono inline-flex items-center gap-1.5 text-[var(--text-3)]">
+                  <Loader2 className="w-3 h-3 animate-spin text-[var(--accent)]" />
+                  Actualisation…
+                </span>
+              )}
+            </div>
           )}
 
           {loading && visible.length === 0 && (
@@ -71,68 +82,56 @@ export default function GmailPage() {
 
           {!loading && visible.length === 0 && (
             <EmptyState
-              icon={<Mail className="w-6 h-6" />}
               title="Aucun email"
               description="Ta boîte de réception est vide."
             />
           )}
 
           {visible.length > 0 && (
-            <div className="space-y-2 relative">
-              {loading && (
-                <div className="absolute -top-7 right-0 flex items-center gap-1.5 text-[10px] text-[var(--text-3)]">
-                  <Loader2 className="w-3 h-3 text-[var(--accent)] animate-spin" />
-                  Actualisation…
-                </div>
-              )}
+            <ul className="border-t border-[var(--line)]">
               {visible.map((msg) => (
-                <Card
+                <li
                   key={msg.id}
-                  variant="ghost"
-                  className="group hover:bg-[var(--surface-2)] transition-colors"
+                  className="border-b border-[var(--line)] py-4"
                 >
-                  <CardBody className="p-3">
-                    <div className="flex items-start gap-3">
-                      <span
-                        className={
-                          msg.unread
-                            ? "mt-1.5 w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0"
-                            : "mt-1.5 w-1.5 h-1.5 rounded-full bg-transparent shrink-0"
-                        }
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <p
-                            className={
-                              msg.unread
-                                ? "text-[13px] font-medium text-[var(--text-1)] truncate"
-                                : "text-[13px] text-[var(--text-2)] truncate"
-                            }
-                          >
-                            {extractName(msg.from)}
-                          </p>
-                          <span className="shrink-0 text-[10px] text-[var(--text-3)] font-mono">
-                            {formatDateShort(msg.date)}
-                          </span>
-                        </div>
+                  <div className="flex items-start gap-3">
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "mt-2 h-1.5 w-1.5 shrink-0 rounded-full",
+                        msg.unread ? "bg-[var(--accent)]" : "bg-transparent"
+                      )}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-3">
                         <p
-                          className={
-                            msg.unread
-                              ? "text-[12px] text-[var(--text-1)] truncate mt-0.5"
-                              : "text-[12px] text-[var(--text-2)] truncate mt-0.5"
-                          }
+                          className={cn(
+                            "truncate text-[length:var(--t-body)] font-medium",
+                            msg.unread ? "text-[var(--text-1)]" : "text-[var(--text-2)]"
+                          )}
                         >
-                          {msg.subject || "(Sans objet)"}
+                          {extractName(msg.from)}
                         </p>
-                        <p className="text-[11px] text-[var(--text-3)] line-clamp-2 mt-1 leading-relaxed">
-                          {msg.snippet}
-                        </p>
+                        <span className="ui-mono shrink-0 text-[var(--text-3)]">
+                          {formatDateShort(msg.date)}
+                        </span>
                       </div>
+                      <p
+                        className={cn(
+                          "mt-0.5 truncate text-[length:var(--t-small)]",
+                          msg.unread ? "text-[var(--text-1)]" : "text-[var(--text-2)]"
+                        )}
+                      >
+                        {msg.subject || "(Sans objet)"}
+                      </p>
+                      <p className="mt-1 line-clamp-2 text-[length:var(--t-small)] leading-relaxed text-[var(--text-2)]">
+                        {msg.snippet}
+                      </p>
                     </div>
-                  </CardBody>
-                </Card>
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       </div>

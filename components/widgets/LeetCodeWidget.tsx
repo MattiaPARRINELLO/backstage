@@ -41,7 +41,7 @@ export function LeetCodeWidget() {
       />
       <CardBody>
         {(error || data?.syncError) && (
-          <div className="text-[11px] text-[var(--danger)] px-3 py-2 rounded-md bg-[var(--danger)]/8 border border-[var(--danger)]/20 mb-3 line-clamp-3">
+          <div className="text-[length:var(--t-small)] text-[var(--danger)] px-3 py-2 rounded-[var(--r-sm)] bg-[var(--danger)]/8 border border-[var(--danger)]/20 mb-3 line-clamp-3">
             {error?.message ?? data?.syncError}
           </div>
         )}
@@ -54,7 +54,7 @@ export function LeetCodeWidget() {
         )}
 
         {data && !data.leetcodeUsername && (
-          <div className="text-[11px] text-[var(--text-3)] leading-relaxed">
+          <div className="text-[length:var(--t-small)] text-[var(--text-3)] leading-relaxed">
             Renseigne ton pseudo dans les{" "}
             <Link href="/settings" className="text-[var(--accent)] hover:underline">
               réglages
@@ -69,7 +69,7 @@ export function LeetCodeWidget() {
             <div className="flex-1 min-w-0 space-y-2">
               <StatRow label="Total" value={data.totalSolved ?? 0} tone="text-[var(--text-1)]" />
               <StatRow label="Easy" value={data.easySolved ?? 0} tone="text-[var(--success)]" />
-              <StatRow label="Medium" value={data.mediumSolved ?? 0} tone="text-[var(--warm)]" />
+              <StatRow label="Medium" value={data.mediumSolved ?? 0} tone="text-[var(--warning)]" />
               <StatRow label="Hard" value={data.hardSolved ?? 0} tone="text-[var(--danger)]" />
             </div>
           </div>
@@ -78,21 +78,21 @@ export function LeetCodeWidget() {
         {data?.leetcodeUsername && (
           <div className="mt-3 pt-2.5 border-t border-[var(--border-1)] space-y-1.5">
             <div className="flex items-center gap-1.5">
-              <Trophy className="w-3 h-3 text-[var(--warm)]" />
-              <span className="text-[10px] font-mono text-[var(--text-3)] ">
+              <Trophy className="w-3 h-3 text-[var(--warning)]" />
+              <span className="text-[length:var(--t-small)] ui-mono text-[var(--text-3)] ">
                 Rang
               </span>
-              <span className="text-[10px] font-mono text-[var(--text-1)] ml-auto tabular-nums">
+              <span className="text-[length:var(--t-small)] ui-mono text-[var(--text-1)] ml-auto tabular-nums">
                 {ranked ? `#${ranking.toLocaleString("fr-FR")}` : "non classé"}
               </span>
             </div>
             {(data.totalSubmissions ?? 0) > 0 && (
               <div className="flex items-center gap-1.5">
-                <Zap className="w-3 h-3 text-[var(--accent-cool)]" />
-                <span className="text-[10px] font-mono text-[var(--text-3)] ">
+                <Zap className="w-3 h-3 text-[var(--text-3)]" />
+                <span className="text-[length:var(--t-small)] ui-mono text-[var(--text-3)] ">
                   Soumissions
                 </span>
-                <span className="text-[10px] font-mono text-[var(--text-1)] ml-auto tabular-nums">
+                <span className="text-[length:var(--t-small)] ui-mono text-[var(--text-1)] ml-auto tabular-nums">
                   {(data.totalSubmissions ?? 0).toLocaleString("fr-FR")}
                 </span>
               </div>
@@ -127,23 +127,17 @@ function StreakGauge({ streak }: { streak: number }) {
           cy="30"
           r={radius}
           fill="none"
-          stroke="url(#streakGrad)"
+          stroke="var(--accent)"
           strokeWidth="4"
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={dashOffset}
           style={{ transition: "stroke-dashoffset 700ms cubic-bezier(0.16, 1, 0.3, 1)" }}
         />
-        <defs>
-          <linearGradient id="streakGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#fbbf24" />
-            <stop offset="100%" stopColor="#f87171" />
-          </linearGradient>
-        </defs>
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <Flame className="w-3.5 h-3.5 text-[var(--warm)]" />
-        <span className="text-[14px] font-semibold text-[var(--text-1)] font-mono tabular-nums leading-none mt-0.5">
+        <Flame className="w-3.5 h-3.5 text-[var(--warning)]" />
+        <span className="text-[length:var(--t-small)] font-semibold text-[var(--text-1)] ui-mono tabular-nums leading-none mt-0.5">
           {streak}
         </span>
       </div>
@@ -153,11 +147,11 @@ function StreakGauge({ streak }: { streak: number }) {
 
 function StatRow({ label, value, tone }: { label: string; value: number; tone: string }) {
   return (
-    <div className="flex items-center justify-between text-[11px]">
-      <span className="text-[var(--text-3)] font-mono  text-[10px]">
+    <div className="flex items-center justify-between text-[length:var(--t-small)]">
+      <span className="text-[var(--text-3)] ui-mono  text-[length:var(--t-small)]">
         {label}
       </span>
-      <span className={`font-mono tabular-nums font-medium ${tone}`}>{value}</span>
+      <span className={`ui-mono tabular-nums font-medium ${tone}`}>{value}</span>
     </div>
   );
 }

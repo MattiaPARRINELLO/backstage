@@ -5,10 +5,14 @@ import { cn } from "@/lib/utils";
 
 type Size = "xs" | "sm" | "md";
 
+/**
+ * Bouton icône (sans libellé). Même matière que `.ui-btn` : seules la taille
+ * et la teinte changent. Le libellé reste obligatoire pour l'accessibilité.
+ */
 const sizeClasses: Record<Size, string> = {
-  xs: "w-6 h-6 rounded-md",
-  sm: "w-7 h-7 rounded-md",
-  md: "w-9 h-9 rounded-lg",
+  xs: "ui-btn--icon ui-btn--xs",
+  sm: "ui-btn--icon ui-btn--xs",
+  md: "ui-btn--icon ui-btn--sm",
 };
 
 type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -29,8 +33,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex items-center justify-center shrink-0 transition-colors duration-200",
-        "focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]",
+        "ui-btn shrink-0",
         sizeClasses[size],
         tone === "danger"
           ? "text-[var(--text-3)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10"

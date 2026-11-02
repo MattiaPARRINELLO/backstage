@@ -1,24 +1,25 @@
 "use client";
 
-import { Pill } from "@/components/ui/Pill";
 import type { MemoryData } from "@/lib/types";
 
 export function ProfileCard({ profile }: { profile: MemoryData["profile"] }) {
   return (
-    <div className="mb-6 p-5 rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)]">
+    <div className="mb-8 border-b border-[var(--line)] pb-5">
       <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-xl bg-[var(--surface-2)] border border-[var(--border-2)] flex items-center justify-center text-[var(--accent)] font-semibold text-[16px]">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--r-sm)] bg-[var(--surface-2)] font-display text-[length:var(--t-lead)] font-semibold text-[var(--accent)]">
           {profile.name.slice(0, 1).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px]  text-[var(--text-3)] font-mono">Profil</p>
-          <h3 className="text-[15px] font-medium text-[var(--text-1)] mt-0.5">{profile.name}</h3>
+          <p className="ui-label">Profil</p>
+          <h2 className="mt-0.5 font-display text-[length:var(--t-lead)] font-semibold text-[var(--text-1)]">
+            {profile.name}
+          </h2>
           {profile.preferences.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2.5">
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
               {profile.preferences.map((p) => (
-                <Pill key={p} tone="muted" dot>
+                <span key={p} className="ui-chip">
                   {p}
-                </Pill>
+                </span>
               ))}
             </div>
           )}

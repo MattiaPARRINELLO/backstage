@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useTransition, useEffect, useMemo } from "react";
-import { Plus, Camera } from "lucide-react";
+import { Plus } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader, EmptyState } from "@/components/layout/Chrome";
-import { Pill } from "@/components/ui/Pill";
-import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
   loadPhotoShoots, createPhotoShoot, editPhotoShoot, removePhotoShoot,
@@ -163,43 +161,43 @@ export default function PhotoShootsPage() {
 
   return (
     <AppShell>
-      <div className="flex flex-col h-full min-w-0">
+      <div className="flex h-full min-w-0 flex-col">
         <div className="px-6 pt-6">
           <PageHeader
-            eyebrow="Photographie"
             title="Photos"
             description="Shootings et livraisons photo au même endroit."
             actions={
               !showAdd && (
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center rounded-md border border-[var(--border-2)] overflow-hidden">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <button
+                      type="button"
+                      className="ui-chip"
+                      data-active={view === "shoots"}
                       onClick={() => setView("shoots")}
-                      className={cn(
-                        "px-3 h-8 text-[12px] font-medium transition-colors",
-                        view === "shoots"
-                          ? "bg-[var(--surface-2)] text-[var(--text-1)]"
-                          : "text-[var(--text-3)] hover:text-[var(--text-1)]"
-                      )}
                     >
                       Shootings
                     </button>
                     <button
+                      type="button"
+                      className="ui-chip"
+                      data-active={view === "delivery"}
                       onClick={() => setView("delivery")}
-                      className={cn(
-                        "px-3 h-8 text-[12px] font-medium transition-colors",
-                        view === "delivery"
-                          ? "bg-[var(--surface-2)] text-[var(--text-1)]"
-                          : "text-[var(--text-3)] hover:text-[var(--text-1)]"
-                      )}
                     >
                       Livraison
                     </button>
                   </div>
                   {view === "shoots" && (
-                    <Button variant="primary" size="sm" onClick={() => setShowAdd(true)} leftIcon={<Plus className="w-3 h-3" />}>
-                      Nouveau shooting
-                    </Button>
+                    <div className="md:hidden">
+                      <button
+                        type="button"
+                        className="ui-btn ui-btn--primary gap-2 whitespace-nowrap"
+                        onClick={() => setShowAdd(true)}
+                      >
+                        <Plus className="h-4 w-4" aria-hidden />
+                        Nouveau shooting
+                      </button>
+                    </div>
                   )}
                 </div>
               )
@@ -217,66 +215,74 @@ export default function PhotoShootsPage() {
         )}
 
         {view === "delivery" ? (
-          <div className="flex-1 min-h-0 overflow-y-auto pt-2">
+          <div className="min-h-0 flex-1 overflow-y-auto pt-2">
             <GalleryKanban />
           </div>
         ) : loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-6 pb-4">
+          <div className="grid grid-cols-1 gap-6 px-6 pb-4 md:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex flex-col gap-3">
                 <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
               </div>
             ))}
           </div>
         ) : !data || data.shoots.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center px-6">
+          <div className="flex flex-1 items-center justify-center px-6">
             <EmptyState
-              icon={<Camera className="w-6 h-6" />}
               title="Aucun shooting"
               description="Ajoute ton premier shooting photo pour commencer le suivi."
               action={
-                <Button variant="primary" size="sm" onClick={() => setShowAdd(true)} leftIcon={<Plus className="w-3 h-3" />}>
+                <button
+                  type="button"
+                  className="ui-btn ui-btn--primary gap-2"
+                  onClick={() => setShowAdd(true)}
+                >
+                  <Plus className="h-4 w-4" aria-hidden />
                   Ajouter un shooting
-                </Button>
+                </button>
               }
             />
           </div>
         ) : (
           <>
-            {/* Desktop: kanban board */}
-            <div className="hidden md:flex flex-1 overflow-x-auto pb-4">
-              <div className="flex gap-0 h-full px-6">
+            {/* Desktop : colonnes séparées par l'espace, sans filet lourd. */}
+            <div className="hidden min-h-0 flex-1 overflow-x-auto pb-6 md:flex">
+              <div className="flex h-full w-full items-start gap-6 px-6 pt-4">
                 {STATUS_FLOW.map((col) => {
                   const items = byStatus[col.key];
                   const isOver = dragOverCol === col.key;
                   return (
-                    <div
+                    <section
                       key={col.key}
                       className={cn(
-                        "flex flex-col flex-1 min-w-[200px] border-r border-[var(--border-1)] last:border-r-0",
-                        "transition-colors duration-150",
+                        "flex min-w-[240px] max-w-[280px] flex-1 flex-col rounded-[var(--r-card)] transition-colors",
                         isOver && "bg-[var(--accent)]/5"
                       )}
                       onDragOver={(e) => handleDragOver(e, col.key)}
                       onDragLeave={() => handleDragLeave(col.key)}
                       onDrop={(e) => handleDrop(e, col.key)}
                     >
-                      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border-1)]">
-                        <span
-                          className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
-                          style={{ backgroundColor: col.color }}
-                        />
-                        <h3 className="text-[11px] font-mono  text-[var(--text-2)]">
-                          {col.label}
-                        </h3>
-                        <span className="text-[10px] text-[var(--text-4)] font-mono ml-auto">{items.length}</span>
+                      <div className="flex items-baseline gap-2 border-b border-[var(--line)] px-1 pb-2">
+                        <h3 className="ui-mono text-[var(--text-3)]">{col.label}</h3>
+                        <span className="ui-mono ml-auto text-[var(--text-4)]">{items.length}</span>
                       </div>
 
-                      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                      <div className="min-h-[96px] flex-1 space-y-2.5 overflow-y-auto py-3">
+                        {col.key === "upcoming" && (
+                          <button
+                            type="button"
+                            onClick={() => setShowAdd(true)}
+                            className="flex w-full items-center justify-center gap-2 rounded-full border border-dashed border-[var(--line-2)] px-4 py-2.5 text-[var(--t-small)] text-[var(--text-2)] transition-colors hover:border-[var(--text-3)] hover:text-[var(--text-1)]"
+                          >
+                            <Plus className="h-4 w-4" aria-hidden />
+                            Nouveau shooting
+                          </button>
+                        )}
+
                         {items.length === 0 && (
-                          <div className="flex items-center justify-center h-24 border-2 border-dashed border-[var(--border-1)] rounded-lg text-[11px] text-[var(--text-4)] font-mono ">
+                          <div className="flex h-[72px] items-center justify-center rounded-full border border-dashed border-[var(--line)] text-[var(--t-small)] text-[var(--text-4)]">
                             Déposer ici
                           </div>
                         )}
@@ -301,33 +307,37 @@ export default function PhotoShootsPage() {
                           </div>
                         ))}
                       </div>
-                    </div>
+                    </section>
                   );
                 })}
               </div>
             </div>
 
-            {/* Mobile: filter pills + card list */}
-            <div className="md:hidden flex-1 flex flex-col min-h-0">
-              <div className="flex gap-1.5 px-4 py-3 overflow-x-auto flex-shrink-0">
-                <Pill
-                  tone={mobileStatus === "all" ? "accent" : "neutral"}
+            {/* Mobile : puces de filtre + liste */}
+            <div className="flex min-h-0 flex-1 flex-col md:hidden">
+              <div className="flex shrink-0 gap-1.5 overflow-x-auto px-4 py-3">
+                <button
+                  type="button"
+                  className="ui-chip shrink-0"
+                  data-active={mobileStatus === "all"}
                   onClick={() => setMobileStatus("all")}
                 >
                   Tous
-                </Pill>
+                </button>
                 {STATUS_FLOW.map((col) => (
-                  <Pill
+                  <button
                     key={col.key}
-                    tone={mobileStatus === col.key ? "accent" : "neutral"}
+                    type="button"
+                    className="ui-chip shrink-0"
+                    data-active={mobileStatus === col.key}
                     onClick={() => setMobileStatus(col.key)}
                   >
                     {col.label}
-                  </Pill>
+                  </button>
                 ))}
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
+              <div className="flex-1 space-y-2 overflow-y-auto px-4 pb-4">
                 {displayedShoots.map((shoot) => (
                   <ShootCard
                     key={shoot.id}
@@ -339,9 +349,9 @@ export default function PhotoShootsPage() {
                   />
                 ))}
                 {displayedShoots.length === 0 && (
-                  <div className="flex items-center justify-center h-32 text-[12px] text-[var(--text-4)] font-mono">
+                  <p className="py-12 text-center text-[var(--t-small)] text-[var(--text-4)]">
                     Aucun shooting dans ce statut
-                  </div>
+                  </p>
                 )}
               </div>
             </div>
@@ -360,14 +370,3 @@ export default function PhotoShootsPage() {
     </AppShell>
   );
 }
-
-/* ---------- ShootCard ---------- */
-
-
-
-/* ---------- DetailModal ---------- */
-
-
-
-/* ---------- AddShootForm ---------- */
-

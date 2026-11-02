@@ -2,10 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { X, Check } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Input, Textarea } from "@/components/ui/Input";
 import type { Reminder, ReminderRecurrence } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { toLocalInputValue, fromLocalInputValue } from "@/lib/date";
 import { RECURRENCE_META } from "./timeline";
 
@@ -37,55 +34,52 @@ export function ReminderForm({
   const [recurrence, setRecurrence] = useState<ReminderRecurrence | undefined>(initial?.recurrence);
 
   return (
-    <div className="mb-6 p-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 fade-in">
-      <p className="text-[10px]  text-[var(--accent)] font-mono mb-3">
+    <div className="ui-card p-5">
+      <p className="text-[length:var(--t-body)] font-medium text-[var(--text-1)]">
         {initial ? "Modifier le rappel" : "Nouveau rappel"}
       </p>
-      <div className="space-y-2.5">
-        <Input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Titre du rappel"
-          aria-label="Titre du rappel"
-          autoFocus
-        />
-        <Textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Notes (optionnel)"
-          aria-label="Notes"
-          rows={2}
-        />
-        <div className="flex items-center gap-2">
-          <label
-            htmlFor="reminder-due"
-            className="text-[11px] text-[var(--text-3)] font-mono  shrink-0"
-          >
-            Échéance
-          </label>
-          <Input
+      <div className="mt-4 space-y-3">
+        <label className="block">
+          <span className="ui-label mb-1.5 block">Titre</span>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Titre du rappel"
+            aria-label="Titre du rappel"
+            className="ui-field w-full"
+            autoFocus
+          />
+        </label>
+        <label className="block">
+          <span className="ui-label mb-1.5 block">Notes</span>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Notes (optionnel)"
+            aria-label="Notes"
+            rows={2}
+            className="ui-field min-h-[72px] w-full resize-none items-start py-3"
+          />
+        </label>
+        <label className="block">
+          <span className="ui-label mb-1.5 block">Échéance</span>
+          <input
             id="reminder-due"
             type="datetime-local"
             value={dueAt}
             onChange={(e) => setDueAt(e.target.value)}
-            className="flex-1 text-[12.5px] font-mono"
+            className="ui-field ui-mono w-full"
           />
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <label className="text-[11px] text-[var(--text-3)] font-mono  shrink-0">
-            Récurrence
-          </label>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Récurrence">
+        </label>
+        <div>
+          <span className="ui-label mb-2 block">Récurrence</span>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Récurrence">
             <button
               type="button"
               onClick={() => setRecurrence(undefined)}
-              className={cn(
-                "px-2.5 py-1 rounded-full text-[10px] font-mono  border transition-colors",
-                !recurrence
-                  ? "border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--accent)]/10"
-                  : "border-[var(--border-1)] text-[var(--text-3)] hover:text-[var(--text-1)]"
-              )}
+              className="ui-chip"
+              data-active={!recurrence}
             >
               Aucune
             </button>
@@ -94,12 +88,8 @@ export function ReminderForm({
                 key={r}
                 type="button"
                 onClick={() => setRecurrence(r)}
-                className={cn(
-                  "px-2.5 py-1 rounded-full text-[10px] font-mono  border transition-colors",
-                  recurrence === r
-                    ? "border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--accent)]/10"
-                    : "border-[var(--border-1)] text-[var(--text-3)] hover:text-[var(--text-1)]"
-                )}
+                className="ui-chip"
+                data-active={recurrence === r}
               >
                 {RECURRENCE_META[r].label}
               </button>
@@ -107,19 +97,19 @@ export function ReminderForm({
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-end gap-1.5 mt-3">
-        <Button variant="ghost" size="sm" onClick={onCancel} leftIcon={<X className="w-3.5 h-3.5" />}>
+      <div className="mt-5 flex items-center justify-end gap-2">
+        <button onClick={onCancel} className="ui-btn ui-btn--ghost">
+          <X className="w-4 h-4" strokeWidth={1.5} />
           Annuler
-        </Button>
-        <Button
-          variant="primary"
-          size="sm"
+        </button>
+        <button
           onClick={() => onSubmit({ title, notes: notes || undefined, dueAt: fromLocalInputValue(dueAt), recurrence })}
           disabled={!title.trim() || !dueAt}
-          leftIcon={<Check className="w-3.5 h-3.5" />}
+          className="ui-btn ui-btn--primary"
         >
+          <Check className="w-4 h-4" strokeWidth={1.5} />
           {initial ? "Sauver" : "Créer"}
-        </Button>
+        </button>
       </div>
     </div>
   );

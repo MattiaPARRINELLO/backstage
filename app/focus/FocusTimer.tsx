@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Play, Square, Timer as TimerIcon } from "lucide-react";
+import { Play, Square } from "lucide-react";
 import { startFocusSession, stopFocusSession } from "@/app/actions/focus";
 import type { FocusState } from "@/lib/focus";
+
+const DEFAULT_MIN = 25;
 
 const DURATIONS = [
   { min: 15, label: "15 min" },
@@ -17,6 +19,15 @@ function formatRemaining(ms: number): string {
   const m = Math.floor(total / 60);
   const s = total % 60;
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+/** Le chiffre dominant de l'ecran : mono, tabulaire, un seul par vue. */
+function BigFigure({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="ui-mono text-[length:var(--t-display)] font-normal leading-[0.95] tracking-[-0.04em] tabular-nums text-[var(--text-1)]">
+      {children}
+    </p>
+  );
 }
 
 export function FocusTimer({ initialState }: { initialState: FocusState }) {
@@ -72,43 +83,34 @@ export function FocusTimer({ initialState }: { initialState: FocusState }) {
       durationMs > 0 ? Math.min(1, Math.max(0, (remaining ?? 0) / durationMs)) : 0;
 
     return (
-      <div className="flex flex-col items-center py-10 text-center">
-        <div className="relative w-56 h-56 rounded-full border border-[var(--border-2)] bg-[var(--surface-1)] flex items-center justify-center mb-6">
-          {/* Anneau de progression */}
-          <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 224 224">
-            <circle cx="112" cy="112" r="104" fill="none" stroke="var(--border-1)" strokeWidth="4" />
-            <circle
-              cx="112"
-              cy="112"
-              r="104"
-              fill="none"
-              stroke="var(--accent)"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeDasharray={2 * Math.PI * 104}
-              strokeDashoffset={(1 - progress) * 2 * Math.PI * 104}
-              className="transition-[stroke-dashoffset] duration-1000 ease-linear"
-            />
-          </svg>
-          <div>
-            <p className="text-5xl font-medium text-[var(--text-1)] font-mono tabular-nums">
-              {formatRemaining(remaining ?? 0)}
-            </p>
-            <p className="mt-1 text-[10px] font-mono  text-[var(--text-4)]">
-              {state.durationMin} min
-            </p>
-          </div>
+      <div className="flex flex-col items-start py-8">
+        <BigFigure>{formatRemaining(remaining ?? 0)}</BigFigure>
+        <p className="ui-mono mt-3 text-[var(--text-2)]">
+          {state.durationMin} min
+        </p>
+
+        {/* Jauge plate : un filet de fond, un aplat d'accent qui se retire. */}
+        <div
+          className="mt-8 h-[3px] w-full overflow-hidden rounded-full bg-[var(--surface-3)]"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress * 100)}
+          aria-label="Temps restant"
+        >
+          <div
+            className="h-full bg-[var(--accent)] transition-[width] duration-1000 ease-linear"
+            style={{ width: `${progress * 100}%` }}
+          />
         </div>
 
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--danger)]/30 bg-[var(--danger)]/5 text-[11px] font-mono  text-[var(--danger)] mb-8">
-          Notifications coupées
-        </div>
+        <p className="ui-mono mt-8 text-[var(--text-2)]">Notifications coupées</p>
 
         <button
           onClick={() => void handleStop()}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[var(--border-2)] text-[var(--text-2)] text-[13px] hover:border-[var(--danger)]/40 hover:text-[var(--danger)] transition-colors duration-200"
+          className="ui-btn ui-btn--ghost mt-6 hover:border-[var(--danger)] hover:text-[var(--danger)]"
         >
-          <Square className="w-4 h-4" />
+          <Square className="h-4 w-4" strokeWidth={1.6} />
           Terminer la session
         </button>
       </div>
@@ -116,35 +118,33 @@ export function FocusTimer({ initialState }: { initialState: FocusState }) {
   }
 
   return (
-    <div className="flex flex-col items-center py-10 text-center">
-      <div className="w-24 h-24 rounded-full border border-[var(--border-2)] bg-[var(--surface-1)] flex items-center justify-center mb-6">
-        <TimerIcon className="w-9 h-9 text-[var(--text-3)]" />
-      </div>
-      <h2 className="text-[15px] font-semibold text-[var(--text-1)]">
+    <div className="flex flex-col items-start py-8">
+      <BigFigure>{formatRemaining(DEFAULT_MIN * 60_000)}</BigFigure>
+      <h2 className="font-display mt-8 text-[length:var(--t-lead)] font-semibold tracking-[-0.02em] text-[var(--text-1)]">
         Une session de focus ?
       </h2>
-      <p className="max-w-sm mt-2 text-[12.5px] text-[var(--text-3)] leading-relaxed">
+      <p className="mt-2 max-w-[34rem] text-[length:var(--t-body)] leading-relaxed text-[var(--text-2)]">
         Pendant la session, les notifications de rappels et de relances sont
         coupées. Elles partiront après — rien n&apos;est perdu.
       </p>
 
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+      <div className="mt-8 flex flex-wrap items-center gap-2">
         {DURATIONS.map((d) => (
           <button
             key={d.min}
             onClick={() => void handleStart(d.min)}
-            className="px-4 py-2.5 rounded-xl border border-[var(--border-1)] text-[13px] text-[var(--text-2)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors duration-200"
+            className="ui-chip transition-colors duration-150 hover:border-[var(--line-2)] hover:text-[var(--text-1)]"
           >
             {d.label}
           </button>
         ))}
       </div>
       <button
-        onClick={() => void handleStart(25)}
-        className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--accent)] text-[#0a0a0b] font-medium text-[13px] hover:brightness-110 active:brightness-95 transition-colors duration-200"
+        onClick={() => void handleStart(DEFAULT_MIN)}
+        className="ui-btn ui-btn--primary mt-8"
       >
-        <Play className="w-4 h-4" />
-        Démarrer 25 min
+        <Play className="h-4 w-4" strokeWidth={1.6} />
+        Démarrer {DEFAULT_MIN} min
       </button>
     </div>
   );

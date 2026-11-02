@@ -1,11 +1,18 @@
 "use client";
 
 import { Trash2, GripVertical, ExternalLink } from "lucide-react";
-import { Pill } from "@/components/ui/Pill";
 import type { WatchLaterItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { formatRelative } from "@/lib/date";
 import { categoryMeta } from "./meta";
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
 
 export function ItemCard({
   item,
@@ -27,7 +34,8 @@ export function ItemCard({
   onDragEnd: () => void;
 }) {
   const meta = categoryMeta[item.category];
-  const Icon = meta.icon;
+  const host = hostOf(item.url);
+
   return (
     <article
       draggable
@@ -36,84 +44,64 @@ export function ItemCard({
       onDrop={onDrop}
       onDragEnd={onDragEnd}
       className={cn(
-        "group relative flex flex-col rounded-2xl border bg-[var(--surface-1)]/40 hover:bg-[var(--surface-2)]/60 transition-colors duration-200 overflow-hidden cursor-grab active:cursor-grabbing",
-        isDragging
-          ? "opacity-40 border-[var(--accent)]/40"
-          : isDragOver
-            ? "border-[var(--accent)]/60 scale-[1.01]"
-            : "border-[var(--border-1)] hover:border-[var(--border-2)]"
+        "group flex cursor-grab items-start gap-3 border-b border-[var(--line)] px-1 py-3 transition-colors active:cursor-grabbing",
+        isDragging && "opacity-40",
+        isDragOver && "bg-[var(--surface-2)]"
       )}
     >
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <Pill tone={meta.tone} dot>
-          <Icon className="w-2.5 h-2.5" />
-          {meta.label}
-        </Pill>
-        <div className="flex items-center gap-0.5">
-          <button
-            onClick={onDelete}
-            className="w-9 h-9 rounded-md flex items-center justify-center text-[var(--text-4)] hover:text-[var(--danger)] hover:bg-[var(--surface-2)] transition-colors opacity-0 group-hover:opacity-100"
-            title="Supprimer"
-            aria-label="Supprimer"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
-          <span className="w-6 h-7 flex items-center justify-center text-[var(--text-4)] opacity-0 group-hover:opacity-100 transition-opacity">
-            <GripVertical className="w-3.5 h-3.5" />
-          </span>
-        </div>
-      </div>
+      <span className="mt-0.5 shrink-0 text-[var(--text-4)] opacity-0 transition-opacity group-hover:opacity-100">
+        <GripVertical className="h-4 w-4" aria-hidden />
+      </span>
 
-      <a
-        href={item.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        draggable={false}
-        onDragStart={(e) => e.preventDefault()}
-        className="px-4 pb-3 flex-1 flex flex-col"
-      >
-        {item.thumbnail ? (
-          <div className="aspect-video rounded-lg overflow-hidden bg-[var(--surface-2)] mb-3 border border-[var(--border-1)]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.thumbnail}
-              alt=""
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-              referrerPolicy="no-referrer"
-            />
-          </div>
-        ) : (
-          <div className="aspect-video rounded-lg bg-[var(--surface-2)] border border-[var(--border-1)] mb-3 flex items-center justify-center text-[var(--text-3)] group-hover:text-[var(--accent)] transition-colors duration-300">
-            <Icon className="w-7 h-7" strokeWidth={1.5} />
-          </div>
-        )}
-        <h3 className="text-[13.5px] font-medium text-[var(--text-1)] leading-snug line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
-          {item.title}
-        </h3>
-        {item.description && (
-          <p className="text-[11.5px] text-[var(--text-3)] mt-1.5 line-clamp-2 leading-relaxed">
-            {item.description}
+      <div className="min-w-0 flex-1">
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          draggable={false}
+          onDragStart={(e) => e.preventDefault()}
+          className="block"
+        >
+          <h3 className="truncate text-[length:var(--t-body)] font-medium text-[var(--text-1)] transition-colors group-hover:text-[var(--accent)]">
+            {item.title}
+          </h3>
+          {item.description && (
+            <p className="mt-0.5 line-clamp-1 text-[length:var(--t-small)] leading-relaxed text-[var(--text-3)]">
+              {item.description}
+            </p>
+          )}
+          <p className="ui-mono mt-1 flex items-center gap-2 text-[var(--text-4)]">
+            <span className="truncate">{host}</span>
+            <span aria-hidden>·</span>
+            <span className="shrink-0">{meta.label}</span>
+            <span aria-hidden>·</span>
+            <span className="shrink-0">{formatRelative(item.createdAt)}</span>
           </p>
-        )}
-      </a>
-
-      <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--border-1)] text-[10px] text-[var(--text-4)] font-mono">
-        <span className="truncate">{item.source}</span>
-        <span className="shrink-0 ml-2">{formatRelative(item.createdAt)}</span>
+        </a>
       </div>
 
-      <a
-        href={item.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        draggable={false}
-        onDragStart={(e) => e.preventDefault()}
-        className="absolute top-3 right-12 w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-3)] hover:text-[var(--accent)] hover:bg-[var(--surface-2)] transition-colors opacity-0 group-hover:opacity-100"
-        title="Ouvrir"
-      >
-        <ExternalLink className="w-3 h-3" />
-      </a>
+      <div className="flex shrink-0 items-center gap-2">
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          draggable={false}
+          onDragStart={(e) => e.preventDefault()}
+          className="ui-btn ui-btn--text gap-1"
+        >
+          Ouvrir
+          <ExternalLink className="h-3 w-3" aria-hidden />
+        </a>
+        <button
+          type="button"
+          onClick={onDelete}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-4)] opacity-60 transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--danger)] focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+          title="Supprimer"
+          aria-label="Supprimer"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
     </article>
   );
 }

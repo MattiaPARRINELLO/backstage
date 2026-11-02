@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { useCachedFetch } from "@/lib/cache";
 import { api, type GoogleHealth } from "@/lib/api-client";
 
@@ -50,13 +51,13 @@ export function GoogleHealthBanner() {
         role="alert"
         className="flex items-center justify-between gap-3 border-b border-[var(--danger)]/30 bg-[var(--danger)]/10 px-4 py-2"
       >
-        <p className="min-w-0 text-[12px] text-[var(--danger)]">
+        <p className="min-w-0 text-[length:var(--t-small)] text-[var(--danger)]">
           {broken.map((k) => ACCOUNT_LABELS[k]).join(" et ")} à reconnecter — l'accès
           a expiré ({broken.length > 1 ? "les deux comptes" : "le compte"}).
         </p>
         <a
           href={`/api/auth/google?type=${broken[0]}`}
-          className="shrink-0 rounded-md border border-[var(--danger)]/50 px-3 py-1 text-[12px] font-medium text-[var(--danger)] transition-colors hover:bg-[var(--danger)]/15"
+          className="shrink-0 rounded-[var(--r-sm)] border border-[var(--danger)]/50 px-3 py-1 text-[length:var(--t-small)] font-medium text-[var(--danger)] transition-colors hover:bg-[var(--danger)]/15"
         >
           Reconnecter
         </a>
@@ -72,9 +73,9 @@ export function GoogleHealthBanner() {
     return (
       <div
         role="status"
-        className="flex items-center justify-between gap-3 border-b border-[#d4a373]/30 bg-[#d4a373]/10 px-4 py-2"
+        className="flex items-center justify-between gap-3 border-b border-[var(--warning)]/30 bg-[var(--warning)]/10 px-4 py-2"
       >
-        <p className="min-w-0 text-[12px] text-[#d4a373]">
+        <p className="min-w-0 text-[length:var(--t-small)] text-[var(--warning)]">
           {expiring.map((k) => ACCOUNT_LABELS[k]).join(" et ")} expirent bientôt
           (application non vérifiée) — reconnectez quand vous pouvez pour éviter
           une coupure.
@@ -82,7 +83,7 @@ export function GoogleHealthBanner() {
         <div className="flex shrink-0 items-center gap-2">
           <a
             href={`/api/auth/google?type=${expiring[0]}`}
-            className="rounded-md border border-[#d4a373]/50 px-3 py-1 text-[12px] font-medium text-[#d4a373] transition-colors hover:bg-[#d4a373]/15"
+            className="rounded-[var(--r-sm)] border border-[var(--warning)]/50 px-3 py-1 text-[length:var(--t-small)] font-medium text-[var(--warning)] transition-colors hover:bg-[var(--warning)]/15"
           >
             Reconnecter
           </a>
@@ -90,11 +91,9 @@ export function GoogleHealthBanner() {
             type="button"
             aria-label="Masquer l'avertissement"
             onClick={() => setDismissedExpiring(true)}
-            className="rounded-md p-1 text-[#8f91a0] transition-colors hover:text-[#f5f3f0]"
+            className="rounded-[var(--r-sm)] p-1 text-[var(--text-3)] transition-colors hover:text-[var(--text-1)]"
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-              <path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
+            <X className="h-3.5 w-3.5" strokeWidth={1.6} aria-hidden />
           </button>
         </div>
       </div>

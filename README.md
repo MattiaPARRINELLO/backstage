@@ -14,13 +14,13 @@
   </p>
 </div>
 
-![Aperçu de BACKSTAGE](public/screenshots/hero-flux.jpg)
+![Aperçu de BACKSTAGE](public/screenshots/landing.jpg)
 
 > _Un bon outil personnel, c'est comme une bonne photo : si tu remarques l'interface avant l'intention, c'est raté._
 
 **Ce que c'est** — une PWA qui centralise chat IA, mémoire longue, rappels,
 agenda, emploi du temps, mails, watch-later et accréditations photo dans une
-seule interface éditoriale sombre, installable et utilisable hors-ligne.
+seule console, claire ou sombre au choix, installable et utilisable hors-ligne.
 
 **Auto-hébergement** — application **mono-utilisateur** (un compte, une passkey,
 données en JSON local). Elle démarre avec une seule variable obligatoire (un
@@ -73,7 +73,7 @@ Calendar, LeetCode, concerts) se répondent entre eux.
 - **Accréditations** : gestion des accréditations photo concerts (suit mes shootings)
 - **Recherche web** : Brave Search avec fallback DuckDuckGo (outils IA du chat)
 - **PWA** : installable, fonctionne hors-ligne, service worker, manifest
-- **Thèmes & accent** : dark/light, couleur d'accent personnalisable, picker de thème
+- **Thèmes & accent** : clair ou sombre (suit le système, choix mémorisé), couleur d'accent réglable dans les paramètres
 
 ---
 
@@ -92,15 +92,46 @@ Calendar, LeetCode, concerts) se répondent entre eux.
 
 | | |
 | --- | --- |
-| ![Mémoire persistante](public/screenshots/brain.jpg) | ![Panneau de contexte](public/screenshots/panneau-code.jpg) |
-| **La mémoire longue** — l'IA retient des faits, tu les corriges ou les oublies | **Le panneau de contexte** — Flux, agenda, inbox, code et photos dans une seule colonne |
+| ![Chat IA](public/screenshots/chat.jpg) | ![La journée](public/screenshots/today.jpg) |
+| **Le chat** — une question, quatre sources ramenées par l'IA dans une seule réponse | **La journée** — rappels, agenda et cours sur une page, sans quitter le flux |
+
+![Photos](public/screenshots/photos.jpg)
 
 - **Tout dans une seule vue** : chat à gauche, agenda / mail / LeetCode / mémoire à droite, aucune page qui coupe le flux
-- **IA qui agit vraiment** : `fetch_page`, `fetch_page_title`, `search_web`, `remember_fact` — pas du texte dans un coin
+- **IA qui agit vraiment** : `fetch_page`, `search_web`, `remember_fact`, `add_reminder` — avec confirmation explicite avant toute action externe
 - **Pensé pour le quotidien** : raccourcis clavier (`⌘K` palette, `?` aide), PWA installable, fonctionne en 3G
-- **Le détail, c'est l'intention** : un loader avant que l'IA ne « pense », un dot animé pendant qu'elle raisonne, un toast quand elle touche au calendrier
+- **Un seul accent, deux thèmes** : la couleur choisie dans les réglages porte l'action et la sélection, jamais la décoration
 
 ➜ **[Voir le code en action](#installation)** (clone + `bun dev`)
+
+---
+
+## 🖥️ Les écrans
+
+Toutes ces pages sont privées (passkey) sauf la landing et la connexion.
+
+| Route | Ce qu'elle fait |
+| --- | --- |
+| `/` | Landing publique : ce que fait le produit, la démo et l'installation en une commande |
+| `/login` | Connexion par passkey (Face ID / Touch ID / clé de sécurité), aucune saisie de mot de passe |
+| `/chat` | Le cœur : conversation IA en streaming, mémoire, outils, pièces jointes et panneau de contexte |
+| `/today` | La journée : rappels, agenda, cours et relances du jour réunis |
+| `/week` | La semaine : charge de travail en colonnes, avec les événements et les retards |
+| `/focus` | Un minuteur de séance, avec les rappels mis en pause pendant le travail |
+| `/photos` | Kanban des shootings photo et vue « Livraison » (galerie par état) |
+| `/brain` | La mémoire de l'IA : faits éditables, catégories, filtres et graphe de relations |
+| `/watch-later` | Liens, articles et vidéos à garder, avec aperçu et réorganisation |
+| `/calendar` | Agenda Google en grille mensuelle, création et édition d'événements |
+| `/reminders` | Rappels groupés par échéance, récurrence et synchronisation Microsoft To Do |
+| `/gmail` | Boîte de réception résumée, lecture et envoi de mails |
+| `/leetcode` | Progression LeetCode : série, activité, difficulté et rang |
+| `/schedule` | Emploi du temps CESAR (semaine + synchronisation) |
+| `/settings` | Modèles IA, accent, connexions Google/Microsoft, export et compte |
+| `/search` | Recherche unifiée dans la mémoire, les mails, les rappels et le web |
+| `/activity` | Journal d'activité de l'application et des actions de l'IA |
+| `/demo-calls` | Console privée des appels de la démo publique (audit) |
+| `/privacy` | Politique de confidentialité et portabilité des données |
+| `/offline` | Page de repli servie par le service worker hors-ligne |
 
 ---
 
@@ -224,38 +255,37 @@ bun run reset:passkey    # reset des passkeys enregistrées
 
 ```
 app/
-  ├─ (chat)            # Chat IA + AppShell
-  ├─ actions/          # Server Actions (une par domaine : memory, reminders, brain…)
-  ├─ api/              # Route handlers (SSE chat, auth, google, cron, push…)
-  ├─ brain/            # Mémoire (faits, CRUD)
-  ├─ reminders/        # Rappels + notifications natives
-  ├─ schedule/         # Emploi du temps CESAR (sync auto, notif -30 min)
+  ├─ page.tsx          # Landing publique (thème clair par défaut)
+  ├─ login/            # Passkey (WebAuthn), carte centrée
+  ├─ chat/             # Conversation IA + panneau de contexte
+  ├─ today/ week/ focus/  # La journée : agrégat, semaine, minuteur
+  ├─ photos/           # Kanban shootings + galerie de livraison
+  ├─ brain/            # Mémoire : faits, filtres, graphe
   ├─ watch-later/      # Liens, articles, vidéos
-  ├─ calendar/         # Google Calendar
-  ├─ gmail/            # Gmail
-  ├─ activity/         # Journal d'activité
-  ├─ search/           # Recherche web + mémoire
-  ├─ accreditations/   # Accréditations photo
-  ├─ settings/         # Thème, accent, profil
-  └─ …                 # photos, focus, leetcode, week, notif, offline…
+  ├─ calendar/ reminders/ gmail/ leetcode/ schedule/  # Intégrations
+  ├─ settings/         # Modèles, accent, connexions, compte
+  ├─ search/ activity/  # Recherche unifiée, journal d'activité
+  ├─ demo-calls/ privacy/ offline/ notif/  # Démo, pages publiques
+  ├─ actions/          # Server Actions (20 domaines)
+  └─ api/              # Route handlers (SSE chat, auth, google, cron, push…)
 components/
-  ├─ chat/             # ChatView, streaming, tool calls
-  ├─ layout/           # AppShell, Chrome, ContextPanel
-  ├─ ui/               # Primitives (Markdown, CommandPalette, KeyboardShortcuts, AccentPicker…)
-  └─ widgets/          # Calendar, Gmail, LeetCode, Accreditations
+  ├─ chat/             # ChatView, streaming, tool calls, accueil
+  ├─ layout/           # AppShell, Chrome (rail), ContextPanel, FluxTimeline
+  ├─ ui/               # Primitives React (Button, Card, Input, Pill, Toast…)
+  ├─ widgets/          # Calendar, Gmail, LeetCode, Accreditations
+  └─ landing/          # Sections de la landing
 lib/
   ├─ storage-core.ts   # Moteur JSON : écritures atomiques, verrous, backups
   ├─ storage/          # CRUD par domaine (reminders, memory, concerts, gallery…)
   ├─ types/            # Types métier par domaine (ré-exportés via types.ts)
-  ├─ ai-providers.ts   # Dispatch OpenAI/Anthropic (barrel)
-  ├─ ai-providers/     # Adapteurs openai.ts, anthropic.ts, types.ts, config.ts
-  ├─ web.ts            # Recherche web, meta de pages, garde-fou anti-SSRF
+  ├─ ai-providers/     # Adaptateurs OpenAI et Anthropic
+  ├─ chat-runs.ts      # Générations de chat survivant à la navigation
+  ├─ cesar-client.ts   # Emploi du temps CESAR (fetch pur, sans navigateur)
   ├─ google-client.ts  # OAuth Google + refresh tokens
   ├─ microsoft-client.ts # OAuth Microsoft + Graph todo
   ├─ session-core.ts   # JWT session (Node fs)
-  ├─ session-edge.ts   # JWT session (edge runtime)
+  ├─ session-edge.ts   # JWT session (runtime edge, proxy)
   ├─ cache.ts          # TTL, SWR, optimistic updates
-  ├─ server-cache.ts   # Cache côté serveur (process memory)
   ├─ daily-brief.ts    # Brief du matin
   └─ offline.ts        # IndexedDB + queue offline
 public/
@@ -265,7 +295,9 @@ public/
 scripts/               # cron-scheduler, reset-passkey, setup (secrets locaux), QA
 Dockerfile             # image auto-hébergeable (build standalone)
 compose.yaml           # déploiement Docker prêt à l'emploi
-docs/                  # self-hosting.md, deploy-cpanel.md
+docs/                  # self-hosting, deploy-cpanel, refonte de l'app
+app/globals.css        # Tokens + primitives .ui-* (système décrit dans DESIGN.md)
+app/landing.css        # Styles de la landing, isolés sous .landing-page
 ```
 
 ---
@@ -278,6 +310,8 @@ et de redistribution, sans garantie.
 ## 🩺 Santé du projet
 
 - CI (GitHub Actions) : lint, typecheck, tests unitaires, build, e2e à chaque push
+- [DESIGN.md](DESIGN.md) — le système visuel : tokens, typographie, composants `.ui-*`, motion
+- [docs/app-refonte.md](docs/app-refonte.md) — le plan de refonte et l'état de chaque phase
 - [docs/self-hosting.md](docs/self-hosting.md) — variables, Docker, HTTPS, backups
 - [docs/deploy-cpanel.md](docs/deploy-cpanel.md) — procédure mutualisée + crontab
 

@@ -1,8 +1,6 @@
 "use client";
 
 import { BellRing, BellOff, Bell } from "lucide-react";
-import { Pill } from "@/components/ui/Pill";
-import { Button } from "@/components/ui/Button";
 import type { NotificationPermissionState } from "@/lib/notifications";
 
 export function PermissionPill({
@@ -14,24 +12,27 @@ export function PermissionPill({
 }) {
   if (permission === "granted") {
     return (
-      <Pill tone="success" dot>
-        <BellRing className="w-3 h-3" />
+      <span className="ui-chip">
+        <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)]" aria-hidden />
+        <BellRing className="w-3.5 h-3.5 text-[var(--text-3)]" strokeWidth={1.5} />
         <span className="hidden sm:inline">Notifications actives</span>
-      </Pill>
+      </span>
     );
   }
   if (permission === "denied") {
     return (
-      <Pill tone="danger" dot>
-        <BellOff className="w-3 h-3" />
-        <span className="hidden sm:inline">Refusées</span>
-      </Pill>
+      <span className="ui-chip">
+        <span className="h-1.5 w-1.5 rounded-full bg-[var(--danger)]" aria-hidden />
+        <BellOff className="w-3.5 h-3.5 text-[var(--text-3)]" strokeWidth={1.5} />
+        <span className="hidden sm:inline">Notifications refusées</span>
+      </span>
     );
   }
   if (permission === "unsupported") return null;
   return (
-    <Button variant="outline" size="sm" onClick={onRequest} leftIcon={<Bell className="w-3.5 h-3.5" />}>
-      <span className="hidden sm:inline">Activer</span>
-    </Button>
+    <button onClick={onRequest} className="ui-chip">
+      <Bell className="w-3.5 h-3.5 text-[var(--text-3)]" strokeWidth={1.5} />
+      <span className="hidden sm:inline">Activer les notifications</span>
+    </button>
   );
 }

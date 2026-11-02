@@ -108,6 +108,11 @@ Stop/Esc, outils, pièces jointes, reprise d'une génération après navigation
 | Connexion | `app/login/page.tsx` (279 l.) | carte centrée `--r-card`, passkey en bouton primaire, Instrument Serif accepté ici seulement |
 | Recherche, activité, démo, notifications | `app/search`, `app/activity`, `app/demo-calls`, `app/notif`, `app/offline` | héritent du socle ; vérifier seulement la cohérence |
 
+> État (2 novembre 2026) : phase 5 livrée. Réglages en sections nommées + lignes
+> à filets, connexion en `.ui-card` centrée (Instrument Serif conservé pour le
+> logotype uniquement), écrans secondaires alignés sur les primitives. Captures
+> avant/après : `docs/app-refonte/captures/phase5/`.
+
 ## Critique / parallélisation
 
 ```

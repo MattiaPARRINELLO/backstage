@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Activity, ChevronDown, ChevronUp, RefreshCw, Search, ShieldAlert, Terminal } from "lucide-react";
+import { ChevronDown, ChevronUp, RefreshCw, Search } from "lucide-react";
 import { loadDemoCalls } from "@/app/actions/demo-calls";
 import { AppShell } from "@/components/layout/AppShell";
-import { EmptyState, PageHeader } from "@/components/layout/Chrome";
+import { PageHeader } from "@/components/layout/Chrome";
 import { cn } from "@/lib/utils";
 import type { DemoCallEntry, DemoCallOutcome } from "@/lib/types";
 
@@ -38,6 +38,12 @@ function matches(call: DemoCallEntry, query: string): boolean {
     .some((value) => value.toLocaleLowerCase("fr-FR").includes(needle));
 }
 
+function outcomeColor(outcome: DemoCallOutcome): string {
+  if (outcome === "success") return "var(--success)";
+  if (outcome === "rate_limited") return "var(--text-2)";
+  return "var(--danger)";
+}
+
 export function DemoCallsView({ initialCalls }: { initialCalls: DemoCallEntry[] }) {
   const [calls, setCalls] = useState(initialCalls);
   const [query, setQuery] = useState("");
@@ -65,129 +71,167 @@ export function DemoCallsView({ initialCalls }: { initialCalls: DemoCallEntry[] 
 
   return (
     <AppShell>
-      <div className="flex-1 min-w-0 flex flex-col h-full min-h-0 overflow-y-auto p-6">
-        <PageHeader
-          eyebrow="Console privée"
-          title="Appels de la démo"
-          description="Journal des requêtes IA publiques, avec contenu envoyé, réponse et métadonnées d’abus potentielles."
-          actions={
-            <button
-              type="button"
-              onClick={refresh}
-              disabled={loading}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-[var(--border-1)] px-3 text-[12px] text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-1)] disabled:opacity-50"
-            >
-              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-              Actualiser
-            </button>
-          }
-        />
+      <div className="flex-1 min-w-0 overflow-y-auto">
+        <div className="mx-auto w-full max-w-3xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
+          <PageHeader
+            title="Appels de la démo"
+            description="Journal des requêtes IA publiques : contenu envoyé, réponse et métadonnées d’abus potentielles."
+            actions={
+              <button
+                type="button"
+                onClick={refresh}
+                disabled={loading}
+                className="ui-btn ui-btn--ghost h-9 px-4 text-[var(--t-small)]"
+              >
+                <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} strokeWidth={1.6} />
+                Actualiser
+              </button>
+            }
+          />
 
-        <div className="mb-5 flex flex-col gap-3 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/60 p-3 sm:flex-row sm:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-4)]" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Rechercher dans les appels…"
-              className="h-10 w-full rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)] pl-9 pr-3 text-[12px] text-[var(--text-1)] outline-none placeholder:text-[var(--text-4)] focus:border-[var(--accent)]"
-            />
-          </div>
-          <label className="flex items-center gap-2 text-[11px] text-[var(--text-3)]">
-            Résultat
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="ui-field h-10 min-w-0 flex-1 gap-2.5">
+              <Search className="h-3.5 w-3.5 shrink-0 text-[var(--text-3)]" strokeWidth={1.6} aria-hidden />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Rechercher dans les appels…"
+                aria-label="Rechercher dans les appels"
+                className="w-full min-w-0 bg-transparent text-[var(--t-small)] text-[var(--text-1)] outline-none placeholder:text-[var(--text-3)]"
+              />
+            </div>
             <select
               value={outcome}
               onChange={(event) => setOutcome(event.target.value as "all" | DemoCallOutcome)}
-              className="h-10 rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)] px-3 text-[12px] text-[var(--text-1)] outline-none focus:border-[var(--accent)]"
+              aria-label="Filtrer par résultat"
+              className="ui-field h-10 w-full cursor-pointer text-[var(--t-small)] text-[var(--text-1)] sm:w-52"
             >
-              <option value="all">Tous</option>
+              <option value="all">Tous les résultats</option>
               {Object.entries(OUTCOME_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
-          </label>
-          <span className="shrink-0 font-mono text-[10px] text-[var(--text-4)]">
-            {filtered.length} / {calls.length}
-          </span>
-        </div>
-
-        {error && <p className="mb-4 rounded-lg border border-[var(--danger)]/30 bg-[var(--danger)]/10 px-3 py-2 text-[12px] text-[var(--danger)]" role="alert">{error}</p>}
-
-        {filtered.length === 0 ? (
-          <EmptyState
-            icon={<Terminal className="h-5 w-5" />}
-            title={calls.length === 0 ? "Aucun appel enregistré" : "Aucun résultat"}
-            description={calls.length === 0 ? "Les prochains appels à /api/demo apparaîtront ici." : "Modifiez votre recherche ou votre filtre."}
-          />
-        ) : (
-          <div className="space-y-2">
-            {filtered.map((call) => {
-              const isOpen = expanded === call.id;
-              const success = call.outcome === "success";
-              return (
-                <article key={call.id} className="overflow-hidden rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/70">
-                  <button
-                    type="button"
-                    onClick={() => setExpanded(isOpen ? null : call.id)}
-                    className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-2)]/60"
-                    aria-expanded={isOpen}
-                  >
-                    <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", success ? "bg-[var(--success)]" : call.outcome === "rate_limited" ? "bg-[var(--warm)]" : "bg-[var(--danger)]")} />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className={cn("text-[11px] font-medium", success ? "text-[var(--success)]" : call.outcome === "rate_limited" ? "text-[var(--warm)]" : "text-[var(--danger)]")}>{OUTCOME_LABELS[call.outcome]}</span>
-                        <span className="font-mono text-[10px] text-[var(--text-4)]">{formatDate(call.createdAt)}</span>
-                        <span className="font-mono text-[10px] text-[var(--text-4)]">{call.status} · {call.durationMs} ms</span>
-                      </span>
-                      <span className="mt-1 block truncate text-[12px] text-[var(--text-1)]">{call.input ?? "Aucun contenu reçu"}</span>
-                      <span className="mt-1 block truncate font-mono text-[10px] text-[var(--text-4)]">{call.ip} · {call.userAgent}</span>
-                    </span>
-                    {isOpen ? <ChevronUp className="mt-1 h-4 w-4 shrink-0 text-[var(--text-4)]" /> : <ChevronDown className="mt-1 h-4 w-4 shrink-0 text-[var(--text-4)]" />}
-                  </button>
-
-                  {isOpen && (
-                    <div className="space-y-4 border-t border-[var(--border-1)] px-4 py-4">
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        <Meta label="Requête" value={call.requestId} mono />
-                        <Meta label="IP" value={call.ip} mono />
-                        <Meta label="Modèle" value={call.model} mono />
-                        <Meta label="Durée" value={`${call.durationMs} ms`} mono />
-                        <Meta label="X-Forwarded-For" value={call.forwardedFor || "—"} mono />
-                        <Meta label="X-Real-IP" value={call.realIp || "—"} mono />
-                        <Meta label="User-Agent" value={call.userAgent} />
-                        <Meta label="Referer" value={call.referer} />
-                      </div>
-                      <div>
-                        <p className="mb-2 flex items-center gap-2 font-mono text-[10px]  text-[var(--text-4)]"><Activity className="h-3.5 w-3.5" /> Question reçue</p>
-                        <pre className="whitespace-pre-wrap rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)]/60 p-3 text-[12px] leading-relaxed text-[var(--text-1)]">{call.input ?? "—"}</pre>
-                      </div>
-                      {call.response && (
-                        <div>
-                          <p className="mb-2 font-mono text-[10px]  text-[var(--text-4)]">Réponse IA</p>
-                          <pre className="whitespace-pre-wrap rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)]/60 p-3 text-[12px] leading-relaxed text-[var(--text-1)]">{call.response}</pre>
-                        </div>
-                      )}
-                      {call.error && (
-                        <div className="rounded-lg border border-[var(--danger)]/25 bg-[var(--danger)]/8 p-3 text-[12px] text-[var(--danger)]">
-                          <p className="mb-1 flex items-center gap-2 font-mono text-[10px] "><ShieldAlert className="h-3.5 w-3.5" /> Erreur</p>
-                          {call.error}
-                        </div>
-                      )}
-                      {call.sources.length > 0 && (
-                        <div>
-                          <p className="mb-2 font-mono text-[10px]  text-[var(--text-4)]">Sources sélectionnées</p>
-                          <div className="flex flex-wrap gap-2">
-                            {call.sources.map((source) => <span key={`${source.kind}-${source.title}`} className="rounded-md border border-[var(--border-1)] bg-[var(--surface-2)] px-2 py-1 text-[10px] text-[var(--text-2)]">{source.kind} · {source.title}</span>)}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </article>
-              );
-            })}
+            <span className="ui-mono shrink-0 text-[var(--text-3)]">
+              {filtered.length} / {calls.length}
+            </span>
           </div>
-        )}
+
+          {error && (
+            <p className="mt-4 text-[var(--t-small)] text-[var(--danger)]" role="alert">
+              {error}
+            </p>
+          )}
+
+          <div className="mt-8">
+            {filtered.length === 0 ? (
+              <div>
+                <p className="text-[var(--t-body)] text-[var(--text-1)]">
+                  {calls.length === 0 ? "Aucun appel enregistré" : "Aucun résultat"}
+                </p>
+                <p className="mt-1 text-[var(--t-small)] text-[var(--text-3)]">
+                  {calls.length === 0
+                    ? "Les prochains appels à /api/demo apparaîtront ici."
+                    : "Modifie votre recherche ou votre filtre."}
+                </p>
+              </div>
+            ) : (
+              <div className="border-t border-[var(--line)]">
+                {filtered.map((call) => {
+                  const isOpen = expanded === call.id;
+                  return (
+                    <article key={call.id} className="border-b border-[var(--line)]">
+                      <button
+                        type="button"
+                        onClick={() => setExpanded(isOpen ? null : call.id)}
+                        className="flex w-full items-start gap-4 py-4 text-left transition-colors hover:bg-[var(--surface-2)]"
+                        aria-expanded={isOpen}
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                            <span
+                              className="text-[15px] font-medium"
+                              style={{ color: outcomeColor(call.outcome) }}
+                            >
+                              {OUTCOME_LABELS[call.outcome]}
+                            </span>
+                            <span className="ui-mono text-[var(--text-3)]">
+                              {call.status} · {call.durationMs} ms
+                            </span>
+                            <span className="ui-mono text-[var(--text-3)]">{formatDate(call.createdAt)}</span>
+                          </span>
+                          <span className="mt-1.5 block truncate text-[15px] text-[var(--text-1)]">
+                            {call.input ?? "Aucun contenu reçu"}
+                          </span>
+                          <span className="ui-mono mt-1 block truncate text-[var(--text-3)]">
+                            {call.ip} · {call.userAgent}
+                          </span>
+                        </span>
+                        {isOpen ? (
+                          <ChevronUp className="mt-1 h-4 w-4 shrink-0 text-[var(--text-3)]" strokeWidth={1.6} />
+                        ) : (
+                          <ChevronDown className="mt-1 h-4 w-4 shrink-0 text-[var(--text-3)]" strokeWidth={1.6} />
+                        )}
+                      </button>
+
+                      {isOpen && (
+                        <div className="space-y-6 pb-6">
+                          <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <Meta label="Requête" value={call.requestId} mono />
+                            <Meta label="IP" value={call.ip} mono />
+                            <Meta label="Modèle" value={call.model} mono />
+                            <Meta label="Durée" value={`${call.durationMs} ms`} mono />
+                            <Meta label="X-Forwarded-For" value={call.forwardedFor || "—"} mono />
+                            <Meta label="X-Real-IP" value={call.realIp || "—"} mono />
+                            <Meta label="User-Agent" value={call.userAgent} />
+                            <Meta label="Referer" value={call.referer} />
+                          </dl>
+
+                          <div>
+                            <p className="ui-mono text-[var(--text-3)]">Question reçue</p>
+                            <pre className="mt-2 whitespace-pre-wrap rounded-[var(--r-sm)] bg-[var(--surface-2)] p-4 text-[var(--t-small)] leading-relaxed text-[var(--text-1)]">
+                              {call.input ?? "—"}
+                            </pre>
+                          </div>
+
+                          {call.response && (
+                            <div>
+                              <p className="ui-mono text-[var(--text-3)]">Réponse IA</p>
+                              <pre className="mt-2 whitespace-pre-wrap rounded-[var(--r-sm)] bg-[var(--surface-2)] p-4 text-[var(--t-small)] leading-relaxed text-[var(--text-1)]">
+                                {call.response}
+                              </pre>
+                            </div>
+                          )}
+
+                          {call.error && (
+                            <div>
+                              <p className="ui-mono text-[var(--text-3)]">Erreur</p>
+                              <p className="mt-2 text-[var(--t-small)] leading-relaxed text-[var(--danger)]" role="alert">
+                                {call.error}
+                              </p>
+                            </div>
+                          )}
+
+                          {call.sources.length > 0 && (
+                            <div>
+                              <p className="ui-mono text-[var(--text-3)]">Sources sélectionnées</p>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {call.sources.map((source) => (
+                                  <span key={`${source.kind}-${source.title}`} className="ui-chip">
+                                    {source.kind} · {source.title}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </AppShell>
   );
@@ -196,8 +240,13 @@ export function DemoCallsView({ initialCalls }: { initialCalls: DemoCallEntry[] 
 function Meta({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="min-w-0">
-      <p className="font-mono text-[9px]  text-[var(--text-4)]">{label}</p>
-      <p className={cn("mt-1 truncate text-[11px] text-[var(--text-2)]", mono && "font-mono")} title={value}>{value}</p>
+      <dt className="ui-mono text-[var(--text-3)]">{label}</dt>
+      <dd
+        className={cn("mt-1 truncate text-[var(--t-small)] text-[var(--text-1)]", mono && "font-mono")}
+        title={value}
+      >
+        {value}
+      </dd>
     </div>
   );
 }

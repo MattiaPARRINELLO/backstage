@@ -1,17 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  CalendarDays,
-  Mail,
-  BellRing,
-  Music,
-  Code2,
-  Cloud,
-  ListChecks,
-  ArrowLeft,
-  Loader2,
-} from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import type { DailyBrief } from "@/lib/types";
 import { Markdown } from "@/components/ui/Markdown";
@@ -36,20 +26,20 @@ export default function DailyBriefPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-[var(--text-4)]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--text-3)]" strokeWidth={1.6} />
       </div>
     );
   }
 
   if (error || !brief) {
     return (
-      <div className="text-center py-20">
-        <p className="text-[var(--text-3)] text-sm mb-4">Aucun brief disponible.</p>
-        <Link
-          href="/chat"
-          className="inline-flex items-center gap-2 text-sm text-[var(--accent-cool)] hover:underline"
-        >
-          <ArrowLeft className="w-4 h-4" />
+      <div className="py-20">
+        <p className="text-[var(--t-body)] text-[var(--text-1)]">Aucun brief disponible.</p>
+        <p className="mt-1 text-[var(--t-small)] text-[var(--text-3)]">
+          Il sera généré au prochain déclenchement du matin.
+        </p>
+        <Link href="/chat" className="ui-btn ui-btn--text mt-5 text-[var(--t-small)]">
+          <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.6} aria-hidden />
           Retour
         </Link>
       </div>
@@ -60,57 +50,47 @@ export default function DailyBriefPage() {
     <>
       <Link
         href="/chat"
-        className="inline-flex items-center gap-2 text-xs font-mono  text-[var(--text-4)] hover:text-[var(--text-2)] transition-colors duration-200 mb-8"
+        className="ui-btn ui-btn--text mb-10 text-[var(--t-small)]"
       >
-        <ArrowLeft className="w-3 h-3" />
+        <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.6} aria-hidden />
         BACKSTAGE
       </Link>
 
-      <header className="mb-10">
-        <div className="flex items-center gap-3 mb-3">
-          <CalendarDays className="w-5 h-5 text-[var(--accent-cool)]" />
-          <h1 className="text-lg font-mono  text-[var(--text-1)]">
-            Brief du jour
-          </h1>
-        </div>
-        <p className="text-xs font-mono text-[var(--text-3)] ">
+      <header className="mb-8">
+        <h1 className="font-display text-[30px] font-semibold leading-[1.05] tracking-[-0.03em] text-[var(--text-1)]">
+          Brief du jour
+        </h1>
+        <p className="ui-mono mt-2 text-[var(--text-3)]">
           {formatRelative(brief.date)}
         </p>
       </header>
 
-      <div className="p-6 rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)] mb-8">
-        <Markdown className="text-sm">{brief.summary}</Markdown>
+      <div className="ui-card mb-10 p-6">
+        <Markdown className="text-[var(--t-body)]">{brief.summary}</Markdown>
       </div>
 
       {brief.weather && (
-        <Section icon={<Cloud className="w-4 h-4" />} label="Météo">
-          <p className="text-sm text-[var(--text-2)]">{brief.weather}</p>
+        <Section label="Météo">
+          <p className="py-3 text-[var(--t-body)] text-[var(--text-2)]">{brief.weather}</p>
         </Section>
       )}
 
       {brief.leetcodeDaily && (
-        <Section icon={<Code2 className="w-4 h-4" />} label="LeetCode du jour">
-          <p className="text-sm text-[var(--text-2)]">
-            <span className="text-[var(--text-1)]">{brief.leetcodeDaily.title}</span>
-            <span className="text-xs font-mono ml-2 px-2 py-0.5 rounded-full bg-[var(--surface-2)] text-[var(--warm)]">
-              {brief.leetcodeDaily.difficulty}
-            </span>
+        <Section label="LeetCode du jour">
+          <p className="flex flex-wrap items-baseline gap-3 py-3 text-[var(--t-body)] text-[var(--text-1)]">
+            {brief.leetcodeDaily.title}
+            <span className="ui-chip">{brief.leetcodeDaily.difficulty}</span>
           </p>
         </Section>
       )}
 
       {brief.reminders.length > 0 && (
-        <Section icon={<BellRing className="w-4 h-4" />} label="Rappels">
-          <ul className="space-y-2">
+        <Section label="Rappels">
+          <ul>
             {brief.reminders.map((r, i) => (
-              <li key={i} className="text-sm text-[var(--text-2)] flex items-start gap-2">
-                <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-warm)] shrink-0" />
-                <span>
-                  <span className="text-[var(--text-1)]">{r.title}</span>
-                  <span className="text-xs font-mono text-[var(--text-4)] ml-2">
-                    {formatRelative(r.dueAt)}
-                  </span>
-                </span>
+              <li key={i} className="flex flex-wrap items-baseline gap-3 border-b border-[var(--line)] py-3 last:border-0">
+                <span className="text-[var(--t-body)] text-[var(--text-1)]">{r.title}</span>
+                <span className="ui-mono text-[var(--text-3)]">{formatRelative(r.dueAt)}</span>
               </li>
             ))}
           </ul>
@@ -118,12 +98,11 @@ export default function DailyBriefPage() {
       )}
 
       {brief.events.length > 0 && (
-        <Section icon={<Music className="w-4 h-4" />} label="Événements">
-          <ul className="space-y-2">
+        <Section label="Événements">
+          <ul>
             {brief.events.map((e, i) => (
-              <li key={i} className="text-sm text-[var(--text-2)] flex items-start gap-2">
-                <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-cool)] shrink-0" />
-                <span>{e.title}</span>
+              <li key={i} className="border-b border-[var(--line)] py-3 text-[var(--t-body)] text-[var(--text-1)] last:border-0">
+                {e.title}
               </li>
             ))}
           </ul>
@@ -131,17 +110,12 @@ export default function DailyBriefPage() {
       )}
 
       {brief.urgentEmails && brief.urgentEmails.length > 0 && (
-        <Section icon={<Mail className="w-4 h-4" />} label="Emails urgents">
-          <ul className="space-y-2">
+        <Section label="Emails urgents">
+          <ul>
             {brief.urgentEmails.map((e, i) => (
-              <li key={i} className="text-sm text-[var(--text-2)] flex items-start gap-2">
-                <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-[var(--danger)] shrink-0" />
-                <span>
-                  <span className="text-[var(--text-1)]">{e.subject}</span>
-                  <span className="text-xs font-mono text-[var(--text-4)] ml-2">
-                    {e.from}
-                  </span>
-                </span>
+              <li key={i} className="flex flex-wrap items-baseline gap-3 border-b border-[var(--line)] py-3 last:border-0">
+                <span className="text-[var(--t-body)] text-[var(--text-1)]">{e.subject}</span>
+                <span className="ui-mono text-[var(--text-3)]">{e.from}</span>
               </li>
             ))}
           </ul>
@@ -149,20 +123,19 @@ export default function DailyBriefPage() {
       )}
 
       {brief.concertChecklist && brief.concertChecklist.length > 0 && (
-        <Section icon={<ListChecks className="w-4 h-4" />} label="Checklist concert">
-          <ul className="space-y-2">
+        <Section label="Checklist concert">
+          <ul>
             {brief.concertChecklist.map((item, i) => (
-              <li key={i} className="text-sm text-[var(--text-2)] flex items-start gap-2">
-                <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-[var(--success)] shrink-0" />
-                <span>{item}</span>
+              <li key={i} className="border-b border-[var(--line)] py-3 text-[var(--t-body)] text-[var(--text-2)] last:border-0">
+                {item}
               </li>
             ))}
           </ul>
         </Section>
       )}
 
-      <div className="mt-10 pt-6 border-t border-[var(--border-1)]">
-        <p className="text-xs font-mono text-[var(--text-4)] ">
+      <div className="mt-12 border-t border-[var(--line)] pt-5">
+        <p className="ui-mono text-[var(--text-3)]">
           Généré à {new Date(brief.generatedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
         </p>
       </div>
@@ -171,23 +144,18 @@ export default function DailyBriefPage() {
 }
 
 function Section({
-  icon,
   label,
   children,
 }: {
-  icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="mb-6">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-[var(--accent-cool)]">{icon}</span>
-        <h2 className="text-xs font-mono  text-[var(--text-3)]">
-          {label}
-        </h2>
-      </div>
-      {children}
-    </div>
+    <section className="mt-10">
+      <h2 className="font-display text-[17px] font-semibold tracking-[-0.02em] text-[var(--text-1)]">
+        {label}
+      </h2>
+      <div className="mt-3 border-t border-[var(--line)]">{children}</div>
+    </section>
   );
 }

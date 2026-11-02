@@ -2,11 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { EmptyState } from "@/components/layout/Chrome";
-import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Card } from "@/components/ui/Card";
-import { Pill } from "@/components/ui/Pill";
-import { Camera, Check, Pencil, Send, CalendarClock, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import type { GalleryItem, GalleryStatus } from "@/lib/types";
 
 const STATUS_LABELS: Record<GalleryStatus, string> = {
@@ -14,13 +11,6 @@ const STATUS_LABELS: Record<GalleryStatus, string> = {
   selecting: "Selecting",
   editing: "Editing",
   delivered: "Delivered",
-};
-
-const STATUS_COLORS: Record<GalleryStatus, "neutral" | "accent" | "warm" | "success"> = {
-  shooted: "neutral",
-  selecting: "accent",
-  editing: "warm",
-  delivered: "success",
 };
 
 // Kanban de livraison (gallery.json), intégré à la page Photos : une seule
@@ -35,8 +25,8 @@ export function GalleryKanban() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-6 pb-6">
-        {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-64 rounded-xl" />)}
+      <div className="grid grid-cols-1 gap-6 px-6 pb-6 sm:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-48 rounded-[var(--r-tile)]" />)}
       </div>
     );
   }
@@ -53,64 +43,88 @@ export function GalleryKanban() {
 
   return (
     <div className="px-6 pb-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {columns.map((status) => (
-          <div key={status}>
-            <div className="flex items-center gap-2 mb-3">
-              <Pill tone={STATUS_COLORS[status]}>{STATUS_LABELS[status]}</Pill>
-              <span className="text-xs text-[var(--text-4)]">
-                {items.filter((g) => g.status === status).length}
-              </span>
-            </div>
-            <div className="space-y-3">
-              {items
-                .filter((g) => g.status === status)
-                .map((g) => (
-                  <Card key={g.id} className="p-4 space-y-2.5">
-                    <div className="text-sm font-medium text-[var(--text-1)]">{g.title}</div>
-                    <div className="text-xs text-[var(--text-3)] space-y-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <Camera className="w-3 h-3 text-[var(--text-4)]" />
-                        {g.totalPhotos} photos
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Check className="w-3 h-3 text-[var(--accent-success)]" />
-                        {g.selectedPhotos} sélectionnées
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Pencil className="w-3 h-3 text-[var(--text-4)]" />
-                        {g.editedPhotos} éditées
-                      </div>
-                      {g.deliveredTo && (
-                        <div className="flex items-center gap-1.5">
-                          <Send className="w-3 h-3 text-[var(--text-4)]" />
-                          Envoyé à : {g.deliveredTo}
+      <div className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {columns.map((status) => {
+          const columnItems = items.filter((g) => g.status === status);
+          return (
+            <section key={status}>
+              <div className="flex items-baseline gap-2 border-b border-[var(--line)] px-1 pb-2">
+                <h2 className="ui-mono text-[var(--text-3)]">{STATUS_LABELS[status]}</h2>
+                <span className="ui-mono ml-auto text-[var(--text-4)]">{columnItems.length}</span>
+              </div>
+
+              <div className="space-y-2.5 pt-3">
+                {columnItems.length === 0 && (
+                  <div className="flex h-[72px] items-center justify-center rounded-full border border-dashed border-[var(--line)] text-[var(--t-small)] text-[var(--text-4)]">
+                    Vide
+                  </div>
+                )}
+
+                {columnItems.map((g) => {
+                  const late = g.deadline ? new Date(g.deadline) < new Date() : false;
+                  return (
+                    <article key={g.id} className="ui-tile p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center gap-0.5 rounded-[var(--r-sm)] bg-[var(--surface-2)]">
+                          <span className="font-display text-[length:var(--t-body)] font-semibold leading-none text-[var(--text-1)]">
+                            {g.totalPhotos}
+                          </span>
+                          <span className="ui-mono leading-none text-[var(--text-3)]">photos</span>
                         </div>
-                      )}
-                      {g.deadline && (
-                        <div className={new Date(g.deadline) < new Date() ? "flex items-center gap-1.5 text-[var(--danger)]" : "flex items-center gap-1.5"}>
-                          <CalendarClock className="w-3 h-3 text-[var(--text-4)]" />
-                          Deadline : {new Date(g.deadline).toLocaleDateString("fr-FR")}
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate text-[length:var(--t-body)] font-medium text-[var(--text-1)]">
+                            {g.title}
+                          </h3>
+                          <p className="ui-mono text-[var(--text-3)]">
+                            {g.selectedPhotos} sélectionnées
+                          </p>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2 pt-1">
+                      </div>
+
+                      <dl className="mt-3 space-y-1 border-t border-[var(--line)] pt-2">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <dt className="ui-label">Éditées</dt>
+                          <dd className="ui-mono text-[var(--text-2)]">{g.editedPhotos}</dd>
+                        </div>
+                        {g.deliveredTo && (
+                          <div className="flex items-baseline justify-between gap-2">
+                            <dt className="ui-label">Envoyé à</dt>
+                            <dd className="ui-mono truncate text-[var(--text-2)]">{g.deliveredTo}</dd>
+                          </div>
+                        )}
+                        {g.deadline && (
+                          <div className="flex items-baseline justify-between gap-2">
+                            <dt className="ui-label">Échéance</dt>
+                            <dd
+                              className={
+                                late
+                                  ? "ui-mono text-[var(--danger)]"
+                                  : "ui-mono text-[var(--text-2)]"
+                              }
+                            >
+                              {new Date(g.deadline).toLocaleDateString("fr-FR")}
+                            </dd>
+                          </div>
+                        )}
+                      </dl>
+
                       {status !== "delivered" && (
-                        <Button
-                          size="sm"
-                          variant="secondary"
+                        <button
+                          type="button"
+                          className="ui-btn ui-btn--text mt-2 gap-1"
                           onClick={() => moveItem(g.id, status, columns[columns.indexOf(status) + 1])}
-                          rightIcon={<ArrowRight className="w-3 h-3" />}
                         >
                           Avancer
-                        </Button>
+                          <ArrowRight className="h-3 w-3" aria-hidden />
+                        </button>
                       )}
-                    </div>
-                  </Card>
-                ))}
-            </div>
-          </div>
-        ))}
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
       </div>
     </div>
   );

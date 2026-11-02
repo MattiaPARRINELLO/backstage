@@ -1,11 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X, Check, Plus } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Textarea } from "@/components/ui/Input";
+import { Plus } from "lucide-react";
 import type { MemoryCategory, MemoryFact } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { categoryMeta } from "./memory-utils";
 
 function CategoryPicker({
@@ -20,13 +17,10 @@ function CategoryPicker({
       {(Object.keys(categoryMeta) as MemoryCategory[]).map((c) => (
         <button
           key={c}
+          type="button"
+          className="ui-chip"
+          data-active={selected === c}
           onClick={() => onSelect(c)}
-          className={cn(
-            "px-2.5 py-1 rounded-full text-[10px] font-mono  border transition-colors",
-            selected === c
-              ? "border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--accent)]/10"
-              : "border-[var(--border-1)] text-[var(--text-3)] hover:text-[var(--text-1)]"
-          )}
         >
           {categoryMeta[c].label}
         </button>
@@ -34,6 +28,9 @@ function CategoryPicker({
     </div>
   );
 }
+
+const areaClass =
+  "w-full resize-none rounded-[var(--r-sm)] bg-[var(--surface-2)] p-3 text-[length:var(--t-body)] leading-relaxed text-[var(--text-1)] outline-none focus:ring-1 focus:ring-[var(--accent)]";
 
 export function EditFactForm({
   fact,
@@ -48,27 +45,28 @@ export function EditFactForm({
   const [category, setCategory] = useState<MemoryCategory>(fact.category);
 
   return (
-    <div className="p-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 fade-in">
-      <Textarea
+    <div className="border-b border-[var(--line)] py-3">
+      <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         rows={2}
+        className={areaClass}
+        aria-label="Contenu du fait"
       />
-      <div className="flex items-center justify-between mt-3 gap-2">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <CategoryPicker selected={category} onSelect={setCategory} />
-        <div className="flex items-center gap-1.5 shrink-0">
-          <Button variant="ghost" size="sm" onClick={onCancel} leftIcon={<X className="w-3.5 h-3.5" />}>
+        <div className="flex shrink-0 items-center gap-3">
+          <button type="button" className="ui-btn ui-btn--text" onClick={onCancel}>
             Annuler
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
+          </button>
+          <button
+            type="button"
+            className="ui-btn ui-btn--primary"
             onClick={() => onSave(fact.id, content, category)}
             disabled={!content.trim()}
-            leftIcon={<Check className="w-3.5 h-3.5" />}
           >
             Sauver
-          </Button>
+          </button>
         </div>
       </div>
     </div>
@@ -85,35 +83,44 @@ export function AddFactForm({
   const [content, setContent] = useState("");
   const [category, setCategory] = useState<MemoryCategory>("life");
 
+  const submit = () => {
+    if (!content.trim()) return;
+    onSubmit(content, category);
+  };
+
   return (
-    <div className="mb-6 p-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 fade-in">
-      <p className="text-[10px]  text-[var(--accent)] font-mono mb-3">
-        Nouveau fait à mémoriser
-      </p>
-      <Textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="Ex : Préfère coder en TypeScript avec des fonctions pures."
-        rows={2}
-        autoFocus
-      />
-      <div className="flex items-center justify-between mt-3 gap-2 flex-wrap">
-        <CategoryPicker selected={category} onSelect={setCategory} />
-        <div className="flex items-center gap-1.5">
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            Annuler
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => onSubmit(content, category)}
-            disabled={!content.trim()}
-            leftIcon={<Plus className="w-3.5 h-3.5" />}
-          >
-            Mémoriser
-          </Button>
-        </div>
+    <form
+      className="mb-8 space-y-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit();
+      }}
+    >
+      <div className="ui-field">
+        <input
+          type="text"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Nouveau fait à mémoriser"
+          aria-label="Nouveau fait à mémoriser"
+          autoFocus
+          className="min-w-0 flex-1 bg-transparent text-base outline-none"
+        />
+        <button
+          type="submit"
+          disabled={!content.trim()}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--background)] transition-opacity disabled:opacity-40"
+          aria-label="Mémoriser"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
       </div>
-    </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <CategoryPicker selected={category} onSelect={setCategory} />
+        <button type="button" className="ui-btn ui-btn--text" onClick={onCancel}>
+          Annuler
+        </button>
+      </div>
+    </form>
   );
 }

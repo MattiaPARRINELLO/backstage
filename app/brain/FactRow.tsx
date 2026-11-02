@@ -6,24 +6,23 @@ import type { MemoryFact } from "@/lib/types";
 
 export function FactRow({ fact, onEdit, onDelete }: { fact: MemoryFact; onEdit: () => void; onDelete: () => void }) {
   return (
-    <div className="group flex items-start gap-3 p-4 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/40 hover:border-[var(--border-2)] hover:bg-[var(--surface-2)]/50 transition-colors duration-200">
-      <span className="shrink-0 w-1 self-stretch rounded-full bg-[var(--accent)]/30" />
-      <div className="flex-1 min-w-0">
-        <p className="text-[13.5px] text-[var(--text-1)] leading-relaxed">
+    <div className="group flex items-start gap-3 border-b border-[var(--line)] py-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-[length:var(--t-body)] leading-relaxed text-[var(--text-1)]">
           {fact.content}
         </p>
         {fact.source === "auto-extract" && fact.confidence !== undefined && (
-          <p className="text-[10px] text-[var(--text-4)] font-mono mt-1.5 ">
+          <p className="ui-mono mt-1 text-[var(--text-4)]">
             mémorisé auto · confiance {Math.round(fact.confidence * 100)}%
           </p>
         )}
       </div>
-      <div className="shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex shrink-0 items-center gap-1 opacity-60 transition-opacity focus-within:opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
         <IconButton label="Modifier" onClick={onEdit}>
-          <Pencil className="w-3 h-3" />
+          <Pencil className="h-3 w-3" />
         </IconButton>
         <IconButton label="Supprimer" tone="danger" onClick={onDelete}>
-          <Trash2 className="w-3 h-3" />
+          <Trash2 className="h-3 w-3" />
         </IconButton>
       </div>
     </div>

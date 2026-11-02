@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { DAY_STORY } from "@/app/landing-content";
-import { reveal } from "./reveal";
 
 const BEATS = DAY_STORY.beats;
 
@@ -17,16 +16,13 @@ export function DayStory() {
   const [outcomes, setOutcomes] = useState<Record<number, Outcome>>({});
 
   return (
-    <section id="journee" className="sec">
+    <section id="journee" className="sec sec--roomy">
       <div className="wrap story">
         <div className="story__head">
-          <span className="tag" {...reveal(0)}>
-            Une journée
-          </span>
-          <h2 className="h2 mt-5" {...reveal(60)}>
+          <h2 className="h2 mt-5">
             {DAY_STORY.title}
           </h2>
-          <p className="lead mt-4" {...reveal(110)}>
+          <p className="lead mt-4">
             {DAY_STORY.lead}
           </p>
           <p className="small mt-3">{DAY_STORY.disclaimer}</p>
@@ -37,7 +33,7 @@ export function DayStory() {
           {BEATS.map((beat, i) => {
             const outcome = outcomes[i];
             return (
-              <article key={beat.time} className="beat" {...reveal(i * 40)}>
+              <article key={beat.time} className="beat">
                 <div>
                   <p className="beat__time">{beat.time}</p>
                   <p className="beat__when">{beat.when}</p>

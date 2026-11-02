@@ -323,10 +323,10 @@ export const PHOTOS = {
     position: "50% 30%",
   },
   afterMemory: {
-    src: "/photos/jokair-scene.jpg",
-    alt: "Un chanteur au micro, bras levé, sous une lumière jaune.",
-    caption: "Jok'air, 23 octobre 2025",
-    position: "50% 42%",
+    src: "/photos/concert-trebiz-2026.jpg",
+    alt: "Le public d'un concert, visages levés dans une lumière rouge.",
+    caption: "Trebiz, 20 février 2026",
+    position: "50% 45%",
   },
   beforeClose: {
     src: "/photos/damso-faisceaux.jpg",

@@ -9,6 +9,11 @@ html[data-theme="dark"] body:has(.landing-page) {
 }
 
 @layer components {
+/* Hallmark · macrostructure: statement + console card (produit mis en page)
+ * theme: clair #f7f8fa · accent bleu #2547ff · Space Grotesk + Inter
+ * passage unslop : pastilles d'étiquette retirées, entrée unique (héros),
+ * grilles de boîtes cassées, survol inerte supprimé, rythme vertical varié.
+ */
 /* ============================================================
    LANDING BACKSTAGE — LANGAGE PRODUIT, 2026
 
@@ -129,7 +134,15 @@ html[data-theme="dark"] .card {
   padding-block: 88px;
 }
 @media (min-width: 768px) {
-  .sec { padding-block: 120px; }
+  .sec { padding-block: 104px; }
+}
+
+/* Le rythme n'est pas une constante : chaque section respire à sa taille. */
+.sec--roomy { padding-block: 96px; }
+.sec--tight { padding-block: 80px; }
+@media (min-width: 768px) {
+  .sec--roomy { padding-block: 152px; }
+  .sec--tight { padding-block: 88px; }
 }
 
 .h2 {
@@ -165,20 +178,6 @@ html[data-theme="dark"] .card {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--t-small);
   letter-spacing: 0.01em;
-}
-
-.tag {
-  display: inline-flex;
-  align-self: flex-start;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--blue-soft);
-  color: var(--blue);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: var(--t-small);
-  letter-spacing: 0.02em;
 }
 
 .sec__head {
@@ -332,7 +331,7 @@ html[data-theme="dark"] .card {
   flex: 1;
   display: grid;
   gap: 40px;
-  align-items: stretch;
+  align-items: center;
 }
 @media (min-width: 1024px) {
   .hero__grid {
@@ -377,7 +376,7 @@ html[data-theme="dark"] .card {
 .hero__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 14px;
+  gap: 8px 18px;
   align-items: center;
   margin-top: 26px;
   font-family: var(--font-mono), ui-monospace, monospace;
@@ -416,14 +415,8 @@ html[data-theme="dark"] .card {
 }
 
 .card__tag {
-  padding: 5px 11px;
-  border-radius: 999px;
-  background: var(--plate-tag-bg);
-  color: var(--plate-tag-ink);
-  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--t-small);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: var(--plate-3);
 }
 
 .card__count {
@@ -466,7 +459,7 @@ html[data-theme="dark"] .card {
 }
 
 .card__a {
-  margin-top: auto;
+  margin-top: 26px;
   padding: 18px 20px;
   border-radius: var(--r-tile);
   background: var(--plate-acc-bg);
@@ -501,9 +494,7 @@ html[data-theme="dark"] .card {
   border-radius: var(--r-tile);
   background: var(--surface);
   border: 1px solid var(--line);
-  transition: border-color 160ms var(--ease), transform 160ms var(--ease);
 }
-.idx:hover { border-color: var(--blue-line); transform: translateY(-2px); }
 
 .idx__name {
   display: block;
@@ -662,7 +653,7 @@ html[data-theme="dark"] .card {
   margin-top: 28px;
 }
 @media (min-width: 768px) {
-  .mem__cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mem__cards { grid-template-columns: 2fr 1fr 1fr; }
 }
 
 .mini {
@@ -891,6 +882,16 @@ html[data-theme="dark"] .card {
   .self__facts { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 40px; }
 }
 
+/* Les garanties sont une fiche technique, pas des cartes. */
+.self__facts .mini {
+  padding: 0;
+  padding-top: 14px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+
 .terminal {
   border-radius: var(--r-card);
   background: var(--plate-bg);
@@ -960,6 +961,13 @@ html[data-theme="dark"] .card {
   height: clamp(240px, 34vw, 520px);
   object-fit: cover;
   object-position: 50% 42%;
+  transform: translate3d(0, calc(var(--shift, 0) * 1px), 0) scale(1.06);
+  transition: transform 160ms linear;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .band__img { transform: none; }
 }
 
 .band__cap {

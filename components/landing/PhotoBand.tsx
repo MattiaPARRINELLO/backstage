@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { PHOTOS } from "@/app/landing-content";
-import { reveal } from "./reveal";
 
 type PhotoBandProps = {
   src: string;
@@ -19,8 +18,8 @@ type PhotoBandProps = {
 export function PhotoBand({ src, alt, caption, position, priority }: PhotoBandProps) {
   return (
     <section className="band" aria-label={caption}>
-      <figure {...reveal(0)}>
-        <div className="band__frame">
+      <figure>
+        <div className="band__frame" data-parallax>
           <Image
             src={src}
             alt={alt}

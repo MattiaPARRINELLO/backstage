@@ -24,7 +24,7 @@ function formatRemaining(ms: number): string {
 /** Le chiffre dominant de l'ecran : mono, tabulaire, un seul par vue. */
 function BigFigure({ children }: { children: React.ReactNode }) {
   return (
-    <p className="font-mono text-[length:var(--t-display)] font-normal leading-[0.95] tracking-[-0.04em] tabular-nums text-[var(--text-1)]">
+    <p className="ui-mono text-[length:var(--t-display)] font-normal leading-[0.95] tracking-[-0.04em] tabular-nums text-[var(--text-1)]">
       {children}
     </p>
   );

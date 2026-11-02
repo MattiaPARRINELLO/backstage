@@ -173,7 +173,7 @@ export default function LeetcodePage() {
             {stats.map((stat) => (
               <div key={stat.key} className="min-w-0">
                 <dt className="ui-label">{stat.label}</dt>
-                <dd className="mt-1 truncate font-display text-[22px] font-semibold leading-tight tracking-[-0.02em] tabular-nums text-[var(--text-1)]">
+                <dd className="mt-1 truncate font-display text-[length:var(--t-lead)] font-semibold leading-tight tracking-[-0.02em] tabular-nums text-[var(--text-1)]">
                   {stat.value}
                 </dd>
               </div>
@@ -184,7 +184,7 @@ export default function LeetcodePage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="ui-card p-6 lg:col-span-2">
             <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
-              <h3 className="text-[15px] font-medium text-[var(--text-1)]">
+              <h3 className="text-[length:var(--t-body)] font-medium text-[var(--text-1)]">
                 Activité — {WEEKS} dernières semaines
               </h3>
               <span className="ui-mono text-[var(--text-3)]">
@@ -227,13 +227,13 @@ export default function LeetcodePage() {
           </div>
 
           <div className="ui-card p-6">
-            <h3 className="mb-4 text-[15px] font-medium text-[var(--text-1)]">
+            <h3 className="mb-4 text-[length:var(--t-body)] font-medium text-[var(--text-1)]">
               Contest
             </h3>
             {contest ? (
               <div className="space-y-4">
                 <div className="flex items-baseline gap-3">
-                  <span className="font-display text-[28px] font-semibold leading-none tracking-[-0.02em] tabular-nums text-[var(--text-1)]">
+                  <span className="font-display text-[length:var(--t-head)] font-semibold leading-none tracking-[-0.02em] tabular-nums text-[var(--text-1)]">
                     {contest.rating}
                   </span>
                   {contest.badge && (
@@ -270,7 +270,7 @@ export default function LeetcodePage() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="ui-card p-6">
-            <h3 className="mb-4 text-[15px] font-medium text-[var(--text-1)]">
+            <h3 className="mb-4 text-[length:var(--t-body)] font-medium text-[var(--text-1)]">
               Répartition par difficulté
             </h3>
             <div className="space-y-4">
@@ -296,7 +296,7 @@ export default function LeetcodePage() {
           </div>
 
           <div className="ui-card p-6">
-            <h3 className="mb-4 text-[15px] font-medium text-[var(--text-1)]">
+            <h3 className="mb-4 text-[length:var(--t-body)] font-medium text-[var(--text-1)]">
               Créneau du jour
             </h3>
             <p className="mb-4 max-w-[34rem] text-[length:var(--t-small)] leading-relaxed text-[var(--text-2)]">
@@ -325,7 +325,7 @@ export default function LeetcodePage() {
 
         {exercises.length > 0 && (
           <div className="ui-card p-6">
-            <h3 className="mb-2 text-[15px] font-medium text-[var(--text-1)]">
+            <h3 className="mb-2 text-[length:var(--t-body)] font-medium text-[var(--text-1)]">
               Exercices enregistrés
             </h3>
             <ul className="divide-y divide-[var(--line)]">
@@ -334,7 +334,7 @@ export default function LeetcodePage() {
                   <div className="flex min-w-0 items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 shrink-0 text-[var(--success)]" strokeWidth={1.5} />
                     <div className="min-w-0">
-                      <div className="truncate text-[15px] text-[var(--text-1)]">{ex.title}</div>
+                      <div className="truncate text-[length:var(--t-body)] text-[var(--text-1)]">{ex.title}</div>
                       <div className="ui-mono text-[var(--text-3)]">
                         {new Date(ex.createdAt).toLocaleDateString("fr-FR")}
                       </div>

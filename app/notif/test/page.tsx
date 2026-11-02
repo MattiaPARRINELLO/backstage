@@ -100,12 +100,12 @@ export default function NotifTestPage() {
         />
 
         <section className="mt-12">
-          <h2 className="font-display text-[20px] font-semibold tracking-[-0.025em] text-[var(--text-1)]">
+          <h2 className="font-display text-[length:var(--t-lead)] font-semibold tracking-[-0.025em] text-[var(--text-1)]">
             Permission navigateur
           </h2>
           <div className="mt-4 border-t border-[var(--line)]">
             <div className="flex items-center justify-between gap-6 border-b border-[var(--line)] py-4">
-              <p className="text-[15px] text-[var(--text-1)]">Statut</p>
+              <p className="text-[length:var(--t-body)] text-[var(--text-1)]">Statut</p>
               <p
                 className="ui-mono"
                 style={{
@@ -133,12 +133,12 @@ export default function NotifTestPage() {
         </section>
 
         <section className="mt-12">
-          <h2 className="font-display text-[20px] font-semibold tracking-[-0.025em] text-[var(--text-1)]">
+          <h2 className="font-display text-[length:var(--t-lead)] font-semibold tracking-[-0.025em] text-[var(--text-1)]">
             Souscriptions push
           </h2>
           <div className="mt-4 border-t border-[var(--line)]">
             <div className="flex items-center justify-between gap-6 border-b border-[var(--line)] py-4">
-              <p className="text-[15px] text-[var(--text-1)]">Appareils</p>
+              <p className="text-[length:var(--t-body)] text-[var(--text-1)]">Appareils</p>
               <p className="ui-mono text-[var(--text-2)]">
                 {subs ? `${subs.count} enregistré(s)` : "Chargement…"}
               </p>
@@ -171,13 +171,13 @@ export default function NotifTestPage() {
         </section>
 
         <section className="mt-12">
-          <h2 className="font-display text-[20px] font-semibold tracking-[-0.025em] text-[var(--danger)]">
+          <h2 className="font-display text-[length:var(--t-lead)] font-semibold tracking-[-0.025em] text-[var(--danger)]">
             Zone sensible
           </h2>
           <div className="mt-4 border-t border-[var(--line)]">
             <div className="flex flex-col gap-3 border-b border-[var(--line)] py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
               <div className="min-w-0">
-                <p className="text-[15px] text-[var(--text-1)]">Supprimer les souscriptions</p>
+                <p className="text-[length:var(--t-body)] text-[var(--text-1)]">Supprimer les souscriptions</p>
                 <p className="mt-1 text-[var(--t-small)] text-[var(--text-3)]">
                   Toutes les souscriptions push seront effacées.
                 </p>

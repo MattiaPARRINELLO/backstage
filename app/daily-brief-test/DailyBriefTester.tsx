@@ -34,14 +34,14 @@ export function DailyBriefTester() {
       </Button>
 
       {error && (
-        <p className="flex items-start gap-2 text-[13px] text-[var(--danger)]">
+        <p className="flex items-start gap-2 text-[length:var(--t-small)] text-[var(--danger)]">
           <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
           {error}
         </p>
       )}
 
       {skipped && (
-        <div className="flex items-start gap-2 text-[13px] text-[var(--warm)]">
+        <div className="flex items-start gap-2 text-[length:var(--t-small)] text-[var(--warning)]">
           <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <span>
             Brief non envoyé : <span className="font-medium">{skipped}</span>.
@@ -51,8 +51,8 @@ export function DailyBriefTester() {
 
       {sentResult && (
         <div
-          className={`flex items-start gap-2 text-[13px] ${
-            sentResult.sent ? "text-[var(--success)]" : "text-[var(--warm)]"
+          className={`flex items-start gap-2 text-[length:var(--t-small)] ${
+            sentResult.sent ? "text-[var(--success)]" : "text-[var(--warning)]"
           }`}
         >
           {sentResult.sent ? (
@@ -71,14 +71,14 @@ export function DailyBriefTester() {
       <div className="pt-4 border-t border-[var(--border-1)]">
         <Link
           href="/notif/daily-brief"
-          className="inline-flex items-center gap-1.5 text-[13px] text-[var(--accent-cool)] hover:underline"
+          className="inline-flex items-center gap-1.5 text-[length:var(--t-small)] text-[var(--text-3)] hover:underline"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           Voir le brief du jour
         </Link>
       </div>
 
-      <p className="flex items-start gap-2 text-[12px] text-[var(--text-4)] leading-relaxed">
+      <p className="flex items-start gap-2 text-[length:var(--t-small)] text-[var(--text-4)] leading-relaxed">
         <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
         Le vrai envoi quotidien a lieu à 7h si le serveur tourne. Cette page permet
         de tester le même chemin à la demande.

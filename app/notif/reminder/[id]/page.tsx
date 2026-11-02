@@ -37,7 +37,7 @@ export default async function ReminderNotifPage({
       <div className={cn("ui-card p-6", !isDone && overdue && "border-[var(--danger)]")}>
         <h1
           className={cn(
-            "font-display text-[28px] font-semibold leading-[1.08] tracking-[-0.03em]",
+            "font-display text-[length:var(--t-head)] font-semibold leading-[1.08] tracking-[-0.03em]",
             isDone ? "text-[var(--text-3)] line-through" : "text-[var(--text-1)]"
           )}
         >

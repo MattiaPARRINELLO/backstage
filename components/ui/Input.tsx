@@ -8,8 +8,12 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * Champ de saisie. `.ui-field` est la seule définition d'un champ
+ * (`app/globals.css`) ; ce composant l'applique à un `<input>` / `<textarea>`.
+ */
 const fieldBase =
-  "w-full bg-[var(--surface-1)] border border-[var(--border-1)] rounded-md px-3 py-2 text-[13px] text-[var(--text-1)] placeholder:text-[var(--text-3)] outline-none transition-colors duration-200 focus:border-[var(--accent)]/70";
+  "ui-field w-full text-[length:var(--t-body)] placeholder:text-[var(--text-3)] outline-none";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   function Input({ className, ...rest }, ref) {
@@ -21,7 +25,13 @@ export const Textarea = forwardRef<
   HTMLTextAreaElement,
   TextareaHTMLAttributes<HTMLTextAreaElement>
 >(function Textarea({ className, ...rest }, ref) {
-  return <textarea ref={ref} className={cn(fieldBase, "resize-none", className)} {...rest} />;
+  return (
+    <textarea
+      ref={ref}
+      className={cn(fieldBase, "ui-field--area resize-none py-2.5", className)}
+      {...rest}
+    />
+  );
 });
 
 export function Field({
@@ -37,13 +47,11 @@ export function Field({
 }) {
   return (
     <label className={cn("block", className)}>
-      {label && (
-        <span className="block mb-1.5 text-[10px] font-mono  text-[var(--text-3)]">
-          {label}
-        </span>
-      )}
+      {label && <span className="ui-label mb-1.5 block">{label}</span>}
       {children}
-      {hint && <span className="block mt-1 text-[11px] text-[var(--text-4)]">{hint}</span>}
+      {hint && (
+        <span className="mt-1 block text-[length:var(--t-small)] text-[var(--text-4)]">{hint}</span>
+      )}
     </label>
   );
 }

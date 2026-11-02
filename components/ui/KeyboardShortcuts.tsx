@@ -83,21 +83,21 @@ export function KeyboardShortcuts() {
       onClick={() => setOpen(false)}
     >
       <div
-        className="w-[480px] max-w-[90vw] max-h-[80vh] overflow-y-auto rounded-2xl border border-[var(--border-1)] bg-[var(--surface-1)] p-6"
+        className="w-[480px] max-w-[90vw] max-h-[80vh] overflow-y-auto rounded-[var(--r-card)] border border-[var(--border-1)] bg-[var(--surface-1)] p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-[13px] font-semibold text-[var(--text-1)] mb-1">Raccourcis clavier</h2>
-        <p className="text-[11px] text-[var(--text-3)] mb-5 font-mono">Appuie sur ? pour réouvrir</p>
+        <h2 className="text-[length:var(--t-small)] font-semibold text-[var(--text-1)] mb-1">Raccourcis clavier</h2>
+        <p className="text-[length:var(--t-small)] text-[var(--text-3)] mb-5 ui-mono">Appuie sur ? pour réouvrir</p>
         <div className="space-y-1">
           {SHORTCUTS.map((s) => (
             <div
               key={s.keys}
-              className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-[var(--surface-2)] transition-colors"
+              className="flex items-center justify-between py-1.5 px-2 rounded-[var(--r-sm)] hover:bg-[var(--surface-2)] transition-colors"
             >
-              <span className="text-[12px] text-[var(--text-2)]">{s.label}</span>
+              <span className="text-[length:var(--t-small)] text-[var(--text-2)]">{s.label}</span>
               <kbd
                 className={cn(
-                  "px-1.5 py-0.5 text-[10px] font-mono rounded border bg-[var(--surface-3)] border-[var(--border-2)] text-[var(--text-1)]",
+                  "px-1.5 py-0.5 text-[length:var(--t-small)] ui-mono rounded border bg-[var(--surface-3)] border-[var(--border-2)] text-[var(--text-1)]",
                   s.keys.length > 3 && "tracking-wider"
                 )}
               >

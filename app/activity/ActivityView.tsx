@@ -121,7 +121,7 @@ export function ActivityView({ entries: initial }: { entries: ActivityEntry[] })
                         className="flex items-start gap-4 border-b border-[var(--line)] py-3 last:border-0"
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="text-[15px] leading-snug text-[var(--text-2)]">
+                          <p className="text-[length:var(--t-body)] leading-snug text-[var(--text-2)]">
                             <span className={cn("font-medium", ACTION_COLORS[e.action] ?? "text-[var(--text-1)]")}>
                               {ACTION_LABELS[e.action] ?? e.action}
                             </span>

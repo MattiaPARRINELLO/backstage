@@ -171,7 +171,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewSession,
       <div className="shrink-0 px-3 py-2 space-y-2">
         <button
           onClick={onNewSession}
-          className="ui-btn ui-btn--primary w-full h-10! px-3! whitespace-nowrap"
+          className="ui-btn ui-btn--primary ui-btn--sm ui-btn--block whitespace-nowrap"
         >
           <Plus className="w-3.5 h-3.5" />
           Nouvelle conversation

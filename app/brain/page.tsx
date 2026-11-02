@@ -98,11 +98,14 @@ export default function BrainPage() {
 
   const handleAdd = (content: string, category: MemoryCategory) => {
     startTransition(async () => {
-      const fact = await rememberFact(content, category, { source: "manual" });
-      if (data) {
-        setData({ ...data, facts: [...data.facts, fact] });
-        toast.show({ message: "Fait mémorisé", tone: "success", duration: 2200 });
-      }
+      await rememberFact(content, category, { source: "manual" });
+      // `rememberFact` appelle `revalidatePath` : l'état local peut être écrasé
+      // par le rafraîchissement RSC avant d'être mis à jour. On relit donc la
+      // source de vérité — sinon le fait est écrit mais invisible jusqu'au
+      // prochain chargement.
+      const fresh = await loadBrain();
+      setData(fresh);
+      toast.show({ message: "Fait mémorisé", tone: "success", duration: 2200 });
       setShowAdd(false);
     });
   };

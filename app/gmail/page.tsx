@@ -106,7 +106,7 @@ export default function GmailPage() {
                       <div className="flex items-baseline justify-between gap-3">
                         <p
                           className={cn(
-                            "truncate text-[15px] font-medium",
+                            "truncate text-[length:var(--t-body)] font-medium",
                             msg.unread ? "text-[var(--text-1)]" : "text-[var(--text-2)]"
                           )}
                         >

@@ -14,24 +14,24 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   rightIcon?: ReactNode;
 };
 
+/**
+ * Bouton de l'application. Toute l'apparence vient des classes `.ui-btn`
+ * (`app/globals.css`) : ce composant ne fait que traduire l'API en variantes.
+ * Ne jamais réintroduire de couleur ou de rayon ici — cf. DESIGN.md §5.
+ */
 const variantClasses: Record<Variant, string> = {
-  primary:
-    "bg-[var(--accent)] text-[#0a0a0b] hover:brightness-110 active:brightness-95",
-  secondary:
-    "bg-[var(--surface-3)] text-[var(--text-1)] border border-[var(--border-2)] hover:border-[var(--border-3)] hover:bg-[var(--surface-2)]",
-  ghost:
-    "text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)]",
-  outline:
-    "border border-[var(--border-2)] text-[var(--text-2)] hover:border-[var(--border-3)] hover:text-[var(--text-1)]",
-  danger:
-    "bg-[var(--danger)]/10 border border-[var(--danger)]/30 text-[var(--danger)] hover:bg-[var(--danger)]/15",
+  primary: "ui-btn--primary",
+  secondary: "ui-btn--ghost",
+  ghost: "ui-btn--quiet",
+  outline: "ui-btn--ghost",
+  danger: "ui-btn--danger",
 };
 
 const sizeClasses: Record<Size, string> = {
-  sm: "h-7 px-2.5 text-[11px] gap-1.5 rounded-md",
-  md: "h-8 px-3 text-[12px] gap-1.5 rounded-md",
-  lg: "h-10 px-4 text-[13px] gap-2 rounded-lg",
-  icon: "h-8 w-8 rounded-md",
+  sm: "ui-btn--sm",
+  md: "ui-btn--sm",
+  lg: "",
+  icon: "ui-btn--icon ui-btn--sm",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
@@ -55,9 +55,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       type={type}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex items-center justify-center font-medium transition-colors duration-200 select-none",
-        "focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--background)]",
-        "disabled:opacity-40 disabled:cursor-not-allowed",
+        "ui-btn select-none disabled:cursor-not-allowed disabled:opacity-55",
         variantClasses[variant],
         sizeClasses[size],
         className
@@ -66,7 +64,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     >
       {loading ? (
         <span
-          className="inline-block w-3 h-3 border-2 border-current border-r-transparent rounded-full animate-spin"
+          className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-r-transparent"
           aria-hidden
         />
       ) : (

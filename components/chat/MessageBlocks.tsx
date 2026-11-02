@@ -285,14 +285,14 @@ export function GroupActionCard({
         <button
           onClick={onConfirm}
           disabled={busy}
-          className="ui-btn ui-btn--primary h-9! px-4! disabled:opacity-50"
+          className="ui-btn ui-btn--primary ui-btn--sm disabled:opacity-50"
         >
           {busy ? "Exécution…" : tools.length > 1 ? "Confirmer tout" : "Confirmer"}
         </button>
         <button
           onClick={onCancel}
           disabled={busy}
-          className="ui-btn ui-btn--ghost h-9! px-4! disabled:opacity-50"
+          className="ui-btn ui-btn--ghost ui-btn--sm disabled:opacity-50"
         >
           Annuler
         </button>

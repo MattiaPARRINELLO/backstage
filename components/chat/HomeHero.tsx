@@ -480,7 +480,7 @@ export function HomeHero({
               key={s.label}
               onClick={() => void onPrompt(s.label)}
               disabled={disabled}
-              className="ui-chip group w-full items-start! justify-start! gap-2.5! rounded-[var(--r-tile)]! px-3.5! py-3! text-left transition-colors duration-150 disabled:opacity-40"
+              className="ui-chip ui-chip--tile group w-full gap-2.5 text-left transition-colors duration-150 disabled:opacity-40"
             >
               <s.icon className="w-4 h-4 shrink-0 mt-0.5 text-[var(--text-3)] group-hover:text-[var(--accent)] transition-colors duration-150" />
               <span className="leading-relaxed line-clamp-2 text-[var(--text-2)]">{s.label}</span>

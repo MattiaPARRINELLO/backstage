@@ -31,11 +31,11 @@ export function OfflineBanner() {
   return (
     <div
       className={cn(
-        "fixed left-1/2 -translate-x-1/2 z-[90] px-4 py-2.5 rounded-xl border text-[11px] font-mono transition-colors duration-500",
+        "fixed left-1/2 -translate-x-1/2 z-[90] px-4 py-2.5 rounded-[var(--r-tile)] border text-[length:var(--t-small)] ui-mono transition-colors duration-500",
         "bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] lg:bottom-4",
         online
           ? "border-[var(--success)]/30 bg-[var(--success)]/10 text-[var(--success)]"
-          : "border-[var(--warm)]/30 bg-[var(--warm)]/10 text-[var(--warm)]"
+          : "border-[var(--warning)]/30 bg-[var(--warning)]/10 text-[var(--warning)]"
       )}
       style={{
         animation: show ? "slide-up 280ms ease-out" : "fade-out 300ms ease-in forwards",

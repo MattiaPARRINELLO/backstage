@@ -718,7 +718,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
               </a>
               <button
                 onClick={() => void acceptConsent()}
-                className="ui-btn ui-btn--primary h-9! px-4!"
+                className="ui-btn ui-btn--primary ui-btn--sm"
               >
                 J&apos;accepte
               </button>
@@ -830,7 +830,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
             />
           </KeyboardSafe>
           <p className="hidden sm:block ui-mono text-[var(--text-4)] mt-2.5 text-center">
-            Entrée envoie · Shift+Entrée nouvelle ligne · Ctrl+L effacer · Esc arrêter
+            Ctrl+Entrée envoie · Shift+Entrée nouvelle ligne · Ctrl+L effacer · Esc arrêter
           </p>
         </div>
       </div>

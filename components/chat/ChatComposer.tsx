@@ -96,8 +96,8 @@ export function ChatComposer({
       )}
       <div
         className={cn(
-          "ui-field items-end! h-auto! min-h-11 gap-0 px-2! py-1.5",
-          dragOver && "border-[var(--accent)]!"
+          "ui-field ui-field--area gap-0 px-2 py-1.5",
+          dragOver && "border-[var(--accent)]"
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -160,7 +160,7 @@ export function ChatComposer({
         {isLoading ? (
           <button
             onClick={onStop}
-            className="ui-btn ui-btn--ghost shrink-0 w-10 h-10! px-0! text-[var(--danger)]!"
+            className="ui-btn ui-btn--ghost ui-btn--icon shrink-0 text-[var(--danger)]"
             title="Arrêter"
             aria-label="Arrêter"
           >
@@ -170,7 +170,7 @@ export function ChatComposer({
           <button
             onClick={onSubmit}
             disabled={!displayValue.trim()}
-            className="ui-btn ui-btn--primary shrink-0 w-10 h-10! px-0!"
+            className="ui-btn ui-btn--primary ui-btn--icon shrink-0"
             title="Envoyer"
             aria-label="Envoyer"
           >

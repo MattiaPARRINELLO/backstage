@@ -11,9 +11,6 @@ import {
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader, EmptyState } from "@/components/layout/Chrome";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Card, CardBody } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Input, Textarea, Field } from "@/components/ui/Input";
 import { api, type CalendarEvent } from "@/lib/api-client";
 import { useCachedFetch } from "@/lib/cache";
 import { cn } from "@/lib/utils";
@@ -23,9 +20,6 @@ import {
   MONTHS,
   DAYS,
   isAllDay,
-  dayStart,
-  addDays,
-  eventEndInclusive,
   isSpanningOrAllDay,
   visibleSpan,
   layoutMultiDayLanes,
@@ -144,25 +138,24 @@ export default function CalendarPage() {
   return (
     <AppShell>
       <div className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
           <PageHeader
-            eyebrow="Google Calendar"
             title="Calendrier"
             description="Vue mensuelle de tes événements synchronisés."
             actions={
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   onClick={() => createNewEvent()}
-                  className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-md border border-[var(--border-2)] text-[var(--text-2)] hover:text-[var(--text-1)] hover:border-[var(--border-3)] transition-colors"
+                  className="ui-btn ui-btn--primary"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-4 h-4" strokeWidth={1.5} />
                   Nouvel événement
                 </button>
                 <a
                   href="/api/auth/google?type=calendar"
-                  className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-md border border-[var(--border-2)] text-[var(--text-2)] hover:text-[var(--text-1)] hover:border-[var(--border-3)] transition-colors"
+                  className="ui-btn ui-btn--text"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
+                  <ExternalLink className="w-4 h-4" strokeWidth={1.5} />
                   Ouvrir dans Google
                 </a>
               </div>
@@ -170,159 +163,141 @@ export default function CalendarPage() {
           />
 
           {error && (
-            <div className="text-[11px] text-[var(--danger)] px-3 py-2.5 rounded-md bg-[var(--danger)]/8 border border-[var(--danger)]/20 mb-6">
+            <div className="mb-6 rounded-[var(--r-sm)] border-l-2 border-[var(--danger)] bg-[var(--danger)]/8 px-3 py-2 text-[length:var(--t-small)] text-[var(--danger)]">
               {error.message}
             </div>
           )}
 
-          <Card>
-            <CardBody className="p-0">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-1)]">
-                <button
-                  onClick={prevMonth}
-                  className="w-8 h-8 rounded-md flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <h2 className="text-[14px] font-semibold text-[var(--text-1)]">
-                  {MONTHS[month]} {year}
-                </h2>
-                <button
-                  onClick={nextMonth}
-                  className="w-8 h-8 rounded-md flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+          <div className="ui-card overflow-hidden">
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-3">
+              <button
+                onClick={prevMonth}
+                aria-label="Mois précédent"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-3)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-1)]"
+              >
+                <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+              <h2 className="font-display text-[19px] font-semibold tracking-[-0.03em] text-[var(--text-1)]">
+                {MONTHS[month]} {year}
+              </h2>
+              <button
+                onClick={nextMonth}
+                aria-label="Mois suivant"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-3)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-1)]"
+              >
+                <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+            </div>
 
-              {loading && !events && (
-                <div className="p-4 space-y-2">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
+            {loading && !events && (
+              <div className="space-y-2 p-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            )}
+
+            {events && (
+              <div>
+                <div className="grid grid-cols-7 border-b border-[var(--line)]">
+                  {DAYS.map((d) => (
+                    <div
+                      key={d}
+                      className="ui-mono px-2 py-2 text-center text-[var(--text-3)]"
+                    >
+                      {d}
+                    </div>
                   ))}
                 </div>
-              )}
 
-              {events && (
                 <div>
-                  <div className="grid grid-cols-7 border-b border-[var(--border-1)]">
-                    {DAYS.map((d) => (
-                      <div
-                        key={d}
-                        className="px-2 py-2 text-[9px] font-semibold  text-[var(--text-4)] font-mono text-center"
-                      >
-                        {d}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div>
-                    {weeks.map(({ days, start: weekStart }, wi) => {
-                      const spanningEvents = multiDayEventsForWeek(weekStart);
-                      return (
-                        <div key={wi} className="border-b border-[var(--border-1)] last:border-b-0">
-                          {spanningEvents.length > 0 && (
-                            <div
-                              className="grid grid-cols-7 border-b border-[var(--border-1)]"
-                              style={{ gridAutoRows: "20px" }}
-                            >
-                              {layoutMultiDayLanes(spanningEvents, weekStart).map((lane, li) =>
-                                lane.map((evt) => {
-                                  const span = visibleSpan(evt, weekStart);
-                                  if (!span) return null;
-                                  const color = EVENT_COLORS[evt.colorId ?? ""];
-                                  const start = new Date(evt.start);
-                                  const end = eventEndInclusive(evt);
-                                  const isStartVisible = dayStart(start) >= dayStart(weekStart);
-                                  const isEndVisible = dayStart(end) < addDays(dayStart(weekStart), 7);
-                                  return (
-                                    <button
-                                      key={evt.id}
-                                      onClick={() => openEdit(evt)}
-                                      className="text-[10px] font-medium truncate px-1.5 py-0.5 text-left hover:opacity-90 transition-opacity m-0.5"
-                                      style={{
-                                        gridColumn: `${span.startCol + 1} / ${span.endCol + 2}`,
-                                        gridRow: li + 1,
-                                        backgroundColor: color?.bg ?? "var(--accent)",
-                                        color: color?.fg ?? "var(--text-1)",
-                                        borderRadius: `${isStartVisible ? "4px" : "0"} ${isEndVisible ? "4px" : "0"} ${isEndVisible ? "4px" : "0"} ${isStartVisible ? "4px" : "0"}`,
-                                      }}
-                                    >
-                                      {isStartVisible ? evt.summary : "\u00A0"}
-                                    </button>
-                                  );
-                                })
-                              )}
-                            </div>
-                          )}
-
-                          <div className="grid grid-cols-7">
-                            {days.map((day, di) => {
-                              const dayEvents = day ? timedEventsForDay(day) : [];
-                              const isToday = day !== null && new Date(year, month, day).toDateString() === todayStr;
-                              return (
-                                <div
-                                  key={di}
-                                  onDoubleClick={() => day !== null && createNewEvent(day)}
-                                  className={cn(
-                                    "min-h-[90px] p-1.5 border-r border-[var(--border-1)] last:border-r-0 transition-colors",
-                                    day === null ? "bg-[var(--surface-2)]/30" : "hover:bg-[var(--surface-2)]/50 cursor-pointer"
-                                  )}
-                                >
-                                  {day !== null && (
-                                    <>
-                                      <span
-                                        className={cn(
-                                          "inline-flex items-center justify-center w-5 h-5 text-[10px] font-mono rounded-full",
-                                          isToday
-                                            ? "bg-[var(--accent)] text-[#0a0a0b] font-semibold"
-                                            : "text-[var(--text-3)]"
-                                        )}
-                                      >
-                                        {day}
-                                      </span>
-                                      <div className="mt-1 space-y-0.5">
-                                        {dayEvents.map((evt) => {
-                                          const color = EVENT_COLORS[evt.colorId ?? ""];
-                                          return (
-                                            <button
-                                              key={evt.id}
-                                              onClick={() => openEdit(evt)}
-                                              className="w-full text-left px-1.5 py-0.5 rounded text-[9px] font-medium truncate block hover:opacity-80 transition-opacity border border-transparent hover:border-[var(--border-2)]"
-                                              style={{
-                                                backgroundColor: "transparent",
-                                                color: "var(--text-1)",
-                                                borderLeftColor: color?.bg ?? "var(--accent)",
-                                                borderLeftWidth: "3px",
-                                              }}
-                                            >
-                                              <span className="text-[var(--text-3)] font-mono mr-1">
-                                                {formatTime(evt.start)}
-                                              </span>
-                                              {evt.summary}
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              );
-                            })}
+                  {weeks.map(({ days, start: weekStart }, wi) => {
+                    const spanningEvents = multiDayEventsForWeek(weekStart);
+                    return (
+                      <div key={wi} className="border-b border-[var(--line)] last:border-b-0">
+                        {spanningEvents.length > 0 && (
+                          <div
+                            className="grid grid-cols-7 border-b border-[var(--line)]"
+                            style={{ gridAutoRows: "24px" }}
+                          >
+                            {layoutMultiDayLanes(spanningEvents, weekStart).map((lane, li) =>
+                              lane.map((evt) => {
+                                const span = visibleSpan(evt, weekStart);
+                                if (!span) return null;
+                                return (
+                                  <button
+                                    key={evt.id}
+                                    onClick={() => openEdit(evt)}
+                                    className="m-0.5 truncate rounded-[6px] bg-[var(--accent-soft)]/20 px-1.5 text-left text-[length:var(--t-small)] font-medium text-[var(--text-1)] transition-colors hover:bg-[var(--accent-soft)]/30"
+                                    style={{
+                                      gridColumn: `${span.startCol + 1} / ${span.endCol + 2}`,
+                                      gridRow: li + 1,
+                                    }}
+                                  >
+                                    {evt.summary}
+                                  </button>
+                                );
+                              })
+                            )}
                           </div>
+                        )}
+
+                        <div className="grid grid-cols-7">
+                          {days.map((day, di) => {
+                            const dayEvents = day ? timedEventsForDay(day) : [];
+                            const isToday = day !== null && new Date(year, month, day).toDateString() === todayStr;
+                            return (
+                              <div
+                                key={di}
+                                onDoubleClick={() => day !== null && createNewEvent(day)}
+                                className={cn(
+                                  "min-h-[104px] border-r border-[var(--line)] p-1.5 transition-colors last:border-r-0",
+                                  day === null ? "bg-[var(--surface-2)]/40" : "cursor-pointer hover:bg-[var(--surface-2)]/50"
+                                )}
+                              >
+                                {day !== null && (
+                                  <>
+                                    <span
+                                      className={cn(
+                                        "ui-mono inline-flex h-5 w-5 items-center justify-center rounded-full",
+                                        isToday
+                                          ? "bg-[var(--accent)] font-medium text-[var(--background)]"
+                                          : "text-[var(--text-3)]"
+                                      )}
+                                    >
+                                      {day}
+                                    </span>
+                                    <div className="mt-1 space-y-0.5">
+                                      {dayEvents.map((evt) => (
+                                        <button
+                                          key={evt.id}
+                                          onClick={() => openEdit(evt)}
+                                          className="block w-full truncate rounded-[6px] bg-[var(--accent-soft)]/20 px-1.5 py-0.5 text-left text-[length:var(--t-small)] text-[var(--text-1)] transition-colors hover:bg-[var(--accent-soft)]/30"
+                                        >
+                                          <span className="ui-mono mr-1 text-[var(--text-3)]">
+                                            {formatTime(evt.start)}
+                                          </span>
+                                          {evt.summary}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
-            </CardBody>
-          </Card>
+              </div>
+            )}
+          </div>
 
           {!loading && events?.length === 0 && (
             <div className="mt-6">
               <EmptyState
-                icon={<ExternalLink className="w-5 h-5" />}
                 title="Aucun événement"
                 description="Ton calendrier est vide pour ce mois."
               />
@@ -332,82 +307,92 @@ export default function CalendarPage() {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto py-4 bg-[var(--background)]/70 backdrop-blur-sm">
-          <div className="w-full max-w-lg mx-4 my-auto rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-1)] shrink-0">
-              <h3 className="text-[14px] font-semibold text-[var(--text-1)]">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[var(--background)]/70 py-4 backdrop-blur-sm sm:items-center">
+          <div className="ui-card my-auto mx-4 flex max-h-[85vh] w-full max-w-lg flex-col shadow-[var(--shadow-float)]">
+            <div className="flex shrink-0 items-center justify-between border-b border-[var(--line)] px-6 py-4">
+              <h3 className="font-display text-[19px] font-semibold tracking-[-0.03em] text-[var(--text-1)]">
                 {isCreating ? "Nouvel événement" : "Modifier l'événement"}
               </h3>
               <button
                 onClick={() => setEditing(null)}
-                className="w-10 h-10 -mr-2 rounded-lg flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
+                className="-mr-2 flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-3)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-1)]"
                 aria-label="Fermer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" strokeWidth={1.5} />
               </button>
             </div>
 
-            <div className="p-5 space-y-4 overflow-y-auto overscroll-contain min-h-0">
-              <Field label="Titre">
-                <Input
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-6">
+              <label className="block">
+                <span className="ui-label mb-1.5 block">Titre</span>
+                <input
                   type="text"
+                  className="ui-field w-full"
                   value={editForm.summary}
                   onChange={(e) => setEditForm((f) => ({ ...f, summary: e.target.value }))}
                   placeholder="Titre de l'événement"
                 />
-              </Field>
+              </label>
 
               {isCreating && (
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Début">
-                    <Input
+                  <label className="block">
+                    <span className="ui-label mb-1.5 block">Début</span>
+                    <input
                       type="datetime-local"
+                      className="ui-field ui-mono w-full"
                       value={toDatetimeLocal(editing.start)}
                       onChange={(e) => setEditing((evt) => (evt ? { ...evt, start: new Date(e.target.value).toISOString() } : null))}
                     />
-                  </Field>
-                  <Field label="Fin">
-                    <Input
+                  </label>
+                  <label className="block">
+                    <span className="ui-label mb-1.5 block">Fin</span>
+                    <input
                       type="datetime-local"
+                      className="ui-field ui-mono w-full"
                       value={toDatetimeLocal(editing.end)}
                       onChange={(e) => setEditing((evt) => (evt ? { ...evt, end: new Date(e.target.value).toISOString() } : null))}
                     />
-                  </Field>
+                  </label>
                 </div>
               )}
 
-              <Field label="Lieu">
-                <Input
+              <label className="block">
+                <span className="ui-label mb-1.5 block">Lieu</span>
+                <input
                   type="text"
+                  className="ui-field w-full"
                   value={editForm.location}
                   onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
                   placeholder="Salle, lien, adresse…"
                 />
-              </Field>
+              </label>
 
-              <Field label="Description">
-                <Textarea
+              <label className="block">
+                <span className="ui-label mb-1.5 block">Description</span>
+                <textarea
+                  className="ui-field min-h-[88px] w-full resize-none items-start py-3"
                   value={editForm.description}
                   onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
                   rows={3}
                 />
-              </Field>
+              </label>
 
               <div>
-                <label className="block text-[10px] font-mono  text-[var(--text-3)] mb-2">
-                  Couleur
-                </label>
+                <span className="ui-label mb-2 block">Couleur</span>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(EVENT_COLORS).map(([id, c]) => (
                     <button
                       key={id}
                       onClick={() => setEditForm((f) => ({ ...f, colorId: id }))}
                       title={c.name}
+                      aria-label={c.name}
+                      aria-pressed={editForm.colorId === id}
                       className={cn(
-                        "w-8 h-8 rounded-full border-2 transition-colors duration-200",
+                        "h-8 w-8 rounded-full border-2 transition-colors duration-200",
                         editForm.colorId === id
-                          ? "border-[var(--text-1)] scale-110"
-                          : "border-transparent"
+                          ? "border-[var(--text-1)]"
+                          : "border-transparent hover:border-[var(--line-2)]"
                       )}
                       style={{ backgroundColor: c.bg }}
                     />
@@ -415,44 +400,45 @@ export default function CalendarPage() {
                   <button
                     onClick={() => setEditForm((f) => ({ ...f, colorId: "" }))}
                     title="Aucune couleur"
+                    aria-label="Aucune couleur"
+                    aria-pressed={!editForm.colorId}
                     className={cn(
-                      "w-8 h-8 rounded-full border-2 border-dashed transition-colors duration-200 flex items-center justify-center text-[9px]",
+                      "flex h-8 w-8 items-center justify-center rounded-full border-2 text-[var(--text-3)] transition-colors duration-200",
                       !editForm.colorId
-                        ? "border-[var(--text-1)] scale-110"
-                        : "border-[var(--border-2)]"
+                        ? "border-[var(--text-1)]"
+                        : "border-dashed border-[var(--line-2)] hover:border-[var(--text-3)]"
                     )}
-                    style={{ backgroundColor: "var(--surface-2)" }}
                   >
-                    <X className="w-3 h-3 text-[var(--text-3)]" />
+                    <X className="w-3 h-3" strokeWidth={1.5} />
                   </button>
                 </div>
               </div>
 
               {editing.start && (
-                <div className="flex items-center gap-2 text-[11px] text-[var(--text-3)] font-mono pt-2 border-t border-[var(--border-1)]">
+                <div className="ui-mono flex flex-wrap items-center gap-2 border-t border-[var(--line)] pt-4 text-[var(--text-3)]">
                   <span>{new Date(editing.start).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}</span>
                   {!isAllDay(editing) && (
                     <span>{formatTime(editing.start)} — {formatTime(editing.end)}</span>
                   )}
-                  {isAllDay(editing) && (
-                    <span>Journée entière</span>
-                  )}
+                  {isAllDay(editing) && <span>Journée entière</span>}
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[var(--border-1)] shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
-              <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
-                Annuler
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                loading={saving}
-                onClick={handleSave}
+            <div className="flex shrink-0 items-center justify-end gap-3 border-t border-[var(--line)] px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <button
+                onClick={() => setEditing(null)}
+                className="ui-btn ui-btn--ghost"
               >
-                Enregistrer
-              </Button>
+                Annuler
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="ui-btn ui-btn--primary"
+              >
+                {saving ? "Enregistrement…" : "Enregistrer"}
+              </button>
             </div>
           </div>
         </div>

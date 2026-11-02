@@ -73,7 +73,7 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              '(function(){try{var s=localStorage.getItem("pb-theme");var d=window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.dataset.theme=(s==="light"||s==="dark")?s:(d?"dark":"light")}catch(e){}})();',
+              '(function(){try{var s=localStorage.getItem("pb-theme");var d=window.matchMedia("(prefers-color-scheme: dark)").matches;var def=location.pathname==="/"?(d?"dark":"light"):"dark";document.documentElement.dataset.theme=(s==="light"||s==="dark")?s:def}catch(e){}})();',
           }}
         />
         <meta name="apple-mobile-web-app-capable" content="yes" />

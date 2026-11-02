@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Bell, CalendarClock, CalendarRange, RefreshCw, ChevronRight, ExternalLink } from "lucide-react";
+import { ExternalLink, RefreshCw } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { PageHeader, EmptyState } from "@/components/layout/Chrome";
+import { PageHeader } from "@/components/layout/Chrome";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { api, type CalendarEvent, type ScheduleCourse } from "@/lib/api-client";
 import { useCachedFetch } from "@/lib/cache";
@@ -23,27 +23,24 @@ function isLate(iso: string): boolean {
   return new Date(iso).getTime() < Date.now();
 }
 
+/** Une section se nomme par son titre : aucun surtitre, aucune icone. */
 function SectionTitle({
-  icon,
   children,
   href,
 }: {
-  icon: React.ReactNode;
   children: React.ReactNode;
   href: string;
 }) {
   return (
-    <div className="flex items-center justify-between mb-3">
-      <h2 className="flex items-center gap-2 text-[11px] font-mono  text-[var(--text-3)]">
-        <span className="text-[var(--accent)]">{icon}</span>
+    <div className="flex items-baseline justify-between gap-4">
+      <h2 className="font-display text-[length:var(--t-lead)] font-semibold tracking-[-0.02em] text-[var(--text-1)]">
         {children}
       </h2>
       <Link
         href={href}
-        className="flex items-center gap-0.5 text-[11px] text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors"
+        className="ui-mono text-[var(--text-3)] transition-colors duration-150 hover:text-[var(--text-1)]"
       >
         Tout voir
-        <ChevronRight className="w-3 h-3" />
       </Link>
     </div>
   );
@@ -63,25 +60,45 @@ function Row({
   href?: string;
 }) {
   const inner = (
-    <div className="flex items-baseline gap-3 py-2 px-3 rounded-lg hover:bg-[var(--surface-2)]/60 transition-colors min-w-0">
+    <div className="-mx-3 flex min-w-0 items-baseline gap-4 rounded-[var(--r-sm)] px-3 py-3">
       {time && (
-        <span className="shrink-0 text-[11px] font-mono text-[var(--text-3)] w-11 tabular-nums">{time}</span>
+        <span className="ui-mono w-12 shrink-0 text-[var(--text-2)]">{time}</span>
       )}
-      <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--text-1)]">{title}</span>
-      {late && (
-        <span className="shrink-0 text-[9px] font-mono  text-[var(--danger)] border border-[var(--danger)]/30 rounded px-1.5 py-0.5">
-          En retard
-        </span>
-      )}
-      {meta && <span className="shrink-0 text-[11px] text-[var(--text-3)]">{meta}</span>}
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-baseline justify-between gap-3">
+          <span className="min-w-0 truncate text-[0.9375rem] text-[var(--text-1)]">
+            {title}
+          </span>
+          {late && (
+            <span className="ui-mono shrink-0 text-[var(--danger)]">En retard</span>
+          )}
+        </div>
+        {meta && (
+          <p className="mt-0.5 truncate text-[length:var(--t-small)] text-[var(--text-2)]">
+            {meta}
+          </p>
+        )}
+      </div>
     </div>
   );
   return href ? (
-    <Link href={href} className="block">
+    <Link
+      href={href}
+      className="block transition-colors duration-150 hover:bg-[var(--surface-2)]"
+    >
       {inner}
     </Link>
   ) : (
     inner
+  );
+}
+
+/** Liste de donnees : filets de 1px, aucune boite. */
+function RowList({ children }: { children: React.ReactNode }) {
+  return (
+    <ul className="mt-4 border-t border-[var(--line)]">
+      {children}
+    </ul>
   );
 }
 
@@ -168,172 +185,173 @@ export default function TodayPage() {
   return (
     <AppShell>
       <div className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+        <div className="mx-auto max-w-3xl px-5 pb-24 pt-12 sm:px-6 sm:pb-[152px] sm:pt-[88px]">
           <PageHeader
-            eyebrow="Vue du jour"
             title="Aujourd'hui"
             description="Rappels, agenda et relances de la journée, rassemblés au même endroit."
           />
 
           {everythingEmpty ? (
-            <EmptyState
-              icon={<CalendarRange className="w-5 h-5" />}
-              title="Rien de prévu"
-              description="Aucun rappel, événement ou relance pour aujourd'hui. Profites-en."
-              action={
-                <Link
-                  href="/chat"
-                  className="inline-flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium rounded-md border border-[var(--border-2)] text-[var(--text-2)] hover:text-[var(--text-1)] hover:border-[var(--border-3)] transition-colors"
-                >
-                  Ouvrir la Console
-                </Link>
-              }
-            />
+            <div className="max-w-[34rem]">
+              <h2 className="font-display text-[length:var(--t-lead)] font-semibold tracking-[-0.02em] text-[var(--text-1)]">
+                Rien de prévu
+              </h2>
+              <p className="mt-2 text-[length:var(--t-body)] leading-relaxed text-[var(--text-2)]">
+                Aucun rappel, événement ou relance pour aujourd&apos;hui. Profites-en.
+              </p>
+              <Link href="/chat" className="ui-btn ui-btn--ghost mt-6">
+                Ouvrir la Console
+              </Link>
+            </div>
           ) : (
-            <div className="space-y-8">
+            <div className="flex flex-col gap-[104px]">
               {/* Rappels */}
               <section>
-                <SectionTitle icon={<Bell className="w-3.5 h-3.5" />} href="/reminders">
-                  Rappels
-                </SectionTitle>
+                <SectionTitle href="/reminders">Rappels</SectionTitle>
                 {remindersError && (
-                  <p className="text-[11px] text-[var(--danger)] mb-2">{remindersError}</p>
+                  <p className="ui-mono mt-3 text-[var(--danger)]">{remindersError}</p>
                 )}
                 {reminders === null ? (
-                  <div className="space-y-1.5">
+                  <div className="mt-4 space-y-1.5">
                     {Array.from({ length: 3 }).map((_, i) => (
                       <Skeleton key={i} className="h-9 w-full" />
                     ))}
                   </div>
                 ) : todayReminders.length === 0 ? (
-                  <p className="text-[12px] text-[var(--text-3)] px-3 py-1.5">Aucun rappel pour aujourd'hui.</p>
+                  <p className="mt-4 text-[length:var(--t-small)] text-[var(--text-3)]">
+                    Aucun rappel pour aujourd&apos;hui.
+                  </p>
                 ) : (
-                  <div className="border border-[var(--border-1)] rounded-xl overflow-hidden">
+                  <RowList>
                     {todayReminders.map((r) => (
-                      <Row
-                        key={r.id}
-                        time={formatTime(r.dueAt)}
-                        title={r.title}
-                        late={isLate(r.dueAt)}
-                        href="/reminders"
-                      />
+                      <li key={r.id} className="border-b border-[var(--line)]">
+                        <Row
+                          time={formatTime(r.dueAt)}
+                          title={r.title}
+                          late={isLate(r.dueAt)}
+                          href="/reminders"
+                        />
+                      </li>
                     ))}
-                  </div>
+                  </RowList>
                 )}
               </section>
 
               {/* Agenda */}
               <section>
-                <SectionTitle icon={<CalendarRange className="w-3.5 h-3.5" />} href="/calendar">
-                  Agenda
-                </SectionTitle>
+                <SectionTitle href="/calendar">Agenda</SectionTitle>
                 {eventsError ? (
-                  <div className="flex flex-col gap-2 px-3 py-3 rounded-lg border border-[var(--danger)]/20 bg-[var(--danger)]/8 text-[12px] text-[var(--text-2)]">
-                    <span className="text-[var(--danger)]">
-                      Impossible de charger l'agenda : {eventsError.message}
+                  <div className="mt-4 flex flex-col gap-3 border-l border-[var(--danger)] pl-4">
+                    <span className="text-[length:var(--t-small)] text-[var(--danger)]">
+                      Impossible de charger l&apos;agenda : {eventsError.message}
                     </span>
-                    <span className="text-[11px] text-[var(--text-3)]">
+                    <span className="text-[length:var(--t-small)] text-[var(--text-2)]">
                       Vérifie que ton compte Google est connecté dans les Paramètres.
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-3">
                       <a
                         href="/api/auth/google?type=calendar"
-                        className="inline-flex items-center gap-1.5 h-7 px-2.5 text-[11px] font-medium rounded-md border border-[var(--border-2)] text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors"
+                        className="ui-mono inline-flex items-center gap-1.5 text-[var(--text-2)] transition-colors duration-150 hover:text-[var(--text-1)]"
                       >
-                        <ExternalLink className="w-3 h-3" />
+                        <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.6} />
                         Connecter le calendrier
                       </a>
                       <button
                         onClick={() => void refetchEvents()}
-                        className="inline-flex items-center gap-1.5 h-7 px-2.5 text-[11px] font-medium rounded-md border border-[var(--border-2)] text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors"
+                        className="ui-mono inline-flex items-center gap-1.5 text-[var(--text-2)] transition-colors duration-150 hover:text-[var(--text-1)]"
                       >
-                        <RefreshCw className="w-3 h-3" />
+                        <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.6} />
                         Réessayer
                       </button>
                     </div>
                   </div>
                 ) : eventsLoading && dayEvents.length === 0 ? (
-                  <div className="space-y-1.5">
+                  <div className="mt-4 space-y-1.5">
                     {Array.from({ length: 3 }).map((_, i) => (
                       <Skeleton key={i} className="h-9 w-full" />
                     ))}
                   </div>
                 ) : dayEvents.length === 0 ? (
-                  <p className="text-[12px] text-[var(--text-3)] px-3 py-1.5">Aucun événement aujourd'hui.</p>
+                  <p className="mt-4 text-[length:var(--t-small)] text-[var(--text-3)]">
+                    Aucun événement aujourd&apos;hui.
+                  </p>
                 ) : (
-                  <div className="border border-[var(--border-1)] rounded-xl overflow-hidden">
+                  <RowList>
                     {dayEvents.map((e) => (
-                      <Row
-                        key={e.id}
-                        time={formatTime(e.start)}
-                        title={e.summary}
-                        meta={e.location ?? undefined}
-                        href="/calendar"
-                      />
+                      <li key={e.id} className="border-b border-[var(--line)]">
+                        <Row
+                          time={formatTime(e.start)}
+                          title={e.summary}
+                          meta={e.location ?? undefined}
+                          href="/calendar"
+                        />
+                      </li>
                     ))}
-                  </div>
+                  </RowList>
                 )}
               </section>
 
               {/* Cours */}
               <section>
-                <SectionTitle icon={<CalendarClock className="w-3.5 h-3.5" />} href="/schedule">
-                  Cours
-                </SectionTitle>
+                <SectionTitle href="/schedule">Cours</SectionTitle>
                 {coursesError && (
-                  <p className="text-[11px] text-[var(--danger)] mb-2">{coursesError.message}</p>
+                  <p className="ui-mono mt-3 text-[var(--danger)]">{coursesError.message}</p>
                 )}
                 {coursesLoading && dayCourses.length === 0 ? (
-                  <div className="space-y-1.5">
+                  <div className="mt-4 space-y-1.5">
                     {Array.from({ length: 2 }).map((_, i) => (
                       <Skeleton key={i} className="h-9 w-full" />
                     ))}
                   </div>
                 ) : dayCourses.length === 0 ? (
-                  <p className="text-[12px] text-[var(--text-3)] px-3 py-1.5">Aucun cours aujourd'hui.</p>
+                  <p className="mt-4 text-[length:var(--t-small)] text-[var(--text-3)]">
+                    Aucun cours aujourd&apos;hui.
+                  </p>
                 ) : (
-                  <div className="border border-[var(--border-1)] rounded-xl overflow-hidden">
+                  <RowList>
                     {dayCourses.map((c) => (
-                      <Row
-                        key={`${c.uuid}-${c.start}`}
-                        time={formatTime(new Date(c.start).toISOString())}
-                        title={c.subject}
-                        meta={c.room || undefined}
-                        href="/schedule"
-                      />
+                      <li key={`${c.uuid}-${c.start}`} className="border-b border-[var(--line)]">
+                        <Row
+                          time={formatTime(new Date(c.start).toISOString())}
+                          title={c.subject}
+                          meta={c.room || undefined}
+                          href="/schedule"
+                        />
+                      </li>
                     ))}
-                  </div>
+                  </RowList>
                 )}
               </section>
 
               {/* Relances */}
               <section>
-                <SectionTitle icon={<RefreshCw className="w-3.5 h-3.5" />} href="/week">
-                  Relances
-                </SectionTitle>
+                <SectionTitle href="/week">Relances</SectionTitle>
                 {intentionsError && (
-                  <p className="text-[11px] text-[var(--danger)] mb-2">{intentionsError}</p>
+                  <p className="ui-mono mt-3 text-[var(--danger)]">{intentionsError}</p>
                 )}
                 {intentions === null ? (
-                  <div className="space-y-1.5">
+                  <div className="mt-4 space-y-1.5">
                     {Array.from({ length: 2 }).map((_, i) => (
                       <Skeleton key={i} className="h-9 w-full" />
                     ))}
                   </div>
                 ) : todayIntentions.length === 0 ? (
-                  <p className="text-[12px] text-[var(--text-3)] px-3 py-1.5">Aucune relance aujourd'hui.</p>
+                  <p className="mt-4 text-[length:var(--t-small)] text-[var(--text-3)]">
+                    Aucune relance aujourd&apos;hui.
+                  </p>
                 ) : (
-                  <div className="border border-[var(--border-1)] rounded-xl overflow-hidden">
+                  <RowList>
                     {todayIntentions.map((i) => (
-                      <Row
-                        key={i.id}
-                        time={formatTime(i.dueAt)}
-                        title={i.subject}
-                        late={isLate(i.dueAt)}
-                        href="/week"
-                      />
+                      <li key={i.id} className="border-b border-[var(--line)]">
+                        <Row
+                          time={formatTime(i.dueAt)}
+                          title={i.subject}
+                          late={isLate(i.dueAt)}
+                          href="/week"
+                        />
+                      </li>
                     ))}
-                  </div>
+                  </RowList>
                 )}
               </section>
             </div>

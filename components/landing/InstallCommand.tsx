@@ -2,18 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
-import { INSTALL_COMMAND } from "@/app/landing-content";
+import { INSTALL_COMMAND, SELF_HOST } from "@/app/landing-content";
 
 /**
  * Bloc d'installation en une commande (style terminal).
  * Le bouton copie la commande exacte servie par /install.sh — le visiteur
- * n'a rien à retaper et ne peut pas se tromper d'URL.
+ * n'a rien à retaper et ne peut pas se tromper d'URL. C'est le seul
+ * monospace de la page, et il s'agit de vrai code.
  */
 export function InstallCommand() {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    []
+  );
 
   const copy = async () => {
     try {
@@ -28,17 +34,29 @@ export function InstallCommand() {
   };
 
   return (
-    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-      <code className="install__cmd">{INSTALL_COMMAND}</code>
-      <button
-        type="button"
-        onClick={() => void copy()}
-        className="cta-secondary shrink-0"
-        aria-label={copied ? "Commande copiée" : "Copier la commande d'installation"}
-      >
-        {copied ? <Check className="h-4 w-4" strokeWidth={1.5} /> : <Copy className="h-4 w-4" strokeWidth={1.5} />}
-        {copied ? "Copié" : "Copier"}
-      </button>
+    <div className="terminal">
+      <div className="terminal__bar">
+        <span>{SELF_HOST.terminalTitle}</span>
+        <button
+          type="button"
+          onClick={() => void copy()}
+          className="terminal__copy"
+          aria-label={copied ? "Commande copiée" : "Copier la commande d'installation"}
+        >
+          <span className="inline-flex items-center gap-2">
+            {copied ? (
+              <Check className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+            ) : (
+              <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+            )}
+            {copied ? "Copié" : "Copier"}
+          </span>
+        </button>
+      </div>
+      <pre className="terminal__pre">
+        <code>{INSTALL_COMMAND}</code>
+      </pre>
+      <p className="terminal__note">{SELF_HOST.terminalNote}</p>
     </div>
   );
 }

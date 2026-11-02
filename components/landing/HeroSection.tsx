@@ -1,70 +1,75 @@
-"use client";
-
-import Link from "next/link";
-import { ArrowRight, MessageSquare } from "lucide-react";
-import { HERO } from "@/app/landing-content";
-import { scrollToSection } from "./SmoothScroll";
+import { CONTEXT, HERO, MODULES } from "@/app/landing-content";
+import { reveal } from "./reveal";
+import { HeroDemoLink } from "./HeroDemoLink";
 
 /**
- * Hero — le texte à gauche, une fiche de contexte réelle à droite.
- * La fiche montre la forme exacte d'une réponse Backstage : la question,
- * les fragments reliés, puis la réponse. Aucune décoration.
+ * Premier écran : le titre à l'échelle de l'affiche, la carte de
+ * contexte qui montre le produit par son contenu, puis l'index des
+ * domaines. Aucune capture d'écran.
  */
 export function HeroSection() {
   return (
-    <section id="hero" className="hero relative">
-      <div className="container hero__inner">
+    <section id="hero" className="hero">
+      <div className="wrap hero__grid">
         <div className="hero__copy">
-          <h1 className="hero__title">{HERO.title}</h1>
-          <p className="hero__desc">{HERO.description}</p>
+          <h1 className="hero__title" {...reveal(0)}>
+            {HERO.title}
+          </h1>
 
-          <div className="hero__actions">
-            <button type="button" onClick={() => scrollToSection("demo")} className="cta-primary">
-              {HERO.primaryCta}
-              <ArrowRight className="h-4 w-4" strokeWidth={1.5} aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToSection("produit")}
-              className="cta-secondary"
+          <p className="hero__desc" {...reveal(70)}>
+            {HERO.description}
+          </p>
+
+          <div className="hero__actions" {...reveal(140)}>
+            <HeroDemoLink label={HERO.primaryCta} />
+            <a
+              href="https://github.com/MattiaPARRINELLO/backstage"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn--ghost"
             >
               {HERO.secondaryCta}
-            </button>
+            </a>
           </div>
 
-          <p className="hero__note">
-            <Link href="/login">{HERO.loginCta}</Link>
-            {" · "}
-            {HERO.note}
+          <p className="hero__meta" {...reveal(210)}>
+            <span>MIT</span>
+            <span>Données locales</span>
+            <span>Passkey</span>
+            <a href="/login">{HERO.loginCta}</a>
           </p>
         </div>
 
-        <div className="hero__card">
-          <div className="context-card">
-            <div className="context-card__bar">
-              <span>{HERO.context.label}</span>
-              <span>Fictif</span>
-            </div>
-
-            <div className="context-card__body">
-              <p className="context-card__ask">
-                <MessageSquare className="h-4 w-4" strokeWidth={1.5} />
-                <span>{HERO.context.question}</span>
-              </p>
-
-              <ul className="context-card__rows">
-                {HERO.context.fragments.map((fragment) => (
-                  <li key={fragment.text} className="context-row">
-                    <span className="context-row__kind">{fragment.kind}</span>
-                    <span className="context-row__text">{fragment.text}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <p className="context-card__answer">{HERO.context.answer}</p>
-              <p className="context-card__foot">{HERO.context.foot}</p>
-            </div>
+        <div className="card hero__card-settle" {...reveal(100)}>
+          <div className="card__top">
+            <span className="card__tag">{CONTEXT.label}</span>
+            <span className="card__count">4 sources</span>
           </div>
+
+          <p className="card__q">« {CONTEXT.question} »</p>
+
+          <div className="card__rows">
+            {CONTEXT.fragments.map((fragment) => (
+              <div key={fragment.text} className="card__row">
+                <span className="card__k">{fragment.kind}</span>
+                <span>{fragment.text}</span>
+              </div>
+            ))}
+          </div>
+
+          <p className="card__a">{CONTEXT.answer}</p>
+          <p className="card__foot">{CONTEXT.foot}</p>
+        </div>
+      </div>
+
+      <div className="wrap">
+        <div className="index">
+          {MODULES.items.map((item) => (
+            <div key={item.name} className="idx">
+              <span className="idx__name">{item.name}</span>
+              <span className="idx__note">{item.short}</span>
+            </div>
+          ))}
         </div>
       </div>
     </section>

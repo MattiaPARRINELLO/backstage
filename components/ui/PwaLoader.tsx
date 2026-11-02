@@ -89,6 +89,9 @@ export function PwaLoader() {
   const [dismissed, setDismissed] = useState(() =>
     typeof window !== "undefined" && localStorage.getItem("pwa-install-dismissed") === "true"
   );
+  // La landing publique n'installe rien : l'invitation ne concerne que l'application.
+  const onLanding =
+    typeof window !== "undefined" && window.location.pathname === "/";
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -149,7 +152,7 @@ export function PwaLoader() {
 
   return (
     <>
-      {installPrompt && !installed && !dismissed && (
+      {installPrompt && !installed && !dismissed && !onLanding && (
         <div className="fixed z-[90] inset-x-0 sm:inset-x-auto bottom-[calc(env(safe-area-inset-bottom)+4rem)] sm:bottom-20 sm:left-1/2 sm:-translate-x-1/2 px-3 sm:px-0">
           <div className="w-full sm:w-auto flex items-center gap-3 px-4 py-3 rounded-2xl sm:rounded-xl border border-[var(--accent)]/30 bg-[var(--surface-2)]/95 backdrop-blur text-[11px] font-mono text-[var(--accent)] animate-slide-up">
             <Image src="/backstage-logo-simple.png" alt="" width={20} height={20} className="w-5 h-5 object-contain shrink-0" />

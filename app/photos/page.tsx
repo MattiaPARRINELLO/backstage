@@ -257,7 +257,7 @@ export default function PhotoShootsPage() {
                     <section
                       key={col.key}
                       className={cn(
-                        "flex min-w-[200px] max-w-[280px] flex-1 flex-col rounded-[var(--r-card)] transition-colors",
+                        "flex min-w-[240px] max-w-[280px] flex-1 flex-col rounded-[var(--r-card)] transition-colors",
                         isOver && "bg-[var(--accent)]/5"
                       )}
                       onDragOver={(e) => handleDragOver(e, col.key)}

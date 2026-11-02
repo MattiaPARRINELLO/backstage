@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
 import "./landing.css";
 import { InstalledRedirect } from "@/components/landing/InstalledRedirect";
-import { SmoothScroll } from "@/components/landing/SmoothScroll";
+import { ScrollReveal } from "@/components/landing/ScrollReveal";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { HeroSection } from "@/components/landing/HeroSection";
-import { ProblemSection } from "@/components/landing/ProblemSection";
-import { MemorySection } from "@/components/landing/MemorySection";
 import { DayStory } from "@/components/landing/DayStory";
+import { MemorySection } from "@/components/landing/MemorySection";
 import { PublicDemo } from "@/components/landing/PublicDemo";
-import { UseCaseWorlds } from "@/components/landing/UseCaseWorlds";
-import { PrivacySection } from "@/components/landing/PrivacySection";
-import { OpenSourceSection } from "@/components/landing/OpenSourceSection";
+import { SelfHostSection } from "@/components/landing/SelfHostSection";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 import { LandingFooter } from "@/components/landing/LandingFooter";
+import { PhotoBand } from "@/components/landing/PhotoBand";
+import { PHOTOS } from "@/app/landing-content";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -20,7 +19,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Backstage — Votre second cerveau personnel",
   description:
-    "Backstage relie vos conversations, votre mémoire et vos outils dans un espace personnel alimenté par l'IA.",
+    "Backstage réunit vos mails, vos cours, votre agenda, vos photos et une IA qui s'en souvient. Un espace personnel privé, installé chez vous.",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
@@ -29,14 +28,14 @@ export const metadata: Metadata = {
     siteName: "Backstage",
     title: "Backstage — Votre second cerveau personnel",
     description:
-      "Backstage relie vos conversations, votre mémoire et vos outils dans un espace personnel alimenté par l'IA.",
+      "Backstage réunit vos mails, vos cours, votre agenda, vos photos et une IA qui s'en souvient.",
     images: [{ url: "/backstage-logo.png", width: 1280, height: 1280, alt: "Backstage" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Backstage — Votre second cerveau personnel",
     description:
-      "Backstage relie vos conversations, votre mémoire et vos outils dans un espace personnel alimenté par l'IA.",
+      "Backstage réunit vos mails, vos cours, votre agenda, vos photos et une IA qui s'en souvient.",
     images: ["/backstage-logo.png"],
   },
 };
@@ -45,25 +44,23 @@ export default function Home() {
   return (
     <>
       <InstalledRedirect />
-      <SmoothScroll>
-        <div className="landing-page">
-          <LandingHeader />
-          <main id="main" className="landing relative z-10">
-            <HeroSection />
-            <ProblemSection />
-            <MemorySection />
-            <DayStory />
-            <PublicDemo />
-            <UseCaseWorlds />
-            <PrivacySection />
-            <OpenSourceSection />
-            <FinalCTA />
-          </main>
-          <div className="relative z-10">
-            <LandingFooter />
-          </div>
-        </div>
-      </SmoothScroll>
+      <ScrollReveal />
+      <div className="landing-page">
+        <LandingHeader />
+        <main id="main" className="landing">
+          <HeroSection />
+          <PhotoBand {...PHOTOS.afterHero} priority />
+          <DayStory />
+          <PhotoBand {...PHOTOS.afterStory} />
+          <MemorySection />
+          <PhotoBand {...PHOTOS.afterMemory} />
+          <PublicDemo />
+          <SelfHostSection />
+          <PhotoBand {...PHOTOS.beforeClose} />
+          <FinalCTA />
+        </main>
+        <LandingFooter />
+      </div>
     </>
   );
 }

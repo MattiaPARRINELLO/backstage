@@ -1,9 +1,9 @@
 // ============================================================
 // CONTENU ÉDITORIAL DE LA LANDING BACKSTAGE.
-// Positionnement : second cerveau personnel — contexte, mémoire,
-// continuité. Toutes les données de démonstration sont FICTIVES
-// et signalées comme telles. Modifier ce fichier suffit pour
-// changer tous les textes.
+// Positionnement : un espace personnel qui relie les morceaux
+// d'une journée et s'en souvient. Toutes les données de
+// démonstration sont FICTIVES et signalées comme telles.
+// Modifier ce fichier suffit pour changer tous les textes.
 // ============================================================
 
 export const GITHUB_URL = "https://github.com/MattiaPARRINELLO/backstage";
@@ -15,102 +15,137 @@ export const LICENSE_LABEL = "MIT";
 export const INSTALL_COMMAND = "curl -fsSL https://brain.mprnl.fr/install.sh | bash";
 
 export const NAV_LINKS = [
-  { href: "#produit", label: "Produit" },
+  { href: "#hero", label: "Produit" },
   { href: "#memoire", label: "Mémoire" },
-  { href: "#usages", label: "Usages" },
-  { href: "#open-source", label: "Open source" },
-  { href: "#securite", label: "Sécurité" },
+  { href: "#journee", label: "Une journée" },
+  { href: "#demo", label: "Démo" },
+  { href: "#chez-vous", label: "Auto-hébergement" },
 ] as const;
 
 // --- Hero -----------------------------------------------------
 
 export const HERO = {
-  title: "Vos mails, vos cours, vos photos. Un seul contexte.",
+  title: "Votre contexte, en un seul endroit.",
   description:
-    "Backstage relie vos conversations, votre mémoire, votre emploi du temps et vos mails. Ce que vous confiez reste là, et revient au bon moment.",
+    "Backstage réunit vos mails, vos cours, votre agenda, vos photos et une IA qui s'en souvient. Un espace privé, installé chez vous.",
   primaryCta: "Essayer la démo",
-  secondaryCta: "Découvrir Backstage",
+  secondaryCta: "Voir le code",
   loginCta: "Se connecter",
-  note: "Démonstration publique limitée · Application complète en accès privé",
-  // Fiche de contexte illustrative (fictive) — montre la forme réelle
-  // d'une réponse : une question, les fragments reliés, la réponse.
-  context: {
-    label: "Contexte relié",
-    question: "Qu'est-ce que je dois préparer pour mon shooting de demain ?",
-    fragments: [
-      { kind: "Agenda", text: "Shooting — jeudi 20:30, Le Transbordeur" },
-      { kind: "Mail", text: "Claire V. — accréditation à retirer sur place" },
-      { kind: "Note", text: "Fosse : 3 titres, puis côté scène" },
-      { kind: "Rappel", text: "Charger batteries et cartes CF ce soir" },
-    ],
-    answer:
-      "Jeudi 20:30 au Transbordeur. L'accréditation est au nom du média, à retirer sur place ; accès fosse sur les 3 premiers titres, puis côté scène. Batteries et cartes CF à charger ce soir.",
-    foot: "Réponse construite à partir de 4 éléments de votre espace",
+  note: "Démonstration publique à données fictives · Application complète en accès privé",
+  shot: {
+    src: "/screenshots/hero-flux.jpg",
+    alt: "L'application Backstage ouverte sur le chat, avec à droite le panneau de flux : cours du lendemain, rappels en retard et mails non lus.",
+    caption: "Le chat au centre, le flux de la journée à droite.",
   },
 } as const;
 
-// --- Problème ---------------------------------------------------
+// --- Contexte relié -------------------------------------------
 
-export const PROBLEM = {
-  title: "Votre journée est partout. Votre contexte aussi.",
-  description:
-    "Une date dans un email. Une idée dans une conversation. Une adresse dans une note. Backstage relie ces fragments pour que l'information utile réapparaisse au bon moment.",
+export const CONTEXT = {
+  label: "Contexte relié",
+  title: "Une question. Quatre morceaux s'assemblent.",
+  lead: "Backstage ne fouille pas un seul dossier : il réunit ce que l'agenda, la boîte mail, les notes et les rappels savent déjà, puis il répond.",
+  question: "Qu'est-ce que je dois préparer pour mon shooting de demain ?",
   fragments: [
-    { kind: "Email", text: "Accréditation — réponse attendue" },
-    { kind: "Événement", text: "Shooting · jeudi 20:30" },
-    { kind: "Conversation", text: "« Prévois un objectif lumineux »" },
-    { kind: "Note", text: "Accès côté scène, passer par le régisseur" },
-    { kind: "Rappel", text: "Charger les batteries la veille" },
-    { kind: "Lien", text: "Fiche technique de la salle" },
-    { kind: "Contact", text: "Claire V. — attachée de presse" },
-    { kind: "Projet", text: "Série « Scène 2025 » en cours" },
+    { kind: "Agenda", text: "Shooting jeudi 20:30, Le Transbordeur" },
+    { kind: "Mail", text: "Claire V. : accréditation au nom du média, à retirer sur place" },
+    { kind: "Note", text: "Fosse : 3 titres, puis côté scène" },
+    { kind: "Rappel", text: "Charger batteries et cartes CF ce soir" },
   ],
-  resolution:
-    "Dans Backstage, ces fragments forment un contexte unique — consultable, recherchable, relié.",
+  answer:
+    "Jeudi 20:30 au Transbordeur. L'accréditation est au nom du média, à retirer sur place ; accès fosse sur les 3 premiers titres, puis côté scène. Batteries et cartes CF à charger ce soir.",
+  foot: "Quatre éléments de l'espace réunis en une réponse · exemple fictif",
+} as const;
+
+// --- Ce qu'il tient ensemble -----------------------------------
+
+export type ModuleItem = {
+  name: string;
+  /** Deux ou trois mots, pour l'index du premier écran. */
+  short: string;
+  line: string;
+};
+
+export const MODULES = {
+  title: "Ce qu'il tient ensemble.",
+  lead: "Six domaines, un seul espace. Chaque bloc correspond à un écran qui existe déjà dans l'application.",
+  items: [
+    {
+      name: "Mails",
+      short: "Boîte résumée",
+      line: "La boîte Gmail résumée dans la conversation, sans changer d'onglet.",
+    },
+    {
+      name: "Agenda",
+      short: "Cours, rappels",
+      line: "Une seule ligne de temps, groupée par jour, avec un bloc pour ce qui est en retard.",
+    },
+    {
+      name: "Mémoire",
+      short: "Faits éditables",
+      line: "Ce que l'IA a retenu, fait par fait : chaque ligne est modifiable et supprimable.",
+    },
+    {
+      name: "Shootings",
+      short: "Shoot → livraison",
+      line: "Salles, accréditations, contacts et séries, du jour du shoot à la livraison.",
+    },
+    {
+      name: "Code",
+      short: "Un problème par jour",
+      line: "Un problème quotidien, et une aide qui connaît déjà votre niveau et vos objectifs.",
+    },
+    {
+      name: "Chez vous",
+      short: "Fichiers locaux",
+      line: "Les données vivent dans un dossier local. Pas de compte à créer chez un tiers.",
+    },
+  ] satisfies ModuleItem[],
 } as const;
 
 // --- Mémoire ----------------------------------------------------
 
 export const MEMORY = {
-  title: "Une IA qui conserve le fil.",
-  description:
-    "Backstage s'appuie sur une mémoire persistante et inspectable : ce que vous confiez reste disponible au-delà d'une seule conversation, et vous gardez la main.",
+  factsLabel: "Mémoire · 3 faits",
+  facts: [
+    { kind: "Contact", text: "Claire V., attachée de presse — accréditations" },
+    { kind: "Préférence", text: "Objectif lumineux privilégié en fosse" },
+    { kind: "Projet", text: "Série « Scène 2025 », livraison en cours" },
+  ],
+  title: "Elle se souvient. Vous pouvez vérifier.",
+  lead: "Une conversation ne s'arrête plus à sa dernière ligne. Les faits utiles sont écrits, dédoublonnés, puis relus : ce qui est retenu reste visible et corrigeable.",
   principles: [
     {
-      n: "01",
       title: "Se souvenir",
-      desc: "Les éléments utiles — préférences, faits, décisions — restent disponibles d'une conversation à l'autre, au lieu de disparaître avec l'historique.",
+      desc: "Préférences, décisions, contacts : les éléments durables survivent à la conversation qui les a vus naître.",
     },
     {
-      n: "02",
       title: "Relier",
-      desc: "Les informations associées à une personne, une date ou un projet forment un contexte cohérent. Une question sur un événement retrouve ce qui s'y rapporte.",
+      desc: "Un fait sur une personne, une date ou un projet rejoint les autres. Une question sur un événement retrouve ce qui s'y rapporte.",
     },
     {
-      n: "03",
       title: "Garder le contrôle",
-      desc: "La mémoire est consultable, corrigeable et supprimable. Chaque fait est éditable, chaque relation visible — rien n'est une boîte noire.",
+      desc: "La mémoire n'est pas une boîte noire : elle se lit, s'édite et se supprime depuis l'interface.",
     },
   ],
 } as const;
 
 // --- Une journée avec Backstage (scrollytelling) — données fictives
 // ⚠️ DONNÉES DE DÉMONSTRATION — entièrement fictives.
-// Le temps AVANCE à chaque étape : on suit une personne de 08:42 la
-// veille du shooting jusqu'au lendemain matin. Chaque étape relie de
-// nouveaux fragments au contexte déjà constitué.
+// Le temps AVANCE d'une étape à l'autre : on suit une personne de
+// 08:42 la veille du shooting jusqu'au lendemain matin.
 
 export const DAY_STORY = {
-  disclaimer: "Exemple illustratif avec des données fictives.",
-  intro:
-    "Suivez une journée réelle — en fiction : chaque moment fait remonter le bon fragment, au bon instant.",
+  title: "Cinq fois le même contexte.",
+  lead: "De la veille au lendemain matin : chaque heure retrouve ce qui a déjà été dit.",
+  disclaimer: "Exemple illustratif, données fictives.",
   beats: [
     {
       time: "08:42",
       when: "La veille du shooting",
       query: "Qu'est-ce que je dois préparer pour mon shooting de demain ?",
       connections: [
-        { kind: "Événement", text: "Shooting — Le Transbordeur, jeudi 20:30" },
+        { kind: "Événement", text: "Shooting : Le Transbordeur, jeudi 20:30" },
         { kind: "Email", text: "Claire V. : « Accréditation au nom du média, retrait sur place »" },
         { kind: "Note", text: "Accès fosse 3 premiers titres, puis côté scène" },
         { kind: "Rappel", text: "Charger batteries + 2 cartes CF la veille" },
@@ -122,37 +157,37 @@ export const DAY_STORY = {
         text: "Ajouter un rappel « partir 45 min avant » pour jeudi ?",
         confirm: "Ajouter le rappel",
         dismiss: "Pas nécessaire",
-        confirmed: "Rappel ajouté à votre liste — dans la démo uniquement.",
+        confirmed: "Rappel ajouté à votre liste (dans la démo uniquement).",
         dismissed: "D'accord, aucune action effectuée.",
       },
     },
     {
       time: "12:15",
       when: "Pause déjeuner",
-      query: "J'ai une fenêtre ce midi — par quoi je commence ?",
+      query: "J'ai une fenêtre ce midi, par quoi je commence ?",
       connections: [
         { kind: "Rappel", text: "Confirmer l'accréditation auprès de Claire V." },
         { kind: "Email", text: "Brouillon rédigé hier, à envoyer" },
         { kind: "Mémoire", text: "Préférence : répondre aux attachés de presse le matin" },
       ],
       answer:
-        "Commencez par l'accréditation : un brouillon de réponse à Claire V. est déjà prêt dans vos emails. Vos notes indiquent que vous répondez aux attachés de presse le matin — parfait pour cette fenêtre. Le matériel peut attendre ce soir.",
+        "Commencez par l'accréditation : un brouillon de réponse à Claire V. est déjà prêt dans vos emails. Vos notes indiquent que vous répondez aux attachés de presse le matin, parfait pour cette fenêtre. Le matériel peut attendre ce soir.",
       nextStep: {
         label: "Action suggérée",
         text: "Envoyer le brouillon de réponse à Claire V. ?",
         confirm: "Envoyer",
         dismiss: "Plus tard",
-        confirmed: "Brouillon envoyé — dans la démo uniquement.",
+        confirmed: "Brouillon envoyé (dans la démo uniquement).",
         dismissed: "D'accord, rien n'a été envoyé.",
       },
     },
     {
       time: "21:58",
       when: "La veille au soir",
-      query: "Je range le matériel — tu me confirmes la liste ?",
+      query: "Je range le matériel, tu me confirmes la liste ?",
       connections: [
-        { kind: "Rappel", text: "2 batteries chargées ✓" },
-        { kind: "Rappel", text: "2 cartes CF formatées ✓" },
+        { kind: "Rappel", text: "2 batteries chargées" },
+        { kind: "Rappel", text: "2 cartes CF formatées" },
         { kind: "Mémoire", text: "Objectif 35mm f/1.4 pour la fosse" },
         { kind: "Note", text: "Lingettes + pare-soleil oubliés la dernière fois" },
       ],
@@ -163,18 +198,18 @@ export const DAY_STORY = {
         text: "Ajouter « lingettes + pare-soleil » à la liste de demain ?",
         confirm: "Ajouter",
         dismiss: "Inutile",
-        confirmed: "Ajouté à votre liste — dans la démo uniquement.",
+        confirmed: "Ajouté à votre liste (dans la démo uniquement).",
         dismissed: "D'accord, aucun rappel créé.",
       },
     },
     {
       time: "19:50",
-      when: "Le soir du shooting — en route",
-      query: "Je suis en route, tu me remindes quoi à l'arrivée ?",
+      when: "Le soir du shooting",
+      query: "Je suis en route, tu me rappelles quoi à l'arrivée ?",
       connections: [
         { kind: "Événement", text: "Retrait accréditation au nom du média" },
         { kind: "Note", text: "Fosse : 3 titres, puis côté scène" },
-        { kind: "Rappel", text: "Partir 45 min avant — confirmé" },
+        { kind: "Rappel", text: "Partir 45 min avant, confirmé" },
         { kind: "Contact", text: "Claire V. sur place si souci" },
       ],
       answer:
@@ -184,7 +219,7 @@ export const DAY_STORY = {
         text: "Garder cette fiche ouverte pour le shooting ?",
         confirm: "Garder",
         dismiss: "Fermer",
-        confirmed: "Fiche épinglée pour la soirée — dans la démo uniquement.",
+        confirmed: "Fiche épinglée pour la soirée (dans la démo uniquement).",
         dismissed: "Fiche fermée.",
       },
     },
@@ -193,33 +228,32 @@ export const DAY_STORY = {
       when: "Le lendemain matin",
       query: "Qu'est-ce que j'ai capté hier dont je dois me souvenir ?",
       connections: [
-        { kind: "Projet", text: "Série « Scène 2025 » — +38 photos" },
+        { kind: "Projet", text: "Série « Scène 2025 » : +38 photos" },
         { kind: "Note", text: "Côté scène : lumière chaude, cadrer large" },
         { kind: "Mémoire", text: "Claire V. veut un export avant vendredi" },
       ],
       answer:
-        "Hier : 38 photos ajoutées à la série « Scène 2025 ». Votre note côté scène conseille une lumière chaude et des cadrages larges. Claire V. a demandé un export avant vendredi — à planifier dans la sélection.",
+        "Hier : 38 photos ajoutées à la série « Scène 2025 ». Votre note côté scène conseille une lumière chaude et des cadrages larges. Claire V. a demandé un export avant vendredi, à planifier dans la sélection.",
       nextStep: {
         label: "Suite logique",
-        text: "Créer une tâche « sélection Scène 2025 — export vendredi » ?",
+        text: "Créer une tâche « sélection Scène 2025, export vendredi » ?",
         confirm: "Créer la tâche",
         dismiss: "Plus tard",
-        confirmed: "Tâche créée — dans la démo uniquement.",
+        confirmed: "Tâche créée (dans la démo uniquement).",
         dismissed: "D'accord, rien n'a été créé.",
       },
     },
   ],
-  outro:
-    "Même contexte, du premier réflexe du matin à la sélection du lendemain. Backstage ne repart jamais de zéro.",
+  outro: "Même contexte, du premier réflexe du matin à la sélection du lendemain.",
 } as const;
 
 // --- Mini-démo publique ------------------------------------------
 
 export const PUBLIC_DEMO = {
-  title: "Essayez avec un contexte fictif.",
+  title: "Posez votre question.",
   description:
-    "Posez une question à Backstage : il répond à partir d'un jeu de données fictives, comme le ferait l'application avec les vôtres.",
-  disclaimer: "Démonstration limitée avec données fictives. Aucun accès à votre espace personnel.",
+    "La démonstration répond à partir d'un jeu de données fictives, comme l'application le ferait avec les vôtres.",
+  disclaimer: "Démonstration limitée, données fictives. Aucun accès à votre espace personnel.",
   placeholder: "Ex. : Que dois-je préparer pour demain ?",
   button: "Demander",
   suggestions: [
@@ -229,117 +263,76 @@ export const PUBLIC_DEMO = {
   ],
   contextLabel: "Contexte mobilisé (fictif)",
   errors: {
-    rate: "Trop de demandes — réessayez dans un instant.",
+    rate: "Trop de demandes, réessayez dans un instant.",
     generic: "La démonstration est momentanément indisponible. Réessayez.",
     invalid: "Question trop longue (400 caractères maximum).",
   },
   after: {
     title: "Ceci n'était qu'un aperçu.",
-    text: "L'application complète est actuellement réservée aux personnes disposant déjà d'un accès.",
+    text: "L'application complète est réservée aux personnes disposant déjà d'un accès.",
     loginCta: "Se connecter",
-    githubCta: "Voir le code sur GitHub",
+    githubCta: "Voir le code",
     note: "La création de compte n'est pas encore disponible.",
   },
 } as const;
 
-// --- Usages ------------------------------------------------------
+// --- Chez vous ---------------------------------------------------
 
-export const USE_CASES = {
-  title: "Trois façons de ne plus perdre le fil.",
-  cases: [
+export const SELF_HOST = {
+  title: "Chez vous, en une commande.",
+  lead: "Backstage tourne sur votre machine : un dossier de données, un conteneur, aucune dépendance à un service tiers pour exister.",
+  facts: [
     {
-      key: "quotidien",
-      tab: "Quotidien",
-      query: "Retrouve ce que je dois préparer pour demain.",
-      fragments: [
-        { kind: "Agenda", text: "Rendez-vous bancaire — 14:00" },
-        { kind: "Rappel", text: "Répondre au propriétaire avant midi" },
-        { kind: "Email", text: "Colis à relancer — livré en point relais" },
-      ],
-      answer:
-        "Demain : rendez-vous bancaire à 14:00, une réponse à envoyer au propriétaire avant midi, et un colis à récupérer en point relais. Rien d'autre d'attendu.",
-      note: "Rappels, agenda et emails sont des intégrations réelles de l'application.",
+      title: "Accès par passkey",
+      desc: "Pas de mot de passe à retenir : l'entrée est biométrique, et toute route privée est protégée par défaut.",
     },
     {
-      key: "photo",
-      tab: "Photographie",
-      query: "Quelles sont les informations importantes pour mon prochain shooting ?",
-      fragments: [
-        { kind: "Shooting", text: "Le Transbordeur — jeudi 20:30" },
-        { kind: "Accréditation", text: "Au nom du média, retrait sur place" },
-        { kind: "Contact", text: "Claire V. — attachée de presse" },
-        { kind: "Note", text: "Fosse 3 titres, puis côté scène" },
-      ],
-      answer:
-        "Jeudi 20:30 au Transbordeur. Accréditation au nom du média à retirer sur place — Claire V. est votre contact. En pratique : fosse limitée à 3 titres, puis côté scène.",
-      note: "Suivi des shootings, accréditations et préparation de concert font partie de l'application.",
-    },
-    {
-      key: "dev",
-      tab: "Développement",
-      query: "Où en suis-je sur cette fonctionnalité ?",
-      fragments: [
-        { kind: "Conversation", text: "« Refacto du rate limiter, à reprendre »" },
-        { kind: "Note", text: "Tester le cas 429 avant de merger" },
-        { kind: "Ressource", text: "Doc du framework — enregistrée mardi" },
-      ],
-      answer:
-        "Dernier état connu : refacto du rate limiter en cours, restait à couvrir le cas 429 par un test avant de merger. La doc du framework que vous aviez enregistrée traite du sujet.",
-      note: "Conversations persistées, ressources sauvegardées et pratique quotidienne du code sont couvertes par l'application.",
-    },
-  ],
-} as const;
-
-// --- Sécurité ----------------------------------------------------
-
-export const PRIVACY = {
-  title: "Personnel par conception.",
-  titleB: "Contrôlable à chaque étape.",
-  description:
-    "Backstage est un espace privé. Les garanties ci-dessous sont celles réellement mises en œuvre dans le projet.",
-  points: [
-    {
-      title: "Accès authentifié",
-      desc: "L'application complète est derrière une authentification par passkey. Toute route privée est protégée par défaut.",
-    },
-    {
-      title: "Secrets côté serveur",
-      desc: "Les clés API restent côté serveur. Rien n'est exposé dans le navigateur.",
-    },
-    {
-      title: "Démonstration isolée",
-      desc: "La démo publique n'utilise qu'un jeu de données fictif, sans accès aux données réelles ni aux connecteurs privés.",
+      title: "Données locales",
+      desc: "L'espace vit dans des fichiers JSON, chez vous, avec sauvegardes et écritures atomiques.",
     },
     {
       title: "Actions confirmées",
-      desc: "Les actions à effet externe (envoi d'email, modification d'agenda) sont soumises à une confirmation explicite avant exécution.",
+      desc: "Un mail envoyé, un agenda modifié : rien ne part sans une confirmation explicite.",
     },
     {
-      title: "Mémoire transparente",
-      desc: "Les faits mémorisés sont listés, éditables et supprimables depuis l'interface.",
-    },
-    {
-      title: "Suppression réelle",
-      desc: "L'export et la suppression définitive des données sont disponibles dans l'application.",
+      title: "Licence MIT",
+      desc: "Le code est public : lisez-le, auditez-le, déployez votre propre instance.",
     },
   ],
+  terminalTitle: "Installation",
+  terminalNote: "Node 22 et Docker · ou clonez le dépôt et lancez le guide d'auto-hébergement.",
+  cta: "Guide d'auto-hébergement",
+  codeCta: "Voir le code sur GitHub",
 } as const;
 
-// --- Open source -------------------------------------------------
+// --- Photographies -------------------------------------------------
+// Images du propriétaire (concerts), servies depuis /photos.
 
-export const OPEN_SOURCE = {
-  title: "Ouvert jusque dans ses fondations.",
-  description:
-    "Backstage est publié sous licence MIT : lisez le code, auditez ce qu'il fait de vos données, ou déployez votre propre instance. `docker compose up -d` et l'espace est chez vous.",
-  techs: [
-    { label: "Licence MIT", role: "libre", desc: "Utilisation, modification et redistribution libres, sans garantie." },
-    { label: "Auto-hébergement", role: "en une commande", desc: "Image Docker prête à l'emploi, données locales, aucun compte tiers obligatoire." },
-    { label: "Next.js · React · TypeScript", role: "stack", desc: "Une architecture inspectable, testée et documentée." },
-  ],
-  signature: "Licence MIT. Code source public. Développé avec OpenCode.",
-  hint: "Une commande, aucun prérequis à installer à la main",
-  cta: "Voir le code sur GitHub",
-  selfHostCta: "S'auto-héberger",
+export const PHOTOS = {
+  credit: "© Mattia Parrinello",
+  afterHero: {
+    src: "/photos/damso-marches.jpg",
+    alt: "Noir et blanc : un chanteur assis seul sur des marches blanches, avant d'entrer en scène.",
+    caption: "Damso, 15 mai 2026",
+    position: "50% 72%",
+  },
+  afterStory: {
+    src: "/photos/jokair-pagaille.jpg",
+    alt: "Un chanteur en chemise rouge, détaché sur fond blanc, micro à la main.",
+    caption: "Jok'air, Pagaille",
+    position: "50% 30%",
+  },
+  afterMemory: {
+    src: "/photos/concert-trebiz-2026.jpg",
+    alt: "Le public d'un concert, visages levés dans une lumière rouge.",
+    caption: "Trebiz, 20 février 2026",
+    position: "50% 45%",
+  },
+  beforeClose: {
+    src: "/photos/damso-faisceaux.jpg",
+    alt: "Silhouette suspendue dans deux faisceaux bleus au-dessus de la scène.",
+    caption: "Damso, 15 mai 2026",
+  },
 } as const;
 
 // --- CTA final ---------------------------------------------------
@@ -347,11 +340,11 @@ export const OPEN_SOURCE = {
 export const FINAL_CTA = {
   title: "Et si votre journée formait enfin un tout ?",
   description:
-    "Découvrez le fonctionnement de Backstage avec la démonstration publique. Si vous disposez déjà d'un accès, connectez-vous à votre espace personnel.",
+    "L'aperçu public suffit pour voir comment Backstage relie une question à son contexte.",
   primaryCta: "Essayer la démo",
   secondaryCta: "Se connecter",
-  tertiaryCta: "Voir le code sur GitHub",
-  note: "Démonstration publique limitée · Application complète en accès privé",
+  tertiaryCta: "Voir le code",
+  note: "Démonstration à données fictives · Application complète en accès privé",
 } as const;
 
 // --- Footer ------------------------------------------------------
@@ -359,17 +352,16 @@ export const FINAL_CTA = {
 export const FOOTER = {
   tagline: "Un espace personnel qui comprend le contexte.",
   links: [
-    { href: "#produit", label: "Produit" },
+    { href: "#hero", label: "Produit" },
     { href: "#memoire", label: "Mémoire" },
-    { href: "#usages", label: "Usages" },
-    { href: "#securite", label: "Sécurité" },
+    { href: "#journee", label: "Une journée" },
+    { href: "#chez-vous", label: "Auto-hébergement" },
   ],
   legal: [
     { href: GITHUB_URL, label: "GitHub", external: true },
-    { href: SELF_HOST_URL, label: "Auto-hébergement", external: true },
-    { href: "/privacy", label: "Mentions légales", external: false },
+    { href: SELF_HOST_URL, label: "Documentation", external: true },
     { href: "/privacy", label: "Confidentialité", external: false },
     { href: "/login", label: "Se connecter", external: false },
   ],
-  signature: "Licence MIT · Code source public · DeepSeek sous le capot",
+  signature: "Licence MIT · Code source public · Développé avec OpenCode",
 } as const;

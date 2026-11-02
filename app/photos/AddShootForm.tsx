@@ -24,7 +24,7 @@ export function AddShootForm({
 
   return (
     <form
-      className="ui-card space-y-3 p-5"
+      className="ui-card max-w-2xl space-y-3 p-5"
       onSubmit={(e) => {
         e.preventDefault();
         handleSubmit();

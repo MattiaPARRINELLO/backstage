@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { NAV_LINKS } from "@/app/landing-content";
 import { scrollToSection } from "./scroll";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function LandingHeader() {
   const [scrolled, setScrolled] = useState(false);
@@ -55,6 +56,7 @@ export function LandingHeader() {
             >
               Essayer la démo
             </button>
+            <ThemeToggle />
             <Link href="/login" className="nav-link hidden sm:inline-flex">
               Se connecter
             </Link>

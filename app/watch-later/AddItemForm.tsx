@@ -1,11 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Check } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Input, Textarea } from "@/components/ui/Input";
 import type { WatchLaterCategory } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { categoryMeta } from "./meta";
 
 export function AddItemForm({
@@ -20,73 +16,85 @@ export function AddItemForm({
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<WatchLaterCategory>("other");
 
+  const valid = Boolean(url.trim() && title.trim());
+
   const handleSubmit = () => {
-    if (!url.trim() || !title.trim()) return;
+    if (!valid) return;
     onSubmit({ url: url.trim(), title: title.trim(), description: description.trim() || undefined, category });
   };
 
   return (
-    <div className="mb-6 p-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 fade-in">
-      <p className="text-[10px]  text-[var(--accent)] font-mono mb-3">
+    <form
+      className="ui-card mb-6 max-w-2xl space-y-3 p-5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSubmit();
+      }}
+    >
+      <h2 className="font-display text-[length:var(--t-lead)] font-semibold text-[var(--text-1)]">
         Nouveau lien
-      </p>
-      <div className="space-y-2.5">
-        <Input
+      </h2>
+
+      <div className="ui-field">
+        <input
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://…"
+          aria-label="Adresse du lien"
           autoFocus
-          className="font-mono"
+          className="min-w-0 flex-1 bg-transparent ui-mono text-base outline-none"
         />
-        <Input
+      </div>
+
+      <div className="ui-field">
+        <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Titre"
+          aria-label="Titre"
+          className="min-w-0 flex-1 bg-transparent text-base outline-none"
         />
-        <Textarea
+      </div>
+
+      <div className="rounded-[var(--r-sm)] bg-[var(--surface-2)] p-3 focus-within:ring-1 focus-within:ring-[var(--accent)]">
+        <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Description (optionnel)"
+          aria-label="Description"
           rows={2}
+          className="w-full resize-none bg-transparent text-base leading-relaxed text-[var(--text-1)] outline-none"
         />
-        <div className="flex flex-wrap gap-1.5">
-          {(Object.keys(categoryMeta) as WatchLaterCategory[]).map((c) => {
-            const meta = categoryMeta[c];
-            const Icon = meta.icon;
-            return (
-              <button
-                key={c}
-                onClick={() => setCategory(c)}
-                className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono  border transition-colors",
-                  category === c
-                    ? "border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--accent)]/10"
-                    : "border-[var(--border-1)] text-[var(--text-3)] hover:text-[var(--text-1)]"
-                )}
-              >
-                <Icon className="w-2.5 h-2.5" />
-                {meta.label}
-              </button>
-            );
-          })}
-        </div>
       </div>
-      <div className="flex items-center justify-end gap-1.5 mt-3">
-        <Button variant="ghost" size="sm" onClick={onCancel} leftIcon={<X className="w-3.5 h-3.5" />}>
+
+      <div className="flex flex-wrap gap-1.5">
+        {(Object.keys(categoryMeta) as WatchLaterCategory[]).map((c) => {
+          const Icon = categoryMeta[c].icon;
+          return (
+            <button
+              key={c}
+              type="button"
+              className="ui-chip gap-1.5"
+              data-active={category === c}
+              onClick={() => setCategory(c)}
+            >
+              <Icon className="h-3 w-3" aria-hidden />
+              {categoryMeta[c].label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center justify-end gap-2">
+        <button type="button" className="ui-btn ui-btn--text" onClick={onCancel}>
           Annuler
-        </Button>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={handleSubmit}
-          disabled={!url.trim() || !title.trim()}
-          leftIcon={<Check className="w-3.5 h-3.5" />}
-        >
+        </button>
+        <button type="submit" className="ui-btn ui-btn--primary" disabled={!valid}>
           Ajouter
-        </Button>
+        </button>
       </div>
-    </div>
+    </form>
   );
 }

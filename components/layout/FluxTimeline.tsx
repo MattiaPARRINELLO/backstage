@@ -34,12 +34,6 @@ interface FluxItem {
   href: string;
 }
 
-const KIND_DOT: Record<Kind, string> = {
-  course: "bg-[var(--accent)]",
-  event: "bg-[var(--accent-cool)]",
-  reminder: "bg-[var(--accent-warm)]",
-};
-
 const KIND_LABEL: Record<Kind, string> = {
   course: "Cours",
   event: "Agenda",
@@ -166,35 +160,35 @@ export function FluxTimeline() {
 
   if (groups.length === 0 && late.length === 0) {
     return (
-      <div className="px-1 py-10 text-center">
-        <CalendarDays className="w-6 h-6 text-[var(--text-4)] mx-auto mb-2" />
-        <p className="text-[11px] text-[var(--text-3)] font-mono">Rien à venir cette semaine</p>
+      <div className="py-10 text-center">
+        <CalendarDays className="w-5 h-5 text-[var(--text-4)] mx-auto mb-3" />
+        <p className="ui-mono text-[var(--text-3)]">Rien à venir cette semaine</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {late.length > 0 && <LateBlock items={late} total={lateTotal} />}
 
-      {groups.map((g) => (
-        <section key={g.key}>
-          <SectionHeading label={g.label} count={g.items.length} />
-          <div className="relative mt-2">
-            <span
-              className="absolute left-[56px] top-2 bottom-2 w-px bg-[var(--border-2)]"
-              aria-hidden
-            />
-            <ol className="space-y-0.5">
+      {groups.map((g) => {
+        // La puce « maintenant » ne doit apparaître qu'une fois par jour :
+        // devant le premier élément encore à venir. Sans ça, chaque entrée
+        // future du jour en recevait une.
+        const firstUpcoming = g.label === "Aujourd'hui" ? g.items.find((i) => i.start > now)?.id : undefined;
+        return (
+          <section key={g.key}>
+            <SectionHeading label={g.label} count={g.items.length} />
+            <ol className="mt-1 divide-y divide-[var(--line)]">
               {g.items.map((item) => (
                 <li key={item.id}>
-                  <TimelineRow item={item} now={now} showNow={g.label === "Aujourd'hui"} />
+                  <TimelineRow item={item} now={now} showNow={item.id === firstUpcoming} />
                 </li>
               ))}
             </ol>
-          </div>
-        </section>
-      ))}
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -203,6 +197,7 @@ function TimelineRow({ item, now, showNow }: { item: FluxItem; now: number; show
   // La puce « maintenant » se place avant le premier élément à venir : elle
   // matérialise la frontière passé / à venir de la journée.
   const nowBefore = showNow && now > 0 && item.start > now;
+  const past = item.end <= now;
 
   return (
     <>
@@ -210,27 +205,27 @@ function TimelineRow({ item, now, showNow }: { item: FluxItem; now: number; show
       <Link
         href={item.href}
         className={cn(
-          "group flex items-start gap-3 rounded-lg px-2.5 py-2 -mx-2.5 transition-colors duration-200",
-          "hover:bg-[var(--surface-2)]",
-          item.end <= now && "opacity-40"
+          "group flex items-start gap-3 py-3 transition-opacity duration-150",
+          past && "opacity-45"
         )}
       >
-        <span className="w-10 shrink-0 pt-0.5 text-right text-[10px] font-mono tabular-nums text-[var(--text-3)]">
-          {formatTime(new Date(item.start).toISOString())}
-        </span>
         <span
           className={cn(
-            "relative z-10 mt-[5px] w-[9px] h-[9px] shrink-0 rounded-full ring-2 ring-[var(--surface-1)]",
-            item.late ? "bg-[var(--danger)]" : KIND_DOT[item.kind],
-            (item.live || item.late) && "flux-now"
+            "shrink-0 rounded-full px-2 py-0.5 ui-mono",
+            item.late
+              ? "bg-[var(--danger)]/10 text-[var(--danger)]"
+              : item.live
+                ? "bg-[var(--accent)] text-[var(--background)]"
+                : "bg-[var(--accent)]/10 text-[var(--accent)]"
           )}
-          aria-hidden
-        />
+        >
+          {formatTime(new Date(item.start).toISOString())}
+        </span>
         <span className="min-w-0 flex-1">
-          <span className="flex items-start gap-1.5">
+          <span className="flex items-start gap-2">
             <span
               className={cn(
-                "min-w-0 flex-1 text-[12px] leading-snug",
+                "min-w-0 flex-1 text-[length:var(--t-body)] leading-snug",
                 item.live || item.late ? "font-medium text-[var(--text-1)]" : "text-[var(--text-2)]"
               )}
             >
@@ -238,19 +233,19 @@ function TimelineRow({ item, now, showNow }: { item: FluxItem; now: number; show
             </span>
             {item.live && <Tag tone="accent">en cours</Tag>}
             {item.late && <Tag tone="danger">en retard</Tag>}
-            <ArrowUpRight className="w-3 h-3 shrink-0 mt-0.5 text-[var(--text-4)] opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+            <ArrowUpRight className="w-3 h-3 shrink-0 mt-1 text-[var(--text-4)] opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
           </span>
-          <span className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 mt-0.5 text-[10px] text-[var(--text-4)] font-mono">
+          <span className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 mt-1 ui-mono text-[var(--text-4)]">
             <span>{KIND_LABEL[item.kind]}</span>
             {item.end > item.start && (
-              <span className="tabular-nums">{formatDuration(item.end - item.start)}</span>
+              <span>{formatDuration(item.end - item.start)}</span>
             )}
             {item.place ? (
               <span className="flex items-center gap-1 min-w-0">
                 {item.remote ? (
-                  <Video className="w-2.5 h-2.5 shrink-0" />
+                  <Video className="w-3 h-3 shrink-0" />
                 ) : (
-                  <MapPin className="w-2.5 h-2.5 shrink-0" />
+                  <MapPin className="w-3 h-3 shrink-0" />
                 )}
                 <span className="truncate">{item.place}</span>
               </span>
@@ -266,10 +261,8 @@ function TimelineRow({ item, now, showNow }: { item: FluxItem; now: number; show
 
 function NowMarker() {
   return (
-    <div className="flex items-center gap-3 py-1.5">
-      <span className="w-10 shrink-0" />
-      <span className="flux-now relative z-10 w-[9px] h-[9px] rounded-full bg-[var(--accent)]" />
-      <span className="text-[9px] font-mono  text-[var(--accent)]">
+    <div className="flex items-center gap-3 py-2.5">
+      <span className="ui-mono rounded-full px-2 py-0.5 bg-[var(--accent)] text-[var(--background)]">
         maintenant
       </span>
       <span className="flex-1 h-px bg-[var(--accent)]/25" />
@@ -281,7 +274,7 @@ function Tag({ tone, children }: { tone: "accent" | "danger"; children: React.Re
   return (
     <span
       className={cn(
-        "shrink-0 mt-px text-[9px] font-mono ",
+        "shrink-0 mt-1 ui-mono",
         tone === "accent" ? "text-[var(--accent)]" : "text-[var(--danger)]"
       )}
     >
@@ -293,28 +286,28 @@ function Tag({ tone, children }: { tone: "accent" | "danger"; children: React.Re
 function LateBlock({ items, total }: { items: { title: string; dueAt: string }[]; total: number }) {
   const shown = items.slice(0, MAX_LATE);
   return (
-    <section className="rounded-xl border border-[var(--danger)]/25 bg-[var(--danger)]/5 overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--danger)]/20">
-        <AlertTriangle className="w-3 h-3 text-[var(--danger)] shrink-0" />
-        <span className="text-[10px] font-mono  text-[var(--danger)]">
+    <section className="ui-tile overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <AlertTriangle className="w-3.5 h-3.5 text-[var(--danger)] shrink-0" />
+        <span className="ui-mono text-[var(--danger)]">
           En retard
         </span>
-        <span className="ml-auto text-[10px] font-mono tabular-nums text-[var(--text-3)]">
+        <span className="ml-auto ui-mono text-[var(--text-3)]">
           {total}
         </span>
       </div>
-      <ul className="p-1.5 space-y-0.5">
+      <ul className="border-t border-[var(--line)] divide-y divide-[var(--line)]">
         {shown.map((r) => (
           <li key={`${r.title}-${r.dueAt}`}>
             <Link
               href="/reminders"
-              className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[var(--danger)]/10 transition-colors duration-150"
+              className="flex items-center gap-2.5 px-3 py-2.5 hover:bg-[var(--surface-2)] transition-colors duration-150"
             >
-              <Bell className="w-2.5 h-2.5 text-[var(--danger)] shrink-0" />
-              <span className="min-w-0 flex-1 text-[12px] text-[var(--text-2)] truncate">
+              <Bell className="w-3 h-3 text-[var(--danger)] shrink-0" />
+              <span className="min-w-0 flex-1 text-[length:var(--t-small)] text-[var(--text-2)] truncate">
                 {r.title}
               </span>
-              <span className="shrink-0 text-[10px] font-mono text-[var(--text-4)]">
+              <span className="shrink-0 ui-mono text-[var(--text-4)]">
                 {new Date(r.dueAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
               </span>
             </Link>
@@ -324,7 +317,7 @@ function LateBlock({ items, total }: { items: { title: string; dueAt: string }[]
       {total > shown.length && (
         <Link
           href="/reminders"
-          className="block px-3 py-1.5 text-[10px] font-mono  text-[var(--text-4)] hover:text-[var(--text-1)] border-t border-[var(--danger)]/15 transition-colors duration-150"
+          className="block px-3 py-2 ui-mono text-[var(--text-4)] hover:text-[var(--text-1)] border-t border-[var(--line)] transition-colors duration-150"
         >
           + {total - shown.length} autres
         </Link>
@@ -337,7 +330,7 @@ function LateBlock({ items, total }: { items: { title: string; dueAt: string }[]
 function SectionHeading({ label, count, live }: { label: string; count?: number; live?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <span className="flex items-center gap-1.5 text-[9px] font-mono  text-[var(--text-4)]">
+      <span className="flex items-center gap-1.5 ui-mono text-[var(--text-3)]">
         {live && (
           <span className="relative flex w-1.5 h-1.5">
             <span className="absolute inset-0 rounded-full bg-[var(--accent)] animate-pulse-dot" />
@@ -347,9 +340,9 @@ function SectionHeading({ label, count, live }: { label: string; count?: number;
         {label}
       </span>
       {count !== undefined && count > 0 && (
-        <span className="text-[9px] font-mono tabular-nums text-[var(--text-4)]/70">{count}</span>
+        <span className="ui-mono text-[var(--text-4)]">{count}</span>
       )}
-      <span className="flex-1 h-px bg-[var(--border-1)]" />
+      <span className="flex-1 h-px bg-[var(--line)]" />
     </div>
   );
 }

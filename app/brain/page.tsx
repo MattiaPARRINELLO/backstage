@@ -1,19 +1,15 @@
 "use client";
 
 import { useState, useTransition, useEffect, useMemo } from "react";
-import { Plus, Brain, Search, Sparkles, Share2, Code2, Camera, Heart, User } from "lucide-react";
+import { Plus, Brain, Search, Share2 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader, EmptyState } from "@/components/layout/Chrome";
-import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { loadBrain, loadMemoryRelationships, rememberFact, editMemoryFact, forgetFact } from "@/app/actions/brain";
 import dynamic from "next/dynamic";
 import type { MemoryData, MemoryCategory, MemoryRelationship } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { categoryMeta, ALL_FILTERS, groupByCategory, type Filter } from "./memory-utils";
-import { StatCard } from "./StatCard";
 import { ProfileCard } from "./ProfileCard";
 import { FactRow } from "./FactRow";
 import { EditFactForm, AddFactForm } from "./FactForms";
@@ -23,7 +19,7 @@ const KnowledgeGraph = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-[600px] rounded-xl border border-[var(--border-1)] flex items-center justify-center text-[var(--text-2)] text-sm">
+      <div className="flex h-[600px] items-center justify-center rounded-[var(--r-card)] border border-[var(--line)] text-[var(--t-body)] text-[var(--text-2)]">
         Chargement du graphe…
       </div>
     ),
@@ -102,11 +98,14 @@ export default function BrainPage() {
 
   const handleAdd = (content: string, category: MemoryCategory) => {
     startTransition(async () => {
-      const fact = await rememberFact(content, category, { source: "manual" });
-      if (data) {
-        setData({ ...data, facts: [...data.facts, fact] });
-        toast.show({ message: "Fait mémorisé", tone: "success", duration: 2200 });
-      }
+      await rememberFact(content, category, { source: "manual" });
+      // `rememberFact` appelle `revalidatePath` : l'état local peut être écrasé
+      // par le rafraîchissement RSC avant d'être mis à jour. On relit donc la
+      // source de vérité — sinon le fait est écrit mais invisible jusqu'au
+      // prochain chargement.
+      const fresh = await loadBrain();
+      setData(fresh);
+      toast.show({ message: "Fait mémorisé", tone: "success", duration: 2200 });
       setShowAdd(false);
     });
   };
@@ -136,49 +135,46 @@ export default function BrainPage() {
 
   return (
     <AppShell>
-      <div className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
+      <div className="min-w-0 flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
           <PageHeader
-            eyebrow="Mémoire longue durée"
             title="Cerveau"
             description="Tout ce que l'IA sait de toi. Modifie ou supprime ce qui ne te représente plus. L'IA utilise ces faits pour personnaliser ses réponses."
             actions={
-              <Button
-                variant="primary"
-                size="md"
+              <button
+                type="button"
+                className="ui-btn ui-btn--primary gap-2"
                 onClick={() => setShowAdd(true)}
-                leftIcon={<Plus className="w-3.5 h-3.5" />}
               >
+                <Plus className="h-4 w-4" aria-hidden />
                 Ajouter un fait
-              </Button>
+              </button>
             }
           />
 
-          <div className="flex gap-1 mb-6 p-0.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-1)] w-fit">
+          <div className="mb-6 flex items-center gap-1.5">
             <button
+              type="button"
+              className="ui-chip gap-2"
+              data-active={tab === "facts"}
               onClick={() => setTab("facts")}
-              className={cn(
-                "px-3 py-1.5 rounded-md text-[11px] font-mono tracking-wider transition-colors flex items-center gap-1.5",
-                tab === "facts" ? "bg-[var(--surface-3)] text-[var(--text-1)]" : "text-[var(--text-3)] hover:text-[var(--text-1)]"
-              )}
             >
-              <Brain className="w-3.5 h-3.5" />
+              <Brain className="h-3.5 w-3.5" aria-hidden />
               Faits
             </button>
             <button
+              type="button"
+              className="ui-chip gap-2"
+              data-active={tab === "graph"}
               onClick={() => setTab("graph")}
-              className={cn(
-                "px-3 py-1.5 rounded-md text-[11px] font-mono tracking-wider transition-colors flex items-center gap-1.5",
-                tab === "graph" ? "bg-[var(--surface-3)] text-[var(--text-1)]" : "text-[var(--text-3)] hover:text-[var(--text-1)]"
-              )}
             >
-              <Share2 className="w-3.5 h-3.5" />
+              <Share2 className="h-3.5 w-3.5" aria-hidden />
               Graphe
             </button>
           </div>
 
           {tab === "graph" && data ? (
-            <div className="h-[600px] rounded-xl border border-[var(--border-1)] overflow-hidden">
+            <div className="h-[600px] overflow-hidden rounded-[var(--r-card)] border border-[var(--line)]">
               <KnowledgeGraph
                 key={data.facts.length}
                 facts={data.facts}
@@ -188,140 +184,110 @@ export default function BrainPage() {
             </div>
           ) : (
             <>
-          {data && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-              <StatCard label="Code" value={counts.dev} icon={Code2} tone="accent" />
-              <StatCard label="Photo" value={counts.photo} icon={Camera} tone="warm" />
-              <StatCard label="Vie" value={counts.life} icon={Heart} tone="success" />
-              <StatCard label="Préférences" value={counts.preference} icon={User} tone="muted" />
-            </div>
-          )}
+              {showAdd && (
+                <AddFactForm
+                  onCancel={() => setShowAdd(false)}
+                  onSubmit={handleAdd}
+                />
+              )}
 
-          {showAdd && (
-            <AddFactForm
-              onCancel={() => setShowAdd(false)}
-              onSubmit={handleAdd}
-            />
-          )}
+              {data && <ProfileCard profile={data.profile} />}
 
-          {data && (
-            <ProfileCard profile={data.profile} />
-          )}
-
-          {loading && !data && (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-20" />
-              ))}
-            </div>
-          )}
-
-          {data && data.facts.length === 0 && (
-            <EmptyState
-              icon={<Brain className="w-5 h-5" />}
-              title="Aucune mémoire pour l'instant"
-              description="L'IA peut mémoriser des faits à ta place via le chat, ou tu peux les ajouter manuellement ici."
-            />
-          )}
-
-          {data && data.facts.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-3)]" />
-                  <Input
-                    type="search"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Rechercher dans la mémoire…"
-                    className="pl-9"
-                  />
-                </div>
-                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-1)]">
-                  {ALL_FILTERS.map((f) => {
-                    const active = filter === f.id;
-                    const count = f.id === "all" ? data.facts.length : counts[f.id as MemoryCategory] ?? 0;
-                    return (
-                      <button
-                        key={f.id}
-                        onClick={() => setFilter(f.id)}
-                        className={cn(
-                          "px-2.5 py-1 rounded-md text-[10px] font-mono  transition-colors flex items-center gap-1.5",
-                          active
-                            ? "bg-[var(--surface-3)] text-[var(--text-1)]"
-                            : "text-[var(--text-3)] hover:text-[var(--text-1)]"
-                        )}
-                      >
-                        {f.label}
-                        <span
-                          className={cn(
-                            "px-1 rounded-sm text-[9px] font-mono",
-                            active
-                              ? "bg-[var(--accent)]/20 text-[var(--accent-soft)]"
-                              : "bg-[var(--surface-3)]/60 text-[var(--text-4)]"
-                          )}
-                        >
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {filteredFacts.length === 0 && (
-                <div className="rounded-xl border border-dashed border-[var(--border-2)] p-8 text-center">
-                  <Sparkles className="w-5 h-5 text-[var(--text-4)] mx-auto mb-2" />
-                  <p className="text-[12px] text-[var(--text-3)]">
-                    Aucun fait ne correspond à ta recherche.
-                  </p>
+              {loading && !data && (
+                <div className="space-y-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12" />
+                  ))}
                 </div>
               )}
 
-              {filteredFacts.length > 0 && (
-                <div className="space-y-8 mt-2">
-                  {(Object.keys(categoryMeta) as MemoryCategory[]).map((cat) => {
-                    const facts = filteredGrouped[cat] ?? [];
-                    if (facts.length === 0) return null;
-                    const meta = categoryMeta[cat];
-                    const Icon = meta.icon;
-                    return (
-                      <section key={cat}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Icon className="w-3.5 h-3.5 text-[var(--text-3)]" />
-                          <h2 className="text-[10px] font-semibold  text-[var(--text-3)] font-mono">
-                            {meta.label}
-                          </h2>
-                          <span className="text-[10px] text-[var(--text-4)] font-mono">
-                            {facts.length}
-                          </span>
-                        </div>
-                        <div className="space-y-2">
-                          {facts.map((fact) =>
-                            editing === fact.id ? (
-                              <EditFactForm
-                                key={fact.id}
-                                fact={fact}
-                                onCancel={() => setEditing(null)}
-                                onSave={handleSaveEdit}
-                              />
-                            ) : (
-                              <FactRow
-                                key={fact.id}
-                                fact={fact}
-                                onEdit={() => setEditing(fact.id)}
-                                onDelete={() => handleDelete(fact.id)}
-                              />
-                            )
-                          )}
-                        </div>
-                      </section>
-                    );
-                  })}
+              {data && data.facts.length === 0 && (
+                <EmptyState
+                  title="Aucune mémoire pour l'instant"
+                  description="L'IA peut mémoriser des faits à ta place via le chat, ou tu peux les ajouter manuellement ici."
+                />
+              )}
+
+              {data && data.facts.length > 0 && (
+                <div className="space-y-5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="ui-field min-w-[200px] flex-1">
+                      <Search className="h-4 w-4 shrink-0 text-[var(--text-3)]" aria-hidden />
+                      <input
+                        type="search"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Rechercher dans la mémoire…"
+                        aria-label="Rechercher dans la mémoire"
+                        className="min-w-0 flex-1 bg-transparent text-base outline-none"
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {ALL_FILTERS.map((f) => {
+                        const active = filter === f.id;
+                        const count = f.id === "all" ? data.facts.length : counts[f.id as MemoryCategory] ?? 0;
+                        return (
+                          <button
+                            key={f.id}
+                            type="button"
+                            className="ui-chip"
+                            data-active={active}
+                            onClick={() => setFilter(f.id)}
+                          >
+                            {f.label}
+                            <span className="ui-mono opacity-60">{count}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {filteredFacts.length === 0 && (
+                    <p className="py-10 text-center text-[length:var(--t-small)] text-[var(--text-4)]">
+                      Aucun fait ne correspond à ta recherche.
+                    </p>
+                  )}
+
+                  {filteredFacts.length > 0 && (
+                    <div className="space-y-8">
+                      {(Object.keys(categoryMeta) as MemoryCategory[]).map((cat) => {
+                        const facts = filteredGrouped[cat] ?? [];
+                        if (facts.length === 0) return null;
+                        const meta = categoryMeta[cat];
+                        return (
+                          <section key={cat}>
+                            <div className="mb-1 flex items-baseline gap-2 border-b border-[var(--line-2)] pb-2">
+                              <h2 className="font-display text-[length:var(--t-lead)] font-semibold text-[var(--text-1)]">
+                                {meta.label}
+                              </h2>
+                              <span className="ui-mono text-[var(--text-4)]">{facts.length}</span>
+                            </div>
+                            <div>
+                              {facts.map((fact) =>
+                                editing === fact.id ? (
+                                  <EditFactForm
+                                    key={fact.id}
+                                    fact={fact}
+                                    onCancel={() => setEditing(null)}
+                                    onSave={handleSaveEdit}
+                                  />
+                                ) : (
+                                  <FactRow
+                                    key={fact.id}
+                                    fact={fact}
+                                    onEdit={() => setEditing(fact.id)}
+                                    onDelete={() => handleDelete(fact.id)}
+                                  />
+                                )
+                              )}
+                            </div>
+                          </section>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
             </>
           )}
         </div>
@@ -329,10 +295,3 @@ export default function BrainPage() {
     </AppShell>
   );
 }
-
-
-
-
-
-
-

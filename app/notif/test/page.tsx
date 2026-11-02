@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/Chrome";
-import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 
 interface SubInfo {
@@ -94,53 +93,112 @@ export default function NotifTestPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Test notifications" />
+      <div className="mx-auto w-full max-w-2xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
+        <PageHeader
+          title="Test notifications"
+          description="Console de vérification du canal push de cet appareil."
+        />
 
-      <div className="max-w-xl mx-auto p-4 space-y-6">
-        <section className="rounded-xl border border-[var(--border-1)] p-4 space-y-3">
-          <h2 className="text-xs font-mono text-[var(--text-3)]">PERMISSION NAVIGATEUR</h2>
-          <p className="text-sm font-mono">
-            Statut : <span className={browserPerm === "granted" ? "text-green-400" : "text-[var(--warm)]"}>{browserPerm}</span>
-          </p>
-          <Button size="sm" onClick={testBrowserNotif}>
-            Tester notification navigateur
-          </Button>
-        </section>
-
-        <section className="rounded-xl border border-[var(--border-1)] p-4 space-y-3">
-          <h2 className="text-xs font-mono text-[var(--text-3)]">PUSH SUBSCRIPTIONS</h2>
-          <p className="text-sm font-mono">
-            {subs ? `${subs.count} appareil(s) enregistré(s)` : "Chargement..."}
-          </p>
-          {subs && subs.endpoints.length > 0 && (
-            <ul className="space-y-1">
-              {subs.endpoints.map((ep, i) => (
-                <li key={i} className="text-[10px] font-mono text-[var(--text-4)] break-all">{ep}</li>
-              ))}
-            </ul>
-          )}
-          <div className="flex gap-2">
-            <Button size="sm" onClick={fetchSubs} variant="ghost">
-              Rafraîchir
-            </Button>
-            <Button size="sm" onClick={sendTest} disabled={loading || !subs || subs.count === 0}>
-              {loading ? "Envoi..." : "Envoyer test push à tous"}
-            </Button>
+        <section className="mt-12">
+          <h2 className="font-display text-[length:var(--t-lead)] font-semibold tracking-[-0.025em] text-[var(--text-1)]">
+            Permission navigateur
+          </h2>
+          <div className="mt-4 border-t border-[var(--line)]">
+            <div className="flex items-center justify-between gap-6 border-b border-[var(--line)] py-4">
+              <p className="text-[length:var(--t-body)] text-[var(--text-1)]">Statut</p>
+              <p
+                className="ui-mono"
+                style={{
+                  color:
+                    browserPerm === "granted"
+                      ? "var(--success)"
+                      : browserPerm === "denied"
+                        ? "var(--danger)"
+                        : "var(--text-2)",
+                }}
+              >
+                {browserPerm}
+              </p>
+            </div>
+            <div className="border-b border-[var(--line)] py-4">
+              <button
+                type="button"
+                onClick={testBrowserNotif}
+                className="ui-btn ui-btn--ghost h-10 px-5 text-[var(--t-small)]"
+              >
+                Tester notification navigateur
+              </button>
+            </div>
           </div>
         </section>
 
-        <section className="rounded-xl border border-[var(--danger)]/30 p-4 space-y-3">
-          <h2 className="text-xs font-mono text-[var(--danger)]">DANGER ZONE</h2>
-          <p className="text-xs text-[var(--text-3)]">Supprime toutes les souscriptions push.</p>
-          <Button size="sm" onClick={clearAll} disabled={loading}>
-            {loading ? "Suppression..." : "Tout supprimer"}
-          </Button>
+        <section className="mt-12">
+          <h2 className="font-display text-[length:var(--t-lead)] font-semibold tracking-[-0.025em] text-[var(--text-1)]">
+            Souscriptions push
+          </h2>
+          <div className="mt-4 border-t border-[var(--line)]">
+            <div className="flex items-center justify-between gap-6 border-b border-[var(--line)] py-4">
+              <p className="text-[length:var(--t-body)] text-[var(--text-1)]">Appareils</p>
+              <p className="ui-mono text-[var(--text-2)]">
+                {subs ? `${subs.count} enregistré(s)` : "Chargement…"}
+              </p>
+            </div>
+            {subs && subs.endpoints.length > 0 && (
+              <ul className="border-b border-[var(--line)] py-3">
+                {subs.endpoints.map((ep, i) => (
+                  <li key={i} className="ui-mono break-all py-0.5 text-[var(--text-3)]">{ep}</li>
+                ))}
+              </ul>
+            )}
+            <div className="flex flex-wrap gap-2 border-b border-[var(--line)] py-4">
+              <button
+                type="button"
+                onClick={fetchSubs}
+                className="ui-btn ui-btn--ghost h-10 px-5 text-[var(--t-small)]"
+              >
+                Rafraîchir
+              </button>
+              <button
+                type="button"
+                onClick={sendTest}
+                disabled={loading || !subs || subs.count === 0}
+                className="ui-btn ui-btn--primary h-10 px-5 text-[var(--t-small)]"
+              >
+                {loading ? "Envoi…" : "Envoyer un push de test"}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-12">
+          <h2 className="font-display text-[length:var(--t-lead)] font-semibold tracking-[-0.025em] text-[var(--danger)]">
+            Zone sensible
+          </h2>
+          <div className="mt-4 border-t border-[var(--line)]">
+            <div className="flex flex-col gap-3 border-b border-[var(--line)] py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+              <div className="min-w-0">
+                <p className="text-[length:var(--t-body)] text-[var(--text-1)]">Supprimer les souscriptions</p>
+                <p className="mt-1 text-[var(--t-small)] text-[var(--text-3)]">
+                  Toutes les souscriptions push seront effacées.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={clearAll}
+                disabled={loading}
+                className="ui-btn ui-btn--ghost h-9 shrink-0 px-4 text-[var(--t-small)]"
+                style={{ color: "var(--danger)", borderColor: "var(--danger)" }}
+              >
+                {loading ? "Suppression…" : "Tout supprimer"}
+              </button>
+            </div>
+          </div>
         </section>
 
         {result && (
-          <div className="rounded-xl border border-[var(--warm)]/30 bg-[var(--warm)]/10 p-3">
-            <p className="text-xs font-mono">{result}</p>
-          </div>
+          <p className="mt-8 text-[var(--t-small)] text-[var(--text-2)]" role="status">
+            {result}
+          </p>
         )}
       </div>
     </AppShell>

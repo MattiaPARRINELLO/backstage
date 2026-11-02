@@ -85,10 +85,10 @@ export function MicrosoftTodoPanel() {
     <section className="mt-12">
       <div className="flex items-center gap-2 mb-3">
         <ListTodo className="w-3.5 h-3.5 text-[var(--text-3)]" />
-        <h2 className="text-[10px] font-semibold  text-[var(--text-3)] font-mono">
+        <h2 className="text-[length:var(--t-small)] font-semibold  text-[var(--text-3)] ui-mono">
           Microsoft To Do
         </h2>
-        <span className="text-[10px] text-[var(--text-4)] font-mono">Samsung Reminder</span>
+        <span className="text-[length:var(--t-small)] text-[var(--text-4)] ui-mono">Samsung Reminder</span>
       </div>
 
       {status === "loading" && (
@@ -99,8 +99,8 @@ export function MicrosoftTodoPanel() {
       )}
 
       {status === "unlinked" && (
-        <div className="p-4 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/40">
-          <p className="text-[12px] text-[var(--text-2)]">
+        <div className="p-4 rounded-[var(--r-tile)] border border-[var(--border-1)] bg-[var(--surface-1)]/40">
+          <p className="text-[length:var(--t-small)] text-[var(--text-2)]">
             Tes reminders Samsung peuvent être synchronisés dans Microsoft To Do
             (One UI → Reminder → compte Microsoft). Connecte ton compte pour les
             retrouver ici.
@@ -128,7 +128,7 @@ export function MicrosoftTodoPanel() {
                   type="button"
                   onClick={() => handleSelectList(l.id)}
                   className={cn(
-                    "px-2.5 py-1 rounded-full text-[10px] font-mono  border transition-colors",
+                    "px-2.5 py-1 rounded-full text-[length:var(--t-small)] ui-mono  border transition-colors",
                     activeListId === l.id
                       ? "border-[var(--accent)]/40 text-[var(--accent)] bg-[var(--accent)]/10"
                       : "border-[var(--border-1)] text-[var(--text-3)] hover:text-[var(--text-1)]"
@@ -146,7 +146,7 @@ export function MicrosoftTodoPanel() {
               <Skeleton className="h-10" />
             </div>
           ) : pending.length === 0 ? (
-            <p className="text-[12px] text-[var(--text-3)]">
+            <p className="text-[length:var(--t-small)] text-[var(--text-3)]">
               {doneCount > 0 ? "Tout est terminé ✓" : "Aucune tâche dans cette liste."}
             </p>
           ) : (
@@ -154,7 +154,7 @@ export function MicrosoftTodoPanel() {
               {pending.map((t) => (
                 <li
                   key={t.id}
-                  className="flex items-start gap-3 p-3 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/40"
+                  className="flex items-start gap-3 p-3 rounded-[var(--r-tile)] border border-[var(--border-1)] bg-[var(--surface-1)]/40"
                 >
                   <button
                     type="button"
@@ -166,9 +166,9 @@ export function MicrosoftTodoPanel() {
                     {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
                   </button>
                   <div className="min-w-0">
-                    <p className="text-[13px] text-[var(--text-1)] break-words">{t.title}</p>
+                    <p className="text-[length:var(--t-small)] text-[var(--text-1)] break-words">{t.title}</p>
                     {t.dueDateTime && (
-                      <p className="text-[11px] text-[var(--text-3)] font-mono mt-0.5">
+                      <p className="text-[length:var(--t-small)] text-[var(--text-3)] ui-mono mt-0.5">
                         {new Date(t.dueDateTime.dateTime).toLocaleString("fr-FR", {
                           day: "2-digit",
                           month: "short",

@@ -17,7 +17,7 @@ export function CancelIntentionButton({ id }: { id: string }) {
         }
       }}
       disabled={cancelled}
-      className="text-[10px] font-mono  text-[var(--text-4)] hover:text-[var(--danger)] disabled:opacity-40 disabled:cursor-default transition-colors duration-200"
+      className="ui-mono self-start text-left text-[var(--text-3)] transition-colors duration-150 hover:text-[var(--danger)] disabled:cursor-default disabled:opacity-40"
     >
       {cancelled ? "Annulée" : "Annuler"}
     </button>

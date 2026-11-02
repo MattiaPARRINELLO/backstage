@@ -4,13 +4,31 @@
 > **dans quel ordre** et **quoi** toucher. Il ne remplace pas DESIGN.md : en cas
 > de doute sur une couleur, un rayon ou une taille, c'est DESIGN.md qui tranche.
 
+## État — 2 novembre 2026
+
+| Phase | Branche | État | Écarts avec le plan |
+| --- | --- | --- | --- |
+| 0 — socle | `feat/app-refonte-socle` | ✅ livrée | Les primitives ont été écrites dans `app/globals.css` (pas dans un `app/ui.css` séparé) et placées ensuite dans `@layer components` pour rester surchargeables. |
+| 1 — shell + chat | `feat/app-shell-chat` | ✅ livrée | Sert de référence de pattern pour les phases suivantes. |
+| 2 — journée | `feat/app-journee` | ✅ livrée | — |
+| 3 — collections | `feat/app-collections` | ✅ livrée | `app/brain/StatCard.tsx` supprimé au profit des listes à filets. |
+| 4 — intégrations | `feat/app-integrations` | ✅ livrée | Le formulaire de rappel a été réécrit ; l'échéance a été conservée. |
+| 5 — réglages + entrée | `feat/app-refonte-reglages-login` | ✅ livrée | La séquence décorative du login (explosion, faisceau) a été retirée, l'anneau et l'empreinte sont conservés. |
+| Réconciliation | `feat/app-reconciliation` | ✅ livrée | Fusion des cinq branches, unification des `.ui-*`, purge des tokens et du CSS mort, documentation. |
+
+Détail de la réconciliation (conflits, patterns unifiés, tokens retirés) :
+[`docs/app-reconciliation.md`](app-reconciliation.md).
+
+Aucun plan de refonte n'est en attente. Les points restés ouverts sont listés
+dans [`DESIGN.md` §8](../DESIGN.md#8-ce-qui-reste-ouvert).
+
 ## Objectif
 
-L'application tourne sur l'ancienne direction : fond `#0d0c0b`, accent ambre,
-mono partout, filets, rayons 8–14 px. La landing est passée au langage moderne
+L'application tournait sur l'ancienne direction : fond `#0d0c0b`, accent ambre,
+mono partout, filets, rayons 8–14 px. La landing était passée au langage moderne
 (fond clair, Space Grotesk, bleu `#2547ff`, rayons 12–26, thème clair/sombre).
-Il faut aligner l'application, **page par page, sans casser une seule
-fonctionnalité**.
+Il fallait aligner l'application, **page par page, sans casser une seule
+fonctionnalité**. C'est fait.
 
 ## Règles pour l'agent qui prend une phase
 
@@ -39,7 +57,7 @@ fonctionnalité**.
 7. **Un commit par écran cohérent**, message en français, préfixe `feat:` /
    `refactor:`.
 
-## Phase 0 — le socle (bloquant, une seule personne)
+## Phase 0 — le socle (bloquant, une seule personne) — ✅ livrée
 
 Rien d'autre ne peut commencer avant. Sans cette phase, chaque agent invente ses
 propres tokens.
@@ -48,7 +66,7 @@ propres tokens.
 | --- | --- |
 | Porter les tokens de DESIGN.md dans `:root` + `html[data-theme="light"]`, en gardant les noms existants (`--background`, `--foreground`, `--surface-*`, `--text-*`) quand c'est possible | `app/globals.css` |
 | Basculer l'application en **sombre par défaut**, le clair disponible (même mécanisme que la landing : `data-theme` + script bloquant déjà dans `app/layout.tsx`) | `app/globals.css`, `app/layout.tsx` |
-| Extraire de `app/landing.css` les primitives partagées : `.card`, `.plate`, `.btn` (primaire / secondaire / texte), `.chip`, `.field`, `.tag` sans pastille, `.mono` | nouveau `app/ui.css` importé par `layout.tsx` |
+| Extraire les primitives partagées en classes `.ui-*` (carte, tuile, plaque, bouton, puce, champ, étiquette, mono) | `app/globals.css` (`@layer components`) |
 | Rayons, échelles typo, ombre unique, palette `--plate-*` | `app/globals.css` |
 | Décider du sort des anciens tokens (`--accent` ambre, `--warm`, `--ai-*`) : les remapper vers le bleu, ou les supprimer et corriger les usages | `app/globals.css` + `grep` des usages |
 | Vérifier que la landing continue de fonctionner (elle a ses propres tokens sous `.landing-page`) | — |
@@ -57,7 +75,7 @@ propres tokens.
 en clair, les primitives existent, `globals.css` ne contient plus de valeur en
 ambre en dur, et la landing est inchangée.
 
-## Phase 1 — le shell et le chat (le cœur)
+## Phase 1 — le shell et le chat (le cœur) — ✅ livrée
 
 C'est l'écran où l'on vit ; il donne le ton du reste.
 
@@ -75,7 +93,7 @@ C'est l'écran où l'on vit ; il donne le ton du reste.
 Stop/Esc, outils, pièces jointes, reprise d'une génération après navigation
 (`/api/chat/stream`) — tout fonctionne comme avant.
 
-## Phase 2 — la journée
+## Phase 2 — la journée — ✅ livrée
 
 | Écran | Fichiers | Cible |
 | --- | --- | --- |
@@ -83,7 +101,7 @@ Stop/Esc, outils, pièces jointes, reprise d'une génération après navigation
 | Semaine | `app/week/*` (241 l.) | grille de semaine sans bordure lourde, aujourd'hui marqué par `--blue-soft` |
 | Focus | `app/focus/*` (178 l.) | un seul chiffre dominant, anneau supprimé au profit d'une barre |
 
-## Phase 3 — les collections
+## Phase 3 — les collections — ✅ livrée
 
 | Écran | Fichiers | Cible |
 | --- | --- | --- |
@@ -91,7 +109,7 @@ Stop/Esc, outils, pièces jointes, reprise d'une génération après navigation
 | Cerveau | `app/brain/*` (557 l.), `components/brain/*` | faits en liste à filets, catégories en puces, ajout en champ pastille, graphe conservé tel quel |
 | Watch later | `app/watch-later/*` (467 l.) | liste dense, domaine en mono, action en bouton texte |
 
-## Phase 4 — les intégrations
+## Phase 4 — les intégrations — ✅ livrée
 
 | Écran | Fichiers | Cible |
 | --- | --- | --- |
@@ -100,13 +118,18 @@ Stop/Esc, outils, pièces jointes, reprise d'une génération après navigation
 | Gmail | `app/gmail/page.tsx` (141 l.) | liste à filets, expéditeur en 500, extrait en `--ink-2` |
 | LeetCode | `app/leetcode/page.tsx` (378 l.) | série en chiffre dominant, grille d'activité en carrés `--blue` à opacité variable |
 
-## Phase 5 — réglages et entrée
+## Phase 5 — réglages et entrée — ✅ livrée
 
 | Écran | Fichiers | Cible |
 | --- | --- | --- |
 | Réglages | `app/settings/page.tsx` (639 l.) | sections nommées, lignes de réglage (libellé à gauche, contrôle à droite), séparateurs `1px --line` |
 | Connexion | `app/login/page.tsx` (279 l.) | carte centrée `--r-card`, passkey en bouton primaire, Instrument Serif accepté ici seulement |
 | Recherche, activité, démo, notifications | `app/search`, `app/activity`, `app/demo-calls`, `app/notif`, `app/offline` | héritent du socle ; vérifier seulement la cohérence |
+
+> État (2 novembre 2026) : phase 5 livrée. Réglages en sections nommées + lignes
+> à filets, connexion en `.ui-card` centrée (Instrument Serif conservé pour le
+> logotype uniquement), écrans secondaires alignés sur les primitives. Captures
+> avant/après : `docs/app-refonte/captures/phase5/`.
 
 ## Critique / parallélisation
 

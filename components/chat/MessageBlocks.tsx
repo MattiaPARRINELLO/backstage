@@ -23,7 +23,7 @@ export function AssistantAvatar({ size = "md" }: { size?: "sm" | "md" }) {
   return (
     <div
       className={cn(
-        "shrink-0 rounded-lg border border-[var(--border-2)] bg-[var(--surface-2)] flex items-center justify-center overflow-hidden",
+        "shrink-0 rounded-full bg-[var(--surface-2)] flex items-center justify-center overflow-hidden",
         size === "md" ? "w-7 h-7" : "w-6 h-6"
       )}
     >
@@ -108,10 +108,10 @@ function ActionChips({ message }: { message: Message }) {
   };
 
   const btn =
-    "inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] rounded-lg transition-colors duration-200";
+    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[length:var(--t-small)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors duration-150";
 
   return (
-    <div className="mt-2.5 flex flex-wrap gap-1 fade-in-action-chips">
+    <div className="mt-3 flex flex-wrap gap-1 fade-in-action-chips">
       <button onClick={handleCopy} className={btn}>
         {copiedId === message.id ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
         {copiedId === message.id ? "Copié" : "Copier"}
@@ -123,13 +123,13 @@ function ActionChips({ message }: { message: Message }) {
         </a>
       )}
       {showCalendar && (
-        <button onClick={() => void handleAddCalendar()} className={cn(btn, "hover:text-[var(--accent-warm)]")}>
+        <button onClick={() => void handleAddCalendar()} className={btn}>
           <CalendarPlus className="w-3.5 h-3.5" />
           Ajouter au calendrier
         </button>
       )}
       {showReminder && (
-        <button onClick={() => void handleAddReminder()} className={cn(btn, "hover:text-[var(--warm)]")}>
+        <button onClick={() => void handleAddReminder()} className={btn}>
           <Bell className="w-3.5 h-3.5" />
           Créer un rappel
         </button>
@@ -147,7 +147,7 @@ export const MessageBlock = memo(function MessageBlock({ message }: { message: M
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] sm:max-w-[75%] rounded-2xl rounded-br-md bg-[var(--surface-2)] px-4 py-2.5 text-[15px] leading-[1.6] text-[var(--text-1)] whitespace-pre-wrap break-words">
+        <div className="max-w-[85%] sm:max-w-[75%] rounded-[var(--r-tile)] bg-[var(--surface-2)] px-4 py-2.5 text-[length:var(--t-body)] leading-[1.6] text-[var(--text-1)] whitespace-pre-wrap break-words">
           {message.content}
         </div>
       </div>
@@ -158,11 +158,11 @@ export const MessageBlock = memo(function MessageBlock({ message }: { message: M
     <div className="flex gap-3">
       <AssistantAvatar />
       <div className="min-w-0 flex-1 pt-0.5">
-        <div className="text-[15px] leading-[1.75] text-[var(--text-1)]">
+        <div className="text-[length:var(--t-body)] leading-[1.75] text-[var(--text-1)]">
           <Markdown>{message.content}</Markdown>
         </div>
         {message.toolCalls && message.toolCalls.length > 0 && (
-          <div className="mt-2.5 space-y-1.5 fade-in-up">
+          <div className="mt-3 space-y-1.5 fade-in-up">
             {message.toolCalls.map((tc) => (
               <ToolCallResult key={tc.id} tool={tc} />
             ))}
@@ -182,27 +182,31 @@ function ToolCallResult({ tool }: { tool: ToolCall }) {
   return (
     <div
       className={cn(
-        "inline-flex max-w-full flex-col items-stretch rounded-lg border px-2.5 py-1.5 text-[11px] font-mono",
-        isRunning && "tool-scan",
+        "inline-flex max-w-full flex-col items-stretch rounded-[var(--r-sm)] border px-3 py-2 ui-mono",
         isRunning
-          ? "border-[var(--ai-tool-call)]/40 bg-[var(--ai-tool-call)]/8 text-[var(--ai-tool-call)]"
+          ? "border-[var(--accent)]/30 bg-[var(--accent)]/5 text-[var(--accent)]"
           : isError
-            ? "border-[var(--danger)]/30 bg-[var(--danger)]/8 text-[var(--danger)]"
-            : "border-[var(--border-1)] bg-[var(--surface-2)] text-[var(--text-2)]"
+            ? "border-[var(--danger)]/30 bg-[var(--danger)]/5 text-[var(--danger)]"
+            : "border-[var(--line)] bg-[var(--surface-1)] text-[var(--text-2)]"
       )}
     >
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 min-w-0 text-left"
+        className="flex items-center gap-2 min-w-0 text-left"
       >
         {isRunning ? (
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--ai-tool-call)] animate-pulse shrink-0" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse shrink-0" />
         ) : (
-          <Icon className="w-3 h-3 shrink-0" />
+          <Icon
+            className={cn(
+              "w-3 h-3 shrink-0",
+              isError ? "text-[var(--danger)]" : "text-[var(--success)]"
+            )}
+          />
         )}
         <span className="truncate">{toolMeta[tool.name]?.label || tool.name}</span>
         {!isRunning && isError && (
-          <span className="shrink-0 text-[var(--danger)]">· echec</span>
+          <span className="shrink-0 text-[var(--danger)]">· échec</span>
         )}
         {tool.duration != null && !isRunning && (
           <span className="text-[var(--text-4)]">· {tool.duration.toFixed(1)}s</span>
@@ -215,7 +219,7 @@ function ToolCallResult({ tool }: { tool: ToolCall }) {
       {expanded && (
         <div
           className={cn(
-            "mt-1.5 pt-1.5 border-t border-[var(--border-1)] whitespace-pre-wrap break-all text-[var(--text-3)]",
+            "mt-2 pt-2 border-t border-[var(--line)] whitespace-pre-wrap break-all text-[var(--text-3)]",
             isError && "text-[var(--danger)]"
           )}
         >
@@ -253,28 +257,27 @@ export function GroupActionCard({
   busy?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-[var(--warm)]/40 bg-[var(--warm)]/8 px-3.5 py-3 text-[12px] fade-in-up">
+    <div className="ui-tile px-4 py-3.5 text-[length:var(--t-small)] fade-in-up">
       <div className="flex items-center gap-2 text-[var(--text-1)]">
         {tools[0] ? (() => {
           const meta = toolMeta[tools[0].name];
           const Icon = meta?.icon ?? Sparkles;
-          return <Icon className="w-3.5 h-3.5 shrink-0 text-[var(--warm)]" />;
+          return <Icon className="w-3.5 h-3.5 shrink-0 text-[var(--accent)]" />;
         })() : null}
-        <span className="font-medium">Actions à confirmer</span>
-        <span className="text-[var(--text-4)] font-mono text-[10px] ">
+        <span className="font-display font-semibold tracking-[-0.03em] text-[length:var(--t-body)]">Actions à confirmer</span>
+        <span className="ui-mono text-[var(--text-3)]">
           {tools.length > 1 ? `${tools.length} actions` : "1 action"}
         </span>
       </div>
       {summary && (
-        <p className="mt-1.5 text-[11.5px] text-[var(--text-2)] font-medium leading-relaxed">
+        <p className="mt-2 text-[var(--text-2)] leading-relaxed">
           {summary}
         </p>
       )}
-      <ul className="mt-2 space-y-1.5">
+      <ul className="mt-2.5 divide-y divide-[var(--line)]">
         {tools.map((t) => (
-          <li key={t.name + t.argsLabel} className="flex items-start gap-2 text-[11px] text-[var(--text-3)]">
-            <span className="mt-1.5 w-1 h-1 rounded-full bg-[var(--warm)] shrink-0" />
-            <span className="leading-snug whitespace-pre-wrap break-words">{t.argsLabel || t.name}</span>
+          <li key={t.name + t.argsLabel} className="py-1.5 leading-snug whitespace-pre-wrap break-words text-[var(--text-3)]">
+            {t.argsLabel || t.name}
           </li>
         ))}
       </ul>
@@ -282,14 +285,14 @@ export function GroupActionCard({
         <button
           onClick={onConfirm}
           disabled={busy}
-          className="px-3 py-1.5 rounded-md bg-[var(--warm)] text-[#0a0a0b] font-medium text-[11px]  hover:brightness-110 active:brightness-95 disabled:opacity-50 transition-colors duration-200"
+          className="ui-btn ui-btn--primary ui-btn--sm disabled:opacity-50"
         >
           {busy ? "Exécution…" : tools.length > 1 ? "Confirmer tout" : "Confirmer"}
         </button>
         <button
           onClick={onCancel}
           disabled={busy}
-          className="px-3 py-1.5 rounded-md border border-[var(--border-2)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] text-[11px]  disabled:opacity-50 transition-colors duration-200"
+          className="ui-btn ui-btn--ghost ui-btn--sm disabled:opacity-50"
         >
           Annuler
         </button>
@@ -302,11 +305,11 @@ export function ThinkingIndicator({ index }: { index: number }) {
   return (
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-[var(--ai-thinking)] thinking-dot" />
-        <span className="w-1.5 h-1.5 rounded-full bg-[var(--ai-thinking)] thinking-dot" style={{ animationDelay: "0.15s" }} />
-        <span className="w-1.5 h-1.5 rounded-full bg-[var(--ai-thinking)] thinking-dot" style={{ animationDelay: "0.3s" }} />
+        <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] thinking-dot" />
+        <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] thinking-dot" style={{ animationDelay: "0.15s" }} />
+        <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] thinking-dot" style={{ animationDelay: "0.3s" }} />
       </div>
-      <span className="text-[11px] font-mono text-[var(--text-4)]">
+      <span className="ui-mono text-[var(--text-3)]">
         {FUNNY_THOUGHTS[index % FUNNY_THOUGHTS.length]}
       </span>
     </div>

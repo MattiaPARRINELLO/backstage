@@ -167,14 +167,15 @@ function LoginForm() {
       : "Se connecter avec Face ID / Touch ID";
 
   return (
-    <div className="relative z-10 flex min-h-screen items-center justify-center px-4">
-      <div className="login-load relative z-10 flex flex-col items-center w-full max-w-sm text-center">
+    <div className="relative z-10 flex min-h-dvh items-center justify-center px-5 py-12">
+      <div className="w-full max-w-sm">
+        <div className="login-load ui-card flex flex-col items-center px-7 py-10 text-center sm:px-9">
         {/* En-tête */}
-        <p className="text-[11px] font-mono text-[var(--text-3)]">Accès privé</p>
-        <h1 className="mt-3 font-editorial text-[40px] leading-none text-[var(--text-1)]">
+        <p className="ui-label">Accès privé</p>
+        <h1 className="mt-2 font-editorial text-[length:var(--t-head)] leading-none text-[var(--text-1)]">
           BACKSTAGE
         </h1>
-        <p className="mt-3 text-[13px] leading-relaxed text-[var(--text-3)]">
+        <p className="mt-3 text-[var(--t-small)] leading-relaxed text-[var(--text-3)]">
           Ton visage, ta clé. Aucun mot de passe à retenir.
         </p>
 
@@ -182,7 +183,7 @@ function LoginForm() {
         <div
           aria-hidden="true"
           data-phase={phase}
-          className="login-ring relative mt-10 w-44 h-44 rounded-full transition-colors duration-200"
+          className="login-ring relative mt-8 h-36 w-36 rounded-full transition-colors duration-200"
         >
           <svg viewBox="0 0 200 200" className="w-full h-full" aria-hidden>
             <circle
@@ -217,20 +218,20 @@ function LoginForm() {
         </div>
 
         {/* Ligne de statut */}
-        <div className="mt-8 min-h-[22px] flex items-center justify-center gap-2.5 px-4">
+        <div className="mt-6 min-h-[22px] flex items-center justify-center gap-2.5 px-2">
           <span
             className="w-1.5 h-1.5 shrink-0 rounded-full transition-colors duration-300"
             style={{ backgroundColor: PHASE_LIGHT[phase] }}
             aria-hidden
           />
           {phase === "error" ? (
-            <span className="flex items-start gap-1.5 text-[12px] text-[var(--danger)] leading-relaxed max-w-[300px] text-left">
+            <span className="flex items-start gap-1.5 text-[var(--t-small)] text-[var(--danger)] leading-relaxed max-w-[300px] text-left" role="alert">
               <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <span>{error}</span>
             </span>
           ) : (
             <span
-              className={`text-[12px] ${
+              className={`text-[var(--t-small)] ${
                 phase === "scanning" || phase === "verified"
                   ? "text-[var(--accent)]"
                   : "text-[var(--text-3)]"
@@ -245,11 +246,11 @@ function LoginForm() {
           type="button"
           onClick={() => (needsRegistration ? handleRegister() : handleAuthenticate())}
           disabled={isBusy || needsRegistration === null}
-          className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-6 text-[13px] font-medium text-[#17110a] transition-colors duration-150 hover:bg-[#ebb275] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[var(--accent)]"
+          className="ui-btn ui-btn--primary mt-5 w-full h-auto min-h-11 py-2.5 text-center leading-snug"
         >
           {isBusy && !verified ? (
             <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />
               {label}
             </>
           ) : (
@@ -257,12 +258,13 @@ function LoginForm() {
           )}
         </button>
 
-        <p className="mt-3 text-[11px] font-mono text-[var(--text-4)]">
+        <p className="ui-mono mt-4 text-[var(--text-4)]">
           Face ID · Touch ID · Clé de sécurité
         </p>
+        </div>
 
-        <p className="text-[11px] text-[var(--text-4)] mt-12 text-center">
-          <ShieldCheck className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" />
+        <p className="mt-6 text-center text-[var(--t-small)] text-[var(--text-4)]">
+          <ShieldCheck className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" strokeWidth={1.6} />
           Clé d&apos;accès WebAuthn
         </p>
       </div>

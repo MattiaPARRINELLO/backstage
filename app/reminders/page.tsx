@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState, useTransition, useRef, useMemo } from "react";
-import { Bell, Plus, Check } from "lucide-react";
+import { Plus } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader, EmptyState } from "@/components/layout/Chrome";
-import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -15,7 +14,6 @@ import {
   editReminder,
 } from "@/app/actions/reminders";
 import type { Reminder, ReminderRecurrence, ReminderStatus } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { api } from "@/lib/api-client";
 import { useCachedFetch } from "@/lib/cache";
 import { MicrosoftTodoPanel } from "@/components/MicrosoftTodoPanel";
@@ -151,37 +149,37 @@ export default function RemindersPage() {
   return (
     <AppShell>
       <div className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+        <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
           <PageHeader
-            eyebrow="Notifications natives"
             title="Rappels"
             description="Liste ce que tu dois faire."
             actions={
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex flex-wrap items-center gap-2">
                 <PermissionPill permission={permission} onRequest={handleRequestPermission} />
-                <Button
-                  variant="primary"
-                  size="md"
+                <button
                   onClick={() => setShowAdd(true)}
-                  leftIcon={<Plus className="w-3.5 h-3.5" />}
+                  className="ui-btn ui-btn--primary"
                 >
+                  <Plus className="w-4 h-4" strokeWidth={1.5} />
                   Nouveau rappel
-                </Button>
+                </button>
               </div>
             }
           />
 
           {showAdd && (
-            <ReminderForm
-              onCancel={() => setShowAdd(false)}
-              onSubmit={handleCreate}
-            />
+            <div className="mb-8">
+              <ReminderForm
+                onCancel={() => setShowAdd(false)}
+                onSubmit={handleCreate}
+              />
+            </div>
           )}
 
           {permission === "unsupported" && (
-            <div className="mb-6 p-4 rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)]/40 text-[12px] text-[var(--text-3)]">
+            <p className="ui-label mb-6">
               Les notifications natives ne sont pas supportées sur ce navigateur.
-            </div>
+            </p>
           )}
 
           {reminders === null ? (
@@ -192,46 +190,32 @@ export default function RemindersPage() {
             </div>
           ) : timeline.length === 0 && completed.length === 0 ? (
             <EmptyState
-              icon={<Bell className="w-5 h-5" />}
               title="Aucun rappel pour l'instant"
               description="Crée un rappel pour recevoir une notification à l'heure dite."
             />
           ) : (
-            <div className="relative">
-              <div
-                aria-hidden
-                className="absolute left-[7px] top-0 bottom-0 w-px bg-[var(--border-2)]"
-              />
-              <div className="space-y-8">
+            <div>
+              <div className="space-y-10">
                 {timeline.map((bucket) => (
                   <section key={bucket.key}>
-                    <div className="flex items-center gap-3 mb-3">
-                      <span
-                        className={cn(
-                          "relative z-10 w-[15px] h-[15px] rounded-full border-2",
-                          bucket.bucket === "today"
-                            ? "border-[var(--accent)] bg-[var(--accent)]"
-                            : bucket.bucket === "past"
-                              ? "border-[var(--danger)] bg-[var(--danger)]"
-                              : "border-[var(--border-3)] bg-[var(--surface-2)]"
-                        )}
-                      />
-                      <h2 className="text-[11px] font-semibold  text-[var(--text-2)] font-mono capitalize">
+                    <div className="mb-1 flex items-baseline justify-between gap-3 border-b border-[var(--line)] pb-2">
+                      <h2 className="font-display text-[length:var(--t-body)] font-semibold tracking-[-0.02em] text-[var(--text-1)] first-letter:uppercase">
                         {bucket.label}
                       </h2>
-                      <span className="text-[10px] text-[var(--text-4)] font-mono">
+                      <span className="ui-mono text-[var(--text-3)]">
                         {bucket.items.length}
                       </span>
                     </div>
-                    <ul className="space-y-2 pl-6">
+                    <ul className="divide-y divide-[var(--line)]">
                       {bucket.items.map((r) =>
                         editing === r.id ? (
-                          <ReminderForm
-                            key={r.id}
-                            initial={r}
-                            onCancel={() => setEditing(null)}
-                            onSubmit={(input) => handleEdit(r.id, input)}
-                          />
+                          <li key={r.id} className="py-3">
+                            <ReminderForm
+                              initial={r}
+                              onCancel={() => setEditing(null)}
+                              onSubmit={(input) => handleEdit(r.id, input)}
+                            />
+                          </li>
                         ) : (
                           <ReminderRow
                             key={r.id}
@@ -249,15 +233,14 @@ export default function RemindersPage() {
               </div>
 
               {completed.length > 0 && (
-                <section className="mt-12">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Check className="w-3.5 h-3.5 text-[var(--success)]" />
-                    <h2 className="text-[10px] font-semibold  text-[var(--text-3)] font-mono">
+                <section className="mt-14">
+                  <div className="mb-1 flex items-baseline justify-between gap-3 border-b border-[var(--line)] pb-2">
+                    <h2 className="font-display text-[length:var(--t-body)] font-semibold tracking-[-0.02em] text-[var(--text-3)]">
                       Terminés
                     </h2>
-                    <span className="text-[10px] text-[var(--text-4)] font-mono">{completed.length}</span>
+                    <span className="ui-mono text-[var(--text-3)]">{completed.length}</span>
                   </div>
-                  <ul className="space-y-2 opacity-60">
+                  <ul className="divide-y divide-[var(--line)] opacity-60">
                     {completed.map((r) => (
                       <ReminderRow
                         key={r.id}
@@ -280,8 +263,3 @@ export default function RemindersPage() {
     </AppShell>
   );
 }
-
-
-
-
-

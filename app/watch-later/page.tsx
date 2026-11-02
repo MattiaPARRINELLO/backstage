@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState, useTransition, useMemo, useRef, useCallback } from "react";
-import { Plus, Search, Play, Filter } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader, EmptyState } from "@/components/layout/Chrome";
-import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import {
   loadWatchLater,
@@ -15,7 +13,6 @@ import {
   reorderWatchLater,
 } from "@/app/actions/watch-later";
 import type { WatchLaterCategory, WatchLaterItem } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { FILTER_ORDER, type FilterId } from "./meta";
 import { ItemCard } from "./ItemCard";
 import { AddItemForm } from "./AddItemForm";
@@ -149,21 +146,20 @@ export default function WatchLaterPage() {
 
   return (
     <AppShell>
-      <div className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+      <div className="min-w-0 flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
           <PageHeader
-            eyebrow="Bookmarks IA"
             title="À voir plus tard"
-            description="Liens que tu as partagés avec l'IA ou ajoutés à la main. Filtre par catégorie, retrouve tout au même endroit. Glisse les cartes pour réorganiser."
+            description="Liens que tu as partagés avec l'IA ou ajoutés à la main. Filtre par catégorie, retrouve tout au même endroit. Glisse les lignes pour réorganiser."
             actions={
-              <Button
-                variant="primary"
-                size="md"
+              <button
+                type="button"
+                className="ui-btn ui-btn--primary gap-2"
                 onClick={() => setShowAdd(true)}
-                leftIcon={<Plus className="w-3.5 h-3.5" />}
               >
+                <Plus className="h-4 w-4" aria-hidden />
                 Ajouter un lien
-              </Button>
+              </button>
             }
           />
 
@@ -174,63 +170,60 @@ export default function WatchLaterPage() {
             />
           )}
 
-          <div className="flex items-center gap-3 mb-6 flex-wrap">
-            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border-1)] overflow-x-auto">
-              {FILTER_ORDER.map(({ id, label, icon: Icon }) => {
+          <div className="mb-6 flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {FILTER_ORDER.map(({ id, label }) => {
                 const active = filter === id;
                 const count = counts[id] ?? 0;
                 return (
                   <button
                     key={id}
+                    type="button"
+                    className="ui-chip shrink-0"
+                    data-active={active}
                     onClick={() => setFilter(id)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium font-mono  transition-colors duration-200 shrink-0",
-                      active
-                        ? "bg-[var(--surface-3)] text-[var(--text-1)]"
-                        : "text-[var(--text-3)] hover:text-[var(--text-1)]"
-                    )}
                   >
-                    <Icon className="w-3 h-3" />
                     {label}
-                    <span className="text-[9px] text-[var(--text-4)] tabular-nums">{count}</span>
+                    <span className="ui-mono opacity-60">{count}</span>
                   </button>
                 );
               })}
             </div>
-            <div className="flex-1 min-w-[200px] max-w-xs relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-3)]" />
-              <Input
+            <div className="ui-field min-w-[200px] max-w-xs flex-1">
+              <Search className="h-4 w-4 shrink-0 text-[var(--text-3)]" aria-hidden />
+              <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Filtrer par titre ou source…"
-                className="pl-9 pr-3 py-1.5 rounded-lg text-[12px] focus:border-[var(--border-2)]"
+                aria-label="Filtrer les liens"
+                className="min-w-0 flex-1 bg-transparent text-base outline-none"
               />
             </div>
           </div>
 
           {items === null ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="h-44" />
+            <div className="border-t border-[var(--line)]">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="border-b border-[var(--line)] py-4">
+                  <Skeleton className="h-10" />
+                </div>
               ))}
             </div>
           ) : filtered.length === 0 ? (
             items.length === 0 ? (
               <EmptyState
-                icon={<Play className="w-5 h-5" />}
                 title="Aucun lien enregistré"
                 description="Partage un lien à l'IA dans le chat — elle l'ajoutera automatiquement. Ou ajoute-le ici."
               />
             ) : (
               <EmptyState
-                icon={<Filter className="w-5 h-5" />}
                 title="Aucun résultat"
                 description="Aucun élément ne correspond à ce filtre. Essaie une autre catégorie."
               />
             )
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="border-t border-[var(--line)]">
               {filtered.map((item) => (
                 <ItemCard
                   key={item.id}
@@ -251,6 +244,3 @@ export default function WatchLaterPage() {
     </AppShell>
   );
 }
-
-
-

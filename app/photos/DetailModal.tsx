@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { X, ExternalLink } from "lucide-react";
-import { Pill } from "@/components/ui/Pill";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import type { PhotoShoot } from "@/lib/types";
-import { STATUS_FLOW, STATUS_PILL_TONE, statusIndex, formatDate } from "./constants";
+import { STATUS_FLOW, statusIndex, formatDate } from "./constants";
 
 export type ShootEditableFields = {
   title: string;
@@ -119,43 +118,53 @@ export function DetailModal({
       role="dialog"
       aria-modal="true"
       aria-label={shoot.title}
-      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto py-4 bg-[var(--background)]/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[var(--background)]/70 py-4 backdrop-blur-sm sm:items-center"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg mx-4 my-auto border border-[var(--border-1)] rounded-lg bg-[var(--surface-1)] max-h-[85vh] flex flex-col"
+        className="ui-card mx-4 my-auto flex max-h-[85vh] w-full max-w-lg flex-col shadow-[var(--shadow-float)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-1)] shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: STATUS_FLOW[statusIndex(shoot.status)].color }} />
-            <h2 className="text-[15px] font-semibold text-[var(--text-1)] truncate">{shoot.title}</h2>
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--line)] px-5 py-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <h2 className="truncate font-display text-[length:var(--t-lead)] font-semibold text-[var(--text-1)]">
+              {shoot.title}
+            </h2>
+            <span className="ui-chip shrink-0">
+              {STATUS_FLOW[statusIndex(shoot.status)].label}
+            </span>
           </div>
-          <button onClick={onClose} className="w-10 h-10 -mr-2 rounded-lg flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors" aria-label="Fermer">
-            <X className="w-4 h-4" />
+          <button
+            onClick={onClose}
+            className="-mr-2 flex h-10 w-10 items-center justify-center rounded-full text-[var(--text-3)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-1)]"
+            aria-label="Fermer"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="p-5 space-y-4 overflow-y-auto overscroll-contain min-h-0">
-          <div className="flex items-center gap-4 text-[12px] font-mono text-[var(--text-2)]">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[var(--text-4)] ">Date</span>
-              <span>{formatDate(shoot.date)}</span>
+        <div className="min-h-0 space-y-4 overflow-y-auto overscroll-contain p-5">
+          <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+            <div className="flex items-baseline gap-2">
+              <dt className="ui-label">Date</dt>
+              <dd className="ui-mono text-[var(--text-2)]">{formatDate(shoot.date)}</dd>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[var(--text-4)] ">Client</span>
-              <span>{shoot.client}</span>
+            <div className="flex items-baseline gap-2">
+              <dt className="ui-label">Client</dt>
+              <dd className="ui-mono text-[var(--text-2)]">{shoot.client}</dd>
             </div>
-            <div className="flex items-center gap-1.5 ml-auto">
-              <Pill tone={STATUS_PILL_TONE[shoot.status]}>{STATUS_FLOW[statusIndex(shoot.status)].label}</Pill>
-            </div>
-          </div>
+          </dl>
 
           {shoot.status === "sent" && shoot.galleryLink && (
-            <div className="flex items-center gap-3 text-[12px] font-mono text-[var(--accent)] p-3 border border-[var(--border-1)] rounded-md bg-[var(--surface-2)]">
-              <span>{shoot.photosSent ?? "?"} photos envoyées</span>
-              <a href={shoot.galleryLink} target="_blank" rel="noopener noreferrer" className="underline hover:no-underline inline-flex items-center gap-1">
-                Voir la galerie <ExternalLink className="w-3.5 h-3.5" />
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-[var(--line)] pt-3 text-[var(--accent)]">
+              <span className="ui-mono">{shoot.photosSent ?? "?"} photos envoyées</span>
+              <a
+                href={shoot.galleryLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ui-mono inline-flex items-center gap-1 underline decoration-[var(--line-2)] underline-offset-4 hover:text-[var(--text-1)]"
+              >
+                Voir la galerie <ExternalLink className="h-3.5 w-3.5" />
               </a>
             </div>
           )}
@@ -168,7 +177,7 @@ export function DetailModal({
                 onChange={(e) => setEditTitle(e.target.value)}
                 placeholder="Titre"
               />
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <Input
                   type="date"
                   value={editDate}
@@ -207,26 +216,32 @@ export function DetailModal({
                 </div>
               )}
               <div className="flex items-center justify-between pt-2">
-                <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>Annuler</Button>
-                <Button variant="primary" size="sm" onClick={handleSave}>Sauvegarder</Button>
+                <button type="button" className="ui-btn ui-btn--text" onClick={() => setEditing(false)}>
+                  Annuler
+                </button>
+                <button type="button" className="ui-btn ui-btn--primary" onClick={handleSave}>
+                  Sauvegarder
+                </button>
               </div>
             </div>
           ) : (
             <>
-              {shoot.notes && (
-                <div>
-                  <h4 className="text-[10px] font-mono  text-[var(--text-4)] mb-1.5">Notes</h4>
-                  <p className="text-[13px] text-[var(--text-2)] leading-relaxed whitespace-pre-wrap">{shoot.notes}</p>
+              {shoot.notes ? (
+                <div className="border-t border-[var(--line)] pt-3">
+                  <p className="whitespace-pre-wrap text-[var(--t-small)] leading-relaxed text-[var(--text-2)]">
+                    {shoot.notes}
+                  </p>
                 </div>
+              ) : (
+                <p className="border-t border-[var(--line)] pt-3 text-[var(--t-small)] text-[var(--text-4)]">
+                  Aucune note
+                </p>
               )}
-              {!shoot.notes && (
-                <p className="text-[13px] text-[var(--text-4)] italic">Aucune note</p>
-              )}
-              <div className="flex items-center justify-between pt-2 border-t border-[var(--border-1)]">
-                <Button variant="danger" size="sm" onClick={onDelete}>
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <Button variant="danger" size="md" onClick={onDelete}>
                   Supprimer
                 </Button>
-                <Button variant="primary" size="sm" onClick={() => setEditing(true)}>
+                <Button variant="primary" size="md" onClick={() => setEditing(true)}>
                   Éditer
                 </Button>
               </div>

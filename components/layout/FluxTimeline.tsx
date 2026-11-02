@@ -171,18 +171,24 @@ export function FluxTimeline() {
     <div className="space-y-6">
       {late.length > 0 && <LateBlock items={late} total={lateTotal} />}
 
-      {groups.map((g) => (
-        <section key={g.key}>
-          <SectionHeading label={g.label} count={g.items.length} />
-          <ol className="mt-1 divide-y divide-[var(--line)]">
-            {g.items.map((item) => (
-              <li key={item.id}>
-                <TimelineRow item={item} now={now} showNow={g.label === "Aujourd'hui"} />
-              </li>
-            ))}
-          </ol>
-        </section>
-      ))}
+      {groups.map((g) => {
+        // La puce « maintenant » ne doit apparaître qu'une fois par jour :
+        // devant le premier élément encore à venir. Sans ça, chaque entrée
+        // future du jour en recevait une.
+        const firstUpcoming = g.label === "Aujourd'hui" ? g.items.find((i) => i.start > now)?.id : undefined;
+        return (
+          <section key={g.key}>
+            <SectionHeading label={g.label} count={g.items.length} />
+            <ol className="mt-1 divide-y divide-[var(--line)]">
+              {g.items.map((item) => (
+                <li key={item.id}>
+                  <TimelineRow item={item} now={now} showNow={item.id === firstUpcoming} />
+                </li>
+              ))}
+            </ol>
+          </section>
+        );
+      })}
     </div>
   );
 }

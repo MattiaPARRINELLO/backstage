@@ -97,8 +97,11 @@ app/
   actions/          20 Server Actions ("use server") + __tests__/
   api/              Route Handlers
   <page>/           page.tsx + composants LOCAUX à cette page
+app/globals.css     tokens, base, primitives .ui-*, animations de l'app
+app/landing.css     tokens et composants de la landing (isolés sous .landing-page)
 components/
-  ui/               primitives partagées (Button, Card, Toast, Skeleton…)
+  ui/               primitives React (Button, Card, Input, Pill, Toast, Skeleton…)
+                    qui délèguent leur apparence aux classes .ui-*
   layout/           AppShell, Chrome, ContextPanel, FluxTimeline
   chat/             composants du chat
   widgets/          cartes dashboard
@@ -126,7 +129,8 @@ scripts/            cron-scheduler, reset-passkey, cesar-smoke, scripts de QA/sc
   les mêmes clés, sinon l'accueil déclenche des requêtes réseau en double.
   L'ancienne exception visuelle (dégradés radiaux, sheen, particules,
   animations d'inactivité) est **supprimée** : l'accueil suit la direction
-  commune (cf. `DESIGN.md > Console IA`).
+  commune (cf. `DESIGN.md` §1 et §6). Il ne reste que `home-rise`, `home-swap`
+  et `home-caret`.
   ⚠️ La composition d'accueil est **ancrée en haut** et le conteneur de
   `ChatView.tsx` n'a **pas** de padding haut dans ce cas : c'est ce qui amène le
   tour de cou du badge détaillé (`/backstage-logo.png`) jusqu'au bord supérieur
@@ -163,8 +167,12 @@ scripts/            cron-scheduler, reset-passkey, cesar-smoke, scripts de QA/sc
 | Plusieurs pages        | `components/<catégorie>/MonComposant.tsx` |
 | Primitive UI générique | `components/ui/`                          |
 
-⚠️ `components/reminders/` et `components/watch-later/` sont **vides** — les vrais
-composants sont dans `app/reminders/` et `app/watch-later/`. Ne pas s'y fier.
+⚠️ **Système de design** : un bouton, une carte, une tuile, une plaque, une
+puce et un champ n'ont **qu'une** définition, les classes `.ui-*` de
+`app/globals.css` (`@layer components`). Les composants de `components/ui/`
+traduisent une API en classes, ils n'écrivent jamais une couleur ni un rayon.
+Pas de `!` pour surcharger un `.ui-*` : utiliser une variante (`--sm`, `--xs`,
+`--icon`, `--block`, `--area`, `--tile`). Tout est décrit dans `DESIGN.md` §5.
 
 ---
 
@@ -672,7 +680,9 @@ l'URL complète (`/v1/chat/completions`), le SDK **Anthropic** ajoute lui-même
 | `AGENTS.md`  | ce fichier                        | ✅                                                  |
 | `docs/self-hosting.md` | auto-hébergement (Docker, vars, HTTPS) | ✅                              |
 | `docs/deploy-cpanel.md` | déploiement mutualisé + crontab  | ✅                                                 |
-| `DESIGN.md`  | palette, typo, composants, motion | ✅                                                  |
+| `DESIGN.md`  | système réel : tokens, typo, composants `.ui-*`, motion, décisions et points ouverts | ✅ |
+| `docs/app-refonte.md` | plan de migration, état de chaque phase | ✅ |
+| `docs/app-reconciliation.md` | fusion des cinq branches, patterns unifiés, tokens retirés, bugs corrigés | ✅ |
 | `PRODUCT.md` | objectif, users, modules, ton     | ✅                                                  |
 
 (`AUDIT.md` a été supprimé : audit périmé qui mentionnait encore Capacitor.)

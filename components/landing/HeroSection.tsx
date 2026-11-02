@@ -12,19 +12,15 @@ export function HeroSection() {
     <section id="hero" className="hero">
       <div className="wrap hero__grid">
         <div className="hero__copy">
-          <span className="tag" {...reveal(0)}>
-            Second cerveau · auto-hébergé
-          </span>
-
-          <h1 className="hero__title" {...reveal(60)}>
+          <h1 className="hero__title" {...reveal(0)}>
             {HERO.title}
           </h1>
 
-          <p className="hero__desc" {...reveal(120)}>
+          <p className="hero__desc" {...reveal(70)}>
             {HERO.description}
           </p>
 
-          <div className="hero__actions" {...reveal(180)}>
+          <div className="hero__actions" {...reveal(140)}>
             <HeroDemoLink label={HERO.primaryCta} />
             <a
               href="https://github.com/MattiaPARRINELLO/backstage"
@@ -36,13 +32,10 @@ export function HeroSection() {
             </a>
           </div>
 
-          <p className="hero__meta" {...reveal(220)}>
+          <p className="hero__meta" {...reveal(210)}>
             <span>MIT</span>
-            <span>·</span>
             <span>Données locales</span>
-            <span>·</span>
             <span>Passkey</span>
-            <span>·</span>
             <a href="/login">{HERO.loginCta}</a>
           </p>
         </div>
@@ -71,8 +64,8 @@ export function HeroSection() {
 
       <div className="wrap">
         <div className="index">
-          {MODULES.items.map((item, i) => (
-            <div key={item.name} className="idx" {...reveal(120 + i * 50)}>
+          {MODULES.items.map((item) => (
+            <div key={item.name} className="idx">
               <span className="idx__name">{item.name}</span>
               <span className="idx__note">{item.short}</span>
             </div>

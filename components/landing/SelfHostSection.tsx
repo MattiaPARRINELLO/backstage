@@ -1,5 +1,4 @@
 import { GITHUB_URL, SELF_HOST, SELF_HOST_URL } from "@/app/landing-content";
-import { reveal } from "./reveal";
 import { InstallCommand } from "./InstallCommand";
 
 /**
@@ -9,37 +8,34 @@ import { InstallCommand } from "./InstallCommand";
  */
 export function SelfHostSection() {
   return (
-    <section id="chez-vous" className="sec">
+    <section id="chez-vous" className="sec sec--tight">
       <div className="wrap self">
         <div>
-          <span className="tag" {...reveal(0)}>
-            Auto-hébergement
-          </span>
-          <h2 className="h2 mt-5" {...reveal(60)}>
+          <h2 className="h2 mt-5">
             {SELF_HOST.title}
           </h2>
-          <p className="lead mt-4" {...reveal(110)}>
+          <p className="lead mt-4">
             {SELF_HOST.lead}
           </p>
 
         </div>
 
-        <div {...reveal(90)}>
+        <div>
           <InstallCommand />
         </div>
       </div>
 
       <div className="wrap">
         <div className="self__facts">
-          {SELF_HOST.facts.map((fact, i) => (
-            <article key={fact.title} className="mini" {...reveal(60 + i * 50)}>
+          {SELF_HOST.facts.map((fact) => (
+            <article key={fact.title} className="mini">
               <h3 className="mini__title">{fact.title}</h3>
               <p className="mini__desc">{fact.desc}</p>
             </article>
           ))}
         </div>
 
-        <div className="self__actions" {...reveal(80)}>
+        <div className="self__actions">
           <a
             href={SELF_HOST_URL}
             target="_blank"

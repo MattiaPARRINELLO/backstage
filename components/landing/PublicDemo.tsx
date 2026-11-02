@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import { GITHUB_URL, PUBLIC_DEMO } from "@/app/landing-content";
-import { reveal } from "./reveal";
 
 type DemoSource = { kind: string; title: string; detail: string };
 
@@ -73,26 +72,23 @@ export function PublicDemo() {
   };
 
   return (
-    <section id="demo" className="sec">
+    <section id="demo" className="sec sec--tight">
       <div className="wrap">
         <div className="demo">
           <div className="demo__grid">
             <div>
-              <span className="tag" {...reveal(0)}>
-                Démonstration
-              </span>
-              <h2 className="h2 mt-5" {...reveal(40)}>
+              <h2 className="h2 mt-5">
                 {PUBLIC_DEMO.title}
               </h2>
-              <p className="lead mt-4" {...reveal(90)}>
+              <p className="lead mt-4">
                 {PUBLIC_DEMO.description}
               </p>
-              <p className="demo__disclaimer" {...reveal(130)}>
+              <p className="demo__disclaimer">
                 {PUBLIC_DEMO.disclaimer}
               </p>
             </div>
 
-            <div {...reveal(80)}>
+            <div>
           <form onSubmit={onSubmit} className="demo__field">
             <label htmlFor="demo-input" className="sr-only">
               Votre question pour la démonstration

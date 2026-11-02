@@ -1,5 +1,4 @@
 import { MEMORY } from "@/app/landing-content";
-import { reveal } from "./reveal";
 
 /**
  * La mémoire : le titre et les trois promesses à gauche, les faits
@@ -12,18 +11,15 @@ export function MemorySection() {
       <div className="wrap">
         <div className="mem">
           <div>
-            <span className="tag" {...reveal(0)}>
-              Mémoire
-            </span>
-            <h2 className="h2 mt-5" {...reveal(60)}>
+            <h2 className="h2 mt-5">
               {MEMORY.title}
             </h2>
-            <p className="lead mt-4" {...reveal(110)}>
+            <p className="lead mt-4">
               {MEMORY.lead}
             </p>
           </div>
 
-          <div className="facts" {...reveal(90)}>
+          <div className="facts">
             <div className="facts__head">
               <span className="card__tag">{MEMORY.factsLabel}</span>
               <span className="card__count">modifiable</span>
@@ -40,8 +36,8 @@ export function MemorySection() {
         </div>
 
         <div className="mem__cards">
-          {MEMORY.principles.map((principle, i) => (
-            <article key={principle.title} className="mini" {...reveal(60 + i * 60)}>
+          {MEMORY.principles.map((principle) => (
+            <article key={principle.title} className="mini">
               <h3 className="mini__title">{principle.title}</h3>
               <p className="mini__desc">{principle.desc}</p>
             </article>

@@ -194,12 +194,21 @@ non écrite ici se règle en lisant ce fichier**, pas en inventant.
 Landing = `components/landing/*`, un fichier par section, contenu éditorial
 centralisé dans `app/landing-content.ts`.
 
-## 8. Ce qui reste à faire (application)
+## 8. Où en est l'application
 
-L'application tourne encore sur l'ancienne direction (sombre, ambre, mono
-partout, filets). Les tokens de ce fichier ne sont **pas** dans
-`app/globals.css`, qui porte encore `--background: #0d0c0b` et
-`--accent: #e0a45e`.
+Les tokens de ce fichier sont portés dans `app/globals.css` (phase 0), avec les
+primitives `.ui-*` en fin de fichier. Les écrans migrent un par un ; le détail et
+l'ordre sont dans [`docs/app-refonte.md`](docs/app-refonte.md).
+
+Deux règles de migration arrêtées sur les réglages et les écrans secondaires :
+
+- **Une ligne de réglage = un couple libellé / contrôle** séparé par `1px
+  var(--line)`. Pas de carte par réglage, pas d'icône décorative en tête de ligne.
+- **`--warm` (ambre) n'est plus propagé.** Une action « modifiée » ou un état
+  « quota atteint » passe en `--text-2` neutre ; seuls l'échec et le retard
+  gardent `--danger`, la réussite `--success`.
+- `.ui-field` s'applique aussi à un `<select>` natif : il en fait une pastille
+  `--surface-2` sans bordure, cohérente avec les champs de saisie.
 
 Ordre de travail et structure cible de chaque écran :
 [`docs/app-refonte.md`](docs/app-refonte.md).

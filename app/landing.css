@@ -495,10 +495,20 @@ body:has(.landing-page) {
   .story { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 56px; }
 }
 
-.story__head { align-self: start; }
-@media (min-width: 1024px) {
-  .story__head { position: sticky; top: 32px; }
+.story__head {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
 }
+
+.story__outro {
+  margin-top: auto;
+  padding-top: 48px;
+  max-width: 24ch;
+  font-size: var(--t-body);
+  color: var(--ink-2);
+}
+
 
 .story__list {
   display: grid;
@@ -892,6 +902,39 @@ body:has(.landing-page) {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 26px;
+}
+
+/* --- Bandeaux photo ---------------------------------------- */
+
+.band {
+  padding-block: 8px;
+}
+
+.band figure { margin: 0; }
+
+.band__frame {
+  overflow: hidden;
+  background: var(--night);
+}
+
+.band__img {
+  display: block;
+  width: 100%;
+  height: clamp(240px, 34vw, 520px);
+  object-fit: cover;
+  object-position: 50% 42%;
+}
+
+.band__cap {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1320px;
+  margin-inline: auto;
+  padding: 14px var(--pad) 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--t-small);
+  color: var(--ink-3);
 }
 
 /* --- Clôture ----------------------------------------------- */

@@ -305,6 +305,36 @@ export const SELF_HOST = {
   codeCta: "Voir le code sur GitHub",
 } as const;
 
+// --- Photographies -------------------------------------------------
+// Images du propriétaire (concerts), servies depuis /photos.
+
+export const PHOTOS = {
+  credit: "© Mattia Parrinello",
+  afterHero: {
+    src: "/photos/damso-marches.jpg",
+    alt: "Noir et blanc : un chanteur assis seul sur des marches blanches, avant d'entrer en scène.",
+    caption: "Damso, 15 mai 2026",
+    position: "50% 72%",
+  },
+  afterStory: {
+    src: "/photos/jokair-pagaille.jpg",
+    alt: "Un chanteur en chemise rouge, détaché sur fond blanc, micro à la main.",
+    caption: "Jok'air, Pagaille",
+    position: "50% 30%",
+  },
+  afterMemory: {
+    src: "/photos/jokair-scene.jpg",
+    alt: "Un chanteur au micro, bras levé, sous une lumière jaune.",
+    caption: "Jok'air, 23 octobre 2025",
+    position: "50% 42%",
+  },
+  beforeClose: {
+    src: "/photos/damso-faisceaux.jpg",
+    alt: "Silhouette suspendue dans deux faisceaux bleus au-dessus de la scène.",
+    caption: "Damso, 15 mai 2026",
+  },
+} as const;
+
 // --- CTA final ---------------------------------------------------
 
 export const FINAL_CTA = {

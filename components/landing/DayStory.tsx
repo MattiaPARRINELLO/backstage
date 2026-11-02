@@ -30,6 +30,7 @@ export function DayStory() {
             {DAY_STORY.lead}
           </p>
           <p className="small mt-3">{DAY_STORY.disclaimer}</p>
+          <p className="lead story__outro">{DAY_STORY.outro}</p>
         </div>
 
         <div className="story__list">

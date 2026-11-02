@@ -10,6 +10,8 @@ import { PublicDemo } from "@/components/landing/PublicDemo";
 import { SelfHostSection } from "@/components/landing/SelfHostSection";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 import { LandingFooter } from "@/components/landing/LandingFooter";
+import { PhotoBand } from "@/components/landing/PhotoBand";
+import { PHOTOS } from "@/app/landing-content";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -47,10 +49,14 @@ export default function Home() {
         <LandingHeader />
         <main id="main" className="landing">
           <HeroSection />
+          <PhotoBand {...PHOTOS.afterHero} priority />
           <DayStory />
+          <PhotoBand {...PHOTOS.afterStory} />
           <MemorySection />
+          <PhotoBand {...PHOTOS.afterMemory} />
           <PublicDemo />
           <SelfHostSection />
+          <PhotoBand {...PHOTOS.beforeClose} />
           <FinalCTA />
         </main>
         <LandingFooter />

@@ -168,7 +168,7 @@ export default function PhotoShootsPage() {
             description="Shootings et livraisons photo au même endroit."
             actions={
               !showAdd && (
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
@@ -188,14 +188,16 @@ export default function PhotoShootsPage() {
                     </button>
                   </div>
                   {view === "shoots" && (
-                    <button
-                      type="button"
-                      className="ui-btn ui-btn--primary gap-2 md:hidden"
-                      onClick={() => setShowAdd(true)}
-                    >
-                      <Plus className="h-4 w-4" aria-hidden />
-                      Nouveau shooting
-                    </button>
+                    <div className="md:hidden">
+                      <button
+                        type="button"
+                        className="ui-btn ui-btn--primary gap-2 whitespace-nowrap"
+                        onClick={() => setShowAdd(true)}
+                      >
+                        <Plus className="h-4 w-4" aria-hidden />
+                        Nouveau shooting
+                      </button>
+                    </div>
                   )}
                 </div>
               )
@@ -247,7 +249,7 @@ export default function PhotoShootsPage() {
           <>
             {/* Desktop : colonnes séparées par l'espace, sans filet lourd. */}
             <div className="hidden min-h-0 flex-1 overflow-x-auto pb-6 md:flex">
-              <div className="flex h-full items-start gap-6 px-6 pt-4">
+              <div className="flex h-full w-full items-start gap-6 px-6 pt-4">
                 {STATUS_FLOW.map((col) => {
                   const items = byStatus[col.key];
                   const isOver = dragOverCol === col.key;
@@ -255,7 +257,7 @@ export default function PhotoShootsPage() {
                     <section
                       key={col.key}
                       className={cn(
-                        "flex min-w-[220px] max-w-[260px] flex-1 flex-col rounded-[var(--r-card)] transition-colors",
+                        "flex min-w-[200px] max-w-[280px] flex-1 flex-col rounded-[var(--r-card)] transition-colors",
                         isOver && "bg-[var(--accent)]/5"
                       )}
                       onDragOver={(e) => handleDragOver(e, col.key)}
@@ -267,7 +269,7 @@ export default function PhotoShootsPage() {
                         <span className="ui-mono ml-auto text-[var(--text-4)]">{items.length}</span>
                       </div>
 
-                      <div className="min-h-[96px] flex-1 space-y-2.5 py-3">
+                      <div className="min-h-[96px] flex-1 space-y-2.5 overflow-y-auto py-3">
                         {col.key === "upcoming" && (
                           <button
                             type="button"

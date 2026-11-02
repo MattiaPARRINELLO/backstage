@@ -1,114 +1,214 @@
-# DESIGN.md — BACKSTAGE
+# DESIGN.md — Backstage
 
-## Direction
+> État au 2 novembre 2026. La **landing** est migrée ; l'**application** ne l'est
+> pas encore. Ce fichier décrit le système cible, pas l'état de chaque écran.
+> Le plan de migration est dans [`docs/app-refonte.md`](docs/app-refonte.md).
 
-La régie d'une salle, la nuit. Ramp neutre chaude (rideau, flight case), une
-seule lumière de travail ambre, les heures et les chiffres en mono.
-Rien ne brille, rien ne flotte : la richesse est dans les données réelles
-(fiche de contexte, ligne de temps, mémoire), pas dans le chrome.
+---
 
-Cette direction est commune à la landing et à l'application. Un seul jeu de
-tokens dans `app/globals.css`.
+## 1. Le principe
 
-## Palette
+Un espace personnel qui se lit comme un **outil de travail**, pas comme un site.
+Le contenu porte la richesse ; le chrome reste silencieux : surfaces, espace,
+un seul accent.
 
-- **Background**: `#0d0c0b`
-- **Surface**: `#121110` / `#191715` / `#201d1a`
-- **Border**: `rgba(239, 233, 222, .08)` / `.13` / `.20`
-- **Text primary**: `#efe9de`
-- **Text secondary**: `#aba49a`
-- **Text muted**: `#8a8279` / `#6f6a63`
-- **Accent ambre**: `#e0a45e` (`--accent-soft` `#f0c08a` pour le texte sur fond sombre)
-- **Success**: `#9bbf8a` · **Danger**: `#d98878`
+Deux règles qui décident de tout le reste :
+
+1. **Un seul accent.** Le bleu `#2547ff` signale l'action, la sélection et la
+   donnée qui compte. Le rouge est réservé à l'urgence et aux retards. Rien
+   d'autre n'est coloré.
+2. **Aucune décoration.** Pas de dégradé décoratif, pas de halo, pas d'ombre
+   portée sauf sur une surface qui flotte réellement (carte de contexte, menu
+   mobile). La profondeur vient des paliers de surface et des filets.
+
+---
+
+## 2. Couleurs
+
+### Thème clair (défaut de la landing)
+
+| Rôle | Valeur | Usage |
+| --- | --- | --- |
+| `--bg` | `#f7f8fa` | fond de page |
+| `--surface` | `#ffffff` | cartes, panneaux |
+| `--surface-2` | `#f1f3f7` | sections alternées, champs |
+| `--ink` | `#0a0b0d` | texte principal, titres |
+| `--ink-2` | `#545a66` | texte courant |
+| `--ink-3` | `#6b7280` | notes, légendes, étiquettes |
+| `--line` | `#e6e9ef` | séparateurs, bordures de carte |
+| `--line-2` | `#d8dce4` | bordure au survol, contour de bouton |
+| `--blue` | `#2547ff` | accent, action primaire |
+| `--blue-ink` | `#ffffff` | texte sur bleu |
+| `--blue-soft` | `#e8edff` | fond d'accent discret |
+| `--blue-line` | `#c9d3ff` | bordure d'accent |
+
+### Thème sombre
+
+| Rôle | Valeur |
+| --- | --- |
+| `--bg` | `#0a0b0d` |
+| `--surface` | `#14161a` |
+| `--surface-2` | `#101215` |
+| `--ink` | `#f2f4f8` |
+| `--ink-2` | `#b7bcc6` |
+| `--ink-3` | `#9aa0ab` |
+| `--line` | `rgba(242,244,248,.10)` |
+| `--line-2` | `rgba(242,244,248,.20)` |
+| `--blue` | `#7d94ff` (éclairci pour tenir le contraste AA sur noir) |
+| `--blue-ink` | `#0a0b0d` |
+| `--blue-soft` | `rgba(125,148,255,.15)` |
+| `--blue-line` | `rgba(125,148,255,.45)` |
+
+### Plaques (surfaces inversées)
+
+Une carte peut s'inverser : plaque sombre sur page claire, plaque claire sur
+page sombre. C'est ce qui donne au produit son « écran dans la page ».
+
+| Rôle | Clair | Sombre |
+| --- | --- | --- |
+| `--plate-bg` | `#0a0b0d` | `#f4f6fa` |
+| `--plate-ink` | `#f2f4f8` | `#0a0b0d` |
+| `--plate-2` | `#cbcfd8` | `#3a3f4a` |
+| `--plate-3` | `#7d838f` | `#6b7280` |
+| `--plate-line` | `rgba(242,244,248,.12)` | `rgba(10,11,13,.10)` |
+| `--plate-acc-bg` | `rgba(37,71,255,.14)` | `#e9eeff` |
+| `--plate-acc-ink` | `#b9c6ff` | `#1b34c4` |
+
+### Sémantique
+
+| Rôle | Valeur | Usage |
+| --- | --- | --- |
+| urgence | `#d98878` (sombre) / `#b42318` (clair) | en retard, échec |
+| succès | `#9bbf8a` | série tenue, envoi réussi |
+| avertissement | `#e0a45e` | **hérité de l'ancienne direction** : à réévaluer lors de la migration, ne pas propager sans décision |
+
+Le thème est porté par `<html data-theme="light|dark">`. Le script bloqueur de
+`app/layout.tsx` le pose avant la première peinture (suit
+`prefers-color-scheme`, sauf `localStorage["pb-theme"]`).
+
+---
+
+## 3. Typographie
+
+| Rôle | Police | Réglage |
+| --- | --- | --- |
+| Titres, noms de blocs, chiffres forts | **Space Grotesk** (`--font-display`) | 600, `letter-spacing: -0.03em` à `-0.045em`, `line-height: 0.96–1.05` |
+| Texte, interface | **Inter** (`--font-sans`) | 400/500, `line-height: 1.5–1.6` |
+| Étiquettes, heures, montants, code | **JetBrains Mono** (`--font-mono`) | 400, `font-variant-numeric: tabular-nums` |
+| Éditorial (login uniquement) | Instrument Serif (`--font-editorial`) | 400 — **ne pas étendre**, la landing n'en veut plus |
+
+### Échelle — cinq tailles visibles maximum
+
+| Token | Valeur | Usage |
+| --- | --- | --- |
+| `--t-display` | `clamp(2.35rem, 4.8vw, 4.25rem)` | titre de premier écran |
+| `--t-head` | `clamp(1.75rem, 3vw, 2.75rem)` | titres de section |
+| `--t-lead` | `clamp(1.125rem, 1.3vw, 1.375rem)` | chapô, question, réponse mise en avant |
+| `--t-body` | `1.03125rem` (16,5 px) | texte courant |
+| `--t-small` | `0.8125rem` (13 px) | notes, étiquettes, légendes |
 
 Règles :
 
-- Un seul accent, rare : action primaire, sélection, chiffre qui compte.
-- Les surfaces restent neutres, même dans un tableau de bord. Pas de fond
-  teinté orange/bleu/vert.
-- Pas de dégradé de teinte, de texte en dégradé, de halo coloré, ni d'ombre
-  colorée. La profondeur vient des paliers de surface et des hairlines.
-- Un dégradé n'est admis que comme variation d'un même neutre.
+- **Jamais de texte lisible sous 13 px.** Les libellés de données passent en
+  mono à 13 px, pas à 11.
+- Un titre tient en **deux lignes** à toutes les largeurs. Au-delà : couper des
+  mots, élargir la mesure, baisser la taille en dernier.
+- Les paragraphes courent sur **45 à 75 caractères** (`max-width: 34rem` typique).
+- Pas de majuscules espacées en étiquette : c'est le tic le plus daté. Casse
+  normale, 13 px, `--ink-3`.
+- Pas d'italique dans les titres.
 
-## Typographie
+---
 
-- **Sans** : Inter (`--font-inter`) — interface.
-- **Mono** : JetBrains Mono (`--font-jetbrains-mono`) — heures, chiffres,
-  libellés de données, `tabular-nums`.
-- **Éditorial** : Instrument Serif (`--font-editorial`) — hero de la landing,
-  salutation de l'accueil, mot BACKSTAGE du login. Nulle part ailleurs.
-- **Display** : Space Grotesk (`--font-display`) — titres de page.
-- Casse normale partout. **Plus de majuscules à tracking large.**
-- Deux poids : 400 et 500 (600 rare). La hiérarchie vient de la taille et de
-  la couleur, pas du poids.
-- Petits textes : jamais de tracking négatif.
+## 4. Espace, formes, profondeur
 
-## Composants
+| Token | Valeur |
+| --- | --- |
+| `--r-card` | `26px` |
+| `--r-tile` | `18px` |
+| `--r-sm` | `12px` |
+| pastille (bouton, puce) | `999px` |
+| gouttière de grille | `8–10px` |
+| marge de page | `20 → 28 → 40px` (`--pad`), conteneur `1320px` |
 
-### Cards
-- Surface `--surface-1` ou `--surface-2`
-- Hairline `--border-1` (ou `--border-2` pour une carte active)
-- Radius 12 px (panneaux 16), radius imbriqué = extérieur − padding
-- Hover : changement de bordure/fond, aucun `scale`, aucun glow
+- **Une seule paire de marges** par page, conteneur centré.
+- **Rythme vertical variable** : `88px` (dense), `104px` (courant), `152px`
+  (respiration). Une page où toutes les sections ont le même padding est plate.
+- **Une ombre** : `0 40px 90px -50px rgba(10,12,20,.55)`, réservée aux surfaces
+  qui flottent (carte de contexte, menu mobile, dialogue). Jamais sur une carte
+  posée.
+- Bordures : `1px solid var(--line)` pour une carte sur fond clair ; pas de
+  bordure quand le palier de surface suffit (carte blanche sur `--surface-2`).
 
-### Boutons
-- Primaire : fond ambre, texte `#17110a`, radius 8, hauteur 44
-- Secondaire : hairline, texte `--text-1`
-- Press : `scale(0.98)`, 120 ms
+### Composition
 
-### Inputs
-- Fond `--surface-1`, hairline `--border-2`
-- Focus : anneau `--accent` 2 px, offset 2 (jamais de glow)
+- Une section = un titre qui la nomme, puis son contenu. **Pas d'étiquette
+  au-dessus du titre.**
+- Les grilles de boîtes identiques sont interdites : varier les largeurs
+  (`2fr 1fr 1fr`), ou remplacer la carte par une fiche technique à filets.
+- Une colonne ne reste jamais vide : le vide se ferme par une image, une
+  colonne, une liste ou un champ de couleur.
 
-### Sidebar / panneaux
-- Panneaux pleins, séparés par une hairline verticale
-- Rail desktop 68 px, panneau de contexte 340 px repliable
-- Mobile : barre supérieure + bottom nav, contenu empilé
+---
 
-## Layout
+## 5. Composants
 
-- Desktop : rail icônes (68 px) · contenu fluide · panneau de contexte (340 px)
-- Les applications remplissent le viewport, pas de colonne centrée étroite
-- Espacement sur la grille de 4 px ; navigation 32–36 px de haut
-- `/chat` accueil : composition ancrée en haut, badge détaillé au bord supérieur
+| Composant | Forme | États |
+| --- | --- | --- |
+| Bouton primaire | pastille, `--blue` / `--blue-ink`, `height: 50px`, `padding: 0 24px` | survol `#1a37e0`, actif `translateY(1px)`, désactivé `opacity .55`, focus `outline 2px --blue` offset 3 |
+| Bouton secondaire | pastille, bordure `--line-2`, fond transparent | survol : bordure `--ink` |
+| Bouton texte | souligné, `--ink-2` | survol : `--ink` |
+| Carte | `--r-card` ou `--r-tile`, `--surface`, `1px --line`, padding `24–34px` | — |
+| Plaque | carte inversée (`--plate-*`) | la seule à porter une ombre |
+| Champ | `--r-sm` ou pastille, fond `--surface-2`, pas de bordure | focus : bordure `--blue-line` |
+| Puce / puce-filtre | pastille, `1px --line`, `--t-small` | survol : bordure `--line-2` |
+| Étiquette de donnée | mono 13 px, `--ink-3` | pas de pastille, pas de majuscules |
+| Liste de données | lignes séparées par `1px --line`, pas de boîte | — |
+| État vide | titre 1 ligne + une phrase, aucun dessin | — |
 
-## Motion
+Aucun composant ne porte d'icône décorative. Les icônes viennent toutes de
+**Lucide** (une seule bibliothèque, `strokeWidth 1.5–1.6`).
 
-- Une seule courbe : `cubic-bezier(.22, 1, .36, 1)` (`--ease`)
-- Durées : 120 ms (press), 150–200 ms (couleur), 300–620 ms (entrée)
-- Animations nommées uniquement (`transition-colors`, `transition-[transform,opacity]`)
-- Aucun mouvement en boucle décoratif : pas de shimmer de titre, pas de halo,
-  pas de balancement, pas de particules. Restent autorisés : spinner de
-  chargement, curseur qui clignote (l'IA attend), point « en cours ».
-- Une seule entrée au chargement, courte (fade + 6–12 px), petit échelonnement.
+---
 
-## Console IA
+## 6. Mouvement
 
-L'ancienne « exception assumée » (dégradés radiaux, halos, sheen, particules)
-est **supprimée**. L'accueil du chat garde :
+- **Deux mouvements, pas trente.** Une entrée orchestrée à l'ouverture (titre,
+  puis phrase, puis action, décalage 60–90 ms) et une dérive lente des images au
+  défilement. Le reste de la page est posé : pas d'apparition par section.
+- Courbe unique `cubic-bezier(.22,1,.36,1)`. Durées : 120 ms (press),
+  150–200 ms (couleur), 600–900 ms (entrée).
+- `transform` et `opacity` uniquement. Jamais de largeur, hauteur ou `top`.
+- `prefers-reduced-motion` supprime tout déplacement, garde le contenu.
+- Un contrôle répond au survol, au focus clavier et au press. Un élément non
+  cliquable n'a pas d'état de survol.
 
-- le badge logo détaillé (`/backstage-logo.png`), ancré au bord supérieur
-- la salutation en Instrument Serif
-- la fiche du prochain rendez-vous (donnée réelle, filet ambre 2 px)
-- les puces de contexte et 4 raccourcis
+---
 
-Le panneau de flux reste une ligne de temps unique (cours + agenda + rappels)
-groupée par jour, avec un bloc « En retard » plafonné à 4 entrées.
+## 7. Ce qui est acquis (landing)
 
-## Kanban (photos)
+`app/landing.css` porte l'implémentation de référence : tokens, `--plate-*`,
+cartes, plaques, puces, boutons, bandeaux photo, thème sombre. **Toute décision
+non écrite ici se règle en lisant ce fichier**, pas en inventant.
 
-- Colonnes séparées par des hairlines
-- En-têtes de colonne en mono, casse normale
-- Cartes : métadonnées minimales (artiste, salle, date)
-- Bouton d'ajout : bordure pointillée centrée
+Landing = `components/landing/*`, un fichier par section, contenu éditorial
+centralisé dans `app/landing-content.ts`.
 
-## LeetCode
+## 8. Ce qui reste à faire (application)
 
-- Deux colonnes sur desktop : jauge de série à gauche, éditeur + réponse à droite
-- Réponse : surface, barre de titre, point ambre et libellé « Réponse »
+L'application tourne encore sur l'ancienne direction (sombre, ambre, mono
+partout, filets). Les tokens de ce fichier ne sont **pas** dans
+`app/globals.css`, qui porte encore `--background: #0d0c0b` et
+`--accent: #e0a45e`.
 
-## Accessibilité
+Ordre de travail et structure cible de chaque écran :
+[`docs/app-refonte.md`](docs/app-refonte.md).
 
-- Focus visible `outline: 2px solid var(--accent); outline-offset: 2px`
-- Contraste minimum 4.5:1 pour le texte principal et le texte sur ambre
-- `prefers-reduced-motion` neutralise toutes les animations (`app/globals.css`)
+## 9. Accessibilité
+
+- Contraste minimum 4,5:1 pour le texte, 3:1 pour les éléments d'interface.
+- Focus visible partout : `outline: 2px solid var(--blue); outline-offset: 3px`.
+- Tout contrôle a un nom accessible ; les icônes seules ont un `aria-label`.
+- Une seule `h1` par page ; chaque section a un titre qui la nomme.
+- Les libellés de formulaire sont visibles (ou `sr-only` si le contexte suffit),
+  et les erreurs sont annoncées (`role="alert"`).

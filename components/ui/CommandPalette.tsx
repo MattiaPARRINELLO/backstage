@@ -244,13 +244,13 @@ export function CommandPalette() {
       />
 
       {/* Card */}
-      <div className="relative w-full max-w-xl mx-4 rounded-2xl border border-[var(--border-2)] bg-[var(--surface-1)] overflow-hidden slide-up">
+      <div className="relative w-full max-w-xl mx-4 rounded-[var(--r-card)] border border-[var(--border-2)] bg-[var(--surface-1)] overflow-hidden slide-up">
         {/* Feedback overlay */}
         {feedback && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-[var(--surface-1)]/95 backdrop-blur-sm fade-in">
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[var(--r-card)] bg-[var(--surface-1)]/95 backdrop-blur-sm fade-in">
             <div
               className={cn(
-                "flex items-center gap-3 px-6 py-4 rounded-xl",
+                "flex items-center gap-3 px-6 py-4 rounded-[var(--r-tile)]",
                 feedback.kind === "success"
                   ? "text-[var(--success)]"
                   : "text-[var(--danger)]"
@@ -261,7 +261,7 @@ export function CommandPalette() {
               ) : (
                 <X className="w-5 h-5" />
               )}
-              <span className="text-[14px] font-medium">{feedback.message}</span>
+              <span className="text-[length:var(--t-small)] font-medium">{feedback.message}</span>
             </div>
           </div>
         )}
@@ -283,11 +283,11 @@ export function CommandPalette() {
             }}
             onKeyDown={handleKeyDown}
             placeholder="Rechercher ou utiliser une commande…"
-            className="flex-1 bg-transparent border-none outline-none text-[14px] text-[var(--text-1)] placeholder:text-[var(--text-4)]"
+            className="flex-1 bg-transparent border-none outline-none text-[length:var(--t-small)] text-[var(--text-1)] placeholder:text-[var(--text-4)]"
             spellCheck={false}
             autoComplete="off"
           />
-          <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--surface-2)] border border-[var(--border-1)] text-[10px] text-[var(--text-4)] font-mono">
+          <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-[var(--r-sm)] bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)] text-[var(--text-4)] ui-mono">
             <Command className="w-2.5 h-2.5" />
             K
           </kbd>
@@ -297,7 +297,7 @@ export function CommandPalette() {
               setInput("");
               setFeedback(null);
             }}
-            className="w-10 h-10 -mr-2 rounded-lg flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
+            className="w-10 h-10 -mr-2 rounded-[var(--r-sm)] flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
             aria-label="Fermer"
           >
             <X className="w-4 h-4" />
@@ -326,7 +326,7 @@ export function CommandPalette() {
                   }}
                   onMouseEnter={() => setSelectedIdx(idx)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors duration-150",
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-[var(--r-sm)] text-left transition-colors duration-150",
                     selected
                       ? "bg-[var(--accent)]/10 text-[var(--accent)] ring-1 ring-[var(--accent)]/20"
                       : "text-[var(--text-1)] hover:bg-[var(--surface-2)]"
@@ -334,7 +334,7 @@ export function CommandPalette() {
                 >
                   <div
                     className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center border shrink-0 transition-colors",
+                      "w-8 h-8 rounded-[var(--r-sm)] flex items-center justify-center border shrink-0 transition-colors",
                       selected
                         ? "border-[var(--accent)]/30 bg-[var(--accent)]/10"
                         : "border-[var(--border-1)] bg-[var(--surface-2)]"
@@ -348,12 +348,12 @@ export function CommandPalette() {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium truncate">{item.label}</p>
-                    <p className="text-[11px] text-[var(--text-3)] truncate">
+                    <p className="text-[length:var(--t-small)] font-medium truncate">{item.label}</p>
+                    <p className="text-[length:var(--t-small)] text-[var(--text-3)] truncate">
                       {item.description}
                     </p>
                   </div>
-                  <kbd className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--surface-2)] border border-[var(--border-1)] text-[var(--text-4)]">
+                  <kbd className="shrink-0 px-1.5 py-0.5 rounded text-[length:var(--t-small)] ui-mono bg-[var(--surface-2)] border border-[var(--border-1)] text-[var(--text-4)]">
                     {item.badge}
                   </kbd>
                 </button>
@@ -365,7 +365,7 @@ export function CommandPalette() {
         {/* Empty state : no input  */}
         {!input.trim() && results.length === 0 && (
           <div className="p-3">
-            <p className="px-3 pb-2 text-[10px] font-semibold  text-[var(--text-4)] font-mono">
+            <p className="px-3 pb-2 text-[length:var(--t-small)] font-semibold  text-[var(--text-4)] ui-mono">
               Commandes disponibles
             </p>
             {COMMANDS.map((cmd) => {
@@ -377,19 +377,19 @@ export function CommandPalette() {
                     setInput(cmd.prefix + " ");
                     inputRef.current?.focus();
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors duration-150 text-[var(--text-1)] hover:bg-[var(--surface-2)] group"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[var(--r-sm)] text-left transition-colors duration-150 text-[var(--text-1)] hover:bg-[var(--surface-2)] group"
                 >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-[var(--border-1)] bg-[var(--surface-2)] shrink-0 group-hover:border-[var(--border-2)] transition-colors">
+                  <div className="w-8 h-8 rounded-[var(--r-sm)] flex items-center justify-center border border-[var(--border-1)] bg-[var(--surface-2)] shrink-0 group-hover:border-[var(--border-2)] transition-colors">
                     <Icon className="w-4 h-4 text-[var(--text-3)]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium truncate">{cmd.label}</p>
-                    <p className="text-[11px] text-[var(--text-3)] truncate">
+                    <p className="text-[length:var(--t-small)] font-medium truncate">{cmd.label}</p>
+                    <p className="text-[length:var(--t-small)] text-[var(--text-3)] truncate">
                       {cmd.description}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <kbd className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--surface-2)] border border-[var(--border-1)] text-[var(--text-4)]">
+                    <kbd className="shrink-0 px-1.5 py-0.5 rounded text-[length:var(--t-small)] ui-mono bg-[var(--surface-2)] border border-[var(--border-1)] text-[var(--text-4)]">
                       {cmd.prefix}
                     </kbd>
                     <ArrowRight className="w-3 h-3 text-[var(--text-4)] opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -404,32 +404,32 @@ export function CommandPalette() {
         {input.trim() && results.length === 0 && !feedback && (
           <div className="flex flex-col items-center justify-center py-10 px-4">
             <Search className="w-6 h-6 text-[var(--text-4)] mb-3" />
-            <p className="text-[13px] text-[var(--text-3)]">Aucune commande trouvée</p>
-            <p className="text-[11px] text-[var(--text-4)] mt-1 text-center">
-              Essayez <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[10px] font-mono">/todo</kbd>,{" "}
-              <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[10px] font-mono">/remember</kbd>,{" "}
-              <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[10px] font-mono">/concert</kbd>,{" "}
-              <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[10px] font-mono">/search</kbd>
+            <p className="text-[length:var(--t-small)] text-[var(--text-3)]">Aucune commande trouvée</p>
+            <p className="text-[length:var(--t-small)] text-[var(--text-4)] mt-1 text-center">
+              Essayez <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)] ui-mono">/todo</kbd>,{" "}
+              <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)] ui-mono">/remember</kbd>,{" "}
+              <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)] ui-mono">/concert</kbd>,{" "}
+              <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)] ui-mono">/search</kbd>
             </p>
           </div>
         )}
 
         {/* Footer hint */}
         <div className="flex items-center gap-3 px-4 py-2.5 border-t border-[var(--border-1)] bg-[var(--surface-2)]/30">
-          <span className="text-[10px] text-[var(--text-4)] font-mono flex items-center gap-1.5">
-            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[9px]">↑</kbd>
-            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[9px]">↓</kbd>
+          <span className="text-[length:var(--t-small)] text-[var(--text-4)] ui-mono flex items-center gap-1.5">
+            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)]">↑</kbd>
+            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)]">↓</kbd>
             Naviguer
           </span>
-          <span className="text-[10px] text-[var(--text-4)] font-mono flex items-center gap-1.5">
-            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[9px]">⏎</kbd>
+          <span className="text-[length:var(--t-small)] text-[var(--text-4)] ui-mono flex items-center gap-1.5">
+            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)]">⏎</kbd>
             Exécuter
           </span>
-          <span className="text-[10px] text-[var(--text-4)] font-mono flex items-center gap-1.5">
-            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[9px]">Esc</kbd>
+          <span className="text-[length:var(--t-small)] text-[var(--text-4)] ui-mono flex items-center gap-1.5">
+            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)]">Esc</kbd>
             Fermer
           </span>
-          <span className="ml-auto text-[10px] text-[var(--text-4)] font-mono flex items-center gap-1">
+          <span className="ml-auto text-[length:var(--t-small)] text-[var(--text-4)] ui-mono flex items-center gap-1">
             <Sparkles className="w-2.5 h-2.5 text-[var(--accent)]" />
             BACKSTAGE
           </span>

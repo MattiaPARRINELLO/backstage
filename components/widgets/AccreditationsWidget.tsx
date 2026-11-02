@@ -8,13 +8,13 @@ import { Pill } from "@/components/ui/Pill";
 import { loadPhotoShoots } from "@/app/actions/photography";
 import type { PhotoShoot, PhotoShootStatus } from "@/lib/types";
 
-const STATUS_FLOW: Record<PhotoShootStatus, { label: string; tone: "neutral" | "accent" | "warm" | "success" | "danger" | "muted" }> = {
+const STATUS_FLOW: Record<PhotoShootStatus, { label: string; tone: "neutral" | "accent" | "success" | "danger" | "muted" }> = {
   upcoming: { label: "À venir", tone: "neutral" },
   done: { label: "Fait", tone: "accent" },
   on_pc: { label: "Sur PC", tone: "accent" },
-  sorted: { label: "Trié", tone: "warm" },
+  sorted: { label: "Trié", tone: "muted" },
   edited: { label: "Retouché", tone: "accent" },
-  exported: { label: "Exporté", tone: "warm" },
+  exported: { label: "Exporté", tone: "muted" },
   sent: { label: "Envoyé", tone: "success" },
 };
 
@@ -59,7 +59,7 @@ export function AccreditationsWidget() {
         action={
           <Link
             href="/photos"
-            className="w-6 h-6 rounded-md flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
+            className="w-6 h-6 rounded-[var(--r-sm)] flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
             title="Voir tous les shootings"
           >
             <ArrowRight className="w-3 h-3" />
@@ -70,18 +70,18 @@ export function AccreditationsWidget() {
         {loading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-14 rounded-lg bg-[var(--surface-2)] animate-pulse" />
+              <div key={i} className="h-14 rounded-[var(--r-sm)] bg-[var(--surface-2)] animate-pulse" />
             ))}
           </div>
         ) : error ? (
           <div className="flex flex-col items-center py-6 text-center">
             <Camera className="w-8 h-8 text-[var(--danger)] mb-2" />
-            <p className="text-[12px] text-[var(--danger)]">{error}</p>
+            <p className="text-[length:var(--t-small)] text-[var(--danger)]">{error}</p>
           </div>
         ) : upcoming.length === 0 ? (
           <div className="flex flex-col items-center py-6 text-center">
             <Camera className="w-8 h-8 text-[var(--text-4)] mb-2" />
-            <p className="text-[12px] text-[var(--text-3)]">Aucun shooting en cours</p>
+            <p className="text-[length:var(--t-small)] text-[var(--text-3)]">Aucun shooting en cours</p>
           </div>
         ) : (
           <div className="space-y-1.5">
@@ -91,16 +91,16 @@ export function AccreditationsWidget() {
                 <Link
                   key={shoot.id}
                   href="/photos"
-                  className="block p-2.5 rounded-lg border border-[var(--border-1)] hover:border-[var(--border-2)] hover:bg-[var(--surface-2)]/50 transition-colors duration-200"
+                  className="block p-2.5 rounded-[var(--r-sm)] border border-[var(--border-1)] hover:border-[var(--border-2)] hover:bg-[var(--surface-2)]/50 transition-colors duration-200"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-medium text-[var(--text-1)] truncate">{shoot.title}</p>
-                      <p className="text-[10px] text-[var(--text-3)] mt-0.5 truncate">{shoot.client}</p>
+                      <p className="text-[length:var(--t-small)] font-medium text-[var(--text-1)] truncate">{shoot.title}</p>
+                      <p className="text-[length:var(--t-small)] text-[var(--text-3)] mt-0.5 truncate">{shoot.client}</p>
                     </div>
                     <Pill tone={meta.tone}>{meta.label}</Pill>
                   </div>
-                  <div className="flex items-center gap-2 mt-1.5 text-[10px] text-[var(--text-3)]">
+                  <div className="flex items-center gap-2 mt-1.5 text-[length:var(--t-small)] text-[var(--text-3)]">
                     <span>{formatDate(shoot.date)}</span>
                     {shoot.photosSent != null && (
                       <span className="flex items-center gap-1">

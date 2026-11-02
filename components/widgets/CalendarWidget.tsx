@@ -67,7 +67,7 @@ export function CalendarWidget() {
       />
       <CardBody className="p-2">
         {error && visible.length === 0 && (
-          <div className="text-[11px] text-[var(--danger)] px-3 py-2.5 rounded-md bg-[var(--danger)]/8 border border-[var(--danger)]/20">
+          <div className="text-[length:var(--t-small)] text-[var(--danger)] px-3 py-2.5 rounded-[var(--r-sm)] bg-[var(--danger)]/8 border border-[var(--danger)]/20">
             {error.message}
           </div>
         )}
@@ -83,7 +83,7 @@ export function CalendarWidget() {
         {!loading && visible.length === 0 && (
           <div className="px-3 py-6 text-center">
             <CalendarRange className="w-6 h-6 text-[var(--text-4)] mx-auto mb-2" />
-            <p className="text-[11px] text-[var(--text-3)] font-mono">Aucun événement à venir</p>
+            <p className="text-[length:var(--t-small)] text-[var(--text-3)] ui-mono">Aucun événement à venir</p>
           </div>
         )}
 
@@ -97,23 +97,23 @@ export function CalendarWidget() {
             {visible.map((evt) => (
               <li
                 key={evt.id}
-                className="group px-3 py-2.5 rounded-md hover:bg-[var(--surface-2)] transition-colors duration-150"
+                className="group px-3 py-2.5 rounded-[var(--r-sm)] hover:bg-[var(--surface-2)] transition-colors duration-150"
               >
                 <div className="flex items-start gap-3">
                   <div className="shrink-0 w-12 text-right">
-                    <div className="text-[10px] font-mono  text-[var(--accent)]">
+                    <div className="text-[length:var(--t-small)] ui-mono  text-[var(--accent)]">
                       {dayLabel(evt.start)}
                     </div>
-                    <div className="text-[10px] text-[var(--text-3)] font-mono mt-0.5">
+                    <div className="text-[length:var(--t-small)] text-[var(--text-3)] ui-mono mt-0.5">
                       {isToday(evt.start) || isTomorrow(evt.start) ? "" : formatTime(evt.start)}
                     </div>
                   </div>
                   <div className="shrink-0 w-px self-stretch bg-[var(--border-1)] group-hover:bg-[var(--border-2)]" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12px] font-medium text-[var(--text-1)] truncate">
+                    <p className="text-[length:var(--t-small)] font-medium text-[var(--text-1)] truncate">
                       {evt.summary}
                     </p>
-                    <div className="flex items-center gap-2 mt-1 text-[10px] text-[var(--text-3)] font-mono">
+                    <div className="flex items-center gap-2 mt-1 text-[length:var(--t-small)] text-[var(--text-3)] ui-mono">
                       {!isToday(evt.start) && !isTomorrow(evt.start) && (
                         <span className="flex items-center gap-1">
                           <Clock className="w-2.5 h-2.5" />

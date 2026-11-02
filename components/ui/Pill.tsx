@@ -1,17 +1,29 @@
-"use client";
-
 import { type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-type Tone = "neutral" | "accent" | "warm" | "success" | "danger" | "muted";
+type Tone = "neutral" | "accent" | "warning" | "success" | "danger" | "muted";
 
+/**
+ * Puce d'état (une donnée, pas un filtre). La forme et la typographie
+ * viennent de `.ui-chip` ; seule la teinte change, jamais une autre taille.
+ * `warning` porte la sémantique d'avertissement — pas de décoration.
+ */
 const toneClasses: Record<Tone, string> = {
-  neutral: "border-[var(--border-2)] text-[var(--text-2)] bg-[var(--surface-2)]",
-  accent: "border-[var(--accent)]/30 text-[var(--accent)] bg-[var(--accent)]/8",
-  warm: "border-[var(--warm)]/30 text-[var(--warm)] bg-[var(--warm)]/8",
-  success: "border-[var(--success)]/30 text-[var(--success)] bg-[var(--success)]/8",
-  danger: "border-[var(--danger)]/30 text-[var(--danger)] bg-[var(--danger)]/8",
-  muted: "border-[var(--border-1)] text-[var(--text-3)] bg-[var(--surface-1)]",
+  neutral: "text-[var(--text-2)]",
+  accent: "border-[var(--accent)]/30 bg-[var(--accent)]/8 text-[var(--accent)]",
+  warning: "border-[var(--warning)]/30 bg-[var(--warning)]/8 text-[var(--warning)]",
+  success: "border-[var(--success)]/30 bg-[var(--success)]/8 text-[var(--success)]",
+  danger: "border-[var(--danger)]/30 bg-[var(--danger)]/8 text-[var(--danger)]",
+  muted: "text-[var(--text-3)]",
+};
+
+const dotClasses: Record<Tone, string> = {
+  neutral: "bg-[var(--text-3)]",
+  accent: "bg-[var(--accent)]",
+  warning: "bg-[var(--warning)]",
+  success: "bg-[var(--success)]",
+  danger: "bg-[var(--danger)]",
+  muted: "bg-[var(--text-4)]",
 };
 
 type PillProps = HTMLAttributes<HTMLSpanElement> & {
@@ -21,27 +33,8 @@ type PillProps = HTMLAttributes<HTMLSpanElement> & {
 
 export function Pill({ className, tone = "neutral", dot, children, ...rest }: PillProps) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium  font-mono whitespace-nowrap",
-        toneClasses[tone],
-        className
-      )}
-      {...rest}
-    >
-      {dot && (
-        <span
-          className={cn(
-            "w-1.5 h-1.5 rounded-full",
-            tone === "accent" && "bg-[var(--accent)]",
-            tone === "warm" && "bg-[var(--warm)]",
-            tone === "success" && "bg-[var(--success)]",
-            tone === "danger" && "bg-[var(--danger)]",
-            tone === "muted" && "bg-[var(--text-4)]",
-            tone === "neutral" && "bg-[var(--text-3)]"
-          )}
-        />
-      )}
+    <span className={cn("ui-chip whitespace-nowrap font-medium", toneClasses[tone], className)} {...rest}>
+      {dot && <span className={cn("h-1.5 w-1.5 rounded-full", dotClasses[tone])} />}
       {children}
     </span>
   );

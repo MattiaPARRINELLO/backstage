@@ -43,7 +43,7 @@ export function AddItemForm({
           placeholder="https://…"
           aria-label="Adresse du lien"
           autoFocus
-          className="min-w-0 flex-1 bg-transparent font-mono text-base outline-none"
+          className="min-w-0 flex-1 bg-transparent ui-mono text-base outline-none"
         />
       </div>
 

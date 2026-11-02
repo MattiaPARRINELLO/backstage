@@ -177,7 +177,7 @@ export default function CalendarPage() {
               >
                 <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
               </button>
-              <h2 className="font-display text-[19px] font-semibold tracking-[-0.03em] text-[var(--text-1)]">
+              <h2 className="font-display text-[length:var(--t-lead)] font-semibold tracking-[-0.03em] text-[var(--text-1)]">
                 {MONTHS[month]} {year}
               </h2>
               <button
@@ -310,7 +310,7 @@ export default function CalendarPage() {
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[var(--background)]/70 py-4 backdrop-blur-sm sm:items-center">
           <div className="ui-card my-auto mx-4 flex max-h-[85vh] w-full max-w-lg flex-col shadow-[var(--shadow-float)]">
             <div className="flex shrink-0 items-center justify-between border-b border-[var(--line)] px-6 py-4">
-              <h3 className="font-display text-[19px] font-semibold tracking-[-0.03em] text-[var(--text-1)]">
+              <h3 className="font-display text-[length:var(--t-lead)] font-semibold tracking-[-0.03em] text-[var(--text-1)]">
                 {isCreating ? "Nouvel événement" : "Modifier l'événement"}
               </h3>
               <button

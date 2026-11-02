@@ -164,7 +164,7 @@ export default function SchedulePage() {
           />
 
           {weekOffset !== 0 && (
-            <p className="text-[12px] text-[var(--text-2)] mb-4 px-3 py-2 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)]">
+            <p className="text-[length:var(--t-small)] text-[var(--text-2)] mb-4 px-3 py-2 rounded-[var(--r-sm)] border border-[var(--border-1)] bg-[var(--surface-1)]">
               {weekOffset > 0
                 ? "Pas de cours cette semaine — voici la semaine du prochain cours."
                 : "Semaine passée."}{" "}
@@ -178,16 +178,16 @@ export default function SchedulePage() {
           )}
 
           <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
-            <p className="text-[11px] font-mono  text-[var(--text-3)]">
+            <p className="text-[length:var(--t-small)] ui-mono  text-[var(--text-3)]">
               {weekLabel}
             </p>
-            <p className="text-[12px] text-[var(--text-3)]">
+            <p className="text-[length:var(--t-small)] text-[var(--text-3)]">
               {totalWeek === 0 ? "Aucune séance" : `${totalWeek} séance${totalWeek > 1 ? "s" : ""}`}
             </p>
           </div>
 
           {syncError && (
-            <p className="text-[12px] text-[var(--danger)] mb-4 px-3 py-2 rounded-lg border border-[var(--danger)]/25 bg-[var(--danger)]/8">
+            <p className="text-[length:var(--t-small)] text-[var(--danger)] mb-4 px-3 py-2 rounded-[var(--r-sm)] border border-[var(--danger)]/25 bg-[var(--danger)]/8">
               {syncError}
             </p>
           )}
@@ -209,7 +209,7 @@ export default function SchedulePage() {
                     <div
                       key={day.key}
                       className={cn(
-                        "rounded-xl border p-3 min-w-0",
+                        "rounded-[var(--r-tile)] border p-3 min-w-0",
                         isToday
                           ? "border-[var(--accent)]/35 bg-[var(--accent)]/5"
                           : "border-[var(--border-1)] bg-[var(--surface-1)]"
@@ -218,38 +218,38 @@ export default function SchedulePage() {
                       <div className="flex items-baseline justify-between gap-2 mb-1">
                         <h2
                           className={cn(
-                            "text-[11px] font-mono ",
+                            "text-[length:var(--t-small)] ui-mono ",
                             isToday ? "text-[var(--accent)]" : "text-[var(--text-3)]"
                           )}
                         >
                           {DAY_LABELS[(day.date.getDay() + 6) % 7].slice(0, 3)}
                         </h2>
-                        <span className="text-[11px] text-[var(--text-3)] tabular-nums">
+                        <span className="text-[length:var(--t-small)] text-[var(--text-3)] tabular-nums">
                           {day.date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}
                         </span>
                       </div>
 
                       {day.list.length === 0 ? (
-                        <p className="text-[11px] text-[var(--text-3)] py-6 text-center">Libre</p>
+                        <p className="text-[length:var(--t-small)] text-[var(--text-3)] py-6 text-center">Libre</p>
                       ) : (
                         <div className="space-y-2 mt-2">
                           {day.list.map((c) => (
                             <div
                               key={`${c.uuid}-${c.start}`}
-                              className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)] px-2.5 py-2"
+                              className="rounded-[var(--r-sm)] border border-[var(--border-1)] bg-[var(--surface-2)] px-2.5 py-2"
                             >
-                              <p className="text-[11px] font-mono text-[var(--accent)] tabular-nums leading-none">
+                              <p className="text-[length:var(--t-small)] ui-mono text-[var(--accent)] tabular-nums leading-none">
                                 {hhmm(c.start)}–{hhmm(c.end)}
                               </p>
-                              <p className="text-[12.5px] font-medium text-[var(--text-1)] leading-snug mt-1.5 break-words">
+                              <p className="text-[length:var(--t-small)] font-medium text-[var(--text-1)] leading-snug mt-1.5 break-words">
                                 {c.subject.replace(/^E\d+\s+/, "")}
                               </p>
                               {c.remote ? (
-                                <p className="text-[10.5px] text-[var(--text-3)] mt-1">Distanciel</p>
+                                <p className="text-[length:var(--t-small)] text-[var(--text-3)] mt-1">Distanciel</p>
                               ) : (
                                 c.room && (
                                   <p
-                                    className="flex items-center gap-1 text-[10.5px] text-[var(--text-3)] mt-1 min-w-0"
+                                    className="flex items-center gap-1 text-[length:var(--t-small)] text-[var(--text-3)] mt-1 min-w-0"
                                     title={c.room}
                                   >
                                     <MapPin className="w-3 h-3 shrink-0" />
@@ -258,7 +258,7 @@ export default function SchedulePage() {
                                 )
                               )}
                               {c.teacher && (
-                                <p className="flex items-center gap-1 text-[10.5px] text-[var(--text-3)] mt-0.5 min-w-0">
+                                <p className="flex items-center gap-1 text-[length:var(--t-small)] text-[var(--text-3)] mt-0.5 min-w-0">
                                   <User className="w-3 h-3 shrink-0" />
                                   <span className="truncate">{c.teacher}</span>
                                 </p>
@@ -273,7 +273,7 @@ export default function SchedulePage() {
               </div>
 
               {totalWeek > 0 && (
-                <p className="flex items-center gap-1.5 mt-6 text-[11px] text-[var(--text-3)]">
+                <p className="flex items-center gap-1.5 mt-6 text-[length:var(--t-small)] text-[var(--text-3)]">
                   <CalendarClock className="w-3.5 h-3.5" />
                   Notification push 30 min avant chaque cours, avec la salle.
                 </p>

@@ -53,7 +53,7 @@ export function SearchView() {
     <AppShell>
       <div className="flex-1 min-w-0 overflow-y-auto">
         <div className="mx-auto w-full max-w-2xl px-5 pb-24 pt-10 sm:px-8 sm:pt-14">
-          <h1 className="font-display text-[30px] font-semibold leading-[1.05] tracking-[-0.03em] text-[var(--text-1)] sm:text-[34px]">
+          <h1 className="font-display text-[length:var(--t-head)] font-semibold leading-[1.05] tracking-[-0.03em] text-[var(--text-1)] sm:text-[length:var(--t-head)]">
             Recherche
           </h1>
           <p className="mt-2.5 max-w-xl text-[var(--t-body)] leading-relaxed text-[var(--text-2)]">
@@ -106,7 +106,7 @@ export function SearchView() {
                   if (items.length === 0) return null;
                   return (
                     <section key={key}>
-                      <h2 className="flex items-baseline gap-2 font-display text-[17px] font-semibold tracking-[-0.02em] text-[var(--text-1)]">
+                      <h2 className="flex items-baseline gap-2 font-display text-[length:var(--t-body)] font-semibold tracking-[-0.02em] text-[var(--text-1)]">
                         {LABELS[key]}
                         <span className="ui-mono text-[var(--text-3)]">{items.length}</span>
                       </h2>
@@ -148,7 +148,7 @@ function ResultRow({ item, type }: { item: SearchItem; type: string }) {
       href={getHref(item, type)}
       className="group flex items-center gap-4 border-b border-[var(--line)] py-3 transition-colors last:border-0 hover:bg-[var(--surface-2)]"
     >
-      <span className="min-w-0 flex-1 truncate text-[15px] text-[var(--text-1)]">
+      <span className="min-w-0 flex-1 truncate text-[length:var(--t-body)] text-[var(--text-1)]">
         {String(title)}
       </span>
       {sub && (

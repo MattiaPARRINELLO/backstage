@@ -104,12 +104,12 @@ export function AddFactForm({
           placeholder="Nouveau fait à mémoriser"
           aria-label="Nouveau fait à mémoriser"
           autoFocus
-          className="min-w-0 flex-1 bg-transparent text-base outline-none"
+          className="min-w-0 flex-1 bg-transparent text-[length:var(--t-body)] outline-none"
         />
         <button
           type="submit"
           disabled={!content.trim()}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--background)] transition-opacity disabled:opacity-40"
+          className="ui-btn ui-btn--primary ui-btn--sm ui-btn--icon shrink-0"
           aria-label="Mémoriser"
         >
           <Plus className="h-4 w-4" />

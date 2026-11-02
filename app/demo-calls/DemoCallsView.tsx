@@ -149,7 +149,7 @@ export function DemoCallsView({ initialCalls }: { initialCalls: DemoCallEntry[] 
                         <span className="min-w-0 flex-1">
                           <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                             <span
-                              className="text-[15px] font-medium"
+                              className="text-[length:var(--t-body)] font-medium"
                               style={{ color: outcomeColor(call.outcome) }}
                             >
                               {OUTCOME_LABELS[call.outcome]}
@@ -159,7 +159,7 @@ export function DemoCallsView({ initialCalls }: { initialCalls: DemoCallEntry[] 
                             </span>
                             <span className="ui-mono text-[var(--text-3)]">{formatDate(call.createdAt)}</span>
                           </span>
-                          <span className="mt-1.5 block truncate text-[15px] text-[var(--text-1)]">
+                          <span className="mt-1.5 block truncate text-[length:var(--t-body)] text-[var(--text-1)]">
                             {call.input ?? "Aucun contenu reçu"}
                           </span>
                           <span className="ui-mono mt-1 block truncate text-[var(--text-3)]">
@@ -242,7 +242,7 @@ function Meta({ label, value, mono = false }: { label: string; value: string; mo
     <div className="min-w-0">
       <dt className="ui-mono text-[var(--text-3)]">{label}</dt>
       <dd
-        className={cn("mt-1 truncate text-[var(--t-small)] text-[var(--text-1)]", mono && "font-mono")}
+        className={cn("mt-1 truncate text-[var(--t-small)] text-[var(--text-1)]", mono && "ui-mono")}
         title={value}
       >
         {value}

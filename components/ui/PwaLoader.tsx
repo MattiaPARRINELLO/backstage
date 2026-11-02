@@ -154,12 +154,12 @@ export function PwaLoader() {
     <>
       {installPrompt && !installed && !dismissed && !onLanding && (
         <div className="fixed z-[90] inset-x-0 sm:inset-x-auto bottom-[calc(env(safe-area-inset-bottom)+4rem)] sm:bottom-20 sm:left-1/2 sm:-translate-x-1/2 px-3 sm:px-0">
-          <div className="w-full sm:w-auto flex items-center gap-3 px-4 py-3 rounded-2xl sm:rounded-xl border border-[var(--accent)]/30 bg-[var(--surface-2)]/95 backdrop-blur text-[11px] font-mono text-[var(--accent)] animate-slide-up">
+          <div className="w-full sm:w-auto flex items-center gap-3 px-4 py-3 rounded-[var(--r-tile)] border border-[var(--accent)]/30 bg-[var(--surface-2)]/95 backdrop-blur text-[length:var(--t-small)] ui-mono text-[var(--accent)] slide-up">
             <Image src="/backstage-logo-simple.png" alt="" width={20} height={20} className="w-5 h-5 object-contain shrink-0" />
             <span className="flex-1 min-w-0 truncate">Installer BACKSTAGE</span>
             <button
               onClick={handleInstall}
-              className="shrink-0 px-4 py-2 rounded-lg bg-[var(--accent)]/20 hover:bg-[var(--accent)]/30 transition-colors"
+              className="shrink-0 px-4 py-2 rounded-[var(--r-sm)] bg-[var(--accent)]/20 hover:bg-[var(--accent)]/30 transition-colors"
             >
               Installer
             </button>
@@ -169,7 +169,7 @@ export function PwaLoader() {
                 setDismissed(true);
               }}
               aria-label="Fermer"
-              className="shrink-0 w-9 h-9 -mr-1.5 flex items-center justify-center rounded-lg opacity-50 hover:opacity-100 hover:bg-[var(--surface-3)] transition-opacity"
+              className="shrink-0 w-9 h-9 -mr-1.5 flex items-center justify-center rounded-[var(--r-sm)] opacity-50 hover:opacity-100 hover:bg-[var(--surface-3)] transition-opacity"
             >
               ✕
             </button>
@@ -178,18 +178,18 @@ export function PwaLoader() {
       )}
       {updateWaiting && (
         <div className="fixed z-[90] inset-x-0 sm:inset-x-auto bottom-[calc(env(safe-area-inset-bottom)+4rem)] sm:bottom-20 sm:left-1/2 sm:-translate-x-1/2 px-3 sm:px-0">
-          <div className="w-full sm:w-auto flex items-center gap-3 px-4 py-3 rounded-2xl sm:rounded-xl border border-[var(--warm)]/30 bg-[var(--surface-2)]/95 backdrop-blur text-[11px] font-mono text-[var(--warm)] animate-slide-up">
+          <div className="w-full sm:w-auto flex items-center gap-3 px-4 py-3 rounded-[var(--r-tile)] border border-[var(--warning)]/30 bg-[var(--surface-2)]/95 backdrop-blur text-[length:var(--t-small)] ui-mono text-[var(--warning)] slide-up">
             <span className="flex-1 min-w-0 truncate">Mise à jour disponible</span>
             <button
               onClick={handleUpdate}
-              className="shrink-0 px-4 py-2 rounded-lg bg-[var(--warm)]/20 hover:bg-[var(--warm)]/30 transition-colors"
+              className="shrink-0 px-4 py-2 rounded-[var(--r-sm)] bg-[var(--warning)]/20 hover:bg-[var(--warning)]/30 transition-colors"
             >
               Actualiser
             </button>
             <button
               onClick={() => setUpdateWaiting(null)}
               aria-label="Fermer"
-              className="shrink-0 w-9 h-9 -mr-1.5 flex items-center justify-center rounded-lg opacity-50 hover:opacity-100 hover:bg-[var(--surface-3)] transition-opacity"
+              className="shrink-0 w-9 h-9 -mr-1.5 flex items-center justify-center rounded-[var(--r-sm)] opacity-50 hover:opacity-100 hover:bg-[var(--surface-3)] transition-opacity"
             >
               ✕
             </button>

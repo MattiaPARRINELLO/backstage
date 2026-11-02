@@ -57,7 +57,7 @@ export default function DailyBriefPage() {
       </Link>
 
       <header className="mb-8">
-        <h1 className="font-display text-[30px] font-semibold leading-[1.05] tracking-[-0.03em] text-[var(--text-1)]">
+        <h1 className="font-display text-[length:var(--t-head)] font-semibold leading-[1.05] tracking-[-0.03em] text-[var(--text-1)]">
           Brief du jour
         </h1>
         <p className="ui-mono mt-2 text-[var(--text-3)]">
@@ -152,7 +152,7 @@ function Section({
 }) {
   return (
     <section className="mt-10">
-      <h2 className="font-display text-[17px] font-semibold tracking-[-0.02em] text-[var(--text-1)]">
+      <h2 className="font-display text-[length:var(--t-body)] font-semibold tracking-[-0.02em] text-[var(--text-1)]">
         {label}
       </h2>
       <div className="mt-3 border-t border-[var(--line)]">{children}</div>

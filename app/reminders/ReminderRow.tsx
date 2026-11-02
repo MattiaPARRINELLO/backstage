@@ -39,7 +39,7 @@ export function ReminderRow({
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            "text-[15px] leading-snug",
+            "text-[length:var(--t-body)] leading-snug",
             done ? "text-[var(--text-3)] line-through" : overdue ? "text-[var(--danger)]" : "text-[var(--text-1)]"
           )}
         >

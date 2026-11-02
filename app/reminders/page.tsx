@@ -199,7 +199,7 @@ export default function RemindersPage() {
                 {timeline.map((bucket) => (
                   <section key={bucket.key}>
                     <div className="mb-1 flex items-baseline justify-between gap-3 border-b border-[var(--line)] pb-2">
-                      <h2 className="font-display text-[17px] font-semibold tracking-[-0.02em] text-[var(--text-1)] first-letter:uppercase">
+                      <h2 className="font-display text-[length:var(--t-body)] font-semibold tracking-[-0.02em] text-[var(--text-1)] first-letter:uppercase">
                         {bucket.label}
                       </h2>
                       <span className="ui-mono text-[var(--text-3)]">
@@ -235,7 +235,7 @@ export default function RemindersPage() {
               {completed.length > 0 && (
                 <section className="mt-14">
                   <div className="mb-1 flex items-baseline justify-between gap-3 border-b border-[var(--line)] pb-2">
-                    <h2 className="font-display text-[17px] font-semibold tracking-[-0.02em] text-[var(--text-3)]">
+                    <h2 className="font-display text-[length:var(--t-body)] font-semibold tracking-[-0.02em] text-[var(--text-3)]">
                       Terminés
                     </h2>
                     <span className="ui-mono text-[var(--text-3)]">{completed.length}</span>

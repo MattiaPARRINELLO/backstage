@@ -142,7 +142,7 @@ export function KnowledgeGraph({ facts, relationships, onEditFact }: KnowledgeGr
 
   const nodeColors: Record<string, string> = {
     dev: "var(--accent)",
-    photo: "var(--warm)",
+    photo: "var(--warning)",
     life: "var(--success)",
     preference: "var(--danger)",
   };
@@ -181,7 +181,7 @@ export function KnowledgeGraph({ facts, relationships, onEditFact }: KnowledgeGr
   };
 
   return (
-    <div className="relative w-full h-[500px] border border-[var(--border-2)] rounded-xl overflow-hidden bg-[var(--surface-1)]/40">
+    <div className="relative w-full h-[500px] border border-[var(--border-2)] rounded-[var(--r-tile)] overflow-hidden bg-[var(--surface-1)]/40">
       <svg
         ref={svgRef}
         className="w-full h-full cursor-grab"
@@ -238,7 +238,7 @@ export function KnowledgeGraph({ facts, relationships, onEditFact }: KnowledgeGr
           ))}
         </g>
       </svg>
-      <div className="absolute bottom-3 left-3 flex gap-3 text-[10px] text-[var(--muted)] font-mono">
+      <div className="absolute bottom-3 left-3 flex gap-3 text-[length:var(--t-small)] text-[var(--muted)] ui-mono">
         {Object.entries(categoryLabels).map(([key, label]) => (
           <span key={key} className="flex items-center gap-1">
             <span

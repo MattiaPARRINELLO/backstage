@@ -35,7 +35,7 @@ export function ReminderForm({
 
   return (
     <div className="ui-card p-5">
-      <p className="text-[15px] font-medium text-[var(--text-1)]">
+      <p className="text-[length:var(--t-body)] font-medium text-[var(--text-1)]">
         {initial ? "Modifier le rappel" : "Nouveau rappel"}
       </p>
       <div className="mt-4 space-y-3">

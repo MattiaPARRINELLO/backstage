@@ -99,7 +99,7 @@ export function ContextPanel() {
       <aside
         aria-label="Panneau de contexte"
         className={cn(
-          "flex flex-col shrink-0 my-3 mr-3 overflow-hidden bg-[var(--surface-1)] border border-[var(--line)] rounded-[var(--r-card)] transition-[width,transform] duration-300 ease-out",
+          "ui-card flex flex-col shrink-0 my-3 mr-3 overflow-hidden transition-[width,transform] duration-300 ease-out",
           "xl:relative xl:translate-x-0",
           collapsed ? "xl:w-14" : "xl:w-[340px]",
           mobileOpen
@@ -152,7 +152,7 @@ export function ContextPanel() {
         </header>
 
         {!collapsed && (
-          <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 space-y-4 context-panel-body">
+          <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 space-y-4">
             {activeContext ? (
               <ContextualView
                 contextKey={activeContext}

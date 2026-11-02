@@ -501,7 +501,7 @@ function Section({
 }) {
   return (
     <section className="mt-12">
-      <h2 className="font-display text-[20px] font-semibold tracking-[-0.025em] text-[var(--text-1)]">
+      <h2 className="font-display text-[length:var(--t-lead)] font-semibold tracking-[-0.025em] text-[var(--text-1)]">
         {title}
       </h2>
       {description && (
@@ -526,7 +526,7 @@ function Row({
   return (
     <div className="flex flex-col gap-3 border-b border-[var(--line)] py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
       <div className="min-w-0">
-        <p className="text-[15px] text-[var(--text-1)]">{label}</p>
+        <p className="text-[length:var(--t-body)] text-[var(--text-1)]">{label}</p>
         {hint && (
           <p className="mt-1 text-[var(--t-small)] leading-relaxed text-[var(--text-3)]">
             {hint}

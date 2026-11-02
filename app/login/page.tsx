@@ -172,7 +172,7 @@ function LoginForm() {
         <div className="login-load ui-card flex flex-col items-center px-7 py-10 text-center sm:px-9">
         {/* En-tête */}
         <p className="ui-label">Accès privé</p>
-        <h1 className="mt-2 font-editorial text-[40px] leading-none text-[var(--text-1)]">
+        <h1 className="mt-2 font-editorial text-[length:var(--t-head)] leading-none text-[var(--text-1)]">
           BACKSTAGE
         </h1>
         <p className="mt-3 text-[var(--t-small)] leading-relaxed text-[var(--text-3)]">
@@ -246,7 +246,7 @@ function LoginForm() {
           type="button"
           onClick={() => (needsRegistration ? handleRegister() : handleAuthenticate())}
           disabled={isBusy || needsRegistration === null}
-          className="ui-btn ui-btn--primary mt-5 w-full"
+          className="ui-btn ui-btn--primary mt-5 w-full h-auto min-h-11 py-2.5 text-center leading-snug"
         >
           {isBusy && !verified ? (
             <>

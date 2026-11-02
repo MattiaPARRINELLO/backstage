@@ -8,6 +8,11 @@ type CardProps = HTMLAttributes<HTMLDivElement> & {
   hover?: boolean;
 };
 
+/**
+ * Carte de l'application. La surface et le rayon viennent de `.ui-card`
+ * (`app/globals.css`). Une variante n'invente jamais une valeur : elle change
+ * de palier de surface. `elevated` = palier `--surface-2`.
+ */
 export function Card({
   className,
   variant = "default",
@@ -18,11 +23,10 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border transition-colors duration-200",
-        variant === "default" && "bg-[var(--surface-1)] border-[var(--border-1)]",
-        variant === "elevated" && "bg-[var(--surface-2)] border-[var(--border-2)]",
-        variant === "ghost" && "bg-transparent border-transparent",
-        hover && "hover:border-[var(--border-2)]",
+        "ui-card transition-colors duration-200",
+        variant === "elevated" && "bg-[var(--surface-2)]",
+        variant === "ghost" && "border-transparent bg-transparent",
+        hover && "hover:border-[var(--line-2)]",
         className
       )}
       {...rest}
@@ -48,17 +52,13 @@ export function CardHeader({
 }: CardHeaderProps) {
   return (
     <div
-      className={cn("flex items-center justify-between px-4 py-3 border-b border-[var(--border-1)]", className)}
+      className={cn("flex items-center justify-between border-b border-[var(--line)] px-4 py-3", className)}
       {...rest}
     >
       <div className="min-w-0 flex-1">
-        {title && (
-          <h3 className="text-[11px] font-semibold  text-[var(--text-3)] font-mono truncate">
-            {title}
-          </h3>
-        )}
+        {title && <h3 className="ui-label truncate font-medium">{title}</h3>}
         {subtitle && (
-          <p className="text-[12px] text-[var(--text-2)] mt-0.5 truncate">{subtitle}</p>
+          <p className="mt-0.5 truncate text-[length:var(--t-small)] text-[var(--text-2)]">{subtitle}</p>
         )}
         {children}
       </div>
@@ -87,7 +87,7 @@ export function CardFooter({
   return (
     <div
       className={cn(
-        "px-4 py-3 border-t border-[var(--border-1)] flex items-center justify-between gap-2",
+        "flex items-center justify-between gap-2 border-t border-[var(--line)] px-4 py-3",
         className
       )}
       {...rest}

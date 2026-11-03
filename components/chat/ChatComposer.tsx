@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Send, Square, Plus, AtSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VoiceInput } from "@/components/chat/VoiceInput";
@@ -33,6 +33,15 @@ export function ChatComposer({
   // Texte affiché : saisie + dictée vocale en cours (résultats intermédiaires).
   const displayValue = voiceLive ? (value ? value + " " : "") + voiceLive : value;
 
+  // Hauteur du champ pilotée par son contenu : le recalcul après chaque
+  // changement (envoi compris) ramène le champ à une ligne quand il se vide.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 200) + "px";
+  }, [displayValue, ref]);
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(true);
@@ -61,9 +70,6 @@ export function ChatComposer({
     const v = e.target.value;
     onChange(v);
     setVoiceLive("");
-    const el = e.target;
-    el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 200) + "px";
     // Sur mobile (bouton @ masqué), taper "@" ouvre le menu de mention.
     setShowMentionMenu(/@[a-z]*$/i.test(v) && !v.endsWith(" "));
   };

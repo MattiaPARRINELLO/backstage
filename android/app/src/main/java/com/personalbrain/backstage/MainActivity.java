@@ -12,6 +12,8 @@ import android.util.Log;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
 
+import com.google.androidbrowserhelper.trusted.TwaLauncher;
+
 /**
  * Point d'entrée unique de l'APK.
  *
@@ -29,6 +31,8 @@ public class MainActivity extends Activity {
     // Android 13+ : sans cette permission, les notifications sont purement et
     // simplement jetées (l'app apparaît en importance NONE dans les réglages).
     private static final int REQ_NOTIFICATIONS = 1001;
+
+    private TwaLauncher twaLauncher;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -99,14 +103,27 @@ public class MainActivity extends Activity {
             TrustedWebActivityIntentBuilder builder = new TrustedWebActivityIntentBuilder(uri);
             builder.setNavigationBarColor(getColor(R.color.backstage_background));
             builder.setColorScheme(CustomTabsIntent.COLOR_SCHEME_DARK);
-            CustomTabsIntent intent = builder.buildCustomTabsIntent();
-            intent.launchUrl(this, uri);
+
+            // TwaLauncher (et pas buildCustomTabsIntent) : c'est lui qui ouvre une
+            // CustomTabsSession vérifiée auprès de Chrome. Sans session, Chrome
+            // traite l'intent comme un simple Custom Tab et affiche la barre
+            // d'URL — même quand assetlinks.json est valide.
+            twaLauncher = new TwaLauncher(this);
+            twaLauncher.launch(builder, null, null, () -> runOnUiThread(this::finish));
         } catch (Exception e) {
             // Aucun navigateur compatible : on n'a pas de webview de secours,
             // donc on le dit plutôt que de laisser un écran noir.
             Log.e(TAG, "lancement TWA impossible : " + e.getClass().getSimpleName());
-        } finally {
             finish();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (twaLauncher != null) {
+            twaLauncher.destroy();
+            twaLauncher = null;
+        }
+        super.onDestroy();
     }
 }

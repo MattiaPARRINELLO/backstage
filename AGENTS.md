@@ -333,7 +333,13 @@ moteur d'écriture (`lib/memory-autosave.ts`) :
   une entité absente du fait existant (nom propre, chiffre, URL, pseudo) n'est
   PAS un doublon — il est créé. Sans elle, « collabore avec Rapstar, portfolio
   photo.mprnl.fr » était absorbé par « Est photographe live & concert » et
-  l'information était perdue en silence. La garde est appliquée aux **quatre**
+  l'information était perdue en silence. Deux autres pertes sont couvertes :
+  un fait hors sujet n'est jamais un doublon (assez de mots porteurs communs
+  exigés — « pas de carte de presse » ne peut plus être absorbé par un fait sur
+  un photographe), et une négation face à une affirmation est une
+  contradiction, pas une reformulation. `findSimilarMemoryFacts` ne renvoie
+  qu'un candidat : c'est la garde, pas la proximité de thème désignée par l'IA,
+  qui décide. La garde est appliquée aux **quatre**
   chemins d'écriture (`add_memory_fact`, `rememberFact`,
   `/api/memory/remember`, `persistExtractedFacts`).
 - **Un dédoublonnage n'est pas un succès** : `add_memory_fact` répond

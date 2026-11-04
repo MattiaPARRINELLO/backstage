@@ -33,10 +33,13 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setupToken = searchParams?.get("setupToken") ?? "";
-  // Code d'appairage : lien généré depuis un appareil déjà connecté
+  // Code d'appairage : généré depuis un appareil déjà connecté
   // (`/settings` → « Ajouter un appareil »), pour enregistrer ici une passkey
   // sans repasser par une session (impossible : aucune clé sur cet appareil).
-  const pairCode = searchParams?.get("pair") ?? "";
+  // Il arrive par le lien (`?pair=`) ou se saisit directement sur cet écran.
+  const [pairCode, setPairCode] = useState(searchParams?.get("pair") ?? "");
+  // Saisie du code à la main : on n'oblige pas à recopier l'URL entière.
+  const [codeInput, setCodeInput] = useState(searchParams?.get("pair") ?? "");
 
   const registerHeaders: Record<string, string> = {};
   if (setupToken) registerHeaders["x-setup-token"] = setupToken;
@@ -56,6 +59,10 @@ function LoginForm() {
   );
 
   useEffect(() => {
+    const headers: Record<string, string> = {};
+    if (setupToken) headers["x-setup-token"] = setupToken;
+    if (pairCode) headers["x-pair-code"] = pairCode;
+
     void fetch("/api/auth/session", { credentials: "same-origin" })
       .then((res) => res.json() as Promise<{ authenticated: boolean }>)
       .then((data) => {
@@ -65,7 +72,7 @@ function LoginForm() {
         }
         return fetch("/api/auth/passkey/register-options", {
           credentials: "same-origin",
-          headers: Object.keys(registerHeaders).length ? registerHeaders : undefined,
+          headers: Object.keys(headers).length ? headers : undefined,
         })
           .then(async (res) => {
             const data = (await res.json()) as { isFirstRegistration?: boolean; error?: string };
@@ -73,7 +80,11 @@ function LoginForm() {
               // Un code d'appairage invalide ou expiré est une impasse : le
               // dire, au lieu de basculer silencieusement sur la connexion.
               if (pairCode) {
-                setError(data.error ?? "Code d'appairage invalide ou expiré.");
+                setError(
+                  res.status === 401
+                    ? "Code d'appairage invalide ou expiré."
+                    : (data.error ?? "Code d'appairage refusé.")
+                );
                 setNeedsRegistration(false);
                 return;
               }
@@ -90,8 +101,7 @@ function LoginForm() {
           });
       })
       .catch(() => setNeedsRegistration(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
+  }, [router, pairCode, setupToken]);
 
   const completeAuth = useCallback(() => {
     setVerified(true);
@@ -187,6 +197,26 @@ function LoginForm() {
         ? "Configurer Face ID / Touch ID"
         : "Se connecter avec Face ID / Touch ID";
 
+  // Le champ de code n'a de sens que si une clé existe déjà sur un autre
+  // appareil (sinon « Se connecter » n'a rien à proposer) et qu'aucun code
+  // valide n'attend déjà la cérémonie.
+  const showCodeForm = !verified && needsRegistration !== null && !(pairCode && needsRegistration);
+
+  function handleCodeSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (status !== "idle" || verified) return;
+
+    const cleaned = codeInput.trim().toLowerCase();
+    if (cleaned.length < 4) {
+      setError("Code d'appairage trop court.");
+      return;
+    }
+
+    setError(null);
+    setNeedsRegistration(null); // passe l'anneau en « Vérification de la clé »
+    setPairCode(cleaned);
+  }
+
   return (
     <div className="relative z-10 flex min-h-dvh items-center justify-center px-5 py-12">
       <div className="w-full max-w-sm">
@@ -278,6 +308,38 @@ function LoginForm() {
             label
           )}
         </button>
+
+        {showCodeForm && (
+          <form onSubmit={handleCodeSubmit} className="mt-5 w-full">
+            <div className="flex items-center gap-2">
+              <div className="ui-field h-10 min-w-0 flex-1">
+                <input
+                  type="text"
+                  value={codeInput}
+                  onChange={(e) => setCodeInput(e.target.value)}
+                  placeholder="code d'appairage"
+                  aria-label="Code d'appairage"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  maxLength={12}
+                  className="ui-mono w-full min-w-0 bg-transparent text-center text-[var(--t-small)] uppercase tracking-[0.25em] text-[var(--text-1)] outline-none placeholder:normal-case placeholder:tracking-normal placeholder:text-[var(--text-3)]"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isBusy || codeInput.trim().length < 4}
+                className="ui-btn ui-btn--ghost h-10 shrink-0 px-4 text-[var(--t-small)]"
+              >
+                Utiliser
+              </button>
+            </div>
+            <p className="mt-2 text-[var(--t-micro)] leading-relaxed text-[var(--text-4)]">
+              Sur un appareil déjà connecté : Paramètres → Sécurité → Ajouter un appareil.
+            </p>
+          </form>
+        )}
 
         <p className="ui-mono mt-4 text-[var(--text-4)]">
           Face ID · Touch ID · Clé de sécurité

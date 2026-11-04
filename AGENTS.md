@@ -343,7 +343,8 @@ Ne jamais réintroduire Playwright ici : ça casse la prod standalone.
   plus de 6 h, est vide, ou si le dernier sync a échoué. Garde anti-concurrence
   dans `lib/storage/schedule.ts`.
 - Notifications : `checkScheduleNotifs()` envoie un push **1 h avant** chaque
-  cours (matière + salle + heure), anti-doublon dans `data/notified-courses.json`.
+  cours (matière + salle + heure), fermé au démarrage de la séance — registre
+  `data/live-notifs.json`, qui sert d'anti-doublon et de source pour la fermeture.
 - Chat : outil **lecture seule** `get_schedule` (`scope: today|week|next`,
   `subject` optionnel) — jamais dans `REQUIRE_CONFIRMATION`.
 - Daily brief : bloc « Cours du jour » + instruction de citer la salle du

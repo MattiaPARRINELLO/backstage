@@ -46,9 +46,10 @@ production** : `https://VOTRE-DOMAINE/api/auth/google/callback`.
 ./deploy.sh
 ```
 
-Le script bascule tout seul sur `main` (et, si `DEPLOY_AUTO_PULL=1`, fait un
-`git pull --ff-only`) : la prod ne reçoit que du code mergé. Il refuse de
-démarrer si l'arbre de travail n'est pas propre.
+Le script bascule tout seul sur `main`, fait un `git pull --ff-only`, puis
+démarre — la prod ne reçoit que du code mergé. Il refuse de démarrer si le pull
+échoue ou si l'arbre de travail n'est pas propre. Le pull se désactive avec
+`DEPLOY_AUTO_PULL=0`.
 
 Lancé depuis un **worktree** (T3 Code, `~/Documents/dev/…` n'étant pas le dossier
 courant), il se relance automatiquement dans le checkout principal — le seul à

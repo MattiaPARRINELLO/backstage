@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-vi.mock("./lib/session-edge", () => ({
+vi.mock("@/lib/session-edge", () => ({
   SESSION_COOKIE: "pb_session",
   verifyJwt: vi.fn(),
 }));
 
-import { proxy } from "./proxy";
-import { verifyJwt } from "./lib/session-edge";
+import { proxy } from "@/proxy";
+import { verifyJwt } from "@/lib/session-edge";
 
 function makeRequest(path: string, cookie?: string): NextRequest {
   const headers = new Headers();

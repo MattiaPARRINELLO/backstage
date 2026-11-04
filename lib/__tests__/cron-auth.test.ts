@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { isAuthorizedCron } from "./lib/cron-auth";
+import { isAuthorizedCron } from "@/lib/cron-auth";
 
 function makeRequest(secretHeader?: string, authHeader?: string): Request {
   const headers = new Headers();

@@ -195,8 +195,7 @@ Toujours importer depuis `@/lib/types`.
 ## Tests
 
 - **Vitest** (`environment: "node"`, alias `@` → racine) dans `lib/__tests__/`,
-  `app/actions/__tests__/`, `app/calendar/__tests__/`, `app/api/chat/__tests__/`,
-  plus `proxy.test.ts` et `cron-auth.test.ts` à la racine.
+  `app/actions/__tests__/`, `app/calendar/__tests__/`, `app/api/chat/__tests__/`.
 - Test dépendant du FS : mocker `process.cwd()` **puis** `await import()` le
   module storage. `lib/__tests__/__fs-mock-helper.ts` ne doit jamais importer de
   code projet (dépendances circulaires).

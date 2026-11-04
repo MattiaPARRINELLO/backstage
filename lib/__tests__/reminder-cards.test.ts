@@ -96,6 +96,17 @@ describe("cartes de rappel", () => {
     vi.useRealTimers();
   });
 
+  it("ne ressuscite pas un rappel oublie depuis des semaines", async () => {
+    // Cas reel : des rappels restes `pending` depuis des mois ne doivent pas
+    // apparaitre d'un coup au demarrage du serveur.
+    state.reminders = [
+      card({ id: "vieux", dueAt: new Date(at(14, 0) - 30 * 24 * 3_600_000).toISOString() }),
+    ];
+    vi.setSystemTime(new Date(at(13, 0)));
+    await checkReminders();
+    expect(sent).toHaveLength(0);
+  });
+
   it("ne poste rien plus d'une heure avant l'échéance", async () => {
     vi.setSystemTime(new Date(at(12, 59)));
     await checkReminders();

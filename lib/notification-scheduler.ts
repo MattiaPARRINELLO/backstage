@@ -15,7 +15,6 @@ let dailyBriefInterval: ReturnType<typeof setInterval> | null = null;
 const REMINDER_INTERVAL_MS = 60_000;
 const DAILY_BRIEF_HOUR = 7;
 const NOTIFIED_FILE = "notified-reminders.json";
-const NOTIFIED_COURSES_FILE = "notified-courses.json";
 
 // Focus mode actif : les notifications sont mises en silence. Les rappels et
 // relances restent en attente et seront envoyés après la fin de la session.
@@ -54,56 +53,61 @@ async function markReminderNotified(id: string): Promise<void> {
 
 const COURSE_LEAD_MIN = 30;
 
-// Notifications « live » (Android 16) : une notification promue reste épinglée
-// jusqu'à sa fin prévue. On garde l'échéance pour envoyer nous-mêmes la
-// fermeture, faute de quoi la puce resterait dans la barre d'état indéfiniment.
+// Notifications « live » (Android 16) : une carte promue reste épinglée jusqu'à
+// sa fin prévue. On garde donc l'échéance pour envoyer nous-mêmes la fermeture.
+//
+// Cycle d'un cours : postée à −30 min (« Cours dans 30 min »), elle est fermée
+// dès que le cours commence — une fois la séance entamée, elle n'apprend plus
+// rien. Le fichier ne sert qu'à savoir quoi fermer et à ne pas re-poster.
 const LIVE_NOTIFS_FILE = "live-notifs.json";
 
 interface LiveNotif {
   tag: string;
-  until: number;
+  subject: string;
+  place: string;
+  start: number;
 }
 
-async function trackLiveNotif(tag: string, until: number): Promise<void> {
-  try {
-    const { mutateJson } = await import("./storage-core");
-    await mutateJson<{ items: LiveNotif[] }>(LIVE_NOTIFS_FILE, { items: [] }, (data) => {
-      data.items = data.items.filter((i) => i.tag !== tag);
-      data.items.push({ tag, until });
-    });
-  } catch (err) {
-    void serverLog("scheduler", "error", "trackLiveNotif failed", err);
-  }
+async function readLiveNotifs(): Promise<LiveNotif[]> {
+  const { readJsonSafe } = await import("./storage");
+  const data = await readJsonSafe<{ items: LiveNotif[] }>(LIVE_NOTIFS_FILE, { items: [] });
+  return data.items ?? [];
 }
 
-/** Ferme les notifications en direct dont l'échéance est passée. */
-export async function clearEndedLiveNotifs(): Promise<void> {
-  try {
-    const { readJsonSafe } = await import("./storage");
-    const { mutateJson } = await import("./storage-core");
-    const now = Date.now();
-    const data = await readJsonSafe<{ items: LiveNotif[] }>(LIVE_NOTIFS_FILE, { items: [] });
-    const ended = data.items.filter((i) => i.until <= now);
-    if (ended.length === 0) return;
+async function writeLiveNotifs(mutator: (items: LiveNotif[]) => void): Promise<void> {
+  const { mutateJson } = await import("./storage-core");
+  await mutateJson<{ items: LiveNotif[] }>(LIVE_NOTIFS_FILE, { items: [] }, (data) => {
+    mutator(data.items);
+  });
+}
 
-    for (const item of ended) {
-      await sendPushToAll(
-        JSON.stringify({
-          title: "BACKSTAGE",
-          body: "",
-          tag: item.tag,
-          data: { type: "live", url: "/schedule" },
-          dismiss: true,
-        })
-      );
-    }
+function clock(ms: number): string {
+  return new Date(ms).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
 
-    await mutateJson<{ items: LiveNotif[] }>(LIVE_NOTIFS_FILE, { items: [] }, (inner) => {
-      inner.items = inner.items.filter((i) => i.until > now);
-    });
-  } catch (err) {
-    void serverLog("scheduler", "error", "clearEndedLiveNotifs failed", err);
-  }
+/** Payload de la carte « cours dans N min ». */
+function coursePayload(course: LiveNotif): string {
+  const start = clock(course.start);
+  const remainingMin = Math.max(0, Math.round((course.start - Date.now()) / 60_000));
+
+  return JSON.stringify({
+    title: `Cours dans ${remainingMin} min : ${course.subject}`,
+    body: [start, course.place].filter(Boolean).join(" — "),
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    tag: course.tag,
+    data: { type: "course", url: "/schedule" },
+    requireInteraction: true,
+    renotify: true,
+    silent: false,
+    timestamp: Date.now(),
+    vibrate: [300, 150, 300, 150, 300],
+    // APK Android : carte promue (Live Update), fermée au début du cours.
+    promoted: true,
+    criticalText: `Début ${start}`.slice(0, 28),
+    progress: Math.max(0, COURSE_LEAD_MIN - remainingMin),
+    progressMax: COURSE_LEAD_MIN,
+  });
 }
 
 // Le brief du jour est déclenché à la fois par le scheduler interne (7h) et par
@@ -142,60 +146,66 @@ async function markBriefSent(date: string): Promise<void> {
   }
 }
 
-/** Notifications "Cours dans 30 min" : matière + salle, déduites de l'EDT CESAR. */
+/** Cartes de cours : postées à −30 min, fermées dès que le cours commence. */
 export async function checkScheduleNotifs(): Promise<void> {
   try {
-    if (await isFocusActive()) return;
+    const now = Date.now();
     const courses = await getCourses();
+    const tracked = await readLiveNotifs();
+    const trackedTags = new Set(tracked.map((i) => i.tag));
+
+    // 1. Cours commencés (ou oubliés) : fermeture, même en mode focus — une
+    //    carte périmée ne doit pas rester dans la barre d'état.
+    const started = tracked.filter((i) => now >= i.start);
+    for (const item of started) {
+      await sendPushToAll(
+        JSON.stringify({
+          title: "BACKSTAGE",
+          body: "",
+          tag: item.tag,
+          data: { type: "live", url: "/schedule" },
+          dismiss: true,
+        })
+      );
+    }
+    if (started.length > 0) {
+      const startedTags = new Set(started.map((i) => i.tag));
+      await writeLiveNotifs((items) => {
+        for (let i = items.length - 1; i >= 0; i--) {
+          if (startedTags.has(items[i].tag)) items.splice(i, 1);
+        }
+      });
+    }
+
+    if (await isFocusActive()) return;
     if (!courses.length) return;
 
-    const now = Date.now();
-    const dueCourses = getCoursesStartingSoon(courses, COURSE_LEAD_MIN, now);
+    // 2. Cours à venir dans la fenêtre : une seule carte par séance.
+    const upcoming = getCoursesStartingSoon(courses, COURSE_LEAD_MIN, now);
+    for (const c of upcoming) {
+      const tag = `course-${courseNotifKey(c, COURSE_LEAD_MIN)}`;
+      if (trackedTags.has(tag)) continue;
 
-    if (!dueCourses.length) return;
-    const { readJsonSafe, writeJsonAtomic } = await import("./storage");
-    const notified = new Set(
-      (await readJsonSafe<{ keys: string[] }>(NOTIFIED_COURSES_FILE, { keys: [] })).keys
-    );
+      const item: LiveNotif = {
+        tag,
+        subject: c.subject,
+        place: [c.room, c.teacher].filter(Boolean).join(" — "),
+        start: c.start,
+      };
 
-    let dirty = false;
-    for (const c of dueCourses) {
-      const key = courseNotifKey(c, COURSE_LEAD_MIN);
-      if (notified.has(key)) continue;
+      const { sent } = await sendPushToAll(coursePayload(item));
+      if (!sent) continue;
 
-      const at = new Date(c.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-      const payload = JSON.stringify({
-        title: `Cours dans ${COURSE_LEAD_MIN} min : ${c.subject}`,
-        body: [at, c.room, c.teacher].filter(Boolean).join(" — ") || "Séance",
-        icon: "/icons/icon-192.png",
-        badge: "/icons/icon-192.png",
-        tag: `course-${key}`,
-        data: { type: "course", url: "/schedule" },
-        requireInteraction: true,
-        renotify: true,
-        silent: false,
-        timestamp: Date.now(),
-        vibrate: [300, 150, 300, 150, 300],
-        // APK Android : notification épinglée, affichée comme Live Update et
-        // retirée automatiquement au début du cours.
-        promoted: true,
-        criticalText: `${at} ${c.subject}`.slice(0, 28),
+      trackedTags.add(tag);
+      await writeLiveNotifs((items) => {
+        items.push(item);
       });
-      const { sent } = await sendPushToAll(payload);
-      if (sent) {
-        notified.add(key);
-        dirty = true;
-        await trackLiveNotif(`course-${key}`, c.start);
-        const { logActivity } = await import("./storage");
-        await logActivity("course_notified", `Cours à venir : ${c.subject}`, `${at} — ${c.room}`);
-      }
-    }
-    if (dirty) {
-      // purge les clés de séances passées (> 1 h après la fin)
-      const allKeys = new Set(
-        courses.filter((c) => c.end > now - 3 * 3_600_000).map((c) => courseNotifKey(c, COURSE_LEAD_MIN))
+      const { logActivity } = await import("./storage");
+      await logActivity(
+        "course_notified",
+        `Cours à venir : ${c.subject}`,
+        `${clock(c.start)} — ${c.room ?? ""}`
       );
-      await writeJsonAtomic("notified-courses.json", { keys: [...notified].filter((k) => allKeys.has(k)) });
     }
   } catch (err) {
     void serverLog("scheduler", "error", "checkScheduleNotifs failed", err);
@@ -489,13 +499,11 @@ export function startScheduler() {
   checkIntentions();
   checkScheduleNotifs();
   syncScheduleIfStale();
-  clearEndedLiveNotifs();
   reminderInterval = setInterval(() => {
     checkReminders();
     checkIntentions();
     checkScheduleNotifs();
     syncScheduleIfStale();
-    clearEndedLiveNotifs();
   }, REMINDER_INTERVAL_MS);
 
   startDailyBrief();

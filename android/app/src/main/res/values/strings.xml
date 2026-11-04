@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BACKSTAGE</string>
+    <string name="title_activity_main">BACKSTAGE</string>
+    <string name="package_name">com.personalbrain.backstage</string>
+    <string name="custom_url_scheme">backstage</string>
+
+    <string name="channel_default">Notifications</string>
+    <string name="channel_reminders">Rappels</string>
+    <string name="channel_courses">Cours</string>
+    <string name="channel_brief">Brief du jour</string>
+    <string name="channel_live">Suivi en direct</string>
+
+    <string name="channel_default_desc">Notifications generales de BACKSTAGE</string>
+    <string name="channel_reminders_desc">Rappels et relances, prioritaires</string>
+    <string name="channel_courses_desc">30 minutes avant chaque cours</string>
+    <string name="channel_brief_desc">Brief du matin</string>
+    <string name="channel_live_desc">Notifications persistantes : prochain cours, brief en cours</string>
+</resources>

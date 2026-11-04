@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug uniquement : autorise le HTTP en clair pour tester l'APK contre le
+     serveur de dev local (adb reverse tcp:3000). La release n'inclut pas ce
+     fichier et reste HTTPS strict. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:usesCleartextTraffic="true" />
+</manifest>

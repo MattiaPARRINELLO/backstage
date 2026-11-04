@@ -17,6 +17,7 @@ const PAIR_SCHEME = "backstage://pair";
 export async function createAndroidPairLink(): Promise<{
   code: string;
   deepLink: string;
+  androidIntent: string;
   expiresAt: string;
 }> {
   await requireSession();
@@ -29,7 +30,21 @@ export async function createAndroidPairLink(): Promise<{
   }
 
   const { code, expiresAt } = await createPairCode();
-  return { code, deepLink: `${PAIR_SCHEME}?code=${code}`, expiresAt };
+  return {
+    code,
+    deepLink: `${PAIR_SCHEME}?code=${code}`,
+    // Chrome Android n'ouvre pas toujours un schéma inconnu depuis un lien
+    // https ; la forme `intent://` est le chemin fiable vers l'app installée.
+    androidIntent: buildAndroidIntent(code),
+    expiresAt,
+  };
+}
+
+function buildAndroidIntent(code: string): string {
+  return (
+    `intent://pair?code=${encodeURIComponent(code)}` +
+    `#Intent;scheme=backstage;package=com.personalbrain.backstage;end`
+  );
 }
 
 export async function loadAndroidDevices(): Promise<{

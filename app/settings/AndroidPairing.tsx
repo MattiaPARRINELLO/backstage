@@ -17,7 +17,9 @@ import {
 export function AndroidPairing() {
   const [devices, setDevices] = useState<{ count: number; lastSeenAt: string | null } | null>(null);
   const [pairing, setPairing] = useState(false);
-  const [pair, setPair] = useState<{ code: string; deepLink: string; expiresAt: string } | null>(null);
+  const [pair, setPair] = useState<
+    { code: string; deepLink: string; androidIntent: string; expiresAt: string } | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -82,7 +84,10 @@ export function AndroidPairing() {
               {pair.code}
             </code>
           </div>
-          <a href={pair.deepLink} className="ui-btn ui-btn--primary h-10 px-4 text-[var(--t-small)]">
+          <a
+            href={pair.androidIntent}
+            className="ui-btn ui-btn--primary h-10 px-4 text-[var(--t-small)]"
+          >
             Ouvrir dans BACKSTAGE
           </a>
         </div>

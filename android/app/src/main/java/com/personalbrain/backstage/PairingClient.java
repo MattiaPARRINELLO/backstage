@@ -6,7 +6,10 @@ import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.messaging.FirebaseMessaging;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Appairage de l'appareil auprès du serveur.
@@ -16,6 +19,10 @@ import com.google.firebase.messaging.FirebaseMessaging;
  * puis transmis par le deep link {@code backstage://pair?code=...}. En échange
  * du code, le serveur renvoie un secret propre à l'appareil, conservé
  * localement et utilisé pour rafraîchir le jeton FCM.
+ *
+ * Le travail est volontairement **bloquant** et exécuté depuis
+ * {@link PairingService} : la MainActivity se ferme dès que le TWA est lancé,
+ * et un appairage lancé depuis l'activité était tué en même temps.
  */
 final class PairingClient {
     private static final String TAG = "BackstagePair";
@@ -23,35 +30,41 @@ final class PairingClient {
 
     private PairingClient() {}
 
-    /** Deep link d'appairage : mémorise le code puis tente l'enregistrement. */
+    /** Deep link d'appairage : mémorise le code puis planifie l'appairage. */
     static void pairAsync(Context ctx, String code) {
         if (code == null || code.isEmpty()) return;
         Context app = ctx.getApplicationContext();
         TokenStore.setPendingCode(app, code);
-        syncAsync(app);
+        PairingWorker.enqueue(app);
     }
 
-    /** Rejoue l'appairage (code en attente) ou rafraîchit le jeton (secret connu). */
+    /** Appelé par FCM quand un nouveau jeton est émis. */
     static void syncAsync(Context ctx) {
+        PairingWorker.enqueue(ctx.getApplicationContext());
+    }
+
+    /** Bloquant : à n'appeler que depuis un thread de service. */
+    static void syncBlocking(Context ctx) {
         final Context app = ctx.getApplicationContext();
         final String secret = TokenStore.secret(app);
         final String code = TokenStore.pendingCode(app);
         if (secret == null && (code == null || code.isEmpty())) return;
 
-        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
-            if (!task.isSuccessful() || task.getResult() == null) {
-                Log.w(TAG, "jeton FCM indisponible");
+        try {
+            String token = Tasks.await(FirebaseMessaging.getInstance().getToken(), 30, TimeUnit.SECONDS);
+            if (token == null || token.isEmpty()) {
+                Log.w(TAG, "jeton FCM vide");
                 return;
             }
-            String token = task.getResult();
             TokenStore.setToken(app, token);
-            new Thread(() -> register(app, token, code, secret)).start();
-        });
+            register(app, token, code, secret);
+        } catch (Exception e) {
+            Log.w(TAG, "jeton FCM indisponible : " + e.getClass().getSimpleName());
+        }
     }
 
     private static void register(Context app, String token, String code, String secret) {
-        try {
-            String body = secret != null
+        try {            String body = secret != null
                     ? "{\"token\":\"" + escape(token) + "\",\"secret\":\"" + escape(secret) + "\"}"
                     : "{\"token\":\"" + escape(token) + "\",\"code\":\"" + escape(code) + "\"}";
 
@@ -61,9 +74,9 @@ final class PairingClient {
                 if (newSecret != null) {
                     TokenStore.setSecret(app, newSecret);
                     TokenStore.clearPendingCode(app);
+                    toast(app, "Notifications activées");
                 }
                 Log.i(TAG, "appareil appairé");
-                toast(app, "Notifications activées");
             } else if (res.status == 401 || res.status == 400) {
                 TokenStore.clearPendingCode(app);
                 Log.w(TAG, "appairage refusé (" + res.status + ")");

@@ -93,7 +93,7 @@ describe("POST /api/demo", () => {
       status: 200,
       input: "Que dois-je préparer pour demain ?",
       response: "Charge tes batteries et tes cartes.",
-      model: "deepseek-v4-flash",
+      model: "deepseek-v4.1-flash",
       ip: "203.0.113.1",
     }));
   });

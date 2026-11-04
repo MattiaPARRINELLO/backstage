@@ -9,14 +9,21 @@ vi.mock("@/lib/storage", () => ({
 const mockMutateJson = vi.fn();
 vi.mock("@/lib/storage-core", () => ({ mutateJson: mockMutateJson }));
 
+const mockPeekAvailableModels = vi.fn<() => string[] | null>();
+const mockWarmModelCatalog = vi.fn();
+vi.mock("@/lib/ai-providers/models", () => ({
+  peekAvailableModels: mockPeekAvailableModels,
+  warmModelCatalog: mockWarmModelCatalog,
+}));
+
 const { getConfig, updateConfig, getConfigCachePath, clearConfigCache, getModel } = await import("@/lib/config");
 
 const defaultConfig = {
   models: {
-    general: "kimi-k2.6",
-    generalAlt: "deepseek-v4-flash",
+    general: "deepseek-v4.1-flash",
+    generalAlt: "deepseek-v4-pro",
     code: "kimi-k2.7-code",
-    titleModel: "deepseek-v4-flash",
+    titleModel: "deepseek-v4.1-flash",
   },
   llm: { temperature: 0.7, maxTokens: 4096 },
   features: { dailyBrief: true, webSearch: true },
@@ -27,6 +34,7 @@ describe("config", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearConfigCache();
+    mockPeekAvailableModels.mockReturnValue(null);
   });
 
   it("retourne la config par défaut quand le fichier n'existe pas", async () => {
@@ -82,7 +90,22 @@ describe("config", () => {
   it("getModel retourne general et generalAlt pour le contexte general", async () => {
     vi.mocked(readJsonSafe).mockResolvedValue({});
     const result = await getModel("general");
+    expect(result.primary).toBe("deepseek-v4.1-flash");
+    expect(result.alt).toBe("deepseek-v4-pro");
+  });
+
+  it("getModel remplace un modele configure disparu du provider", async () => {
+    vi.mocked(readJsonSafe).mockResolvedValue({ models: { general: "kimi-k2.6" } });
+    mockPeekAvailableModels.mockReturnValue(["deepseek-v4.1-flash", "deepseek-v4-pro"]);
+    const result = await getModel("general");
+    expect(result.primary).toBe("deepseek-v4.1-flash");
+  });
+
+  it("getModel garde le modele configure quand le catalogue est froid", async () => {
+    vi.mocked(readJsonSafe).mockResolvedValue({ models: { general: "kimi-k2.6" } });
+    mockPeekAvailableModels.mockReturnValue(null);
+    const result = await getModel("general");
     expect(result.primary).toBe("kimi-k2.6");
-    expect(result.alt).toBe("deepseek-v4-flash");
+    expect(mockWarmModelCatalog).toHaveBeenCalled();
   });
 });

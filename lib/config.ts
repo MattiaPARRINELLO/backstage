@@ -1,6 +1,7 @@
 import path from "path";
 import { readJsonSafe } from "./storage";
 import { mutateJson } from "./storage-core";
+import { peekAvailableModels, warmModelCatalog } from "./ai-providers/models";
 
 export interface AppConfig {
   models: {
@@ -27,10 +28,10 @@ const CONFIG_PATH = path.join(process.cwd(), "data", CONFIG_FILENAME);
 
 const defaultConfig: AppConfig = {
   models: {
-    general: "kimi-k2.6",
-    generalAlt: "deepseek-v4-flash",
+    general: "deepseek-v4.1-flash",
+    generalAlt: "deepseek-v4-pro",
     code: "kimi-k2.7-code",
-    titleModel: "deepseek-v4-flash",
+    titleModel: "deepseek-v4.1-flash",
   },
   llm: {
     temperature: 0.7,
@@ -103,10 +104,50 @@ export function clearConfigCache() {
   invalidateCache();
 }
 
+// Les identifiants de modeles du provider bougent (retrait, renommage) :
+// un modele configure qui n'existe plus doit etre remplace automatiquement
+// plutot que de faire echouer chaque appel IA (400 « Model is unavailable »).
+// On ne consulte que le catalogue deja en cache : jamais d'appel reseau sur
+// le chemin d'un tour de chat. Cache froid -> on garde le modele configure et
+// on rafraichit en arriere-plan pour le tour suivant.
+async function resolveAvailableModel(
+  preferred: string,
+  context: "general" | "code"
+): Promise<string> {
+  const available = peekAvailableModels();
+  if (!available) {
+    warmModelCatalog();
+    return preferred;
+  }
+  if (available.includes(preferred)) return preferred;
+
+  const replacement =
+    (context === "code" ? available.find((m) => m.includes("code")) : undefined) ??
+    available[0] ??
+    preferred;
+  if (replacement !== preferred) {
+    console.warn(
+      `[config] Modele indisponible chez le provider (${preferred}), repli sur ${replacement}`
+    );
+  }
+  return replacement;
+}
+
 export async function getModel(context: "general" | "code"): Promise<{ primary: string; alt: string }> {
   const config = await getConfig();
   if (context === "code") {
-    return { primary: config.models.code, alt: config.models.code };
+    const model = await resolveAvailableModel(config.models.code, "code");
+    return { primary: model, alt: model };
   }
-  return { primary: config.models.general, alt: config.models.generalAlt };
+  const [primary, alt] = await Promise.all([
+    resolveAvailableModel(config.models.general, "general"),
+    resolveAvailableModel(config.models.generalAlt, "general"),
+  ]);
+  return { primary, alt };
+}
+
+// Modele economique des taches internes (titres de conversation, resumes).
+export async function getTitleModel(): Promise<string> {
+  const config = await getConfig();
+  return resolveAvailableModel(config.models.titleModel, "general");
 }

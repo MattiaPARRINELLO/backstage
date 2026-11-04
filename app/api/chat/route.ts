@@ -12,7 +12,7 @@ import {
   appendAssistantTurn,
 } from "@/lib/storage";
 import { createRun, publish, subscribe, finishRun } from "@/lib/chat-runs";
-import { getModel } from "@/lib/config";
+import { getModel, getTitleModel } from "@/lib/config";
 import { DEFAULT_SESSION_ID } from "@/lib/ai-providers/config";
 import type { ChatMessage, MemoryCategory } from "@/lib/types";
 import { getSession } from "@/lib/session";
@@ -290,7 +290,7 @@ export async function POST(request: NextRequest) {
       try {
         const { chatCompletion } = await import("@/lib/ai-providers");
         const result = await chatCompletion(
-          "deepseek-v4-flash",
+          await getTitleModel(),
           [
             { role: "system", content: "Tu résumes des messages en conservant TOUTES les informations utiles : dates, horaires, lieux, noms, actions demandées, numéros. Sois concis mais complet. Ne liste pas — raconte de façon fluide." },
             { role: "user", content: "Résumé conservant tous les détails pratiques :\n\n" + m.content },

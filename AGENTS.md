@@ -372,8 +372,19 @@ Update). Le canal Discord a été supprimé.
 - **Démarrage** : le scheduler ne dépend **pas** de VAPID. Il tournait avant
   uniquement si les clés web étaient présentes, ce qui éteignait aussi les
   notifications natives d'un déploiement APK-seul.
-- **Live Updates (APK)** : `promoted: true` + `criticalText` épinglent la
-  notification (API 36). Les cours sont promus et fermés par
+- **Live Updates (Android 16)** : un message avec `promoted: true` devient une
+  vraie Live Update (carte promue en haut du tiroir, barre de progression, puce
+  dans la barre d'état). La recette exacte, validée sur un S24 sous Android 16 :
+  `setOngoing(true)` + `setOnlyAlertOnce(true)` + `setShortCriticalText()` +
+  `setColor()` + `ProgressStyle` avec **un segment coloré**, plus la demande de
+  promotion via l'extra `android.requestPromotedOngoing` **et**
+  `notification.flags |= FLAG_PROMOTED_ONGOING`. `Builder.setFlag()` seul ne
+  suffit pas : le drapeau n'arrive pas dans la notification postée (constaté en
+  comparant `dumpsys notification`). Le système peut la refuser selon l'app-op
+  `POST_PROMOTED_NOTIFICATIONS` ; dans ce cas elle redevient une notification
+  persistante classique, jamais perdue. Vérifier la promotion :
+  `adb logcat | grep "live update"` (`promotable=true`) et `dumpsys
+  notification | grep PROMOTED_ONGOING`. Les cours sont promus et fermés par
   `clearEndedLiveNotifs()` à l'heure de début (`data/live-notifs.json`) ; un
   message `dismiss: true` ferme la notification du `tag` correspondant.
 - **Appairage APK** : le TWA vit dans Chrome, l'APK n'a donc pas le cookie de

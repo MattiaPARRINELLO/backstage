@@ -114,9 +114,14 @@ purgé automatiquement au premier envoi en échec (`UNREGISTERED`).
   restent dans le tiroir jusqu'à ce qu'on les ferme. Les rappels et cours sont en
   plus `ongoing` (non balayables) le temps de l'évènement.
 - **Live Updates (Android 16)** : un message avec `promoted: true` pose
-  `FLAG_PROMOTED_ONGOING`, un `ProgressStyle` et un texte critique court. Le
-  système décide de la promotion (selon version, OEM et réglages) ; sans
-  promotion la notification redevient une notification persistante classique.
+  `FLAG_PROMOTED_ONGOING` + l'extra `android.requestPromotedOngoing`, un
+  `ProgressStyle` avec segment coloré, `setOnlyAlertOnce(true)` et un texte
+  critique court → carte promue en haut du tiroir, barre de progression et puce
+  dans la barre d'état. `Builder.setFlag()` seul ne suffit pas : le drapeau
+  n'arrive pas dans la notification postée (vérifié dans `dumpsys
+  notification`), il faut aussi forcer `notification.flags`. Si le système
+  refuse la promotion (app-op `POST_PROMOTED_NOTIFICATIONS`), la notification
+  redevient une notification persistante classique — jamais perdue.
   Les cours sont promus, et fermés automatiquement à l'heure de début par
   `clearEndedLiveNotifs()` (`data/live-notifs.json`).
 - **Clic** : ouvre le TWA sur le `url` du message (`/schedule`, `/reminders`…).
@@ -136,6 +141,10 @@ et éventuellement `promoted` / `criticalText` / `progress` / `progressMax`.
   depuis elle est tué. L'appairage passe donc par WorkManager.
 - `setOngoing(true)` sur une notification promue est **requis**, sinon le
   système retire la puce.
+- La promotion se demande en **deux endroits** : l'extra
+  `android.requestPromotedOngoing` (clé non exposée par le SDK) **et**
+  `notification.flags |= FLAG_PROMOTED_ONGOING` après `build()`.
+  `Builder.setFlag()` seul est silencieusement ignoré.
 - Un `<bitmap>` dans un `layer-list` ne peut pas pointer une icône adaptative
   (crash au démarrage) : utiliser `android:drawable`.
 - Le TWA exige Chrome ; sans navigateur compatible, l'APK ne peut pas afficher

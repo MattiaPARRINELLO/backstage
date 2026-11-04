@@ -45,7 +45,10 @@ Mono-utilisateur, auth par passkey, données en JSON local.
 | Icons      | `lucide-react`                                                    |
 | Markdown   | `react-markdown` + `remark-gfm`                                   |
 
-**Pas de Capacitor** — supprimé, le projet est PWA uniquement.
+**Pas de Capacitor** — supprimé. L'app native est un **TWA** (Trusted Web
+Activity) + module FCM, dans `android/` : Chrome affiche `brain.mprnl.fr`, donc
+passkeys et session fonctionnent sans portage. Voir `docs/android-apk.md`.
+Ne jamais réintroduire Capacitor : les passkeys WebAuthn y sont cassées.
 
 ---
 
@@ -63,6 +66,7 @@ Mono-utilisateur, auth par passkey, données en JSON local.
 | Tests E2E        | `bun run test:e2e`         |
 | Bundle analyzer  | `bun run analyze`          |
 | Cron rappels     | `bun run cron:reminders`   |
+| APK Android      | `cd android && ./gradlew :app:assembleRelease` |
 | Cron daily brief | `bun run cron:daily-brief` |
 | Reset passkey    | `bun run reset:passkey`    |
 | Setup local      | `bun run setup`            |
@@ -117,6 +121,8 @@ lib/
   __tests__/        tests unitaires
 e2e/                specs Playwright (helpers, global-setup, projets no-auth/chromium)
 scripts/            cron-scheduler, reset-passkey, cesar-smoke, scripts de QA/screenshots
+android/            APK = TWA (Chrome) + notifications FCM natives (Gradle/Java)
+                    → voir docs/android-apk.md, jamais de WebView de secours
 ```
 
 ### Pages particulières
@@ -189,6 +195,10 @@ Matcher : tout sauf `_next/static`, `_next/image`, `assets`, `icons`, `images`,
   `/install.sh` (script d'installation en une commande, `curl … | bash`)
 - API : `/api/auth`, `/api/cron`, `/api/push`, `/api/reminders/pending`
 - Fichiers racine : `.js`, `.json`, `.ico`, `.png`, `.svg`, `.webp`, `.txt`
+
+➡️ `/.well-known/assetlinks.json` (vérification TWA) est public par la règle
+`.json` ; il est servi par une réécriture vers `app/api/assetlinks/route.ts`
+(cf. `next.config.ts`).
 
 **Comportement sans session valide** :
 
@@ -332,8 +342,9 @@ Ne jamais réintroduire Playwright ici : ça casse la prod standalone.
 - Sync automatique : `syncScheduleIfStale()` (notification-scheduler) si l'EDT a
   plus de 6 h, est vide, ou si le dernier sync a échoué. Garde anti-concurrence
   dans `lib/storage/schedule.ts`.
-- Notifications : `checkScheduleNotifs()` envoie un push **30 min avant** chaque
-  cours (matière + salle + heure), anti-doublon dans `data/notified-courses.json`.
+- Notifications : `checkScheduleNotifs()` envoie un push **1 h avant** chaque
+  cours (matière + salle + heure), fermé au démarrage de la séance — registre
+  `data/live-notifs.json`, qui sert d'anti-doublon et de source pour la fermeture.
 - Chat : outil **lecture seule** `get_schedule` (`scope: today|week|next`,
   `subject` optionnel) — jamais dans `REQUIRE_CONFIRMATION`.
 - Daily brief : bloc « Cours du jour » + instruction de citer la salle du
@@ -341,12 +352,15 @@ Ne jamais réintroduire Playwright ici : ça casse la prod standalone.
 
 ### Notifications push (`lib/notification-scheduler.ts`)
 
-Canal unique : **web push** (`lib/send-push.ts` + `lib/push-subscriptions.ts`,
-VAPID). Le payload JSON est rendu par `public/sw.js` (`push` →
-`showNotification`). Le canal Discord (DMs du bot, cartes `next/og`, bot
-conversationnel) a été **supprimé** — un seul appareil suffit.
+Deux canaux, un seul point d'envoi : **web push** (`lib/send-push.ts` +
+`lib/push-subscriptions.ts`, VAPID) pour la PWA, et **FCM** (`lib/fcm.ts` +
+`lib/fcm-devices.ts`) pour l'APK Android. `sendPushToAll(payload)` alimente les
+deux avec le même JSON ; une panne FCM ne bloque jamais le web push. Le payload
+web est rendu par `public/sw.js` ; côté APK il est **data-only** et c'est
+`Notifications.java` qui construit la notification (canal, persistance, Live
+Update). Le canal Discord a été supprimé.
 
-- **Événements** : cours (`checkScheduleNotifs`, −30 min), rappels
+- **Événements** : cours (`checkScheduleNotifs`, −60 min), rappels
   (`checkReminders`), relances (`checkIntentions`), brief du jour
   (`triggerDailyBrief`). Tous passent par `sendPushToAll(payload)`.
 - **Urgence** : toutes les notifs sont envoyées en `urgency: "high"` (livraison
@@ -354,9 +368,43 @@ conversationnel) a été **supprimé** — un seul appareil suffit.
   (`lib/send-push.ts`). Côté payload, `requireInteraction`, `renotify`,
   `silent: false`, `timestamp` et une vibration marquée les rendent persistantes
   et visibles sur le téléphone. `renotify` **exige** un `tag` (toujours fourni).
-- **`sent`** est vrai dès qu'un appareil abonné a reçu le push — sinon un rappel
-  sans appareil abonné serait retenté toutes les 60 s indéfiniment.
-- **Démarrage** : le scheduler ne tourne que si les clés VAPID sont présentes.
+- **`sent`** est vrai dès qu'un appareil abonné (web **ou** natif) a reçu le
+  push — sinon un rappel serait retenté toutes les 60 s indéfiniment.
+- **Démarrage** : le scheduler ne dépend **pas** de VAPID. Il tournait avant
+  uniquement si les clés web étaient présentes, ce qui éteignait aussi les
+  notifications natives d'un déploiement APK-seul.
+- **Live Updates (Android 16)** : un message avec `promoted: true` devient une
+  vraie Live Update (carte promue en haut du tiroir, barre de progression, puce
+  dans la barre d'état). La recette exacte, validée sur un S24 sous Android 16 :
+  `setOngoing(true)` + `setOnlyAlertOnce(true)` + `setShortCriticalText()` +
+  `setColor()` + `ProgressStyle` avec **un segment coloré**, plus la demande de
+  promotion via l'extra `android.requestPromotedOngoing` **et**
+  `notification.flags |= FLAG_PROMOTED_ONGOING`. `Builder.setFlag()` seul ne
+  suffit pas : le drapeau n'arrive pas dans la notification postée (constaté en
+  comparant `dumpsys notification`). Le système peut la refuser selon l'app-op
+  `POST_PROMOTED_NOTIFICATIONS` ; dans ce cas elle redevient une notification
+  persistante classique, jamais perdue. Vérifier la promotion :
+  `adb logcat | grep "live update"` (`promotable=true`) et `dumpsys
+  notification | grep PROMOTED_ONGOING`. Les cours sont promus : carte postée à
+  1 h avant, fermée dès que le cours commence (`data/live-notifs.json` — une fois
+  la séance entamée elle n'apprend plus rien) ; un message `dismiss: true`
+  ferme la notification du `tag` correspondant. Règle verrouillée par
+  `lib/__tests__/course-notifications.test.ts`.
+- **Rappels** : même règle que les cours — carte promue postée 1 h avant
+  l'échéance (`REMINDER_LEAD_MIN`), fermée par `dismissReminderCard(id)` dès que
+  le rappel est fait, supprimé ou reporté (`app/actions/reminders.ts`,
+  `/api/reminders/[id]/done`, `/api/reminders/[id]/snooze`), ou quand un tick
+  constate qu'il n'est plus `pending` (sync Microsoft, autre client). Le même
+  registre `data/live-notifs.json` porte cours **et** rappels (`kind`).
+  Attention : le canal Android d'une carte est celui de son type — un rappel
+  sonne, il n'est pas silencieux comme le canal `live`. Tests :
+  `lib/__tests__/reminder-cards.test.ts`.
+- **Appairage APK** : le TWA vit dans Chrome, l'APK n'a donc pas le cookie de
+  session. `app/actions/push.ts` génère un code à usage unique (10 min) →
+  `backstage://pair?code=…` → `app/api/push/fcm/pair` renvoie un secret
+  d'appareil, stocké **haché** (`data/fcm-devices.json`). Ne jamais remplacer ça
+  par un secret d'appairage partagé dans l'APK : il ouvrirait les notifications
+  privées à quiconque l'extrait.
 - **Anti-doublon du brief** : le cron cPanel (`0 7 * * *`) et le scheduler
   interne visent la même minute ; `triggerDailyBrief` n'envoie qu'une fois par
   jour (`data/notified-briefs.json`, 7 jours d'historique) sauf source
@@ -486,8 +534,9 @@ Ré-exporte `export *` des 14 domaines + `./web`, mais de `storage-core` seuleme
 ### Fichiers data/
 
 `accreditations` · `activity` · `chat-history` · `concerts` · `config` ·
-`consent` · `demo-calls` · `emails` · `gallery` · `intentions` · `leetcode` · `memory` ·
-`notified-briefs` · `notified-courses` · `notified-reminders` · `photo-shoots` · `push-subscriptions` ·
+`consent` · `demo-calls` · `emails` · `fcm-devices` · `fcm-pair-codes` · `gallery` ·
+`intentions` · `leetcode` · `live-notifs` · `memory` ·
+`notified-briefs` · `photo-shoots` · `push-subscriptions` ·
 `reminders` · `schedule` · `server-cache` · `users` · `watch-later`
 
 Tokens OAuth : `calendar-token` · `gmail-token` · `microsoft-todo-token` ·
@@ -630,7 +679,8 @@ avec AUTH_SECRET aléatoire et VAPID vides).
 (enregistrement passkey initial) · `OPENWEATHERMAP_API_KEY` ·
 `BRAVE_SEARCH_API_KEY` · `VAPID_SUBJECT` / `VAPID_PRIVATE_KEY` /
 `NEXT_PUBLIC_VAPID_PUBLIC_KEY` · `CRON_BASE_URL` · `ANALYZE` · `CESAR_BASE` (défaut `https://cesar.emineo-education.fr`) ·
-`GOOGLE_TESTING_EXPIRY` (`"true"` uniquement si projet Google en mode Testing : réactive l'alerte d'âge ~7 j, sinon seul un refresh échoué déclenche « à reconnecter »)
+`GOOGLE_TESTING_EXPIRY` (`"true"` uniquement si projet Google en mode Testing : réactive l'alerte d'âge ~7 j, sinon seul un refresh échoué déclenche « à reconnecter ») ·
+`ANDROID_CERT_SHA256` (empreinte de la clé de signature APK servie dans `assetlinks.json` ; défaut = clé release du dépôt)
 
 Modèle complet : `.deploy.env.example`.
 
@@ -679,6 +729,7 @@ l'URL complète (`/v1/chat/completions`), le SDK **Anthropic** ajoute lui-même
 | `README.md`  | présentation, install, structure  | ✅                                                  |
 | `AGENTS.md`  | ce fichier                        | ✅                                                  |
 | `docs/self-hosting.md` | auto-hébergement (Docker, vars, HTTPS) | ✅                              |
+| `docs/android-apk.md` | APK TWA + notifications natives (build, signature, appairage) | ✅                    |
 | `docs/deploy-cpanel.md` | déploiement mutualisé + crontab  | ✅                                                 |
 | `DESIGN.md`  | système réel : tokens, typo, composants `.ui-*`, motion, décisions et points ouverts | ✅ |
 | `docs/app-refonte.md` | plan de migration, état de chaque phase | ✅ |

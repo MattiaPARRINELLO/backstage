@@ -1,0 +1,9 @@
+# Secrets locaux du projet Android : jamais commités.
+keystore/
+local.properties
+app/google-services.json
+build/
+.gradle/
+*.jks
+*.keystore
+app/build/

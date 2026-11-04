@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { dismissReminderCard } from "@/lib/notification-scheduler";
 import { updateReminder } from "@/lib/storage";
 import { requireSession } from "@/lib/session";
 
@@ -11,5 +12,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   now.setMinutes(now.getMinutes() + 15);
   const r = await updateReminder(id, { dueAt: now.toISOString(), status: "snoozed" });
   if (!r) return NextResponse.json({ error: "Rappel introuvable" }, { status: 404 });
+  await dismissReminderCard(id);
   return NextResponse.json({ ok: true });
 }

@@ -124,7 +124,7 @@ export default function SchedulePage() {
           <PageHeader
             eyebrow="Emploi du temps"
             title="Ma semaine"
-            description="Cours CESAR synchronisés automatiquement (toutes les 6 h) — notifications 30 min avant, salle incluse."
+            description="Cours CESAR synchronisés automatiquement (toutes les 6 h) — notifications 1 h avant, salle incluse."
             actions={
               <div className="flex items-center gap-1.5">
                 <Button
@@ -275,7 +275,7 @@ export default function SchedulePage() {
               {totalWeek > 0 && (
                 <p className="flex items-center gap-1.5 mt-6 text-[length:var(--t-small)] text-[var(--text-3)]">
                   <CalendarClock className="w-3.5 h-3.5" />
-                  Notification push 30 min avant chaque cours, avec la salle.
+                  Notification push 1 h avant chaque cours, avec la salle.
                 </p>
               )}
             </>

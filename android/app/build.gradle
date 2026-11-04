@@ -1,0 +1,71 @@
+apply plugin: "com.android.application"
+apply plugin: "com.google.gms.google-services"
+
+import java.util.Properties
+
+// La clé de signature n'est jamais commitée (voir android/.gitignore).
+def keystoreProps = new Properties()
+def keystoreFile = file("../keystore/keystore.properties")
+if (keystoreFile.exists()) {
+    keystoreFile.withInputStream { keystoreProps.load(it) }
+}
+
+android {
+    namespace "com.personalbrain.backstage"
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "com.personalbrain.backstage"
+        minSdk 26
+        targetSdk 36
+        versionCode 1
+        versionName "1.0.0"
+        // Surchargeable pour tester contre un serveur local :
+        // ./gradlew assembleDebug -PbaseUrl=http://localhost:3000
+        buildConfigField "String", "BASE_URL", "\"${project.findProperty("baseUrl") ?: "https://brain.mprnl.fr"}\""
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    signingConfigs {
+        release {
+            if (keystoreFile.exists()) {
+                storeFile file("../keystore/${keystoreProps["storeFile"]}")
+                storePassword keystoreProps["storePassword"]
+                keyAlias keystoreProps["keyAlias"]
+                keyPassword keystoreProps["keyPassword"]
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+        debug {
+            // Même clé que la release : un APK de test a donc la même empreinte
+            // SHA-256 et peut être vérifié par assetlinks.json.
+            signingConfig keystoreFile.exists() ? signingConfigs.release : null
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation "androidx.core:core:1.15.0"
+    implementation "androidx.browser:browser:1.8.0"
+    implementation platform("com.google.firebase:firebase-bom:33.7.0")
+    implementation "com.google.firebase:firebase-messaging"
+    implementation "androidx.work:work-runtime:2.10.0"
+}

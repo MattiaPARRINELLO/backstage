@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { dismissReminderCard } from "@/lib/notification-scheduler";
 import { revalidatePath } from "next/cache";
 import { updateReminder } from "@/lib/storage";
 import { pushReminderUpdateToMicrosoft } from "@/lib/reminder-sync";
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const r = await updateReminder(id, { status: "done", notifiedAt: new Date().toISOString() });
   if (!r) return NextResponse.json({ error: "Rappel introuvable" }, { status: 404 });
   await pushReminderUpdateToMicrosoft(r);
+  await dismissReminderCard(id);
   revalidatePath("/reminders");
   return NextResponse.json({ ok: true });
 }

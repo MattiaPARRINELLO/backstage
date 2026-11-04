@@ -12,6 +12,7 @@ import {
   logActivity,
 } from "@/lib/storage";
 import type { Reminder, RemindersData } from "@/lib/types";
+import { dismissReminderCard } from "@/lib/notification-scheduler";
 import {
   pushNewReminderToMicrosoft,
   pushReminderUpdateToMicrosoft,
@@ -96,7 +97,11 @@ export async function removeReminder(id: string): Promise<boolean> {
   const target = data.reminders.find((r) => r.id === id);
   if (target) await pushReminderDeleteToMicrosoft(target);
   const ok = await deleteReminder(id);
-  if (ok) await logActivity("reminder_deleted", "Rappel supprimé", id);
+  if (ok) {
+    await logActivity("reminder_deleted", "Rappel supprimé", id);
+    // La carte de notification n'a plus de raison d'être.
+    await dismissReminderCard(id);
+  }
   revalidatePath("/reminders");
   return ok;
 }
@@ -111,6 +116,9 @@ export async function markReminderStatus(
   if (!parsedStatus.success) throw new Error("Statut invalide");
   const r = await updateReminder(id, { status: parsedStatus.data });
   if (r) await pushReminderUpdateToMicrosoft(r);
+  // Fait / reporté : la carte disparaît (elle sera repostée si le rappel revient
+  // en attente plus tard).
+  if (r && parsedStatus.data !== "pending") await dismissReminderCard(id);
   revalidatePath("/reminders");
   return r;
 }

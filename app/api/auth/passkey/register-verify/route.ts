@@ -3,19 +3,30 @@ import { verifyRegistrationResponse } from "@simplewebauthn/server";
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import { getRpID, getOrigin, saveCredential, hasCredentials, markSetupConsumed, isOpenBootstrapAllowed } from "@/lib/auth";
 import { consumeChallenge, createSession, getSession } from "@/lib/session";
+import { consumePasskeyPairCode } from "@/lib/passkey-pairing";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as {
     response: unknown;
     setupToken?: string;
+    pairCode?: string;
   };
 
+  const challenge = await consumeChallenge();
+  if (!challenge) {
+    return NextResponse.json({ error: "Challenge expire ou invalide" }, { status: 400 });
+  }
+
   // Même garde que register-options : l'ajout d'une passkey à un compte déjà
-  // configuré exige une session active (anti prise de contrôle).
+  // configuré exige une session active (anti prise de contrôle), ou un code
+  // d'appairage à usage unique généré depuis un appareil déjà connecté.
+  //
+  // Le challenge est consommé avant le code d'appairage : un onglet resté
+  // ouvert ne doit pas brûler un code encore valable.
   const alreadyRegistered = await hasCredentials();
   if (alreadyRegistered) {
     const session = await getSession();
-    if (!session) {
+    if (!session && !(await consumePasskeyPairCode(body.pairCode ?? ""))) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
   } else if (process.env.SETUP_TOKEN) {
@@ -43,11 +54,6 @@ export async function POST(request: NextRequest) {
       },
       { status: 503 }
     );
-  }
-
-  const challenge = await consumeChallenge();
-  if (!challenge) {
-    return NextResponse.json({ error: "Challenge expire ou invalide" }, { status: 400 });
   }
 
   const rpID = getRpID(request);

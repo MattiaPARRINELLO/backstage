@@ -33,6 +33,14 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setupToken = searchParams?.get("setupToken") ?? "";
+  // Code d'appairage : lien généré depuis un appareil déjà connecté
+  // (`/settings` → « Ajouter un appareil »), pour enregistrer ici une passkey
+  // sans repasser par une session (impossible : aucune clé sur cet appareil).
+  const pairCode = searchParams?.get("pair") ?? "";
+
+  const registerHeaders: Record<string, string> = {};
+  if (setupToken) registerHeaders["x-setup-token"] = setupToken;
+  if (pairCode) registerHeaders["x-pair-code"] = pairCode;
 
   const [status, setStatus] = useState<"idle" | "loading" | "registering" | "authenticating">("idle");
   const [needsRegistration, setNeedsRegistration] = useState<boolean | null>(null);
@@ -57,11 +65,18 @@ function LoginForm() {
         }
         return fetch("/api/auth/passkey/register-options", {
           credentials: "same-origin",
-          headers: setupToken ? { "x-setup-token": setupToken } : undefined,
+          headers: Object.keys(registerHeaders).length ? registerHeaders : undefined,
         })
           .then(async (res) => {
             const data = (await res.json()) as { isFirstRegistration?: boolean; error?: string };
             if (!res.ok || data.error) {
+              // Un code d'appairage invalide ou expiré est une impasse : le
+              // dire, au lieu de basculer silencieusement sur la connexion.
+              if (pairCode) {
+                setError(data.error ?? "Code d'appairage invalide ou expiré.");
+                setNeedsRegistration(false);
+                return;
+              }
               // 401 = une passkey existe déjà mais la session est expirée :
               // on bascule sur le flux d'authentification (le bouton « Se connecter »).
               if (res.status === 401) {
@@ -71,7 +86,7 @@ function LoginForm() {
               setError(data.error ?? `Impossible de vérifier l'état de l'enregistrement (${res.status}).`);
               return;
             }
-            setNeedsRegistration(data.isFirstRegistration ?? false);
+            setNeedsRegistration(pairCode ? true : (data.isFirstRegistration ?? false));
           });
       })
       .catch(() => setNeedsRegistration(false));
@@ -93,7 +108,7 @@ function LoginForm() {
     try {
       const optionsRes = await fetch("/api/auth/passkey/register-options", {
         credentials: "same-origin",
-        headers: setupToken ? { "x-setup-token": setupToken } : undefined,
+        headers: Object.keys(registerHeaders).length ? registerHeaders : undefined,
       });
       const optionsData = (await optionsRes.json()) as { options: PublicKeyCredentialCreationOptionsJSON };
       const attestation = await startRegistration({ optionsJSON: optionsData.options });
@@ -101,7 +116,11 @@ function LoginForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ response: attestation, setupToken: setupToken || undefined }),
+        body: JSON.stringify({
+          response: attestation,
+          setupToken: setupToken || undefined,
+          pairCode: pairCode || undefined,
+        }),
       });
       const verifyData = (await verifyRes.json()) as { verified?: boolean; error?: string };
       if (verifyData.verified) {
@@ -162,9 +181,11 @@ function LoginForm() {
   const isBusy = status !== "idle" || verified;
   const label = needsRegistration === null
     ? "Chargement…"
-    : needsRegistration
-      ? "Configurer Face ID / Touch ID"
-      : "Se connecter avec Face ID / Touch ID";
+    : pairCode && needsRegistration
+      ? "Appairer cet appareil"
+      : needsRegistration
+        ? "Configurer Face ID / Touch ID"
+        : "Se connecter avec Face ID / Touch ID";
 
   return (
     <div className="relative z-10 flex min-h-dvh items-center justify-center px-5 py-12">

@@ -54,4 +54,29 @@ describe("hasNewInformation — garde anti-perte du dedoublonnage", () => {
   it("un fait existant vide laisse toujours passer le candidat", () => {
     expect(hasNewInformation("N'importe quoi", "")).toBe(true);
   });
+
+  it("un fait hors sujet n'est pas absorbe par le fait le plus proche", () => {
+    // Le cas reel : « pas de carte de presse » a ete absorbe par un fait sur
+    // Samuel / Bleu Citron, que le modele avait designe comme le plus proche.
+    expect(
+      hasNewInformation("Pas de carte de presse", "Samuel, photographe pour Bleu Citron")
+    ).toBe(true);
+    expect(hasNewInformation("Pas de carte de presse", "Travaille avec Rapstar")).toBe(true);
+    expect(hasNewInformation("Dort mal en semaine", "Est photographe de concert")).toBe(true);
+  });
+
+  it("une negation face a une affirmation est une contradiction, pas un doublon", () => {
+    expect(hasNewInformation("Pas de carte de presse", "A une carte de presse")).toBe(true);
+    expect(hasNewInformation("Ne travaille jamais avec Bleu Citron", "Travaille avec Bleu Citron")).toBe(
+      true
+    );
+    // Meme polarite : la reformulation reste un doublon.
+    expect(hasNewInformation("N'a pas de carte de presse", "Pas de carte de presse")).toBe(false);
+  });
+
+  it("une reformulation de meme sujet reste un doublon", () => {
+    expect(
+      hasNewInformation("Photographie pour Bleu Citron", "Photographe pour Bleu Citron")
+    ).toBe(false);
+  });
 });

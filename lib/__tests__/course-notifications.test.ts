@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Le planning des cartes de cours est une règle métier précise : affichée
-// 30 min avant la séance, fermée dès que le cours commence, une seule fois par
+// 1 h avant la séance, fermée dès que le cours commence, une seule fois par
 // cours. Un bug ici se voit en production (carte fantôme toute la journée ou
 // notification absente), d'où ce test avec horloge simulée.
 const store = new Map<string, unknown>();
@@ -82,27 +82,27 @@ describe("cartes de cours", () => {
     vi.useRealTimers();
   });
 
-  it("ne poste rien plus de 30 min avant", async () => {
-    vi.setSystemTime(new Date(at(8, 29)));
+  it("ne poste rien plus d'une heure avant", async () => {
+    vi.setSystemTime(new Date(at(7, 59)));
     await checkScheduleNotifs();
     expect(sent).toHaveLength(0);
   });
 
-  it("poste à −30 min, une seule fois", async () => {
-    vi.setSystemTime(new Date(at(8, 30)));
+  it("poste 1 h avant, une seule fois", async () => {
+    vi.setSystemTime(new Date(at(8, 0)));
     await checkScheduleNotifs();
     await checkScheduleNotifs();
     vi.setSystemTime(new Date(at(8, 45)));
     await checkScheduleNotifs();
 
     expect(sent).toHaveLength(1);
-    expect(sent[0].title).toBe("Cours dans 30 min : E17 PYTHON");
-    expect(sent[0].tag).toBe("course-c1@30min");
+    expect(sent[0].title).toBe("Cours dans 60 min : E17 PYTHON");
+    expect(sent[0].tag).toBe("course-c1@60min");
     expect(sent[0].dismiss).toBe(false);
   });
 
   it("ferme la carte dès que le cours commence", async () => {
-    vi.setSystemTime(new Date(at(8, 30)));
+    vi.setSystemTime(new Date(at(8, 0)));
     await checkScheduleNotifs();
     expect(sent).toHaveLength(1);
 
@@ -114,7 +114,7 @@ describe("cartes de cours", () => {
     await checkScheduleNotifs();
     expect(sent).toHaveLength(2);
     expect(sent[1].dismiss).toBe(true);
-    expect(sent[1].tag).toBe("course-c1@30min");
+    expect(sent[1].tag).toBe("course-c1@60min");
 
     // et elle n'est pas re-postée ensuite
     vi.setSystemTime(new Date(at(9, 5)));
@@ -128,12 +128,12 @@ describe("cartes de cours", () => {
 
     vi.setSystemTime(new Date(at(8, 30)));
     await checkScheduleNotifs();
-    vi.setSystemTime(new Date(at(13, 0)));
+    vi.setSystemTime(new Date(at(12, 30)));
     await checkScheduleNotifs();
 
     expect(sent.filter((s) => !s.dismiss).map((s) => s.tag)).toEqual([
-      "course-c1@30min",
-      "course-c2@30min",
+      "course-c1@60min",
+      "course-c2@60min",
     ]);
     COURSES.pop();
   });

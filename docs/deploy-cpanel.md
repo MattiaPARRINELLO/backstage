@@ -43,12 +43,17 @@ production** : `https://VOTRE-DOMAINE/api/auth/google/callback`.
 ## 3. Déployer
 
 ```bash
-git checkout main && git pull
 ./deploy.sh
 ```
 
-⚠️ Le script refuse de démarrer si la branche courante n'est pas `main` ou si
-l'arbre de travail n'est pas propre : la prod ne reçoit que du code mergé.
+Le script bascule tout seul sur `main`, fait un `git pull --ff-only`, puis
+démarre — la prod ne reçoit que du code mergé. Il refuse de démarrer si le pull
+échoue ou si l'arbre de travail n'est pas propre. Le pull se désactive avec
+`DEPLOY_AUTO_PULL=0`.
+
+Lancé depuis un **worktree** (T3 Code, `~/Documents/dev/…` n'étant pas le dossier
+courant), il se relance automatiquement dans le checkout principal — le seul à
+contenir `.deploy.env` et `data/`.
 
 Le script enchaîne : `bun run build` → préparation du dossier *standalone*
 (`.next/standalone` + `.next/static` + `public/` + `assets/`) → sauvegarde de la

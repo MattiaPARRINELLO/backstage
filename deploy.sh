@@ -12,6 +12,25 @@ BUILD_DIR="${SCRIPT_DIR}/.next"
 STANDALONE_DIR="${BUILD_DIR}/standalone"
 DEPLOY_TMP="${SCRIPT_DIR}/.deploy-tmp"
 
+# ─── 0.0 Bascule vers le checkout principal ─────────────
+# Les secrets (.deploy.env) et les donnees reelles (data/) ne vivent que dans le
+# checkout principal (celui de ~/Documents/dev/...), jamais dans un worktree T3.
+# Lance depuis un worktree, le script s'y relance donc automatiquement : c'est le
+# seul dossier ou il peut trouver .deploy.env et deployer du code de main.
+MAIN_WORKTREE="$(git -C "$SCRIPT_DIR" worktree list --porcelain 2>/dev/null | sed -n 's/^worktree //p' | head -n1 || true)"
+
+if [ -n "${MAIN_WORKTREE}" ] && [ "${DEPLOY_REEXEC:-0}" != "1" ]; then
+  MAIN_REAL="$(cd "${MAIN_WORKTREE}" 2>/dev/null && pwd -P || true)"
+  SCRIPT_REAL="$(cd "${SCRIPT_DIR}" && pwd -P)"
+  if [ -n "${MAIN_REAL}" ] && [ "${MAIN_REAL}" != "${SCRIPT_REAL}" ]; then
+    if [ -f "${MAIN_REAL}/deploy.sh" ]; then
+      echo -e "${CYAN}→ Worktree detecte — bascule vers le checkout principal ${MAIN_REAL}${NC}"
+      DEPLOY_REEXEC=1 exec bash "${MAIN_REAL}/deploy.sh" "$@"
+    fi
+    echo -e "${YELLOW}⚠  Checkout principal ${MAIN_REAL} sans deploy.sh — poursuite depuis le worktree${NC}"
+  fi
+fi
+
 # ─── Chargement config ──────────────────────────────────
 if [ -f "$CONFIG_FILE" ]; then
   echo -e "${CYAN}→ Chargement de ${CONFIG_FILE}${NC}"
@@ -31,13 +50,26 @@ fi
 
 # ─── 0. Garde : déploiement depuis main uniquement ──────
 # Le déploiement pousse l'arbre de travail vers la prod : le lancer depuis une
-# branche de travail déploierait du code non revu. On refuse tout ce qui n'est
-# pas la branche main (sans échappatoire volontaire).
+# branche de travail déploierait du code non revu. Le script bascule donc
+# automatiquement sur main (working tree propre exigé) ; sinon il refuse.
 if CURRENT_BRANCH="$(git -C "$SCRIPT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null)"; then
   if [ "$CURRENT_BRANCH" != "main" ]; then
-    echo -e "${RED}✗ Déploiement refusé : branche courante « ${CURRENT_BRANCH} », attendu « main ».${NC}"
-    echo -e "${YELLOW}  Fusionne d'abord ta PR puis : git checkout main && git pull${NC}"
-    exit 1
+    echo -e "${YELLOW}→ Branche courante « ${CURRENT_BRANCH} » — bascule automatique sur main${NC}"
+    if [ -n "$(git -C "$SCRIPT_DIR" status --porcelain)" ]; then
+      echo -e "${RED}✗ Bascule impossible : working tree non propre.${NC}"
+      echo -e "${YELLOW}  Commit ou stash tes changements avant de déployer.${NC}"
+      exit 1
+    fi
+    git -C "$SCRIPT_DIR" checkout main
+  fi
+  # Mise à jour de main avant de déployer (désactivable avec DEPLOY_AUTO_PULL=0).
+  if [ "${DEPLOY_AUTO_PULL:-1}" != "0" ]; then
+    echo -e "${CYAN}→ Mise à jour de main (git pull --ff-only)…${NC}"
+    if ! git -C "$SCRIPT_DIR" pull --ff-only; then
+      echo -e "${RED}✗ git pull --ff-only a échoué (réseau absent ou main divergente).${NC}"
+      echo -e "${YELLOW}  Déploiement interrompu : la prod ne doit pas recevoir un main périmé.${NC}"
+      exit 1
+    fi
   fi
   if [ -n "$(git -C "$SCRIPT_DIR" status --porcelain)" ]; then
     echo -e "${RED}✗ Déploiement refusé : working tree non propre sur main.${NC}"

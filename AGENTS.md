@@ -726,6 +726,22 @@ l'URL complète (`/v1/chat/completions`), le SDK **Anthropic** ajoute lui-même
 `/v1` — d'où `getAnthropicClientConfig()` qui retire le suffixe `/v1`, sinon
 `/v1/v1/messages` → 404.
 
+⚠️ **Les identifiants de modèles périment vite** (`deepseek-v4-flash` →
+`400 Model is unavailable`, `kimi-k2.6` → `410 ModelDeprecated`). Ne jamais
+réécrire une liste à la main comme source de vérité :
+
+- `lib/ai-providers/models.ts` interroge `GET /models` (cache 1 h) et lit le
+  protocole déclaré par le provider (`api.messages` → SDK Anthropic,
+  `chat-completions` → OpenAI, `responses`, `generate-content`).
+  `getModelProtocol()` est **synchrone** (cache seulement) car le routage SDK ne
+  peut pas attendre un appel réseau ; cache froid → repli statique.
+- `lib/config.ts` (`getModel`, `getTitleModel`) remplace automatiquement un
+  modèle configuré qui n'existe plus par un modèle vivant du catalogue déjà en
+  cache, et rafraîchit ce catalogue en arrière-plan sinon.
+- Les constantes `OPENAI_MODELS` / `ANTHROPIC_MODELS` de
+  `lib/ai-providers/config.ts` ne sont qu'un **repli hors ligne** : elles ne
+  doivent contenir que des modèles vérifiés vivants.
+
 ---
 
 ## Conventions

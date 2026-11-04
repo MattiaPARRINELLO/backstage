@@ -34,21 +34,25 @@ export function getAnthropicClientConfig(sessionId?: string) {
   return { ...config, baseURL: config.baseURL.replace(/\/v1\/?$/, "") };
 }
 
-// Source unique des modèles proposés à l'utilisateur (Paramètres → Modèles d'IA).
+// Liste des modeles affiches quand `GET /models` est injoignable (cf.
+// lib/ai-providers/models.ts, qui interroge le provider et met en cache la
+// vraie liste). Un identifiant mort ici ne coute rien tant que le provider
+// repond, mais autant n'y laisser que des modeles verifies vivants.
 const OPENAI_MODELS: readonly string[] = [
+  "deepseek-v4.1-flash",
   "deepseek-v4-pro",
-  "deepseek-v4-flash",
-  "kimi-k2.6",
   "kimi-k2.7-code",
 ];
 
+// Modeles servis par l'API Anthropic (`/v1/messages`) : le provider le declare
+// dans `api.messages` ; cette liste n'est que le repli quand le cache est
+// froid (cf. getModelProtocol).
 const ANTHROPIC_MODELS: readonly string[] = [
-  "qwen3.7-max",
+  "claude-haiku-5-5",
+  "qwen3.8-max",
+  "qwen3.8-flash",
   "qwen3.7-plus",
-  "qwen3.6-plus",
   "minimax-m3",
-  "minimax-m2.7",
-  "minimax-m2.5",
 ];
 
 export const AVAILABLE_MODELS: readonly string[] = [...OPENAI_MODELS, ...ANTHROPIC_MODELS];

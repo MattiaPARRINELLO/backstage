@@ -311,7 +311,6 @@ et de redistribution, sans garantie.
 
 - CI (GitHub Actions) : lint, typecheck, tests unitaires, build, e2e à chaque push
 - [DESIGN.md](DESIGN.md) — le système visuel : tokens, typographie, composants `.ui-*`, motion
-- [docs/app-refonte.md](docs/app-refonte.md) — le plan de refonte et l'état de chaque phase
 - [docs/self-hosting.md](docs/self-hosting.md) — variables, Docker, HTTPS, backups
 - [docs/deploy-cpanel.md](docs/deploy-cpanel.md) — procédure mutualisée + crontab
 

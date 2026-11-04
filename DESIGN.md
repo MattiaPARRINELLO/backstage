@@ -4,8 +4,6 @@
 > **La landing et l'application partagent le même langage.** Ce fichier décrit
 > ce qui est réellement dans `app/globals.css` et `app/landing.css` ; en cas de
 > doute, c'est le CSS qui tranche, puis ce document doit être corrigé.
-> Le plan de migration et son historique sont dans
-> [`docs/app-refonte.md`](docs/app-refonte.md).
 
 ---
 

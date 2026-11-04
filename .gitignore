@@ -36,12 +36,14 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # deploy config
 .deploy.env
 
 # personal data
 /data
+/android/data/
 
 # vercel
 .vercel
@@ -60,16 +62,7 @@ next-env.d.ts
 /.deploy-tmp/
 /backstage-deploy.tar.gz
 
-# agent tooling local
-/.mimocode/plans/
-
-
-
-
 # Rendu intermédiaire du story unslop
-unslop-story/.story-frames/
-
-# Rendu vidéo unslop (frames intermédiaires)
 unslop-story/.story-frames/
 
 # Artefacts de la revue design (tasteskill)

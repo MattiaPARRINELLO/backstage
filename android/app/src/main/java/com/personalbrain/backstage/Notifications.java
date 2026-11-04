@@ -87,7 +87,7 @@ final class Notifications {
 
         // Message de contrôle : le serveur demande la fermeture d'une
         // notification en direct (cours terminé, brief du jour refermé).
-        if ("cancel".equals(value(data, "action", null))) {
+        if ("1".equals(value(data, "dismiss", null))) {
             String cancelTag = value(data, "tag", null);
             cancel(ctx, cancelTag);
             return;

@@ -4,6 +4,7 @@ import { getConfig } from "./config";
 import { configureVapid, getVapidDetails, sendPushNotification } from "./send-push";
 import { serverLog } from "./logger";
 import { markdownToText } from "./utils";
+import { sendFcmToAll, type FcmPayload } from "./fcm";
 import type { DailyBrief } from "./types";
 
 let schedulerStarted = false;
@@ -52,6 +53,58 @@ async function markReminderNotified(id: string): Promise<void> {
 }
 
 const COURSE_LEAD_MIN = 30;
+
+// Notifications « live » (Android 16) : une notification promue reste épinglée
+// jusqu'à sa fin prévue. On garde l'échéance pour envoyer nous-mêmes la
+// fermeture, faute de quoi la puce resterait dans la barre d'état indéfiniment.
+const LIVE_NOTIFS_FILE = "live-notifs.json";
+
+interface LiveNotif {
+  tag: string;
+  until: number;
+}
+
+async function trackLiveNotif(tag: string, until: number): Promise<void> {
+  try {
+    const { mutateJson } = await import("./storage-core");
+    await mutateJson<{ items: LiveNotif[] }>(LIVE_NOTIFS_FILE, { items: [] }, (data) => {
+      data.items = data.items.filter((i) => i.tag !== tag);
+      data.items.push({ tag, until });
+    });
+  } catch (err) {
+    void serverLog("scheduler", "error", "trackLiveNotif failed", err);
+  }
+}
+
+/** Ferme les notifications en direct dont l'échéance est passée. */
+export async function clearEndedLiveNotifs(): Promise<void> {
+  try {
+    const { readJsonSafe } = await import("./storage");
+    const { mutateJson } = await import("./storage-core");
+    const now = Date.now();
+    const data = await readJsonSafe<{ items: LiveNotif[] }>(LIVE_NOTIFS_FILE, { items: [] });
+    const ended = data.items.filter((i) => i.until <= now);
+    if (ended.length === 0) return;
+
+    for (const item of ended) {
+      await sendPushToAll(
+        JSON.stringify({
+          title: "BACKSTAGE",
+          body: "",
+          tag: item.tag,
+          data: { type: "live", url: "/schedule" },
+          dismiss: true,
+        })
+      );
+    }
+
+    await mutateJson<{ items: LiveNotif[] }>(LIVE_NOTIFS_FILE, { items: [] }, (inner) => {
+      inner.items = inner.items.filter((i) => i.until > now);
+    });
+  } catch (err) {
+    void serverLog("scheduler", "error", "clearEndedLiveNotifs failed", err);
+  }
+}
 
 // Le brief du jour est déclenché à la fois par le scheduler interne (7h) et par
 // le cron cPanel : sans cette garde, chaque appel renvoyait un DM et un push.
@@ -123,11 +176,16 @@ export async function checkScheduleNotifs(): Promise<void> {
         silent: false,
         timestamp: Date.now(),
         vibrate: [300, 150, 300, 150, 300],
+        // APK Android : notification épinglée, affichée comme Live Update et
+        // retirée automatiquement au début du cours.
+        promoted: true,
+        criticalText: `${at} ${c.subject}`.slice(0, 28),
       });
       const { sent } = await sendPushToAll(payload);
       if (sent) {
         notified.add(key);
         dirty = true;
+        await trackLiveNotif(`course-${key}`, c.start);
         const { logActivity } = await import("./storage");
         await logActivity("course_notified", `Cours à venir : ${c.subject}`, `${at} — ${c.room}`);
       }
@@ -159,6 +217,11 @@ export async function syncScheduleIfStale(): Promise<void> {
 export async function sendPushToAll(
   payload: string
 ): Promise<{ sent: boolean; devices: number }> {
+  // Deux canaux pour la même notification : web push (PWA installée) et FCM
+  // (APK Android). Les deux partent du même JSON, chacun ignore les champs
+  // qu'il ne comprend pas.
+  const native = await sendFcmToAll(toFcmPayload(payload));
+
   const subs = await getSubscriptions();
   let webSent = false;
   if (subs.length > 0) {
@@ -198,7 +261,40 @@ export async function sendPushToAll(
     }
   }
 
-  return { sent: webSent, devices: subs.length };
+  return { sent: webSent || native.sent, devices: subs.length + native.devices };
+}
+
+/** Traduit le JSON web push en message natif (data-only côté APK). */
+function toFcmPayload(raw: string): FcmPayload {
+  let parsed: {
+    title?: string;
+    body?: string;
+    tag?: string;
+    promoted?: boolean;
+    criticalText?: string;
+    progress?: number;
+    progressMax?: number;
+    dismiss?: boolean;
+    data?: { type?: string; url?: string };
+  };
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    parsed = { body: raw };
+  }
+  const data = parsed.data ?? {};
+  return {
+    title: parsed.title ?? "BACKSTAGE",
+    body: (parsed.body ?? "").slice(0, 400),
+    tag: parsed.tag,
+    type: data.type,
+    url: data.url,
+    promoted: parsed.promoted === true,
+    criticalText: parsed.criticalText,
+    progress: parsed.progress,
+    progressMax: parsed.progressMax,
+    dismiss: parsed.dismiss === true,
+  };
 }
 
 export async function checkReminders() {
@@ -384,20 +480,22 @@ export function startScheduler() {
   const vapidDetails = getVapidDetails();
   const vapidReady = Boolean(vapidDetails.publicKey && vapidDetails.privateKey);
   if (!vapidReady) {
-    console.warn("[scheduler] VAPID absent : notifications web push desactivees");
-    schedulerStarted = false;
-    return;
+    // Ne pas couper le scheduler : les notifications natives (APK Android)
+    // n'ont pas besoin de VAPID, seule la PWA en dépend.
+    console.warn("[scheduler] VAPID absent : web push desactive, notifications natives conservees");
   }
 
   checkReminders();
   checkIntentions();
   checkScheduleNotifs();
   syncScheduleIfStale();
+  clearEndedLiveNotifs();
   reminderInterval = setInterval(() => {
     checkReminders();
     checkIntentions();
     checkScheduleNotifs();
     syncScheduleIfStale();
+    clearEndedLiveNotifs();
   }, REMINDER_INTERVAL_MS);
 
   startDailyBrief();

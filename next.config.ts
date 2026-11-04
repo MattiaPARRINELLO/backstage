@@ -19,8 +19,18 @@ const nextConfig: NextConfig = {
       "./node_modules/@img/**/*",
     ],
   },
-  async headers() {
-    const headers = [
+  // Le fichier Digital Asset Links doit vivre à la racine exacte
+  // /.well-known/assetlinks.json : la route vit dans app/api/assetlinks et on la
+  // réécrit ici (un dossier `.well-known` n'est pas fiable côté App Router).
+  async rewrites() {
+    return [
+      {
+        source: "/.well-known/assetlinks.json",
+        destination: "/api/assetlinks",
+      },
+    ];
+  },
+  async headers() {    const headers = [
       { key: "X-Frame-Options", value: "DENY" },
       { key: "X-Content-Type-Options", value: "nosniff" },
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

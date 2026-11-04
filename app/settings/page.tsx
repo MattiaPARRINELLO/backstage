@@ -10,6 +10,7 @@ import {
 import { useState, useEffect } from "react";
 import { setLeetcodeUsername, loadLeetcode } from "@/app/actions/leetcode";
 import { updateModels } from "@/app/actions/settings";
+import { AndroidPairing } from "./AndroidPairing";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/Chrome";
 import { AccentPicker } from "@/components/ui/AccentPicker";
@@ -351,6 +352,7 @@ export default function SettingsPage() {
                     : "Désactivé"
               }
             />
+            <AndroidPairing />
           </Section>
 
           <Section

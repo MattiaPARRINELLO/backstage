@@ -74,3 +74,4 @@ unslop-story/.story-frames/
 
 # Artefacts de la revue design (tasteskill)
 .taste-skill/
+dist/

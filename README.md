@@ -27,7 +27,16 @@ données en JSON local). Elle démarre avec deux variables obligatoires (un
 endpoint IA compatible OpenAI et sa clé) ; Google, Microsoft et CESAR sont des
 intégrations optionnelles.
 
-| | |
+## Sommaire
+
+- [Déployer en 3 commandes](#déployer-en-3-commandes)
+- [Ce que c'est](#-ce-que-cest) · [Stack](#-stack) · [Ce que je montre](#-ce-que-je-montre)
+- [Les écrans](#-les-écrans) · [Décisions techniques](#-décisions-techniques-notables)
+- [Trois problèmes réels](#-trois-problèmes-réels-et-ce-quils-mont-appris)
+- [Installation](#-installation) · [Structure](#-structure)
+- [Licence](#-licence) · [Santé du projet](#-santé-du-projet) · [Me retrouver](#-me-retrouver)
+
+| Aspect | Détail |
 | --- | --- |
 | **Échelle** | 36 000 lignes · 25 pages · 38 routes API · 22 Server Actions |
 | **Qualité** | 58 fichiers de tests (Vitest) + E2E Playwright |
@@ -79,18 +88,21 @@ Calendar, LeetCode, concerts) se répondent entre eux.
 
 ## 💻 Stack
 
-| Frontend                     | Backend / Runtime          | Data / Infra                | Auth                              |
-| ---------------------------- | -------------------------- | --------------------------- | --------------------------------- |
-| ![Next.js](https://img.shields.io/badge/Next.js-000?style=flat-square&logo=nextdotjs&logoColor=white) | ![Bun](https://img.shields.io/badge/Bun-000?style=flat-square&logo=bun&logoColor=f9f1e1) | ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white) | ![Google OAuth](https://img.shields.io/badge/Google_OAuth-4285F4?style=flat-square&logo=google&logoColor=white) |
-| ![React](https://img.shields.io/badge/React_19-20232A?style=flat-square&logo=react&logoColor=61DAFB) | ![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai&logoColor=white) | ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) | ![Passkey](https://img.shields.io/badge/Passkey_(WebAuthn)-34a853?style=flat-square&logo=webauthn&logoColor=white) |
-| ![react-markdown](https://img.shields.io/badge/react--markdown-000?style=flat-square&logo=markdown&logoColor=white) | ![Anthropic](https://img.shields.io/badge/Anthropic-191919?style=flat-square&logo=anthropic&logoColor=white) | ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=flat-square&logo=vitest&logoColor=white) | |
-| | ![google-auth-library](https://img.shields.io/badge/google--auth--library-4285F4?style=flat-square&logo=google&logoColor=white) | | |
+| **Frontend** | **Runtime & données** | **Intégrations** |
+| --- | --- | --- |
+| ![Next.js](https://img.shields.io/badge/Next.js-000?style=flat-square&logo=nextdotjs&logoColor=white) | ![Bun](https://img.shields.io/badge/Bun-000?style=flat-square&logo=bun&logoColor=f9f1e1) | ![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai&logoColor=white) |
+| ![React](https://img.shields.io/badge/React_19-20232A?style=flat-square&logo=react&logoColor=61DAFB) | ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) | ![Anthropic](https://img.shields.io/badge/Anthropic-191919?style=flat-square&logo=anthropic&logoColor=white) |
+| ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white) | ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=flat-square&logo=vitest&logoColor=white) | ![Google OAuth](https://img.shields.io/badge/Google_OAuth-4285F4?style=flat-square&logo=google&logoColor=white) |
+| ![react-markdown](https://img.shields.io/badge/react--markdown-000?style=flat-square&logo=markdown&logoColor=white) | ![google-auth-library](https://img.shields.io/badge/google--auth--library-4285F4?style=flat-square&logo=google&logoColor=white) | ![Passkey](https://img.shields.io/badge/Passkey_(WebAuthn)-34a853?style=flat-square&logo=webauthn&logoColor=white) |
+
+Bun pour le développement et le build ; le conteneur de production exécute le
+build standalone sur Node 22.
 
 ---
 
 ## 🌟 Ce que je montre
 
-| | |
+| Le chat | La journée |
 | --- | --- |
 | ![Chat IA](public/screenshots/chat.jpg) | ![La journée](public/screenshots/today.jpg) |
 | **Le chat** — une question, quatre sources ramenées par l'IA dans une seule réponse | **La journée** — rappels, agenda et cours sur une page, sans quitter le flux |
@@ -102,7 +114,7 @@ Calendar, LeetCode, concerts) se répondent entre eux.
 - **Pensé pour le quotidien** : raccourcis clavier (`⌘K` palette, `?` aide), PWA installable, fonctionne en 3G
 - **Un seul accent, deux thèmes** : la couleur choisie dans les réglages porte l'action et la sélection, jamais la décoration
 
-➜ **[Voir le code en action](#installation)** (clone + `bun dev`)
+➜ **[Voir le code en action](#-installation)** (clone + `bun dev`)
 
 ---
 

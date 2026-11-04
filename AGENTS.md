@@ -342,7 +342,7 @@ Ne jamais réintroduire Playwright ici : ça casse la prod standalone.
 - Sync automatique : `syncScheduleIfStale()` (notification-scheduler) si l'EDT a
   plus de 6 h, est vide, ou si le dernier sync a échoué. Garde anti-concurrence
   dans `lib/storage/schedule.ts`.
-- Notifications : `checkScheduleNotifs()` envoie un push **30 min avant** chaque
+- Notifications : `checkScheduleNotifs()` envoie un push **1 h avant** chaque
   cours (matière + salle + heure), anti-doublon dans `data/notified-courses.json`.
 - Chat : outil **lecture seule** `get_schedule` (`scope: today|week|next`,
   `subject` optionnel) — jamais dans `REQUIRE_CONFIRMATION`.
@@ -359,7 +359,7 @@ web est rendu par `public/sw.js` ; côté APK il est **data-only** et c'est
 `Notifications.java` qui construit la notification (canal, persistance, Live
 Update). Le canal Discord a été supprimé.
 
-- **Événements** : cours (`checkScheduleNotifs`, −30 min), rappels
+- **Événements** : cours (`checkScheduleNotifs`, −60 min), rappels
   (`checkReminders`), relances (`checkIntentions`), brief du jour
   (`triggerDailyBrief`). Tous passent par `sendPushToAll(payload)`.
 - **Urgence** : toutes les notifs sont envoyées en `urgency: "high"` (livraison
@@ -385,7 +385,7 @@ Update). Le canal Discord a été supprimé.
   persistante classique, jamais perdue. Vérifier la promotion :
   `adb logcat | grep "live update"` (`promotable=true`) et `dumpsys
   notification | grep PROMOTED_ONGOING`. Les cours sont promus : carte postée à
-  −30 min, fermée dès que le cours commence (`data/live-notifs.json` — une fois
+  1 h avant, fermée dès que le cours commence (`data/live-notifs.json` — une fois
   la séance entamée elle n'apprend plus rien) ; un message `dismiss: true`
   ferme la notification du `tag` correspondant. Règle verrouillée par
   `lib/__tests__/course-notifications.test.ts`.

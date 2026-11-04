@@ -51,12 +51,12 @@ async function markReminderNotified(id: string): Promise<void> {
   }
 }
 
-const COURSE_LEAD_MIN = 30;
+const COURSE_LEAD_MIN = 60;
 
 // Notifications « live » (Android 16) : une carte promue reste épinglée jusqu'à
 // sa fin prévue. On garde donc l'échéance pour envoyer nous-mêmes la fermeture.
 //
-// Cycle d'un cours : postée à −30 min (« Cours dans 30 min »), elle est fermée
+// Cycle d'un cours : postée 1 h avant (« Cours dans 60 min »), elle est fermée
 // dès que le cours commence — une fois la séance entamée, elle n'apprend plus
 // rien. Le fichier ne sert qu'à savoir quoi fermer et à ne pas re-poster.
 const LIVE_NOTIFS_FILE = "live-notifs.json";
@@ -146,7 +146,7 @@ async function markBriefSent(date: string): Promise<void> {
   }
 }
 
-/** Cartes de cours : postées à −30 min, fermées dès que le cours commence. */
+/** Cartes de cours : postées 1 h avant, fermées dès que le cours commence. */
 export async function checkScheduleNotifs(): Promise<void> {
   try {
     const now = Date.now();

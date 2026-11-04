@@ -104,7 +104,10 @@ final class Notifications {
         int progressMax = parseInt(value(data, "progressMax", "0"), 0);
         int progress = parseInt(value(data, "progress", "0"), 0);
 
-        String channel = promoted ? CHANNEL_LIVE : channelFor(type);
+        // Une carte promue reste dans le canal de son type : un rappel doit
+        // sonner même épinglé. Le canal « live » (silencieux) ne sert qu'aux
+        // messages de contrôle.
+        String channel = channelFor(type);
         int id = idFor(tag != null ? tag : url);
 
         PendingIntent contentIntent = openIntent(ctx, url, id);

@@ -14,7 +14,8 @@ let dailyBriefInterval: ReturnType<typeof setInterval> | null = null;
 
 const REMINDER_INTERVAL_MS = 60_000;
 const DAILY_BRIEF_HOUR = 7;
-const NOTIFIED_FILE = "notified-reminders.json";
+/** Délai d'annonce des rappels et des cours (même règle : 1 h avant). */
+const REMINDER_LEAD_MIN = 60;
 
 // Focus mode actif : les notifications sont mises en silence. Les rappels et
 // relances restent en attente et seront envoyés après la fin de la session.
@@ -29,54 +30,45 @@ async function isFocusActive(): Promise<boolean> {
   }
 }
 
-async function getNotifiedReminders(): Promise<Set<string>> {
-  try {
-    const { readJsonSafe } = await import("./storage");
-    const data = await readJsonSafe<{ ids: string[] }>(NOTIFIED_FILE, { ids: [] });
-    return new Set(data.ids);
-  } catch {
-    return new Set();
-  }
-}
-
-async function markReminderNotified(id: string): Promise<void> {
-  try {
-    const { mutateJson } = await import("./storage-core");
-    await mutateJson<{ ids: string[] }>(NOTIFIED_FILE, { ids: [] }, (data) => {
-      if (data.ids.includes(id)) return null; // déjà notifié → pas d'écriture
-      data.ids.push(id);
-    });
-  } catch (err) {
-    void serverLog("scheduler", "error", "Erreur persistance notification", err);
-  }
-}
-
 const COURSE_LEAD_MIN = 60;
 
-// Notifications « live » (Android 16) : une carte promue reste épinglée jusqu'à
-// sa fin prévue. On garde donc l'échéance pour envoyer nous-mêmes la fermeture.
+// Cartes « live » (Android 16) : une notification promue reste épinglée jusqu'à
+// sa fin prévue, donc on tient un registre de ce qui est affiché pour savoir
+// quoi fermer et ne pas re-poster.
 //
-// Cycle d'un cours : postée 1 h avant (« Cours dans 60 min »), elle est fermée
-// dès que le cours commence — une fois la séance entamée, elle n'apprend plus
-// rien. Le fichier ne sert qu'à savoir quoi fermer et à ne pas re-poster.
+// - cours : postée 1 h avant, fermée au démarrage de la séance ;
+// - rappel : postée 1 h avant l'échéance, fermée quand le rappel est fait,
+//   supprimé, ou reporté.
 const LIVE_NOTIFS_FILE = "live-notifs.json";
 
-interface LiveNotif {
+interface LiveCard {
   tag: string;
+  kind: "course" | "reminder";
+  /** id du rappel, pour pouvoir le fermer quand il change d'état. */
+  refId?: string;
   subject: string;
   place: string;
-  start: number;
+  /** Démarrage du cours ou échéance du rappel. */
+  at: number;
 }
 
-async function readLiveNotifs(): Promise<LiveNotif[]> {
+async function readLiveCards(): Promise<LiveCard[]> {
   const { readJsonSafe } = await import("./storage");
-  const data = await readJsonSafe<{ items: LiveNotif[] }>(LIVE_NOTIFS_FILE, { items: [] });
-  return data.items ?? [];
+  const data = await readJsonSafe<{ items: Partial<LiveCard>[] }>(LIVE_NOTIFS_FILE, { items: [] });
+  // `start` était le nom du champ avant la généralisation aux rappels.
+  return (data.items ?? []).map((item) => ({
+    tag: item.tag ?? "",
+    kind: item.kind ?? "course",
+    refId: item.refId,
+    subject: item.subject ?? "",
+    place: item.place ?? "",
+    at: item.at ?? (item as { start?: number }).start ?? 0,
+  }));
 }
 
-async function writeLiveNotifs(mutator: (items: LiveNotif[]) => void): Promise<void> {
+async function writeLiveCards(mutator: (items: LiveCard[]) => void): Promise<void> {
   const { mutateJson } = await import("./storage-core");
-  await mutateJson<{ items: LiveNotif[] }>(LIVE_NOTIFS_FILE, { items: [] }, (data) => {
+  await mutateJson<{ items: LiveCard[] }>(LIVE_NOTIFS_FILE, { items: [] }, (data) => {
     mutator(data.items);
   });
 }
@@ -85,10 +77,36 @@ function clock(ms: number): string {
   return new Date(ms).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 
+/** Ferme une carte déjà affichée, sur les deux canaux. */
+export async function dismissLiveCard(tag: string, url: string): Promise<void> {
+  await sendPushToAll(
+    JSON.stringify({
+      title: "BACKSTAGE",
+      body: "",
+      tag,
+      data: { type: "live", url },
+      dismiss: true,
+    })
+  );
+  await writeLiveCards((items) => {
+    const index = items.findIndex((i) => i.tag === tag);
+    if (index >= 0) items.splice(index, 1);
+  });
+}
+
+/** Ferme la carte d'un rappel (fait, supprimé, reporté). */
+export async function dismissReminderCard(reminderId: string): Promise<void> {
+  try {
+    await dismissLiveCard(`reminder-${reminderId}`, "/reminders");
+  } catch (err) {
+    void serverLog("scheduler", "error", "dismissReminderCard failed", err);
+  }
+}
+
 /** Payload de la carte « cours dans N min ». */
-function coursePayload(course: LiveNotif): string {
-  const start = clock(course.start);
-  const remainingMin = Math.max(0, Math.round((course.start - Date.now()) / 60_000));
+function coursePayload(course: LiveCard): string {
+  const start = clock(course.at);
+  const remainingMin = Math.max(0, Math.round((course.at - Date.now()) / 60_000));
 
   return JSON.stringify({
     title: `Cours dans ${remainingMin} min : ${course.subject}`,
@@ -107,6 +125,38 @@ function coursePayload(course: LiveNotif): string {
     criticalText: `Début ${start}`.slice(0, 28),
     progress: Math.max(0, COURSE_LEAD_MIN - remainingMin),
     progressMax: COURSE_LEAD_MIN,
+  });
+}
+
+/** Payload de la carte « rappel dans N min » (mêmes règles que les cours). */
+function reminderPayload(card: LiveCard & { id: string; notes?: string; recurrence?: string }): string {
+  const due = clock(card.at);
+  const remainingMin = Math.max(0, Math.round((card.at - Date.now()) / 60_000));
+  const late = Date.now() > card.at;
+
+  return JSON.stringify({
+    title: late ? `Rappel : ${card.subject}` : `Rappel dans ${remainingMin} min : ${card.subject}`,
+    body: [due, card.notes || card.place].filter(Boolean).join(" — ") || "Rappel",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    tag: card.tag,
+    // `reminderId` et `recurrence` sont consommés par le service worker (actions
+    // « Fait » / « +15 min ») ; l'APK les ignore et ouvre simplement /reminders.
+    data: { type: "reminder", reminderId: card.id, url: "/reminders", recurrence: card.recurrence },
+    requireInteraction: true,
+    renotify: true,
+    silent: false,
+    timestamp: Date.now(),
+    actions: [
+      { action: "done", title: "✓ Fait" },
+      { action: "snooze", title: "⏰ +15 min" },
+    ],
+    vibrate: [300, 150, 300, 150, 300],
+    // APK Android : carte promue, fermée quand le rappel est traité.
+    promoted: true,
+    criticalText: due.slice(0, 28),
+    progress: Math.max(0, REMINDER_LEAD_MIN - remainingMin),
+    progressMax: REMINDER_LEAD_MIN,
   });
 }
 
@@ -151,30 +201,15 @@ export async function checkScheduleNotifs(): Promise<void> {
   try {
     const now = Date.now();
     const courses = await getCourses();
-    const tracked = await readLiveNotifs();
-    const trackedTags = new Set(tracked.map((i) => i.tag));
+    const tracked = await readLiveCards();
+    const courseCards = tracked.filter((i) => i.kind === "course");
+    const trackedTags = new Set(courseCards.map((i) => i.tag));
 
     // 1. Cours commencés (ou oubliés) : fermeture, même en mode focus — une
     //    carte périmée ne doit pas rester dans la barre d'état.
-    const started = tracked.filter((i) => now >= i.start);
-    for (const item of started) {
-      await sendPushToAll(
-        JSON.stringify({
-          title: "BACKSTAGE",
-          body: "",
-          tag: item.tag,
-          data: { type: "live", url: "/schedule" },
-          dismiss: true,
-        })
-      );
-    }
-    if (started.length > 0) {
-      const startedTags = new Set(started.map((i) => i.tag));
-      await writeLiveNotifs((items) => {
-        for (let i = items.length - 1; i >= 0; i--) {
-          if (startedTags.has(items[i].tag)) items.splice(i, 1);
-        }
-      });
+    for (const item of courseCards.filter((i) => now >= i.at)) {
+      await dismissLiveCard(item.tag, "/schedule");
+      trackedTags.delete(item.tag);
     }
 
     if (await isFocusActive()) return;
@@ -186,18 +221,19 @@ export async function checkScheduleNotifs(): Promise<void> {
       const tag = `course-${courseNotifKey(c, COURSE_LEAD_MIN)}`;
       if (trackedTags.has(tag)) continue;
 
-      const item: LiveNotif = {
+      const item: LiveCard = {
         tag,
+        kind: "course",
         subject: c.subject,
         place: [c.room, c.teacher].filter(Boolean).join(" — "),
-        start: c.start,
+        at: c.start,
       };
 
       const { sent } = await sendPushToAll(coursePayload(item));
       if (!sent) continue;
 
       trackedTags.add(tag);
-      await writeLiveNotifs((items) => {
+      await writeLiveCards((items) => {
         items.push(item);
       });
       const { logActivity } = await import("./storage");
@@ -309,52 +345,62 @@ function toFcmPayload(raw: string): FcmPayload {
 
 export async function checkReminders() {
   try {
-    if (await isFocusActive()) return; // silence pendant le focus
     const data = await getReminders();
     const now = Date.now();
     const pending = data.reminders.filter(
-      (r) => r.status === "pending" && new Date(r.dueAt).getTime() <= now + 60_000
+      (r) => r.status === "pending" && new Date(r.dueAt).getTime() <= now + REMINDER_LEAD_MIN * 60_000
     );
 
-    const notifiedReminders = await getNotifiedReminders();
+    const tracked = await readLiveCards();
+    const reminderCards = tracked.filter((c) => c.kind === "reminder");
+    const trackedTags = new Set(reminderCards.map((c) => c.tag));
 
-    // Purge les IDs de rappels qui n'existent plus (supprimés ou terminés)
-    const allReminderIds = new Set(data.reminders.map((r) => r.id));
-    const purged = [...notifiedReminders].filter((id) => !allReminderIds.has(id));
-    if (purged.length > 0) {
-      for (const id of purged) notifiedReminders.delete(id);
-      const { writeJsonAtomic } = await import("./storage");
-      await writeJsonAtomic(NOTIFIED_FILE, { ids: [...notifiedReminders] });
+    // 1. Cartes orphelines : le rappel a été fait, supprimé ou reporté sans
+    //    passer par l'action (sync Microsoft, autre client, cron).
+    const pendingIds = new Set(
+      data.reminders.filter((r) => r.status === "pending").map((r) => r.id)
+    );
+    for (const card of reminderCards) {
+      if (!card.refId || !pendingIds.has(card.refId)) {
+        await dismissLiveCard(card.tag, "/reminders");
+        trackedTags.delete(card.tag);
+      }
     }
 
+    if (await isFocusActive()) return; // silence pendant le focus
+
     for (const r of pending) {
-      if (notifiedReminders.has(r.id)) continue;
+      const tag = `reminder-${r.id}`;
+      if (trackedTags.has(tag)) continue;
 
-      const payload = JSON.stringify({
-        title: r.title,
-        body: r.notes || "Rappel",
-        icon: "/icons/icon-192.png",
-        badge: "/icons/icon-192.png",
-        tag: "reminder-" + r.id,
-        data: { type: "reminder", reminderId: r.id, url: "/reminders", recurrence: r.recurrence },
-        requireInteraction: true,
-        renotify: true,
-        silent: false,
-        timestamp: Date.now(),
-        actions: [
-          { action: "done", title: "✓ Fait" },
-          { action: "snooze", title: "⏰ +15 min" },
-        ],
-        vibrate: [300, 150, 300, 150, 300],
+      const card: LiveCard & { id: string; notes?: string; recurrence?: string } = {
+        tag,
+        kind: "reminder",
+        refId: r.id,
+        subject: r.title,
+        place: r.notes ?? "",
+        at: new Date(r.dueAt).getTime(),
+        id: r.id,
+        notes: r.notes,
+        recurrence: r.recurrence,
+      };
+
+      // On n'enregistre la carte que si l'envoi a réussi : sinon elle sera
+      // retentée au prochain tick au lieu d'être perdue.
+      const { sent } = await sendPushToAll(reminderPayload(card));
+      if (!sent) continue;
+
+      trackedTags.add(tag);
+      await writeLiveCards((items) => {
+        items.push({
+          tag,
+          kind: "reminder",
+          refId: r.id,
+          subject: r.title,
+          place: r.notes ?? "",
+          at: card.at,
+        });
       });
-
-      // On marque le rappel notifié SEULEMENT si l'envoi a réussi : sinon il
-      // sera retenté au prochain tick au lieu d'être perdu.
-      const { sent } = await sendPushToAll(payload);
-      if (sent) {
-        notifiedReminders.add(r.id);
-        await markReminderNotified(r.id);
-      }
     }
   } catch (err) {
     void serverLog("scheduler", "error", "checkReminders failed", err);

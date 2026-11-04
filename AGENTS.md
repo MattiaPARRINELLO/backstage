@@ -390,6 +390,15 @@ Update). Le canal Discord a été supprimé.
   la séance entamée elle n'apprend plus rien) ; un message `dismiss: true`
   ferme la notification du `tag` correspondant. Règle verrouillée par
   `lib/__tests__/course-notifications.test.ts`.
+- **Rappels** : même règle que les cours — carte promue postée 1 h avant
+  l'échéance (`REMINDER_LEAD_MIN`), fermée par `dismissReminderCard(id)` dès que
+  le rappel est fait, supprimé ou reporté (`app/actions/reminders.ts`,
+  `/api/reminders/[id]/done`, `/api/reminders/[id]/snooze`), ou quand un tick
+  constate qu'il n'est plus `pending` (sync Microsoft, autre client). Le même
+  registre `data/live-notifs.json` porte cours **et** rappels (`kind`).
+  Attention : le canal Android d'une carte est celui de son type — un rappel
+  sonne, il n'est pas silencieux comme le canal `live`. Tests :
+  `lib/__tests__/reminder-cards.test.ts`.
 - **Appairage APK** : le TWA vit dans Chrome, l'APK n'a donc pas le cookie de
   session. `app/actions/push.ts` génère un code à usage unique (10 min) →
   `backstage://pair?code=…` → `app/api/push/fcm/pair` renvoie un secret
@@ -527,7 +536,7 @@ Ré-exporte `export *` des 14 domaines + `./web`, mais de `storage-core` seuleme
 `accreditations` · `activity` · `chat-history` · `concerts` · `config` ·
 `consent` · `demo-calls` · `emails` · `fcm-devices` · `fcm-pair-codes` · `gallery` ·
 `intentions` · `leetcode` · `live-notifs` · `memory` ·
-`notified-briefs` · `notified-courses` · `notified-reminders` · `photo-shoots` · `push-subscriptions` ·
+`notified-briefs` · `photo-shoots` · `push-subscriptions` ·
 `reminders` · `schedule` · `server-cache` · `users` · `watch-later`
 
 Tokens OAuth : `calendar-token` · `gmail-token` · `microsoft-todo-token` ·

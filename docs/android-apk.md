@@ -124,6 +124,10 @@ purgé automatiquement au premier envoi en échec (`UNREGISTERED`).
   redevient une notification persistante classique — jamais perdue.
   Les cours sont promus, affichés 1 h avant la séance et fermés dès que le
   cours commence (suivi dans `data/live-notifs.json`).
+- **Rappels** : même traitement que les cours — carte promue 1 h avant
+  l'échéance, fermée dès que le rappel est marqué fait, supprimé ou reporté
+  (ou s'il n'est plus `pending` au tick suivant). Le tag `reminder-<id>` est
+  partagé avec la PWA, donc les deux canaux se remplacent au lieu de cumuler.
 - **Clic** : ouvre le TWA sur le `url` du message (`/schedule`, `/reminders`…).
 
 Ajouter une notification : passer par `sendPushToAll()` avec les champs

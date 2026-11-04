@@ -23,14 +23,14 @@ agenda, emploi du temps, mails, watch-later et accréditations photo dans une
 seule console, claire ou sombre au choix, installable et utilisable hors-ligne.
 
 **Auto-hébergement** — application **mono-utilisateur** (un compte, une passkey,
-données en JSON local). Elle démarre avec une seule variable obligatoire (un
-endpoint IA compatible OpenAI) ; Google, Microsoft et CESAR sont des
+données en JSON local). Elle démarre avec deux variables obligatoires (un
+endpoint IA compatible OpenAI et sa clé) ; Google, Microsoft et CESAR sont des
 intégrations optionnelles.
 
 | | |
 | --- | --- |
-| **Échelle** | 32 000 lignes · 25 pages · 34 routes API · 20 Server Actions |
-| **Qualité** | 46 fichiers de tests (Vitest) + E2E Playwright |
+| **Échelle** | 36 000 lignes · 25 pages · 38 routes API · 22 Server Actions |
+| **Qualité** | 58 fichiers de tests (Vitest) + E2E Playwright |
 | **Auth** | Passkey WebAuthn + JWT, OAuth Google & Microsoft |
 | **Déploiement** | Docker (`compose.yaml`) ou build standalone Next.js (cPanel, VPS) |
 | **Données** | Fichiers JSON avec écritures atomiques, verrous et rotation de backups |
@@ -141,7 +141,7 @@ Toutes ces pages sont privées (passkey) sauf la landing et la connexion.
 2. **`googleapis` → `google-auth-library`** — moins de surface, plus de contrôle sur les tokens et le refresh
 3. **Cache client TTL + stale-while-revalidate** — pas de re-fetch agressif, données toujours fraîches sous 60s
 4. **Service Worker maison** — pas de Workbox, stratégie `cache-first` pour le shell, `network-first` pour les API
-5. **Manifeste + icônes SVG** — pas de PNG à générer, scalables à toutes les tailles
+5. **Manifeste + icônes PNG déclinées** — service worker maison, installable sur iOS et Android sans dépendre d'un générateur
 6. **Pas de base de données** — pour l'instant, fichiers JSON + mémoire serveur. C'est personnel, c'est assumé.
 
 > Un bon outil personnel, c'est un outil qu'on peut ouvrir à 2h du matin
@@ -231,6 +231,7 @@ OpenAI), `AUTH_SECRET`, `WEBAUTHN_RP_ID` / `WEBAUTHN_ORIGIN`, `SETUP_TOKEN`.
 | `CESAR_PASSWORD`            | Emploi du temps CESAR                                       |
 
 Liste commentée : [`.env.example`](.env.example).
+
 ### Commandes
 
 ```bash
@@ -266,7 +267,7 @@ app/
   ├─ settings/         # Modèles, accent, connexions, compte
   ├─ search/ activity/  # Recherche unifiée, journal d'activité
   ├─ demo-calls/ privacy/ offline/ notif/  # Démo, pages publiques
-  ├─ actions/          # Server Actions (20 domaines)
+  ├─ actions/          # Server Actions (22 domaines)
   └─ api/              # Route handlers (SSE chat, auth, google, cron, push…)
 components/
   ├─ chat/             # ChatView, streaming, tool calls, accueil
@@ -291,11 +292,11 @@ lib/
 public/
   ├─ sw.js             # Service worker
   ├─ manifest.json     # PWA manifest
-  └─ icons/            # SVG icons
+  └─ icons/            # Icônes PWA (192, 512, apple-touch)
 scripts/               # cron-scheduler, reset-passkey, setup (secrets locaux), QA
 Dockerfile             # image auto-hébergeable (build standalone)
 compose.yaml           # déploiement Docker prêt à l'emploi
-docs/                  # self-hosting, deploy-cpanel, refonte de l'app
+docs/                  # architecture, self-hosting, deploy-cpanel, android-apk
 app/globals.css        # Tokens + primitives .ui-* (système décrit dans DESIGN.md)
 app/landing.css        # Styles de la landing, isolés sous .landing-page
 ```

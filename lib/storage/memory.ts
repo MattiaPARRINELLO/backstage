@@ -86,7 +86,7 @@ export async function findSimilarMemoryFacts(content: string, category: MemoryFa
         {
           role: "system",
           content:
-            "Tu compares un nouveau texte avec une liste de faits existants. Retourne UNIQUEMENT l'id du fait le plus similaire sémantiquement, ou 'null' si aucun ne correspond. Ne retourne rien d'autre.",
+            "Tu compares un nouveau texte avec une liste de faits existants. Retourne UNIQUEMENT l'id du fait existant qui dit DEJA la meme chose (meme enonce, eventuellement reformule), ou 'null' sinon. Une proximite de theme ne suffit pas : deux faits qui parlent du meme domaine mais d'informations differentes ne sont PAS un doublon. Une negation et une affirmation ne sont PAS un doublon. Dans le doute, reponds 'null'. Ne retourne rien d'autre.",
         },
         {
           role: "user",
@@ -96,7 +96,7 @@ export async function findSimilarMemoryFacts(content: string, category: MemoryFa
       []
     );
 
-    const id = result.content.trim();
+    const id = result.content.trim().replace(/^["'`]+|["'`]+$/g, "");
     if (id && id !== "null") {
       const found = categoryFacts.find((f) => f.id === id);
       if (found) return found;

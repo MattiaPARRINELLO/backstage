@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
@@ -121,6 +122,7 @@ final class Notifications {
                     .setContentIntent(contentIntent)
                     .setAutoCancel(false)
                     .setOngoing(true)
+                    .setOnlyAlertOnce(true)
                     .setShowWhen(true)
                     .setWhen(System.currentTimeMillis())
                     .setCategory(Notification.CATEGORY_PROGRESS)
@@ -129,15 +131,25 @@ final class Notifications {
 
             if (progressMax > 0) {
                 Notification.ProgressStyle style = new Notification.ProgressStyle()
-                        .addProgressSegment(new Notification.ProgressStyle.Segment(progressMax))
+                        .addProgressSegment(new Notification.ProgressStyle.Segment(progressMax).setColor(light))
                         .setProgress(Math.max(0, Math.min(progress, progressMax)));
                 builder.setStyle(style);
             }
 
             // API 36 : demande l'affichage en « Live Update » (puce dans la barre
-            // d'état, section dédiée en haut du tiroir).
+            // d'état, section dédiée en haut du tiroir). Trois choses sont
+            // nécessaires, et le drapeau seul ne suffit pas : le flag, l'extra
+            // "android.requestPromotedOngoing" (clé non exposée par le SDK, lue
+            // par SystemUI), et une notification « promotable »
+            // (ProgressStyle + texte critique + couleur + ongoing).
+            Bundle extras = new Bundle();
+            extras.putBoolean("android.requestPromotedOngoing", true);
+            builder.setExtras(extras);
             builder.setFlag(Notification.FLAG_PROMOTED_ONGOING, true);
             notification = builder.build();
+            notification.flags |= Notification.FLAG_PROMOTED_ONGOING;
+
+            Log.i(TAG, "live update: promotable=" + notification.hasPromotableCharacteristics());
         } else {
             NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx, channel)
                     .setSmallIcon(smallIcon)

@@ -308,8 +308,8 @@ public/
 scripts/               # cron-scheduler, reset-passkey, setup (secrets locaux), QA
 Dockerfile             # image auto-hébergeable (build standalone)
 compose.yaml           # déploiement Docker prêt à l'emploi
-docs/                  # architecture, self-hosting, deploy-cpanel, android-apk
-app/globals.css        # Tokens + primitives .ui-* (système décrit dans DESIGN.md)
+docs/                  # architecture, design, product, self-hosting, deploy-cpanel, android-apk
+app/globals.css        # Tokens + primitives .ui-* (système décrit dans docs/design.md)
 app/landing.css        # Styles de la landing, isolés sous .landing-page
 ```
 
@@ -323,7 +323,8 @@ et de redistribution, sans garantie.
 ## 🩺 Santé du projet
 
 - CI (GitHub Actions) : lint, typecheck, tests unitaires, build, e2e à chaque push
-- [DESIGN.md](DESIGN.md) — le système visuel : tokens, typographie, composants `.ui-*`, motion
+- [docs/design.md](docs/design.md) — le système visuel : tokens, typographie, composants `.ui-*`, motion
+- [docs/product.md](docs/product.md) — objectif, utilisateurs, modules, ton
 - [docs/architecture.md](docs/architecture.md) — les invariants techniques (chat, mémoire, CESAR, notifications)
 - [docs/self-hosting.md](docs/self-hosting.md) — variables, Docker, HTTPS, backups
 - [docs/deploy-cpanel.md](docs/deploy-cpanel.md) — procédure mutualisée + crontab

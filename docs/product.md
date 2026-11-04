@@ -1,4 +1,4 @@
-# PRODUCT.md — PersonalBrain
+# Product — Backstage
 
 ## Objective
 A personal "second brain" dashboard for a developer who is also a concert photographer. It centralizes creative work tracking, daily coding practice, and on-demand AI assistance in a single, calm workspace.

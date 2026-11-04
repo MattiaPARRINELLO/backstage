@@ -107,7 +107,7 @@ un champ n'a **qu'une** définition — les classes `.ui-*` de `app/globals.css`
 (`@layer components`). Les composants de `components/ui/` traduisent une API en
 classes ; ils n'écrivent jamais une couleur ni un rayon. Pas de `!` : utiliser
 une variante (`--sm`, `--xs`, `--icon`, `--block`, `--area`, `--tile`).
-Tout est décrit dans `DESIGN.md`.
+Tout est décrit dans `docs/design.md`.
 
 ---
 
@@ -240,16 +240,17 @@ périment) : `docs/architecture.md` § *Contrat du provider IA*.
 
 ## Documentation
 
-| Fichier                | Contenu                                                    |
-| ---------------------- | ---------------------------------------------------------- |
-| `README.md`            | présentation, installation, structure                      |
-| `docs/architecture.md` | invariants détaillés (chat, mémoire, CESAR, push, OAuth)   |
-| `docs/self-hosting.md` | Docker, variables, HTTPS, backups                          |
-| `docs/deploy-cpanel.md`| déploiement mutualisé + crontab                            |
-| `docs/android-apk.md`  | TWA + FCM (build, signature, appairage)                    |
-| `DESIGN.md`            | tokens, typographie, composants `.ui-*`, motion            |
-| `PRODUCT.md`           | objectif, utilisateurs, modules, ton                       |
-| `.env.example`         | variables d'environnement commentées                       |
+| Fichier                | Contenu                                                  |
+| ---------------------- | -------------------------------------------------------- |
+| `README.md`            | présentation, installation, structure                    |
+| `AGENTS.md`            | règles agent (ce fichier)                                |
+| `docs/architecture.md` | invariants détaillés (chat, mémoire, CESAR, push, OAuth) |
+| `docs/design.md`       | tokens, typographie, composants `.ui-*`, motion          |
+| `docs/product.md`      | objectif, utilisateurs, modules, ton                      |
+| `docs/self-hosting.md` | Docker, variables, HTTPS, backups                        |
+| `docs/deploy-cpanel.md`| déploiement mutualisé + crontab                          |
+| `docs/android-apk.md`  | TWA + FCM (build, signature, appairage)                  |
+| `.env.example`         | variables d'environnement commentées                     |
 
 ---
 
@@ -272,7 +273,7 @@ périment) : `docs/architecture.md` § *Contrat du provider IA*.
 1. API Next.js incertaine → `node_modules/next/dist/docs/`
 2. Auth / routing → `proxy.ts`, puis `lib/session.ts`
 3. Pattern d'action → `app/actions/reminders.ts`
-4. Question produit → `PRODUCT.md` ; UI → `DESIGN.md`
+4. Question produit → `docs/product.md` ; UI → `docs/design.md`
 5. Déploiement → `docs/self-hosting.md`, `docs/deploy-cpanel.md`
 6. Pattern inconnu → lire un fichier voisin et l'imiter
 7. Ambiguïté d'architecture → demander, ne pas deviner

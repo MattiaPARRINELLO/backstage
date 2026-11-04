@@ -1,4 +1,4 @@
-# DESIGN.md — Backstage
+# Design — Backstage
 
 > État au 2 novembre 2026, après réconciliation des cinq branches de refonte.
 > **La landing et l'application partagent le même langage.** Ce fichier décrit

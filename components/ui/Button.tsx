@@ -17,7 +17,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 /**
  * Bouton de l'application. Toute l'apparence vient des classes `.ui-btn`
  * (`app/globals.css`) : ce composant ne fait que traduire l'API en variantes.
- * Ne jamais réintroduire de couleur ou de rayon ici — cf. DESIGN.md §5.
+ * Ne jamais réintroduire de couleur ou de rayon ici — cf. docs/design.md §5.
  */
 const variantClasses: Record<Variant, string> = {
   primary: "ui-btn--primary",

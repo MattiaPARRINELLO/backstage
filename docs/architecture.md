@@ -16,7 +16,7 @@ pourquoi elles existent et ce qui casse si on les ignore.
   les mêmes clés, sinon l'accueil déclenche des requêtes réseau en double.
   L'ancienne exception visuelle (dégradés radiaux, sheen, particules,
   animations d'inactivité) est **supprimée** : l'accueil suit la direction
-  commune (cf. `DESIGN.md` §1 et §6). Il ne reste que `home-rise`, `home-swap`
+  commune (cf. `design.md` §1 et §6). Il ne reste que `home-rise`, `home-swap`
   et `home-caret`.
   ⚠️ La composition d'accueil est **ancrée en haut** et le conteneur de
   `ChatView.tsx` n'a **pas** de padding haut dans ce cas : c'est ce qui amène le

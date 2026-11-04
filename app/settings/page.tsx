@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { setLeetcodeUsername, loadLeetcode } from "@/app/actions/leetcode";
 import { updateModels } from "@/app/actions/settings";
 import { AndroidPairing } from "./AndroidPairing";
+import { PasskeyPairing } from "./PasskeyPairing";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/Chrome";
 import { AccentPicker } from "@/components/ui/AccentPicker";
@@ -392,6 +393,13 @@ export default function SettingsPage() {
                 </p>
               </div>
             )}
+          </Section>
+
+          <Section
+            title="Sécurité"
+            description="Les clés qui ouvrent BACKSTAGE, et les appareils autorisés à en recevoir une."
+          >
+            <PasskeyPairing />
           </Section>
 
           <Section

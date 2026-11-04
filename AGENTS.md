@@ -213,6 +213,32 @@ de code lourd (`fs`, `path`) si un jour déployé en edge.
 l'ancien nom) : fichier renommé, fonction exportée `proxy`, runtime Node par
 défaut. Testé par `proxy.test.ts` et les E2E (deny-by-default).
 
+### Ajout d'une clé d'accès sur un autre appareil (`lib/passkey-pairing.ts`)
+
+Une passkey est liée à l'appareil (ou au gestionnaire de clés) qui l'a créée.
+Comme l'enregistrement d'une clé supplémentaire exige une **session active**
+(`register-options` renvoie `401` sinon), un PC n'a aucun moyen d'obtenir sa
+propre clé quand la seule passkey vit sur le téléphone — et le QR code
+« utiliser un téléphone » échoue si la clé est dans un fournisseur qui ne
+répond pas au protocole hybrid (Samsung Pass, par exemple).
+
+Le pont est un **code d'appairage** :
+
+| Étape | Où | Quoi |
+| ----- | -- | ---- |
+| 1 | `/settings` → Sécurité → « Ajouter un appareil » | `createPasskeyPairing()` (Server Action, `requireSession`) génère un code de 10 caractères, TTL 10 min, 5 codes en attente max |
+| 2 | Autre appareil | `https://<domaine>/login?pair=<code>` : `register-options` accepte le header `x-pair-code` |
+| 3 | `register-verify` | le code est **consommé** (`consumePasskeyPairCode`) puis la clé enregistrée et la session ouverte |
+
+- Le code ne remplace jamais la biométrie : il autorise seulement l'appareil
+  inconnu à lancer la cérémonie WebAuthn. Il est à usage unique, jamais stocké
+  en clair ailleurs que dans `data/passkey-pair-codes.json` (inespionnable sans
+  session, le fichier reste côté serveur).
+- Un code invalide/expiré est une **impasse explicite** sur `/login`, pas un
+  repli silencieux vers « Se connecter » (qui ne peut pas aboutir sans clé).
+- Ne pas remplacer ce mécanisme par un `SETUP_TOKEN` réutilisable : cela
+  rouvrirait l'enregistrement public d'une nouvelle passkey.
+
 ### Routes notables hors `/api/auth`
 
 - `/api/chat/confirm` — **exécute les outils IA à effet externe après
@@ -536,7 +562,7 @@ Ré-exporte `export *` des 14 domaines + `./web`, mais de `storage-core` seuleme
 `accreditations` · `activity` · `chat-history` · `concerts` · `config` ·
 `consent` · `demo-calls` · `emails` · `fcm-devices` · `fcm-pair-codes` · `gallery` ·
 `intentions` · `leetcode` · `live-notifs` · `memory` ·
-`notified-briefs` · `photo-shoots` · `push-subscriptions` ·
+`notified-briefs` · `passkey-pair-codes` · `photo-shoots` · `push-subscriptions` ·
 `reminders` · `schedule` · `server-cache` · `users` · `watch-later`
 
 Tokens OAuth : `calendar-token` · `gmail-token` · `microsoft-todo-token` ·

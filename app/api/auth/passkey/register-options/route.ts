@@ -2,17 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateRegistrationOptions } from "@simplewebauthn/server";
 import { getRpID, getOrigin, hasCredentials, isSetupConsumed, isOpenBootstrapAllowed } from "@/lib/auth";
 import { createChallenge, getSession } from "@/lib/session";
+import { isValidPasskeyPairCode } from "@/lib/passkey-pairing";
 
 export async function GET(request: NextRequest) {
   const alreadyRegistered = await hasCredentials();
+  const pairCode = request.headers.get("x-pair-code") ?? "";
 
   // Bootstrap : le premier enregistrement est libre (aucun compte n'existe).
   // Un enregistrement supplémentaire (ajout d'une passkey) exige une session
   // active, sinon n'importe qui peut enregistrer sa propre passkey et
   // s'authentifier à la place du propriétaire.
+  //
+  // Exception : le code d'appairage, généré depuis un appareil déjà connecté
+  // (`createPasskeyPairing`). Sans lui, une passkey resterait prisonnière de
+  // l'appareil qui l'a créée et aucun second appareil ne pourrait se connecter.
   if (alreadyRegistered) {
     const session = await getSession();
-    if (!session) {
+    if (!session && !(await isValidPasskeyPairCode(pairCode))) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
   } else if (process.env.SETUP_TOKEN) {

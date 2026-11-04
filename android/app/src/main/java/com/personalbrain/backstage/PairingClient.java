@@ -48,7 +48,12 @@ final class PairingClient {
         final Context app = ctx.getApplicationContext();
         final String secret = TokenStore.secret(app);
         final String code = TokenStore.pendingCode(app);
-        if (secret == null && (code == null || code.isEmpty())) return;
+        // Un code explicite prime sur le secret : sinon un appareil dont le
+        // serveur a oublié l'entrée (redéploiement, données restaurées) ne
+        // pourrait plus jamais être réappairé — le secret périmé serait retenté
+        // à chaque fois.
+        final boolean useCode = code != null && !code.isEmpty();
+        if (!useCode && (secret == null || secret.isEmpty())) return;
 
         try {
             String token = Tasks.await(FirebaseMessaging.getInstance().getToken(), 30, TimeUnit.SECONDS);
@@ -57,14 +62,15 @@ final class PairingClient {
                 return;
             }
             TokenStore.setToken(app, token);
-            register(app, token, code, secret);
+            register(app, token, useCode ? code : null, useCode ? null : secret);
         } catch (Exception e) {
             Log.w(TAG, "jeton FCM indisponible : " + e.getClass().getSimpleName());
         }
     }
 
     private static void register(Context app, String token, String code, String secret) {
-        try {            String body = secret != null
+        try {
+            String body = secret != null
                     ? "{\"token\":\"" + escape(token) + "\",\"secret\":\"" + escape(secret) + "\"}"
                     : "{\"token\":\"" + escape(token) + "\",\"code\":\"" + escape(code) + "\"}";
 
@@ -76,11 +82,18 @@ final class PairingClient {
                     TokenStore.clearPendingCode(app);
                     toast(app, "Notifications activées");
                 }
-                Log.i(TAG, "appareil appairé");
+                Log.i(TAG, secret != null ? "jeton rafraîchi" : "appareil appairé");
             } else if (res.status == 401 || res.status == 400) {
-                TokenStore.clearPendingCode(app);
-                Log.w(TAG, "appairage refusé (" + res.status + ")");
-                toast(app, "Code d'appairage invalide ou expiré");
+                if (secret != null) {
+                    // Secret refusé : on l'oublie, sinon aucun nouvel appairage
+                    // par code ne serait possible depuis les Paramètres.
+                    TokenStore.clearSecret(app);
+                    Log.w(TAG, "secret refusé, oublié");
+                } else {
+                    TokenStore.clearPendingCode(app);
+                    Log.w(TAG, "appairage refusé (" + res.status + ")");
+                    toast(app, "Code d'appairage invalide ou expiré");
+                }
             } else {
                 Log.w(TAG, "appairage : HTTP " + res.status);
             }

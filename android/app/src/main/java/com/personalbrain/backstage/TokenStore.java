@@ -36,6 +36,10 @@ final class TokenStore {
         prefs(ctx).edit().putString("secret", secret).apply();
     }
 
+    static void clearSecret(Context ctx) {
+        prefs(ctx).edit().remove("secret").apply();
+    }
+
     /** Code d'appairage reçu par deep link, en attente du jeton FCM. */
     static String pendingCode(Context ctx) {
         return prefs(ctx).getString("pendingCode", null);

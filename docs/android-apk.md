@@ -122,8 +122,8 @@ purgé automatiquement au premier envoi en échec (`UNREGISTERED`).
   notification`), il faut aussi forcer `notification.flags`. Si le système
   refuse la promotion (app-op `POST_PROMOTED_NOTIFICATIONS`), la notification
   redevient une notification persistante classique — jamais perdue.
-  Les cours sont promus, et fermés automatiquement à l'heure de début par
-  `clearEndedLiveNotifs()` (`data/live-notifs.json`).
+  Les cours sont promus, affichés 30 min avant la séance et fermés dès que le
+  cours commence (suivi dans `data/live-notifs.json`).
 - **Clic** : ouvre le TWA sur le `url` du message (`/schedule`, `/reminders`…).
 
 Ajouter une notification : passer par `sendPushToAll()` avec les champs

@@ -384,9 +384,11 @@ Update). Le canal Discord a été supprimé.
   `POST_PROMOTED_NOTIFICATIONS` ; dans ce cas elle redevient une notification
   persistante classique, jamais perdue. Vérifier la promotion :
   `adb logcat | grep "live update"` (`promotable=true`) et `dumpsys
-  notification | grep PROMOTED_ONGOING`. Les cours sont promus et fermés par
-  `clearEndedLiveNotifs()` à l'heure de début (`data/live-notifs.json`) ; un
-  message `dismiss: true` ferme la notification du `tag` correspondant.
+  notification | grep PROMOTED_ONGOING`. Les cours sont promus : carte postée à
+  −30 min, fermée dès que le cours commence (`data/live-notifs.json` — une fois
+  la séance entamée elle n'apprend plus rien) ; un message `dismiss: true`
+  ferme la notification du `tag` correspondant. Règle verrouillée par
+  `lib/__tests__/course-notifications.test.ts`.
 - **Appairage APK** : le TWA vit dans Chrome, l'APK n'a donc pas le cookie de
   session. `app/actions/push.ts` génère un code à usage unique (10 min) →
   `backstage://pair?code=…` → `app/api/push/fcm/pair` renvoie un secret

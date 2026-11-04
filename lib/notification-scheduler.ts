@@ -16,6 +16,12 @@ const REMINDER_INTERVAL_MS = 60_000;
 const DAILY_BRIEF_HOUR = 7;
 /** Délai d'annonce des rappels et des cours (même règle : 1 h avant). */
 const REMINDER_LEAD_MIN = 60;
+/**
+ * Fenêtre de rattrapage après l'échéance : couvre un redémarrage ou une coupure
+ * du serveur, sans ressusciter les rappels oubliés depuis des semaines (un
+ * rappel encore `pending` de l'an dernier ne doit pas surgir aujourd'hui).
+ */
+const REMINDER_GRACE_MIN = 6 * 60;
 
 // Focus mode actif : les notifications sont mises en silence. Les rappels et
 // relances restent en attente et seront envoyés après la fin de la session.
@@ -347,9 +353,13 @@ export async function checkReminders() {
   try {
     const data = await getReminders();
     const now = Date.now();
-    const pending = data.reminders.filter(
-      (r) => r.status === "pending" && new Date(r.dueAt).getTime() <= now + REMINDER_LEAD_MIN * 60_000
-    );
+    const pending = data.reminders.filter((r) => {
+      if (r.status !== "pending") return false;
+      const due = new Date(r.dueAt).getTime();
+      return (
+        due <= now + REMINDER_LEAD_MIN * 60_000 && due >= now - REMINDER_GRACE_MIN * 60_000
+      );
+    });
 
     const tracked = await readLiveCards();
     const reminderCards = tracked.filter((c) => c.kind === "reminder");

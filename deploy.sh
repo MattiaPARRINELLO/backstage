@@ -62,10 +62,14 @@ if CURRENT_BRANCH="$(git -C "$SCRIPT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/nul
     fi
     git -C "$SCRIPT_DIR" checkout main
   fi
-  # Facultatif : mettre main à jour avant de déployer (DEPLOY_AUTO_PULL=1).
-  if [ "${DEPLOY_AUTO_PULL:-0}" = "1" ]; then
+  # Mise à jour de main avant de déployer (désactivable avec DEPLOY_AUTO_PULL=0).
+  if [ "${DEPLOY_AUTO_PULL:-1}" != "0" ]; then
     echo -e "${CYAN}→ Mise à jour de main (git pull --ff-only)…${NC}"
-    git -C "$SCRIPT_DIR" pull --ff-only
+    if ! git -C "$SCRIPT_DIR" pull --ff-only; then
+      echo -e "${RED}✗ git pull --ff-only a échoué (réseau absent ou main divergente).${NC}"
+      echo -e "${YELLOW}  Déploiement interrompu : la prod ne doit pas recevoir un main périmé.${NC}"
+      exit 1
+    fi
   fi
   if [ -n "$(git -C "$SCRIPT_DIR" status --porcelain)" ]; then
     echo -e "${RED}✗ Déploiement refusé : working tree non propre sur main.${NC}"

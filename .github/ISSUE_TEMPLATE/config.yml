@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Guide de contribution
+    url: https://github.com/MattiaPARRINELLO/backstage/blob/main/CONTRIBUTING.md
+    about: Installation, commandes, conventions de commit et taille de PR.
+  - name: Documentation d'auto-hebergement
+    url: https://github.com/MattiaPARRINELLO/backstage/blob/main/docs/self-hosting.md
+    about: Docker, VPS, variables d'environnement et depannage.
+  - name: Signaler un probleme de securite
+    url: mailto:contact.mprnl@gmail.com
+    about: N'ouvre pas d'issue publique pour une faille. Ecris a l'auteur.

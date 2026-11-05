@@ -66,6 +66,7 @@ WebAuthn cassent sous Capacitor. Voir `docs/android-apk.md`.
 | Tests unitaires   | `bun run test`                                |
 | Tests E2E         | `bun run test:e2e`                            |
 | Setup local       | `bun run setup`                               |
+| Setup sans cle IA | `bun run setup:dev`                           |
 | Reset passkey     | `bun run reset:passkey`                       |
 | APK Android       | `cd android && ./gradlew :app:assembleRelease`|
 
@@ -214,7 +215,9 @@ Obligatoires : `NEXT_PUBLIC_API_URL`, `IA_API_KEY`, `AUTH_SECRET`,
 `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN`, `SETUP_TOKEN`.
 Options : Google, Microsoft, `OPENWEATHERMAP_API_KEY`, `BRAVE_SEARCH_API_KEY`,
 VAPID, `CRON_SECRET`/`CRON_BASE_URL`, `CESAR_*`, `GOOGLE_TESTING_EXPIRY`,
-`ANDROID_CERT_SHA256`. Déploiement : `.deploy.env.example`.
+`ANDROID_CERT_SHA256`, `AI_PROVIDER=mock` (fournisseur IA factice),
+`DEV_AUTH_BYPASS=true` (session locale hors production).
+Déploiement : `.deploy.env.example`.
 
 Contrat du provider IA (session header, baseURL des deux SDK, modèles qui
 périment) : `docs/architecture.md` § *Contrat du provider IA*.
@@ -243,6 +246,8 @@ périment) : `docs/architecture.md` § *Contrat du provider IA*.
 | ---------------------- | -------------------------------------------------------- |
 | `README.md`            | présentation, installation, structure                    |
 | `AGENTS.md`            | règles agent (ce fichier)                                |
+| `CONTRIBUTING.md`      | installation dev, commandes, conventions, périmètre      |
+| `docs/contributing/`   | carte du code, tutoriel première PR                      |
 | `docs/architecture.md` | invariants détaillés (chat, mémoire, CESAR, push, OAuth) |
 | `docs/design.md`       | tokens, typographie, composants `.ui-*`, motion          |
 | `docs/product.md`      | objectif, utilisateurs, modules, ton                      |

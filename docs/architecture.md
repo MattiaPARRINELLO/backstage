@@ -384,6 +384,21 @@ ne pas réintroduire de `catch {}` vide, c'est ce qui a masqué la panne.
 
 ---
 
+## Mode développement sans clé ni passkey
+
+Deux interrupteurs, réservés au développement local :
+
+| Variable | Effet | Garde |
+| -------- | ----- | ----- |
+| `AI_PROVIDER=mock` | `lib/ai-providers/mock.ts` répond à la place du modèle (aucun appel réseau, catalogue `mock-backstage`) | aucune, mais la valeur n'a d'effet que si elle est présente |
+| `DEV_AUTH_BYPASS=true` | `GET /api/auth/dev-login` ouvre une session `owner` sans WebAuthn | `NODE_ENV !== "production"` **et** valeur exacte, sinon 404 |
+
+`bun run setup:dev` écrit ces deux variables dans `.env.local`. Ne jamais les
+activer sur une instance exposée : `DEV_AUTH_BYPASS` ouvrirait l'application à
+quiconque atteint l'URL.
+
+---
+
 ## instrumentation.ts — piège documenté
 
 ```ts

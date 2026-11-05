@@ -34,6 +34,7 @@ intégrations optionnelles.
 - [Les écrans](#-les-écrans) · [Décisions techniques](#-décisions-techniques-notables)
 - [Trois problèmes réels](#-trois-problèmes-réels-et-ce-quils-mont-appris)
 - [Installation](#-installation) · [Structure](#-structure)
+- [Contribuer](#-contribuer)
 - [Licence](#-licence) · [Santé du projet](#-santé-du-projet) · [Me retrouver](#-me-retrouver)
 
 | Aspect | Détail |
@@ -208,6 +209,17 @@ bun dev
 L'app démarre sur [http://localhost:3000](http://localhost:3000).
 `bun run setup` est idempotent : il ne réécrit jamais une valeur déjà présente.
 
+**Contribuer sans clé API ni passkey** (mode développement) :
+
+```bash
+bun install && bun run setup:dev && bun dev
+```
+
+Puis ouvrir [http://localhost:3000/api/auth/dev-login](http://localhost:3000/api/auth/dev-login).
+`AI_PROVIDER=mock` renvoie des réponses scriptées et `DEV_AUTH_BYPASS=true`
+ouvre une session locale. Les deux sont ignorés en production. Détail :
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
 **Premier login :** ouvrir
 [http://localhost:3000/login?setupToken=…](http://localhost:3000/login) (le token
 est dans `.env.local`). Il ne sert qu'une fois. En production, sans
@@ -314,6 +326,24 @@ app/landing.css        # Styles de la landing, isolés sous .landing-page
 ```
 
 ---
+
+## 🤝 Contribuer
+
+Les contributions externes sont bienvenues : corrections de bugs, tests,
+documentation, accessibilité et auto-hébergement. Les PR restent petites (un
+sujet, moins de 400 lignes) et déclarent l'aide éventuelle d'un assistant IA.
+
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** : installation, commandes, conventions
+  de branche et de commit, périmètre, transparence IA
+- **[docs/contributing/code-map.md](docs/contributing/code-map.md)** : quel
+  dossier fait quoi, où ajouter une route, une action, un écran, un test
+- **[docs/contributing/premiere-pr.md](docs/contributing/premiere-pr.md)** : ta
+  première PR en 15 minutes
+- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** : règles de comportement
+
+Les issues utilisent les modèles de `.github/ISSUE_TEMPLATE/`. Pour une faille
+de sécurité, écris à [contact.mprnl@gmail.com](mailto:contact.mprnl@gmail.com)
+au lieu d'ouvrir une issue publique.
 
 ## 📄 Licence
 

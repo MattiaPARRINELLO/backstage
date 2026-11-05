@@ -265,8 +265,10 @@ Ne jamais réintroduire Playwright ici : ça casse la prod standalone.
   plus de 6 h, est vide, ou si le dernier sync a échoué. Garde anti-concurrence
   dans `lib/storage/schedule.ts`.
 - Notifications : `checkScheduleNotifs()` envoie un push **1 h avant** chaque
-  cours (matière + salle + heure), fermé au démarrage de la séance — registre
-  `data/live-notifs.json`, qui sert d'anti-doublon et de source pour la fermeture.
+  cours (salle en titre, heure + prof en corps), **rafraîchi silencieusement
+  chaque minute** (barre de progression), fermé au démarrage de la séance —
+  registre `data/live-notifs.json`, qui sert d'anti-doublon et de source pour la
+  fermeture.
 - Chat : outil **lecture seule** `get_schedule` (`scope: today|week|next`,
   `subject` optionnel) — jamais dans `REQUIRE_CONFIRMATION`.
 - Daily brief : bloc « Cours du jour » + instruction de citer la salle du
@@ -312,7 +314,11 @@ Update).
   notification | grep PROMOTED_ONGOING`. Les cours sont promus : carte postée à
   1 h avant, fermée dès que le cours commence (`data/live-notifs.json` — une fois
   la séance entamée elle n'apprend plus rien) ; un message `dismiss: true`
-  ferme la notification du `tag` correspondant. Règle verrouillée par
+  ferme la notification du `tag` correspondant. **Rafraîchissement** : une carte
+  affichée est renvoyée chaque fois que les minutes restantes changent
+  (`sentMin` du registre), avec `silent: true` / `renotify: false` côté web et
+  `setOnlyAlertOnce(true)` côté APK — sinon le texte figé (« dans 60 min ») ne
+  bouge plus jusqu'à la fin. Règle verrouillée par
   `lib/__tests__/course-notifications.test.ts`.
 - **Rappels** : même règle que les cours — carte promue postée 1 h avant
   l'échéance (`REMINDER_LEAD_MIN`), fermée par `dismissReminderCard(id)` dès que
@@ -321,8 +327,9 @@ Update).
   constate qu'il n'est plus `pending` (sync Microsoft, autre client). Le même
   registre `data/live-notifs.json` porte cours **et** rappels (`kind`).
   Attention : le canal Android d'une carte est celui de son type — un rappel
-  sonne, il n'est pas silencieux comme le canal `live`. Tests :
-  `lib/__tests__/reminder-cards.test.ts`.
+  sonne, il n'est pas silencieux comme le canal `live`. Le compte à rebours
+  (« Rappel dans N min ») est rafraîchi selon la même règle que les cours.
+  Tests : `lib/__tests__/reminder-cards.test.ts`.
 - **Appairage APK** : le TWA vit dans Chrome, l'APK n'a donc pas le cookie de
   session. `app/actions/push.ts` génère un code à usage unique (10 min) →
   `backstage://pair?code=…` → `app/api/push/fcm/pair` renvoie un secret

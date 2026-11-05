@@ -163,6 +163,9 @@ final class Notifications {
                     .setContentIntent(contentIntent)
                     .setAutoCancel(true)
                     .setOngoing(promoted)
+                    // Le serveur rafraîchit la carte chaque minute (compte à
+                    // rebours) : sans ça, chaque mise à jour resonnerait.
+                    .setOnlyAlertOnce(true)
                     .setCategory(promoted ? NotificationCompat.CATEGORY_PROGRESS : NotificationCompat.CATEGORY_REMINDER)
                     .setPriority(NotificationCompat.PRIORITY_MAX)
                     .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)

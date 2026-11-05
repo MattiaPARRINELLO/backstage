@@ -42,9 +42,10 @@ const COURSE_LEAD_MIN = 60;
 // sa fin prévue, donc on tient un registre de ce qui est affiché pour savoir
 // quoi fermer et ne pas re-poster.
 //
-// - cours : postée 1 h avant, fermée au démarrage de la séance ;
-// - rappel : postée 1 h avant l'échéance, fermée quand le rappel est fait,
-//   supprimé, ou reporté.
+// - cours : postée 1 h avant, rafraîchie chaque minute, fermée au démarrage de
+//   la séance ;
+// - rappel : postée 1 h avant l'échéance, rafraîchie chaque minute, fermée
+//   quand le rappel est fait, supprimé, ou reporté.
 const LIVE_NOTIFS_FILE = "live-notifs.json";
 
 interface LiveCard {
@@ -53,9 +54,19 @@ interface LiveCard {
   /** id du rappel, pour pouvoir le fermer quand il change d'état. */
   refId?: string;
   subject: string;
+  /** Salle du cours (ou notes du rappel). */
   place: string;
+  /** Enseignant, affiché dans le corps de la carte de cours. */
+  teacher?: string;
+  /** Salle seule, pour la puce de la barre d'état. */
+  room?: string;
   /** Démarrage du cours ou échéance du rappel. */
   at: number;
+  /**
+   * Minutes restantes au moment du dernier envoi : sert à ne rafraîchir la
+   * carte que quand le compte à rebours (ou la barre de progression) change.
+   */
+  sentMin?: number;
 }
 
 async function readLiveCards(): Promise<LiveCard[]> {
@@ -68,7 +79,10 @@ async function readLiveCards(): Promise<LiveCard[]> {
     refId: item.refId,
     subject: item.subject ?? "",
     place: item.place ?? "",
+    teacher: item.teacher,
+    room: item.room,
     at: item.at ?? (item as { start?: number }).start ?? 0,
+    sentMin: item.sentMin,
   }));
 }
 
@@ -109,35 +123,46 @@ export async function dismissReminderCard(reminderId: string): Promise<void> {
   }
 }
 
-/** Payload de la carte « cours dans N min ». */
-function coursePayload(course: LiveCard): string {
+/** Minutes restantes (arrondies) avant une échéance. */
+function remainingMinutes(at: number, now = Date.now()): number {
+  return Math.max(0, Math.round((at - now) / 60_000));
+}
+
+/** Payload de la carte « cours » : la salle passe en titre, l'heure en corps. */
+function coursePayload(course: LiveCard, update = false): string {
   const start = clock(course.at);
-  const remainingMin = Math.max(0, Math.round((course.at - Date.now()) / 60_000));
+  const remainingMin = remainingMinutes(course.at);
+  const room = (course.room ?? "").trim();
+  const title = room ? `${room} — ${course.subject}` : course.subject;
 
   return JSON.stringify({
-    title: `Cours dans ${remainingMin} min : ${course.subject}`,
-    body: [start, course.place].filter(Boolean).join(" — "),
+    title,
+    body: [`Début ${start}`, course.teacher].filter(Boolean).join(" — "),
     icon: "/icons/icon-192.png",
     badge: "/icons/icon-192.png",
     tag: course.tag,
     data: { type: "course", url: "/schedule" },
     requireInteraction: true,
-    renotify: true,
-    silent: false,
+    // Rafraîchissement : même `tag`, remplacement silencieux (pas de son).
+    renotify: !update,
+    silent: update,
     timestamp: Date.now(),
-    vibrate: [300, 150, 300, 150, 300],
+    vibrate: update ? [] : [300, 150, 300, 150, 300],
     // APK Android : carte promue (Live Update), fermée au début du cours.
     promoted: true,
-    criticalText: `Début ${start}`.slice(0, 28),
+    criticalText: (room || "Cours").slice(0, 28),
     progress: Math.max(0, COURSE_LEAD_MIN - remainingMin),
     progressMax: COURSE_LEAD_MIN,
   });
 }
 
 /** Payload de la carte « rappel dans N min » (mêmes règles que les cours). */
-function reminderPayload(card: LiveCard & { id: string; notes?: string; recurrence?: string }): string {
+function reminderPayload(
+  card: LiveCard & { id: string; notes?: string; recurrence?: string },
+  update = false
+): string {
   const due = clock(card.at);
-  const remainingMin = Math.max(0, Math.round((card.at - Date.now()) / 60_000));
+  const remainingMin = remainingMinutes(card.at);
   const late = Date.now() > card.at;
 
   return JSON.stringify({
@@ -150,14 +175,14 @@ function reminderPayload(card: LiveCard & { id: string; notes?: string; recurren
     // « Fait » / « +15 min ») ; l'APK les ignore et ouvre simplement /reminders.
     data: { type: "reminder", reminderId: card.id, url: "/reminders", recurrence: card.recurrence },
     requireInteraction: true,
-    renotify: true,
-    silent: false,
+    renotify: !update,
+    silent: update,
     timestamp: Date.now(),
     actions: [
       { action: "done", title: "✓ Fait" },
       { action: "snooze", title: "⏰ +15 min" },
     ],
-    vibrate: [300, 150, 300, 150, 300],
+    vibrate: update ? [] : [300, 150, 300, 150, 300],
     // APK Android : carte promue, fermée quand le rappel est traité.
     promoted: true,
     criticalText: due.slice(0, 28),
@@ -202,20 +227,18 @@ async function markBriefSent(date: string): Promise<void> {
   }
 }
 
-/** Cartes de cours : postées 1 h avant, fermées dès que le cours commence. */
+/** Cartes de cours : postées 1 h avant, mises à jour chaque minute, fermées au début. */
 export async function checkScheduleNotifs(): Promise<void> {
   try {
     const now = Date.now();
     const courses = await getCourses();
     const tracked = await readLiveCards();
     const courseCards = tracked.filter((i) => i.kind === "course");
-    const trackedTags = new Set(courseCards.map((i) => i.tag));
 
     // 1. Cours commencés (ou oubliés) : fermeture, même en mode focus — une
     //    carte périmée ne doit pas rester dans la barre d'état.
     for (const item of courseCards.filter((i) => now >= i.at)) {
       await dismissLiveCard(item.tag, "/schedule");
-      trackedTags.delete(item.tag);
     }
 
     if (await isFocusActive()) return;
@@ -225,20 +248,37 @@ export async function checkScheduleNotifs(): Promise<void> {
     const upcoming = getCoursesStartingSoon(courses, COURSE_LEAD_MIN, now);
     for (const c of upcoming) {
       const tag = `course-${courseNotifKey(c, COURSE_LEAD_MIN)}`;
-      if (trackedTags.has(tag)) continue;
-
+      const room = c.room?.trim() ?? "";
       const item: LiveCard = {
         tag,
         kind: "course",
         subject: c.subject,
-        place: [c.room, c.teacher].filter(Boolean).join(" — "),
+        place: room,
+        room,
+        teacher: c.teacher,
         at: c.start,
       };
+      const sentMin = remainingMinutes(item.at, now);
+      const existing = courseCards.find((i) => i.tag === tag);
+
+      // Carte déjà affichée : la barre de progression doit suivre l'heure
+      // réelle. On la remplace silencieusement quand le compte change, sinon
+      // elle reste figée sur « 60 min » jusqu'au début du cours.
+      if (existing) {
+        if (existing.sentMin === sentMin) continue;
+        const { sent } = await sendPushToAll(coursePayload(item, true), { quiet: true });
+        if (!sent) continue;
+        await writeLiveCards((items) => {
+          const card = items.find((i) => i.tag === tag);
+          if (card) card.sentMin = sentMin;
+        });
+        continue;
+      }
 
       const { sent } = await sendPushToAll(coursePayload(item));
       if (!sent) continue;
 
-      trackedTags.add(tag);
+      item.sentMin = sentMin;
       await writeLiveCards((items) => {
         items.push(item);
       });
@@ -246,7 +286,7 @@ export async function checkScheduleNotifs(): Promise<void> {
       await logActivity(
         "course_notified",
         `Cours à venir : ${c.subject}`,
-        `${clock(c.start)} — ${c.room ?? ""}`
+        `${clock(c.start)} — ${room}`
       );
     }
   } catch (err) {
@@ -267,7 +307,8 @@ export async function syncScheduleIfStale(): Promise<void> {
 }
 
 export async function sendPushToAll(
-  payload: string
+  payload: string,
+  options: { quiet?: boolean } = {}
 ): Promise<{ sent: boolean; devices: number }> {
   // Deux canaux pour la même notification : web push (PWA installée) et FCM
   // (APK Android). Les deux partent du même JSON, chacun ignore les champs
@@ -281,13 +322,13 @@ export async function sendPushToAll(
     if (!vapidDetails.publicKey || !vapidDetails.privateKey) {
       void serverLog("scheduler", "error", "VAPID keys missing");
     } else {
-      console.log(`[scheduler] Envoi push à ${subs.length} appareil(s)...`);
+      if (!options.quiet) console.log(`[scheduler] Envoi push à ${subs.length} appareil(s)...`);
 
       const results = await Promise.allSettled(
         subs.map(async (sub: StoredPushSubscription) => {
           try {
             await sendPushNotification(sub.endpoint, sub.keys, payload);
-            console.log(`[scheduler] Push OK → ${sub.endpoint.slice(0, 50)}...`);
+            if (!options.quiet) console.log(`[scheduler] Push OK → ${sub.endpoint.slice(0, 50)}...`);
             return true;
           } catch (err: unknown) {
             const e = err as { statusCode?: number; body?: string };
@@ -307,7 +348,7 @@ export async function sendPushToAll(
       const failed = results.filter((r) => r.status === "fulfilled" && r.value === false).length;
       if (failed > 0) {
         console.warn(`[scheduler] ${failed}/${subs.length} push notifications failed`);
-      } else {
+      } else if (!options.quiet) {
         console.log(`[scheduler] ${subs.length}/${subs.length} push envoyés avec succès`);
       }
     }
@@ -363,7 +404,6 @@ export async function checkReminders() {
 
     const tracked = await readLiveCards();
     const reminderCards = tracked.filter((c) => c.kind === "reminder");
-    const trackedTags = new Set(reminderCards.map((c) => c.tag));
 
     // 1. Cartes orphelines : le rappel a été fait, supprimé ou reporté sans
     //    passer par l'action (sync Microsoft, autre client, cron).
@@ -373,7 +413,6 @@ export async function checkReminders() {
     for (const card of reminderCards) {
       if (!card.refId || !pendingIds.has(card.refId)) {
         await dismissLiveCard(card.tag, "/reminders");
-        trackedTags.delete(card.tag);
       }
     }
 
@@ -381,8 +420,6 @@ export async function checkReminders() {
 
     for (const r of pending) {
       const tag = `reminder-${r.id}`;
-      if (trackedTags.has(tag)) continue;
-
       const card: LiveCard & { id: string; notes?: string; recurrence?: string } = {
         tag,
         kind: "reminder",
@@ -394,13 +431,26 @@ export async function checkReminders() {
         notes: r.notes,
         recurrence: r.recurrence,
       };
+      const sentMin = remainingMinutes(card.at, now);
+      const existing = reminderCards.find((c) => c.tag === tag);
+
+      // Carte déjà affichée : « rappel dans N min » doit décroître pour de bon.
+      if (existing) {
+        if (existing.sentMin === sentMin) continue;
+        const { sent } = await sendPushToAll(reminderPayload(card, true), { quiet: true });
+        if (!sent) continue;
+        await writeLiveCards((items) => {
+          const trackedCard = items.find((i) => i.tag === tag);
+          if (trackedCard) trackedCard.sentMin = sentMin;
+        });
+        continue;
+      }
 
       // On n'enregistre la carte que si l'envoi a réussi : sinon elle sera
       // retentée au prochain tick au lieu d'être perdue.
       const { sent } = await sendPushToAll(reminderPayload(card));
       if (!sent) continue;
 
-      trackedTags.add(tag);
       await writeLiveCards((items) => {
         items.push({
           tag,
@@ -409,6 +459,7 @@ export async function checkReminders() {
           subject: r.title,
           place: r.notes ?? "",
           at: card.at,
+          sentMin,
         });
       });
     }

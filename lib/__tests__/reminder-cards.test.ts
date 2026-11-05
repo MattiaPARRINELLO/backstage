@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // l'échéance, une seule fois, fermée quand le rappel est traité (fait,
 // supprimé, reporté) ou s'il n'est plus en attente.
 const store = new Map<string, unknown>();
-const sent: { title: string; tag?: string; dismiss?: boolean; progress?: number; progressMax?: number }[] = [];
+const sent: { title: string; tag?: string; dismiss?: boolean; progress?: number; progressMax?: number; silent?: boolean }[] = [];
 
 type FakeReminder = {
   id: string;
@@ -64,7 +64,14 @@ vi.mock("@/lib/send-push", () => ({
 
 vi.mock("@/lib/fcm", () => ({
   sendFcmToAll: vi.fn(
-    async (payload: { title: string; tag?: string; dismiss?: boolean; progress?: number; progressMax?: number }) => {
+    async (payload: {
+      title: string;
+      tag?: string;
+      dismiss?: boolean;
+      progress?: number;
+      progressMax?: number;
+      silent?: boolean;
+    }) => {
       sent.push(payload);
       return { sent: true, devices: 1 };
     }
@@ -119,11 +126,13 @@ describe("cartes de rappel", () => {
     vi.setSystemTime(new Date(at(13, 30)));
     await checkReminders();
 
-    expect(sent).toHaveLength(1);
-    expect(sent[0].title).toBe("Rappel dans 60 min : Appeler le plombier");
-    expect(sent[0].tag).toBe("reminder-r1");
-    expect(sent[0].progressMax).toBe(60);
-    expect(sent[0].dismiss).toBe(false);
+    const [initial, refresh] = sent;
+    expect(initial.title).toBe("Rappel dans 60 min : Appeler le plombier");
+    expect(initial.tag).toBe("reminder-r1");
+    expect(initial.progressMax).toBe(60);
+    expect(initial.dismiss).toBe(false);
+    // Le compte à rebours suit l'heure réelle, sans ressonner.
+    expect(refresh.title).toBe("Rappel dans 30 min : Appeler le plombier");
   });
 
   it("ferme la carte quand le rappel est fait", async () => {

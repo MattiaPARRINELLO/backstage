@@ -90,8 +90,9 @@ export function startLiveRun(input: {
   sessionId: string;
   userMessage: Message;
   messages: { role: "user" | "assistant"; content: string }[];
+  actionContext?: string;
 }): void {
-  const { sessionId, userMessage, messages } = input;
+  const { sessionId, userMessage, messages, actionContext } = input;
 
   controllers.get(sessionId)?.abort();
   const run: LiveRun = {
@@ -113,7 +114,8 @@ export function startLiveRun(input: {
         messages,
         (event) => pushEvent(run, event),
         controller.signal,
-        sessionId
+        sessionId,
+        actionContext
       );
       // Flux fermé sans évènement final (coupure réseau) : on ne laisse pas
       // la vue bloquée en « en train d'écrire ».

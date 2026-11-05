@@ -68,6 +68,28 @@ export function isFailedStatus(status: ToolStatus): boolean {
 }
 
 /**
+ * Outils à effet de bord dont le résultat peut être rejoué au modèle dans les
+ * tours suivants. Volontairement restreint aux écritures : les résultats de
+ * lecture (emails, pages web, calendrier) sont du contenu externe non fiable
+ * et ne doivent jamais être promus dans le prompt système.
+ */
+export const SIDE_EFFECT_TOOL_NAMES = new Set<string>([
+  "send_email_response",
+  "create_calendar_event",
+  "update_calendar_event",
+  "delete_calendar_event",
+  "add_memory_fact",
+  "add_reminder",
+  "update_reminder",
+  "schedule_followup",
+  "add_watch_later",
+  "scan_accreditations",
+  "prepare_concert",
+  "add_photo_shoot",
+  "update_photo_shoot",
+]);
+
+/**
  * Règle injectée au modèle quand un outil n'a pas abouti. Le marqueur `[...]`
  * est la source de vérité : il ne dépend pas de la formulation du texte.
  */

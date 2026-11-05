@@ -104,6 +104,24 @@ describe("POST /api/chat", () => {
     );
   });
 
+  it("injecte l'etat des actions deja executees dans le prompt systeme", async () => {
+    const res = await POST(
+      makeRequest({
+        messages: [{ role: "user", content: "Alors, ce mail est parti ?" }],
+        actionContext: "- send_email_response : [OK] Reponse envoyee (message id: abc).",
+      })
+    );
+    await res.text();
+
+    const [, sentMessages] = mockStream.mock.calls[0] as [
+      string,
+      { role: string; content: string }[],
+    ];
+    const system = sentMessages.find((m) => m.role === "system");
+    expect(system?.content).toContain("<executed_actions>");
+    expect(system?.content).toContain("[OK] Reponse envoyee");
+  });
+
   it("memorise les faits extraits et les signale apres la reponse finale", async () => {
     // L'extraction doit etre ATTENDUE (pas de `void`) : c'est ce qui garantit
     // l'ecriture avant la fin de la requete.

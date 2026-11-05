@@ -188,6 +188,13 @@ d'une exécution d'outil : `ok` / `error` / `empty` / `blocked`.
   `TOOL_HONESTY_RULE` dès qu'un résultat n'est pas `[OK]`.
 - `/api/chat/confirm-batch` dérive `ok` du **statut**, plus du texte : un
   résultat « Rappel introuvable. » sans exception est affiché comme un échec.
+- Après une confirmation, le client reporte le résultat sur l'appel d'outil
+  concerné (`status: "success"`), puis transmet au tour suivant un bloc
+  `actionContext` limité aux **outils à effet de bord** (`SIDE_EFFECT_TOOL_NAMES`
+  dans `lib/tool-result.ts`). La route l'injecte dans le prompt système sous
+  `<executed_actions>`. Sans ça, le modèle repart d'un contexte où l'action est
+  encore « bloquée » et affirme que le mail n'est pas parti. Les résultats de
+  lecture (emails, pages web) sont exclus : contenu externe non fiable.
 
 ➡️ Tout nouvel outil d'écriture doit passer par `runTool` et se vérifier par
 relecture. Tout nouvel consommateur doit utiliser le statut, jamais une

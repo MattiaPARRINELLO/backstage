@@ -6,6 +6,7 @@ import {
   isFailedStatus,
   TOOL_STATUS_MARKER,
   TOOL_HONESTY_RULE,
+  SIDE_EFFECT_TOOL_NAMES,
 } from "@/lib/tool-result";
 
 describe("classifyToolText", () => {
@@ -78,5 +79,15 @@ describe("TOOL_HONESTY_RULE", () => {
     for (const marker of Object.values(TOOL_STATUS_MARKER)) {
       expect(TOOL_HONESTY_RULE).toContain(`[${marker}]`);
     }
+  });
+});
+
+describe("SIDE_EFFECT_TOOL_NAMES", () => {
+  it("contient les ecritures rejouables et exclut les lectures", () => {
+    expect(SIDE_EFFECT_TOOL_NAMES.has("send_email_response")).toBe(true);
+    expect(SIDE_EFFECT_TOOL_NAMES.has("add_reminder")).toBe(true);
+    // Les lectures ramenent du contenu externe : jamais promues dans le prompt.
+    expect(SIDE_EFFECT_TOOL_NAMES.has("fetch_and_search_emails")).toBe(false);
+    expect(SIDE_EFFECT_TOOL_NAMES.has("web_search")).toBe(false);
   });
 });

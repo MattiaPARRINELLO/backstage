@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // notification absente), d'où ce test avec horloge simulée.
 const store = new Map<string, unknown>();
 const sent: { title: string; tag?: string; dismiss?: boolean; body?: string; silent?: boolean }[] = [];
+/** Résultat renvoyé par le canal natif : permet de simuler un envoi raté. */
+let fcmResult: { sent: boolean; devices: number } = { sent: true, devices: 1 };
 
 const COURSES = [
   { uuid: "c1", subject: "E17 PYTHON", room: "Salle 06", teacher: "M. Martin", start: 0, end: 0 },
@@ -64,7 +66,7 @@ vi.mock("@/lib/fcm", () => ({
   sendFcmToAll: vi.fn(
     async (payload: { title: string; tag?: string; dismiss?: boolean; silent?: boolean }) => {
       sent.push(payload);
-      return { sent: true, devices: 1 };
+      return fcmResult;
     }
   ),
 }));
@@ -75,6 +77,7 @@ describe("cartes de cours", () => {
   beforeEach(() => {
     store.clear();
     sent.length = 0;
+    fcmResult = { sent: true, devices: 1 };
     vi.useFakeTimers();
     COURSES[0].start = at(9, 0);
     COURSES[0].end = at(12, 0);
@@ -128,6 +131,37 @@ describe("cartes de cours", () => {
     vi.setSystemTime(new Date(at(9, 5)));
     await checkScheduleNotifs();
     expect(sent.at(-1)).toBe(dismiss);
+  });
+
+  it("réessaie la fermeture tant qu'aucun appareil ne l'a reçue", async () => {
+    vi.setSystemTime(new Date(at(8, 0)));
+    await checkScheduleNotifs();
+
+    // Appareil injoignable au moment du début du cours : la carte doit rester
+    // suivie, sinon la notification resterait affichée pour toujours.
+    fcmResult = { sent: false, devices: 1 };
+    vi.setSystemTime(new Date(at(9, 0)));
+    await checkScheduleNotifs();
+    const tracked = store.get("live-notifs.json") as { items: { tag: string }[] };
+    expect(tracked.items).toHaveLength(1);
+
+    // Réseau revenu : la consigne passe, le registre est purgé.
+    fcmResult = { sent: true, devices: 1 };
+    vi.setSystemTime(new Date(at(9, 1)));
+    await checkScheduleNotifs();
+    expect((store.get("live-notifs.json") as { items: { tag: string }[] }).items).toHaveLength(0);
+  });
+
+  it("abandonne après plusieurs tentatives de fermeture", async () => {
+    vi.setSystemTime(new Date(at(8, 0)));
+    await checkScheduleNotifs();
+
+    fcmResult = { sent: false, devices: 1 };
+    for (let i = 0; i < 5; i += 1) {
+      vi.setSystemTime(new Date(at(9, i)));
+      await checkScheduleNotifs();
+    }
+    expect((store.get("live-notifs.json") as { items: { tag: string }[] }).items).toHaveLength(0);
   });
 
   it("chaque cours a sa propre carte", async () => {

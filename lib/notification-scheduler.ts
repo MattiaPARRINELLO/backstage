@@ -67,7 +67,16 @@ interface LiveCard {
    * carte que quand le compte à rebours (ou la barre de progression) change.
    */
   sentMin?: number;
+  /** Tentatives de fermeture déjà effectuées (voir `dismissLiveCard`). */
+  dismissTries?: number;
 }
+
+/**
+ * Nombre de ticks (1 min) pendant lesquels on réessaie de fermer une carte
+ * dont la consigne de fermeture n'a atteint aucun appareil. Au-delà, on cède :
+ * un téléphone resté hors ligne des jours ne doit pas faire tourner la boucle.
+ */
+const MAX_DISMISS_TRIES = 5;
 
 async function readLiveCards(): Promise<LiveCard[]> {
   const { readJsonSafe } = await import("./storage");
@@ -83,6 +92,7 @@ async function readLiveCards(): Promise<LiveCard[]> {
     room: item.room,
     at: item.at ?? (item as { start?: number }).start ?? 0,
     sentMin: item.sentMin,
+    dismissTries: item.dismissTries,
   }));
 }
 
@@ -99,7 +109,7 @@ function clock(ms: number): string {
 
 /** Ferme une carte déjà affichée, sur les deux canaux. */
 export async function dismissLiveCard(tag: string, url: string): Promise<void> {
-  await sendPushToAll(
+  const { sent, devices } = await sendPushToAll(
     JSON.stringify({
       title: "BACKSTAGE",
       body: "",
@@ -110,7 +120,17 @@ export async function dismissLiveCard(tag: string, url: string): Promise<void> {
   );
   await writeLiveCards((items) => {
     const index = items.findIndex((i) => i.tag === tag);
-    if (index >= 0) items.splice(index, 1);
+    if (index < 0) return;
+    // La consigne n'est pas arrivée alors qu'un appareil est censé l'écouter
+    // (réseau, appareil éteint) : on garde la carte pour la retenter au tick
+    // suivant. Sinon elle restait affichée pour toujours, plus personne ne
+    // connaissant son `tag`.
+    if (!sent && devices > 0) {
+      const card = items[index];
+      card.dismissTries = (card.dismissTries ?? 0) + 1;
+      if (card.dismissTries < MAX_DISMISS_TRIES) return;
+    }
+    items.splice(index, 1);
   });
 }
 

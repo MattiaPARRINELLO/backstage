@@ -83,6 +83,21 @@ self.addEventListener("push", (event) => {
   if (!event.data) return;
   try {
     const payload = event.data.json();
+
+    // Message de contrôle : le serveur demande la fermeture d'une notification
+    // déjà affichée (cours commencé, rappel traité). SANS ce traitement, le SW
+    // re-affichait un message vide avec le même `tag` : la carte « live »
+    // restait donc dans le tiroir bien après la fin du cours.
+    if (payload.dismiss) {
+      if (!payload.tag) return;
+      event.waitUntil(
+        self.registration
+          .getNotifications({ tag: payload.tag })
+          .then((notifications) => notifications.forEach((n) => n.close()))
+      );
+      return;
+    }
+
     const options = {
       body: payload.body || "",
       icon: payload.icon || "/icons/icon-192.png",

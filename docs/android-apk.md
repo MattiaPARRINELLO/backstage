@@ -123,7 +123,9 @@ purgé automatiquement au premier envoi en échec (`UNREGISTERED`).
   refuse la promotion (app-op `POST_PROMOTED_NOTIFICATIONS`), la notification
   redevient une notification persistante classique — jamais perdue.
   Les cours sont promus, affichés 1 h avant la séance et fermés dès que le
-  cours commence (suivi dans `data/live-notifs.json`).
+  cours commence (suivi dans `data/live-notifs.json`). Le compte à rebours est
+  rafraîchi chaque minute par le serveur (même `tag`, `setOnlyAlertOnce(true)`)
+  pour que la barre de progression et le texte ne restent pas figés.
 - **Rappels** : même traitement que les cours — carte promue 1 h avant
   l'échéance, fermée dès que le rappel est marqué fait, supprimé ou reporté
   (ou s'il n'est plus `pending` au tick suivant). Le tag `reminder-<id>` est

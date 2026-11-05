@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // cours. Un bug ici se voit en production (carte fantôme toute la journée ou
 // notification absente), d'où ce test avec horloge simulée.
 const store = new Map<string, unknown>();
-const sent: { title: string; tag?: string; dismiss?: boolean; body?: string }[] = [];
+const sent: { title: string; tag?: string; dismiss?: boolean; body?: string; silent?: boolean }[] = [];
 
 const COURSES = [
   { uuid: "c1", subject: "E17 PYTHON", room: "Salle 06", teacher: "M. Martin", start: 0, end: 0 },
@@ -61,10 +61,12 @@ vi.mock("@/lib/send-push", () => ({
 }));
 
 vi.mock("@/lib/fcm", () => ({
-  sendFcmToAll: vi.fn(async (payload: { title: string; tag?: string; dismiss?: boolean }) => {
-    sent.push(payload);
-    return { sent: true, devices: 1 };
-  }),
+  sendFcmToAll: vi.fn(
+    async (payload: { title: string; tag?: string; dismiss?: boolean; silent?: boolean }) => {
+      sent.push(payload);
+      return { sent: true, devices: 1 };
+    }
+  ),
 }));
 
 const { checkScheduleNotifs } = await import("@/lib/notification-scheduler");
@@ -88,38 +90,44 @@ describe("cartes de cours", () => {
     expect(sent).toHaveLength(0);
   });
 
-  it("poste 1 h avant, une seule fois", async () => {
+  it("poste 1 h avant, une seule fois, puis rafraîchit silencieusement", async () => {
     vi.setSystemTime(new Date(at(8, 0)));
     await checkScheduleNotifs();
-    await checkScheduleNotifs();
+    await checkScheduleNotifs(); // même minute : rien de neuf
     vi.setSystemTime(new Date(at(8, 45)));
     await checkScheduleNotifs();
 
-    expect(sent).toHaveLength(1);
-    expect(sent[0].title).toBe("Cours dans 60 min : E17 PYTHON");
-    expect(sent[0].tag).toBe("course-c1@60min");
-    expect(sent[0].dismiss).toBe(false);
+    expect(sent).toHaveLength(2);
+    const [initial, refresh] = sent;
+    // La salle passe en principal, l'heure descend dans le corps.
+    expect(initial.title).toBe("Salle 06 — E17 PYTHON");
+    expect(initial.body).toBe("Début 09:00 — M. Martin");
+    expect(initial.tag).toBe("course-c1@60min");
+    expect(initial.dismiss).toBe(false);
+    // 15 min plus tard, la carte est remplacée sans ressonner.
+    expect(refresh.title).toBe("Salle 06 — E17 PYTHON");
+    expect(refresh.tag).toBe("course-c1@60min");
   });
 
   it("ferme la carte dès que le cours commence", async () => {
     vi.setSystemTime(new Date(at(8, 0)));
     await checkScheduleNotifs();
-    expect(sent).toHaveLength(1);
+    expect(sent.filter((s) => !s.dismiss)).toHaveLength(1);
 
     vi.setSystemTime(new Date(at(8, 59)));
     await checkScheduleNotifs();
-    expect(sent).toHaveLength(1); // toujours affichée
+    expect(sent.filter((s) => !s.dismiss)).toHaveLength(2); // rafraîchie, toujours affichée
 
     vi.setSystemTime(new Date(at(9, 0)));
     await checkScheduleNotifs();
-    expect(sent).toHaveLength(2);
-    expect(sent[1].dismiss).toBe(true);
-    expect(sent[1].tag).toBe("course-c1@60min");
+    const dismiss = sent.at(-1);
+    expect(dismiss?.dismiss).toBe(true);
+    expect(dismiss?.tag).toBe("course-c1@60min");
 
     // et elle n'est pas re-postée ensuite
     vi.setSystemTime(new Date(at(9, 5)));
     await checkScheduleNotifs();
-    expect(sent).toHaveLength(2);
+    expect(sent.at(-1)).toBe(dismiss);
   });
 
   it("chaque cours a sa propre carte", async () => {

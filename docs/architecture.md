@@ -314,7 +314,14 @@ Update).
   notification | grep PROMOTED_ONGOING`. Les cours sont promus : carte postée à
   1 h avant, fermée dès que le cours commence (`data/live-notifs.json` — une fois
   la séance entamée elle n'apprend plus rien) ; un message `dismiss: true`
-  ferme la notification du `tag` correspondant. **Rafraîchissement** : une carte
+  ferme la notification du `tag` correspondant. **Les deux canaux doivent
+  traiter ce message** : `public/sw.js` ferme via
+  `registration.getNotifications({ tag })` (sinon le SW ré-affichait un message
+  vide avec le même `tag`, et la carte restait dans le tiroir après le cours),
+  et `Notifications.java` annule via `NotificationManagerCompat.cancel(id)`. Le
+  registre ne purge une carte qu'une fois la consigne réellement délivrée à un
+  appareil (5 tentatives max), sinon la notification devenait orpheline.
+  **Rafraîchissement** : une carte
   affichée est renvoyée chaque fois que les minutes restantes changent
   (`sentMin` du registre), avec `silent: true` / `renotify: false` côté web et
   `setOnlyAlertOnce(true)` côté APK — sinon le texte figé (« dans 60 min ») ne

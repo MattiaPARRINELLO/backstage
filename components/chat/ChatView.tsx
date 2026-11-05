@@ -26,6 +26,7 @@ import {
   clearLiveRun,
 } from "@/components/chat/live-run";
 import { formatTime } from "@/lib/date";
+import { SIDE_EFFECT_TOOL_NAMES } from "@/lib/tool-result";
 import { MessageBlock, ToolCallTray, ThinkingIndicator, AssistantAvatar, GroupActionCard } from "@/components/chat/MessageBlocks";
 import { KeyboardSafe } from "@/components/ui/KeyboardSafe";
 
@@ -588,10 +589,34 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
           content: m.content,
         }));
 
+      // Résultats des actions à effet de bord (confirmées comprises) : sans ce
+      // rappel, le modèle repart d'un contexte où il n'a aucune preuve que
+      // l'action a bien été exécutée et peut affirmer qu'elle n'a pas eu lieu.
+      const actionContext = next
+        .flatMap((m) => m.toolCalls ?? [])
+        .filter(
+          (tc) =>
+            SIDE_EFFECT_TOOL_NAMES.has(tc.name) &&
+            tc.result &&
+            tc.status !== "running"
+        )
+        .slice(-20)
+        .map((tc) => {
+          const result = (tc.result ?? "").replace(/\s+/g, " ").trim().slice(0, 220);
+          const label =
+            tc.status === "success"
+              ? "OK"
+              : result.startsWith("ACTION_BLOCKED")
+                ? "BLOQUE"
+                : "ERREUR";
+          return `- ${tc.name} : [${label}] ${result}`;
+        })
+        .join("\n");
+
       // La génération est portée par `live-run.ts` (hors React) : un changement
       // de page ne l'interrompt plus. Le serveur la poursuit même si l'onglet
       // est fermé, et GET /api/chat/stream permet de s'y réattacher.
-      startLiveRun({ sessionId, userMessage: userMsg, messages: apiMessages });
+      startLiveRun({ sessionId, userMessage: userMsg, messages: apiMessages, actionContext });
     },
     [loading, messages, sessionId, onSessionChange, chatCtx, consent]
   );
@@ -607,7 +632,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   }, [sessionId]);
 
   const confirmGroup = useCallback(
-    async (group: { id: string; tools: { name: string; args: Record<string, unknown>; argsLabel: string }[] }) => {
+    async (group: { id: string; tools: { toolCallId: string; name: string; args: Record<string, unknown>; argsLabel: string }[] }) => {
       if (confirmBusy) return;
       setConfirmBusy(group.id);
       try {
@@ -629,6 +654,30 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
               timestamp: new Date().toISOString(),
             })),
           ]);
+
+          // Reporte le résultat réel sur l'appel d'outil bloqué : il est
+          // persisté avec la session et rejoué au modèle au tour suivant, sinon
+          // l'IA continue de croire que l'action attend une confirmation.
+          const byToolCallId = new Map(
+            group.tools.map((t, i) => [t.toolCallId, results[i]])
+          );
+          setMessages((prev) =>
+            prev.map((m) => {
+              if (!m.toolCalls?.some((tc) => byToolCallId.has(tc.id))) return m;
+              return {
+                ...m,
+                toolCalls: m.toolCalls.map((tc) => {
+                  const r = byToolCallId.get(tc.id);
+                  if (!r) return tc;
+                  return {
+                    ...tc,
+                    result: r.ok ? (r.result ?? "OK") : (r.error ?? "Échec"),
+                    status: r.ok ? ("success" as const) : ("error" as const),
+                  };
+                }),
+              };
+            })
+          );
         }
         // Une seule toast groupée qui liste ce qui a été fait.
         const lines = results

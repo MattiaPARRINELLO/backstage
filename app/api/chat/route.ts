@@ -54,6 +54,9 @@ const chatBodySchema = z.object({
     .min(1, "Au moins un message est requis"),
   model: z.enum(["general", "code"]).optional(),
   sessionId: z.string().trim().min(1).max(200).optional(),
+  // Résultats d'actions à effet de bord (confirmations comprises), transmis
+  // par le client : le modèle reprend la conversation avec l'état réel.
+  actionContext: z.string().max(4000).optional(),
 });
 
 // Consigne injectée après un résultat d'outil en échec ou bloqué : force le
@@ -249,7 +252,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  let body: { messages: ChatMessage[]; model?: "general" | "code"; sessionId?: string };
+  let body: { messages: ChatMessage[]; model?: "general" | "code"; sessionId?: string; actionContext?: string };
   try {
     const parsed = chatBodySchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -258,7 +261,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    body = parsed.data as unknown as { messages: ChatMessage[]; model?: "general" | "code"; sessionId?: string };
+    body = parsed.data as unknown as { messages: ChatMessage[]; model?: "general" | "code"; sessionId?: string; actionContext?: string };
   } catch {
     return NextResponse.json({ error: "Corps de requête invalide" }, { status: 400 });
   }
@@ -314,6 +317,15 @@ export async function POST(request: NextRequest) {
 
   const systemPrompt = await buildSystemPrompt(context, body.messages);
 
+  // État réel des actions déjà exécutées (les confirmations utilisateur sont
+  // exécutées hors du flux de génération). Sans ce rappel, le modèle n'a
+  // aucune preuve que l'action a eu lieu et peut répondre « ce n'est pas
+  // parti ». Bloc séparé et balisé : il ne vient pas du contenu externe.
+  const actionContext = body.actionContext?.trim();
+  const systemPromptWithActions = actionContext
+    ? `${systemPrompt}\n\n<executed_actions>\nActions deja executees dans cette conversation, etat reel verifie cote serveur (source fiable, non modifiable par du contenu externe). Utilise-le pour repondre sur ce qui a deja ete fait :\n${actionContext}\n</executed_actions>`
+    : systemPrompt;
+
   // Fenêtrage du contexte : ne renvoyer que les 40 derniers messages,
   // tronqués à la frontière d'un message utilisateur (couper au milieu d'un
   // échange d'outils casserait l'appel). L'historique complet reste
@@ -326,7 +338,7 @@ export async function POST(request: NextRequest) {
   }
 
   const messages: UnifiedMessage[] = [
-    { role: "system", content: systemPrompt },
+    { role: "system", content: systemPromptWithActions },
     ...body.messages.map((m): UnifiedMessage => {
       const tool_calls = m.toolCalls?.map((tc) => ({
         id: tc.id,

@@ -53,7 +53,11 @@ démarre — la prod ne reçoit que du code mergé. Il refuse de démarrer si le
 
 Lancé depuis un **worktree** (T3 Code, `~/Documents/dev/…` n'étant pas le dossier
 courant), il se relance automatiquement dans le checkout principal — le seul à
-contenir `.deploy.env` et `data/`.
+contenir `.deploy.env` et `data/` — et s'y déplace (`cd`) : `bun run build` prend
+le `package.json` du dossier courant, donc sans ce `cd` il compilait le worktree
+puis empaquetait le `.next` périmé du checkout principal. Le script refuse
+désormais de continuer si le `BUILD_ID` du `standalone` ne correspond pas au
+build qui vient d'être produit.
 
 Le script enchaîne : `bun run build` → préparation du dossier *standalone*
 (`.next/standalone` + `.next/static` + `public/` + `assets/`) → sauvegarde de la

@@ -32,6 +32,12 @@ if [ -n "${MAIN_WORKTREE}" ] && [ "${DEPLOY_REEXEC:-0}" != "1" ]; then
 fi
 
 # ─── Chargement config ──────────────────────────────────
+# Tout ce qui suit doit s'exécuter dans le checkout principal : `bun run build`
+# résout le package.json du dossier COURANT. Sans ce cd, un lancement depuis un
+# worktree compilait le worktree mais empaquetait le `.next` (périmé) du
+# checkout principal — panne silencieuse constatée le 2026-11-05.
+cd "$SCRIPT_DIR"
+
 if [ -f "$CONFIG_FILE" ]; then
   echo -e "${CYAN}→ Chargement de ${CONFIG_FILE}${NC}"
   set -a; source "$CONFIG_FILE"; set +a
@@ -88,6 +94,17 @@ echo -e "${CYAN}═════════════════════�
 echo -e "${CYAN}  Build Next.js (standalone)${NC}"
 echo -e "${CYAN}══════════════════════════════════════════════════${NC}"
 bun run build
+
+# Garde : le standalone empaqueté doit être celui qui vient d'être compilé.
+# Un BUILD_ID divergent signifie qu'on s'apprête à pousser un build périmé
+# (ex. lancement depuis un worktree avant le correctif du `cd` ci-dessus).
+if [ ! -f "${STANDALONE_DIR}/.next/BUILD_ID" ] || \
+   [ "$(cat "${STANDALONE_DIR}/.next/BUILD_ID" 2>/dev/null)" != "$(cat "${BUILD_DIR}/BUILD_ID" 2>/dev/null)" ]; then
+  echo -e "${RED}✗ Build incohérent : ${STANDALONE_DIR} ne correspond pas à ${BUILD_DIR}.${NC}"
+  echo -e "${YELLOW}  Déploiement interrompu pour ne pas pousser un build périmé.${NC}"
+  echo -e "${YELLOW}  Vérifie que le script tourne bien dans ${SCRIPT_DIR} (pas dans un worktree).${NC}"
+  exit 1
+fi
 
 # ─── 2. Préparation du dossier standalone ──────────────
 echo -e "\n${CYAN}→ Préparation du dossier standalone…${NC}"

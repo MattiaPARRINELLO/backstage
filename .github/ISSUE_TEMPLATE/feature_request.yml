@@ -1,0 +1,57 @@
+name: Proposer une fonctionnalite
+description: Une idee qui reste dans le perimetre du projet.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        BACKSTAGE est une application mono-utilisateur, personnelle et
+        auto-hebergee. Les propositions multi-utilisateur ou base de donnees
+        distribuee sont hors perimetre (voir CONTRIBUTING.md).
+  - type: textarea
+    id: probleme
+    attributes:
+      label: Probleme a resoudre
+      description: Decris la situation actuelle, pas seulement la solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposition
+    attributes:
+      label: Proposition
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives envisagees
+    validations:
+      required: false
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact technique estime
+      description: Fichiers, routes, donnees ou integrations concernes.
+      placeholder: app/actions/reminders.ts, data/reminders.json, /today
+    validations:
+      required: false
+  - type: dropdown
+    id: perimetre
+    attributes:
+      label: Ce changement touche-t-il le comportement existant ?
+      options:
+        - Non, ajout isole
+        - Oui, changement de comportement
+        - Je ne sais pas
+    validations:
+      required: true
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Verification
+      options:
+        - label: J'ai lu CONTRIBUTING.md et la carte du code.
+          required: true
+        - label: J'ai verifie qu'aucune issue existante ne couvre deja cette idee.
+          required: true

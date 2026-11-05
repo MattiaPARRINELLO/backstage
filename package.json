@@ -22,7 +22,8 @@
     "cron:reminders": "bun scripts/cron-scheduler.ts reminders",
     "cron:daily-brief": "bun scripts/cron-scheduler.ts daily-brief",
     "reset:passkey": "bun scripts/reset-passkey.ts",
-    "setup": "bun scripts/setup.ts"
+    "setup": "bun scripts/setup.ts",
+    "setup:dev": "bun scripts/setup.ts --dev"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.109.1",

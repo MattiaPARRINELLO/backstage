@@ -4,6 +4,8 @@ import type { ChatCompletionResult, StreamEvent, UnifiedMessage, UnifiedTool } f
 import { getModelProtocol } from "./ai-providers/models";
 import { chatOpenAI, responsesOpenAI, streamOpenAI } from "./ai-providers/openai";
 import { chatAnthropic, streamAnthropic } from "./ai-providers/anthropic";
+import { chatMock, streamMock } from "./ai-providers/mock";
+import { isMockAiEnabled } from "./ai-providers/config";
 
 export type { UnifiedMessage, UnifiedTool, UnifiedToolCall, ChatCompletionResult, StreamEvent } from "./ai-providers/types";
 
@@ -21,6 +23,9 @@ export async function chatCompletion(
   signal?: AbortSignal,
   sessionId?: string
 ): Promise<ChatCompletionResult> {
+  if (isMockAiEnabled()) {
+    return chatMock(messages, tools);
+  }
   if (getModelProtocol(model) === "anthropic") {
     return chatAnthropic(model, messages, tools, signal, sessionId);
   }
@@ -39,6 +44,9 @@ export async function* streamChatCompletion(
   signal?: AbortSignal,
   sessionId?: string
 ): AsyncGenerator<StreamEvent> {
+  if (isMockAiEnabled()) {
+    return yield* streamMock(messages, tools);
+  }
   if (getModelProtocol(model) === "anthropic") {
     return yield* streamAnthropic(model, messages, tools, signal, sessionId);
   }

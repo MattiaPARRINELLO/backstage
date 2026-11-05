@@ -1,6 +1,13 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const API_KEY = process.env.IA_API_KEY;
 
+// Mode de developpement sans cle API : `AI_PROVIDER=mock` remplace tous les
+// appels au provider par des reponses scriptees (lib/ai-providers/mock.ts).
+// Toute autre valeur (ou l'absence de valeur) garde le provider reel.
+export function isMockAiEnabled(): boolean {
+  return process.env.AI_PROVIDER === "mock";
+}
+
 // Le provider (OpenCode Go) exige un identifiant de session stable par
 // conversation dans `x-opencode-session` : sans lui il repond
 // 400 MissingSessionID. Il demande aussi que le client s'identifie avec son
@@ -12,6 +19,18 @@ const CLIENT_USER_AGENT = "personalbrain/1.0";
 export const DEFAULT_SESSION_ID = "personalbrain";
 
 export function getClientConfig(sessionId?: string) {
+  // En mode mock, aucune requete ne part : une configuration factice suffit et
+  // evite qu'un chemin secondaire (liste des modeles, demo) jette au demarrage.
+  if (isMockAiEnabled()) {
+    return {
+      baseURL: "http://mock.invalid/v1",
+      apiKey: "mock",
+      defaultHeaders: {
+        "User-Agent": CLIENT_USER_AGENT,
+        "x-opencode-session": sessionId || DEFAULT_SESSION_ID,
+      },
+    };
+  }
   if (!API_URL || !API_KEY) {
     throw new Error("NEXT_PUBLIC_API_URL et IA_API_KEY doivent etre configures");
   }

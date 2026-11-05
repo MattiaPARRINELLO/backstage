@@ -1,4 +1,5 @@
-import { getClientConfig, AVAILABLE_MODELS, isAnthropicModel } from "./config";
+import { getClientConfig, AVAILABLE_MODELS, isAnthropicModel, isMockAiEnabled } from "./config";
+import { MOCK_CATALOG } from "./mock";
 import { getServerCached, setServerCached } from "@/lib/server-cache";
 
 const CACHE_KEY = "available-models-v2";
@@ -32,6 +33,11 @@ const FALLBACK_CATALOG: ModelInfo[] = AVAILABLE_MODELS.map((id) => ({
 // avec cache memoire+disque d'une heure. En cas d'echec reseau ou de liste
 // vide, repli sur la liste connue pour ne jamais bloquer l'interface.
 export async function fetchModelCatalog(): Promise<ModelInfo[]> {
+  if (isMockAiEnabled()) {
+    setServerCached(CACHE_KEY, MOCK_CATALOG, CACHE_TTL_MS);
+    return [...MOCK_CATALOG];
+  }
+
   const cached = getServerCached<ModelInfo[]>(CACHE_KEY);
   if (cached && cached.length > 0) return cached;
 
@@ -70,6 +76,7 @@ export async function fetchAvailableModels(): Promise<string[]> {
 
 // Catalogue deja en cache, sans appel reseau. `null` = cache froid.
 export function peekAvailableModels(): string[] | null {
+  if (isMockAiEnabled()) return MOCK_CATALOG.map((m) => m.id);
   const cached = getServerCached<ModelInfo[]>(CACHE_KEY);
   if (!cached || cached.length === 0) return null;
   return cached.map((m) => m.id);

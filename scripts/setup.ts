@@ -10,6 +10,8 @@
  *   - WEBAUTHN_RP_ID / ORIGIN        domaine de l'installation
  *
  * Usage : bun run setup            (relançable, idempotent)
+ *         bun run setup:dev        (ajoute AI_PROVIDER=mock et DEV_AUTH_BYPASS,
+ *                                   pour developper sans cle API ni passkey)
  */
 
 import { randomBytes } from "crypto";
@@ -18,6 +20,7 @@ import path from "path";
 import webpush from "web-push";
 
 const ENV_FILE = path.join(process.cwd(), ".env.local");
+const DEV_MODE = process.argv.includes("--dev");
 
 /** Valeurs que le script sait générer seul. */
 function generateValue(key: string): { value: string; comment: string } | null {
@@ -113,11 +116,29 @@ async function main() {
     ["NEXT_PUBLIC_API_URL", "URL du provider IA (compatible OpenAI)"],
     ["IA_API_KEY", "clé API du provider IA"],
   ];
-  lines.push(block("API IA (obligatoire pour le chat)"));
+  lines.push(
+    block(
+      DEV_MODE
+        ? "API IA (optionnel en mode developpement)"
+        : "API IA (obligatoire pour le chat)"
+    )
+  );
   for (const [key, comment] of manual) {
     const current = existing.get(key);
     lines.push(`# ${comment}`, `${key}=${current ?? ""}${current ? `   # ${comment} — conservé` : ""}`, "");
   }
+
+  if (DEV_MODE) {
+    lines.push(
+      block("MODE DEVELOPPEMENT (sans cle API ni passkey)"),
+      "# Reponses IA scriptees, aucun appel reseau (lib/ai-providers/mock.ts).",
+      `AI_PROVIDER=${existing.get("AI_PROVIDER") || "mock"}   # mock | (vide) = provider reel`,
+      "# Session locale sans WebAuthn. Ignore en production, meme si la valeur est presente.",
+      `DEV_AUTH_BYPASS=${existing.get("DEV_AUTH_BYPASS") || "true"}`,
+      ""
+    );
+  }
+
   lines.push(
     "# Les autres intégrations (Gmail/Calendar, Microsoft To Do, météo,",
     "# recherche web, CESAR) sont optionnelles : voir .env.example.",
@@ -129,6 +150,18 @@ async function main() {
   console.log(`\n✓ ${ENV_FILE} mis à jour`);
   if (created.length) console.log(`  Généré  : ${created.join(", ")}`);
   if (kept.length) console.log(`  Conservé : ${kept.join(", ")}`);
+  if (DEV_MODE) {
+    console.log(
+      "\nMode developpement : aucune cle API ni passkey n'est necessaire.\n" +
+        "  1. bun dev\n" +
+        "  2. Ouvrir http://localhost:3000/api/auth/dev-login (session locale)\n" +
+        "  3. Pour un vrai provider : retirer AI_PROVIDER=mock et DEV_AUTH_BYPASS,\n" +
+        "     puis renseigner NEXT_PUBLIC_API_URL et IA_API_KEY\n" +
+        "\nDetail : CONTRIBUTING.md et docs/contributing/"
+    );
+    return;
+  }
+
   console.log(
     "\nReste à faire :\n" +
       "  1. Renseigner NEXT_PUBLIC_API_URL et IA_API_KEY (provider compatible OpenAI) dans .env.local\n" +

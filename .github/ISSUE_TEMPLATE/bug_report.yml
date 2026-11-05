@@ -1,0 +1,83 @@
+name: Signaler un bug
+description: Quelque chose ne fonctionne pas comme documente.
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de decrire un probleme reproductible. Une issue vague ne peut pas
+        etre corrigee.
+  - type: textarea
+    id: resume
+    attributes:
+      label: Resume
+      description: En une ou deux phrases, ce qui ne va pas.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Etapes de reproduction
+      placeholder: |
+        1. Ouvrir /chat
+        2. Ecrire ...
+        3. Observer ...
+    validations:
+      required: true
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Comportement attendu
+    validations:
+      required: true
+  - type: textarea
+    id: observe
+    attributes:
+      label: Comportement observe
+      description: Message d'erreur exact, capture ou extrait de logs.
+    validations:
+      required: true
+  - type: input
+    id: fichier
+    attributes:
+      label: Fichier ou route concerne
+      placeholder: app/api/chat/route.ts, /login, lib/storage-core.ts
+    validations:
+      required: false
+  - type: dropdown
+    id: environnement
+    attributes:
+      label: Environnement
+      options:
+        - Developpement local (bun dev)
+        - Build de production (bun run build && bun run start)
+        - Docker
+        - cPanel ou VPS
+        - APK Android (TWA)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version ou commit
+      description: Sortie de `git rev-parse --short HEAD`.
+      placeholder: 29bdf7b
+    validations:
+      required: false
+  - type: textarea
+    id: piste
+    attributes:
+      label: Piste de resolution
+      description: Si tu as une idee, meme partielle, indique-la.
+    validations:
+      required: false
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Verification
+      options:
+        - label: J'ai cherche une issue existante avant d'ouvrir celle-ci.
+          required: true
+        - label: Je n'ai inclus aucun secret, token ou donnee personnelle.
+          required: true

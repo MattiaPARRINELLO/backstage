@@ -1,0 +1,72 @@
+name: Probleme d'auto-hebergement
+description: Docker, VPS, cPanel, HTTPS, passkey ou sauvegardes.
+title: "self-hosting: "
+labels: ["self-hosting"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ne colle jamais de secret : remplace les valeurs de `.env.local` par
+        `***` avant de poster.
+  - type: textarea
+    id: contexte
+    attributes:
+      label: Contexte de deploiement
+      description: Hebergeur, mode d'installation, version.
+      placeholder: |
+        VPS Debian 12, Docker Compose, commit 29bdf7b
+    validations:
+      required: true
+  - type: textarea
+    id: etapes
+    attributes:
+      label: Ce que tu as fait
+      description: Commandes exactes, sans secret.
+    validations:
+      required: true
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Resultat attendu
+    validations:
+      required: true
+  - type: textarea
+    id: erreur
+    attributes:
+      label: Resultat observe et logs
+      description: |
+        Sortie de `docker compose logs --tail=100` ou du service Node.
+        Verifie qu'aucun token ni chemin personnel n'y figure.
+    validations:
+      required: true
+  - type: dropdown
+    id: etape
+    attributes:
+      label: Etape concernee
+      options:
+        - Installation (bun install, bun run setup)
+        - Build (bun run build)
+        - Demarrage (bun run start, Docker)
+        - Connexion passkey / WebAuthn
+        - HTTPS / reverse proxy
+        - Notifications push
+        - Sauvegardes et donnees
+        - Autre
+    validations:
+      required: true
+  - type: input
+    id: doc
+    attributes:
+      label: Page de documentation consultee
+      placeholder: docs/self-hosting.md, docs/deploy-cpanel.md
+    validations:
+      required: false
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Verification
+      options:
+        - label: J'ai remplace toutes les valeurs sensibles par `***`.
+          required: true
+        - label: J'ai lu docs/self-hosting.md et la section Depannage.
+          required: true

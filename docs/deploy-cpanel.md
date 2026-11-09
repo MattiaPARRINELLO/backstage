@@ -32,6 +32,7 @@ Variables minimales :
 | `SSH_TARGET_DIR` | *Application root* noté à l'étape 1 |
 | `DEPLOY_NODEENV` | chemin du `nodevenv` (vide si `node` est déjà dans le PATH) |
 | `NEXT_PUBLIC_API_URL`, `IA_API_KEY` | provider IA |
+| `NEXT_PUBLIC_SITE_URL` | URL publique canonique (métadonnées, commande d'installation) |
 | `AUTH_SECRET` | `openssl rand -hex 32` |
 | `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN` | le domaine public (`https://…`) |
 | `SETUP_TOKEN` | token one-time du premier passkey |

@@ -12,8 +12,7 @@ import { FinalCTA } from "@/components/landing/FinalCTA";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { PhotoBand } from "@/components/landing/PhotoBand";
 import { PHOTOS } from "@/app/landing-content";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+import { SITE_URL } from "@/lib/site-url";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

@@ -34,9 +34,11 @@ One command (checks prerequisites, clones, installs, generates secrets, starts):
 curl -fsSL https://brain.mprnl.fr/install.sh | bash
 ```
 
-Options: `--node` (start with Node instead of Docker), `--no-start` (prepare
-only), `--help`. Environment: `BACKSTAGE_DIR` (target directory, default
-`./backstage`), `BACKSTAGE_PORT` (local port, default `3000`). The script only
+Options: `--node` (start with Node instead of Docker), `--docker` (force
+Docker), `--no-start` (prepare only), `--dir <path>`, `--port <n>`,
+`--ref <branch-or-tag>`, `--help`. Environment: `BACKSTAGE_DIR` (target
+directory, default `./backstage`), `BACKSTAGE_PORT` (local port, default
+`3000`), `BACKSTAGE_REF`, `BACKSTAGE_REPO`, `NO_COLOR`. The script only
 ever clones the official repo, installs dependencies and generates local
 secrets — no `sudo`, no telemetry.
 

@@ -51,10 +51,26 @@ warn() { printf '%b[!]%b %s\n' "$C_WARN" "$C_RESET" "$*" >&2; }
 die()  { printf '%b[x]%b %s\n' "$C_ERR" "$C_RESET" "$*" >&2; exit 1; }
 
 SERVER_PID=""
-cleanup() {
-  if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
-    kill "$SERVER_PID" 2>/dev/null || true
+# `bun run start` lance Next en enfant : tuer le seul PID parent laisserait un
+# serveur orphelin qui garde le port. On tue donc toute la descendance.
+kill_tree() {
+  parent="$1"
+  if command -v pgrep >/dev/null 2>&1; then
+    for child in $(pgrep -P "$parent" 2>/dev/null || true); do
+      kill_tree "$child"
+    done
   fi
+  kill "$parent" 2>/dev/null || true
+}
+cleanup() {
+  if [ -n "$SERVER_PID" ]; then
+    kill_tree "$SERVER_PID"
+    SERVER_PID=""
+  fi
+}
+on_signal() {
+  cleanup
+  exit 130
 }
 on_error() {
   status=$?
@@ -67,7 +83,8 @@ on_error() {
   exit "$status"
 }
 trap on_error ERR
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+trap on_signal INT TERM
 
 usage() {
   cat <<'EOF'

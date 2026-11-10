@@ -176,6 +176,11 @@ if [ -z "${WEBAUTHN_RP_ID:-}" ] || [ -z "${WEBAUTHN_ORIGIN:-}" ]; then
   echo -e "${YELLOW}   Renseignez votre domaine dans .deploy.env pour un comportement stable.${NC}"
 fi
 
+if [ -z "${NEXT_PUBLIC_SITE_URL:-}" ]; then
+  echo -e "${YELLOW}⚠  NEXT_PUBLIC_SITE_URL non défini — métadonnées et commande d'installation utiliseront le domaine par défaut du code.${NC}"
+  echo -e "${YELLOW}   Renseignez votre URL publique dans .deploy.env (rebuild nécessaire pour la changer).${NC}"
+fi
+
 echo -e "${GREEN}✓ Standalone prêt dans ${DEPLOY_TMP}${NC}"
 
 # ─── 3. Déploiement ────────────────────────────────────

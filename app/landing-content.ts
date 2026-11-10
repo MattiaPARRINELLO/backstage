@@ -6,13 +6,15 @@
 // Modifier ce fichier suffit pour changer tous les textes.
 // ============================================================
 
+import { SITE_URL } from "@/lib/site-url";
+
 export const GITHUB_URL = "https://github.com/MattiaPARRINELLO/backstage";
 /** Guide d'auto-hébergement (licence MIT, Docker, variables, backups). */
 export const SELF_HOST_URL =
   "https://github.com/MattiaPARRINELLO/backstage/blob/main/docs/self-hosting.md";
 export const LICENSE_LABEL = "MIT";
 /** Commande d'installation en une ligne, servie par /install.sh. */
-export const INSTALL_COMMAND = "curl -fsSL https://brain.mprnl.fr/install.sh | bash";
+export const INSTALL_COMMAND = `curl -fsSL ${SITE_URL}/install.sh | bash`;
 
 export const NAV_LINKS = [
   { href: "#hero", label: "Produit" },

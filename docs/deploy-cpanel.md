@@ -15,8 +15,9 @@ hébergeur le permet — voir [self-hosting.md](./self-hosting.md).
    - *Application startup file* : `server.js`
    - *Node version* : la plus récente disponible (20 ou 22)
 3. Noter le chemin de l'environnement virtuel affiché
-   (`/home/USER/nodevenv/APP/VERSION/bin/activate`) : il servira à
-   `DEPLOY_NODEENV`.
+   (`/home/USER/nodevenv/APP/VERSION/bin/activate`) : il n'est plus requis par
+   le déploiement (les dépendances serveur sont embarquées dans le bundle
+   standalone), mais il reste utile pour un `npm install` manuel.
 
 ## 2. Configurer `.deploy.env`
 
@@ -30,7 +31,7 @@ Variables minimales :
 | --- | --- |
 | `SSH_HOST` / `SSH_USER` / `SSH_PORT` | accès SSH (cPanel → SSH Access) |
 | `SSH_TARGET_DIR` | *Application root* noté à l'étape 1 |
-| `DEPLOY_NODEENV` | chemin du `nodevenv` (vide si `node` est déjà dans le PATH) |
+| `DEPLOY_NODEENV` | chemin du `nodevenv` (facultatif, utile pour un `npm install` manuel) |
 | `NEXT_PUBLIC_API_URL`, `IA_API_KEY` | provider IA |
 | `NEXT_PUBLIC_SITE_URL` | URL publique canonique (métadonnées, commande d'installation) |
 | `AUTH_SECRET` | `openssl rand -hex 32` |
@@ -63,8 +64,9 @@ build qui vient d'être produit.
 Le script enchaîne : `bun run build` → préparation du dossier *standalone*
 (`.next/standalone` + `.next/static` + `public/` + `assets/`) → sauvegarde de la
 version en place dans `backstage-releases/` (5 dernières, hors `node_modules` et
-`data/`) → `rsync --delete` → `npm install --production` → durcissement des
-permissions (`data/` en 700, fichiers 600) → redémarrage.
+`data/`) → `rsync --delete` (dépendances serveur incluses) → vérification du
+bundle → durcissement des permissions (`data/` en 700, fichiers 600) →
+redémarrage.
 
 **`data/` n'est jamais écrasé** : seuls `config.json` et
 `firebase-service-account.json` sont synchronisés, le reste des JSON est exclu

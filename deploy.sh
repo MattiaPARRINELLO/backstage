@@ -224,7 +224,6 @@ fi
 
 rsync -avz --delete \
   -e "ssh -p ${SSH_PORT}" \
-  --exclude 'node_modules' \
   --include 'data/firebase-service-account.json' \
   --include 'data/config.json' \
   --exclude 'data/*.json' \
@@ -233,18 +232,21 @@ rsync -avz --delete \
   "$DEPLOY_TMP/" \
   "${SSH_USER}@${SSH_HOST}:${SSH_TARGET_DIR}/"
 
-# ─── 3.5 Install dependencies ──────────────────────────
-echo -e "\n${CYAN}→ Installation des dépendances sur le serveur…${NC}"
-# `activate` peut être absent (hors cPanel) : on retombe alors sur le node du
-# shell. DEPLOY_NODEENV rend le script utilisable sur n'importe quel hébergeur.
-NODE_ACTIVATE=""
-if [ -n "${DEPLOY_NODEENV}" ]; then
-  NODE_ACTIVATE="source ${DEPLOY_NODEENV} && "
+# ─── 3.5 Vérification des dépendances ──────────────────
+# Next trace les dépendances serveur dans `.next/standalone/node_modules` :
+# le bundle déployé est exactement celui qui vient d'être construit. On ne
+# lance donc plus `npm install` à distance, qui échouait systématiquement sur
+# cPanel : le `npm` du nodevenv est un wrapper qui change de dossier et lit un
+# `package.json` inexistant dans `VIRTUAL_ENV/lib`.
+echo -e "\n${CYAN}→ Vérification des dépendances embarquées…${NC}"
+if ssh -p "$SSH_PORT" "${SSH_USER}@${SSH_HOST}" \
+  "cd ${SSH_TARGET_DIR} && test -f node_modules/next/package.json && echo ok" 2>/dev/null | grep -q '^ok$'; then
+  echo -e "${GREEN}  ✓ Dépendances présentes dans le bundle${NC}"
+else
+  echo -e "${YELLOW}  ⚠  node_modules/next est absent sur le serveur.${NC}"
+  echo -e "${YELLOW}     Vérifie que .next/standalone contient bien node_modules, ou lance :${NC}"
+  echo -e "${YELLOW}     cd ${SSH_TARGET_DIR} && npm install --omit=dev${NC}"
 fi
-ssh -p "$SSH_PORT" "${SSH_USER}@${SSH_HOST}" \
-  "${NODE_ACTIVATE}cd ${SSH_TARGET_DIR} && npm install --production 2>&1" \
-  && echo -e "${GREEN}  ✓ Dépendances installées${NC}" \
-  || echo -e "${YELLOW}  ⚠  Impossible d'installer les dépendances — à faire manuellement :${NC}"
 
 # ─── 3.6 Durcissement des permissions ─────────────────
 # Les tokens OAuth et le secret de session ne doivent pas être lisibles par

@@ -18,7 +18,7 @@ import com.google.androidbrowserhelper.trusted.TwaLauncher;
  * Point d'entrée unique de l'APK.
  *
  * L'application elle-même est un Trusted Web Activity : c'est Chrome qui
- * affiche {@code https://brain.mprnl.fr}. Conséquence importante : l'origine
+ * affiche {@code https://backstage.mprnl.fr}. Conséquence importante : l'origine
  * reste la vraie, donc les passkeys WebAuthn et la session fonctionnent
  * exactement comme dans la PWA — aucun portage du front n'est nécessaire.
  *

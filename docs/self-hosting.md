@@ -31,7 +31,7 @@ so self-hosters can point the one-liner at their own domain.
 One command (checks prerequisites, clones, installs, generates secrets, starts):
 
 ```bash
-curl -fsSL https://brain.mprnl.fr/install.sh | bash
+curl -fsSL https://backstage.mprnl.fr/install.sh | bash
 ```
 
 Options: `--node` (start with Node instead of Docker), `--docker` (force

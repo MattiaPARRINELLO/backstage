@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import path from "path";
 
 // Sert le script d'installation en une commande :
-//   curl -fsSL https://brain.mprnl.fr/install.sh | bash
+//   curl -fsSL https://backstage.mprnl.fr/install.sh | bash
 // Fichier source unique : scripts/install.sh (versionné, relu, testé).
 // Le chemin est public (PUBLIC_PATHS dans proxy.ts).
 //

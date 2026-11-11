@@ -48,7 +48,7 @@ intégrations optionnelles.
 ### Déployer en 3 commandes
 
 ```bash
-curl -fsSL https://brain.mprnl.fr/install.sh | bash
+curl -fsSL https://backstage.mprnl.fr/install.sh | bash
 ```
 
 Ou à la main :

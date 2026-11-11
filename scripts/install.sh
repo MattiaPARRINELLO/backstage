@@ -252,8 +252,8 @@ Variables d'environnement équivalentes :
   BACKSTAGE_VERBOSE, NO_COLOR
 
 Exemples:
-  curl -fsSL https://brain.mprnl.fr/install.sh | bash -s -- --port 8080
-  BACKSTAGE_DIR=~/apps/backstage curl -fsSL https://brain.mprnl.fr/install.sh | bash
+  curl -fsSL https://backstage.mprnl.fr/install.sh | bash -s -- --port 8080
+  BACKSTAGE_DIR=~/apps/backstage curl -fsSL https://backstage.mprnl.fr/install.sh | bash
 EOF
 }
 
@@ -548,7 +548,7 @@ if [ -d "$TARGET_DIR" ]; then
   else
     die "Le dossier '$TARGET_DIR' existe déjà et ne ressemble pas à BACKSTAGE.
      Choisissez un autre emplacement avec --dir, par exemple :
-       BACKSTAGE_DIR=mon-backstage curl -fsSL https://brain.mprnl.fr/install.sh | bash"
+       BACKSTAGE_DIR=mon-backstage curl -fsSL https://backstage.mprnl.fr/install.sh | bash"
   fi
 else
   if [ -n "$REF" ]; then

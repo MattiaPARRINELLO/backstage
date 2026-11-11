@@ -10,7 +10,7 @@ hébergeur le permet — voir [self-hosting.md](./self-hosting.md).
 
 1. cPanel → **Setup Node.js App** → *Create application*.
 2. Renseigner :
-   - *Application root* : le dossier de l'app (ex. `/home/USER/brain.mprnl.fr`)
+   - *Application root* : le dossier de l'app (ex. `/home/USER/backstage.mprnl.fr`)
    - *Application URL* : le domaine ou le sous-domaine
    - *Application startup file* : `server.js`
    - *Node version* : la plus récente disponible (20 ou 22)
@@ -95,7 +95,7 @@ Si `CRON_SECRET` est vide, les deux routes répondent `401`.
 ## 6. Rollback
 
 ```bash
-tar -xzf ~/brain.mprnl.fr/../backstage-releases/backstage-AAAAMMJJ-HHMMSS.tar.gz -C ~/brain.mprnl.fr
+tar -xzf ~/backstage.mprnl.fr/../backstage-releases/backstage-AAAAMMJJ-HHMMSS.tar.gz -C ~/backstage.mprnl.fr
 ```
 
 puis redémarrer l'app. `data/` n'est pas concerné par la restauration.

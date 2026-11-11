@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 /**
  * Digital Asset Links : prouve à Chrome que l'APK `BACKSTAGE` et le domaine
- * brain.mprnl.fr appartiennent au même éditeur. Sans ce fichier, le TWA
+ * backstage.mprnl.fr appartiennent au même éditeur. Sans ce fichier, le TWA
  * s'ouvre avec une barre d'URL au lieu du plein écran.
  *
  * Servi sur `/.well-known/assetlinks.json` via une réécriture Next.

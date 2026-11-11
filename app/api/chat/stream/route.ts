@@ -31,11 +31,14 @@ export async function GET(request: NextRequest) {
   const encoder = new TextEncoder();
   let closed = false;
   let unsubscribe: (() => void) | null = null;
+  let stopHeartbeat: (() => void) | null = null;
 
   const stream = new ReadableStream({
     start(controller) {
       const close = () => {
         closed = true;
+        stopHeartbeat?.();
+        stopHeartbeat = null;
         unsubscribe?.();
         unsubscribe = null;
         try {
@@ -53,6 +56,19 @@ export async function GET(request: NextRequest) {
           closed = true;
         }
       };
+
+      // Battement de cœur : garde la connexion SSE vivante à travers les
+      // proxys pendant une longue recherche d'outil (cf. /api/chat).
+      const heartbeat = setInterval(() => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(": keep-alive\n\n"));
+        } catch {
+          closed = true;
+        }
+      }, 15_000);
+      (heartbeat as { unref?: () => void }).unref?.();
+      stopHeartbeat = () => clearInterval(heartbeat);
 
       // Abonnement d'abord (aucun évènement ne peut être manqué : on est dans
       // le même tour de boucle), puis rejeu de l'instantané courant.
@@ -73,6 +89,8 @@ export async function GET(request: NextRequest) {
     },
     cancel() {
       closed = true;
+      stopHeartbeat?.();
+      stopHeartbeat = null;
       unsubscribe?.();
       unsubscribe = null;
     },
@@ -83,6 +101,8 @@ export async function GET(request: NextRequest) {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
+      // Désactive le buffering des proxys (nginx) sur ce flux.
+      "X-Accel-Buffering": "no",
     },
   });
 }

@@ -364,6 +364,7 @@ export async function POST(request: NextRequest) {
   let streamClosed = false;
   let generationStarted = false;
   let unsubscribe: (() => void) | null = null;
+  let stopHeartbeat: (() => void) | null = null;
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -383,7 +384,24 @@ export async function POST(request: NextRequest) {
         false
       );
 
+      // Battement de cœur SSE : sans trafic pendant une longue recherche
+      // d'outil, un proxy (Apache/Passenger, nginx) peut considérer la
+      // connexion inactive et la couper. Un commentaire SSE tous les 15 s la
+      // garde ouverte sans rien changer côté client.
+      const heartbeat = setInterval(() => {
+        if (streamClosed) return;
+        try {
+          controller.enqueue(encoder.encode(": keep-alive\n\n"));
+        } catch {
+          streamClosed = true;
+        }
+      }, 15_000);
+      (heartbeat as { unref?: () => void }).unref?.();
+      stopHeartbeat = () => clearInterval(heartbeat);
+
       function closeStream() {
+        stopHeartbeat?.();
+        stopHeartbeat = null;
         unsubscribe?.();
         unsubscribe = null;
         if (streamClosed) return;
@@ -630,6 +648,8 @@ export async function POST(request: NextRequest) {
       // on ne coupe PAS la génération. Elle continue côté serveur, écrit sa
       // réponse dans l'historique et reste récupérable via
       // GET /api/chat/stream. Seul /api/chat/stop l'interrompt.
+      stopHeartbeat?.();
+      stopHeartbeat = null;
       streamClosed = true;
       unsubscribe?.();
       unsubscribe = null;
@@ -644,6 +664,8 @@ export async function POST(request: NextRequest) {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
+      // Désactive le buffering des proxys (nginx) sur ce flux.
+      "X-Accel-Buffering": "no",
     },
   });
 }

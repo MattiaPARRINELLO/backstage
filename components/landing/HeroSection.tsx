@@ -1,4 +1,4 @@
-import { CONTEXT, HERO, MODULES } from "@/app/landing-content";
+import type { LandingContent } from "@/app/landing-content";
 import { reveal } from "./reveal";
 import { HeroDemoLink } from "./HeroDemoLink";
 
@@ -7,49 +7,49 @@ import { HeroDemoLink } from "./HeroDemoLink";
  * contexte qui montre le produit par son contenu, puis l'index des
  * domaines. Aucune capture d'écran.
  */
-export function HeroSection() {
+export function HeroSection({ t }: { t: LandingContent }) {
   return (
     <section id="hero" className="hero">
       <div className="wrap hero__grid">
         <div className="hero__copy">
           <h1 className="hero__title" {...reveal(0)}>
-            {HERO.title}
+            {t.hero.title}
           </h1>
 
           <p className="hero__desc" {...reveal(70)}>
-            {HERO.description}
+            {t.hero.description}
           </p>
 
           <div className="hero__actions" {...reveal(140)}>
-            <HeroDemoLink label={HERO.primaryCta} />
+            <HeroDemoLink label={t.hero.primaryCta} />
             <a
-              href="https://github.com/MattiaPARRINELLO/backstage"
+              href={t.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn--ghost"
             >
-              {HERO.secondaryCta}
+              {t.hero.secondaryCta}
             </a>
           </div>
 
           <p className="hero__meta" {...reveal(210)}>
             <span>MIT</span>
-            <span>Données locales</span>
+            <span>{t.ui.localData}</span>
             <span>Passkey</span>
-            <a href="/login">{HERO.loginCta}</a>
+            <a href="/login">{t.hero.loginCta}</a>
           </p>
         </div>
 
         <div className="card hero__card-settle" {...reveal(100)}>
           <div className="card__top">
-            <span className="card__tag">{CONTEXT.label}</span>
-            <span className="card__count">4 sources</span>
+            <span className="card__tag">{t.context.label}</span>
+            <span className="card__count">{t.context.sourcesCount}</span>
           </div>
 
-          <p className="card__q">« {CONTEXT.question} »</p>
+          <p className="card__q">« {t.context.question} »</p>
 
           <div className="card__rows">
-            {CONTEXT.fragments.map((fragment) => (
+            {t.context.fragments.map((fragment) => (
               <div key={fragment.text} className="card__row">
                 <span className="card__k">{fragment.kind}</span>
                 <span>{fragment.text}</span>
@@ -57,14 +57,14 @@ export function HeroSection() {
             ))}
           </div>
 
-          <p className="card__a">{CONTEXT.answer}</p>
-          <p className="card__foot">{CONTEXT.foot}</p>
+          <p className="card__a">{t.context.answer}</p>
+          <p className="card__foot">{t.context.foot}</p>
         </div>
       </div>
 
       <div className="wrap">
         <div className="index">
-          {MODULES.items.map((item) => (
+          {t.modules.items.map((item) => (
             <div key={item.name} className="idx">
               <span className="idx__name">{item.name}</span>
               <span className="idx__note">{item.short}</span>

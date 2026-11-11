@@ -1,8 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-import { FOOTER } from "@/app/landing-content";
+import type { LandingContent } from "@/app/landing-content";
 
-export function LandingFooter() {
+export function LandingFooter({ t }: { t: LandingContent }) {
   return (
     <footer className="site-footer">
       <div className="wrap">
@@ -18,11 +18,11 @@ export function LandingFooter() {
               />
               <span className="wordmark">Backstage</span>
             </div>
-            <p className="footer__tagline">{FOOTER.tagline}</p>
+            <p className="footer__tagline">{t.footer.tagline}</p>
           </div>
 
-          <nav aria-label="Liens de pied de page" className="footer__links">
-            {[...FOOTER.links, ...FOOTER.legal].map((link) =>
+          <nav aria-label={t.ui.footerLinksLabel} className="footer__links">
+            {[...t.footer.links, ...t.footer.legal].map((link) =>
               "external" in link && link.external ? (
                 <a
                   key={link.label}
@@ -39,10 +39,13 @@ export function LandingFooter() {
                 </Link>
               )
             )}
+            <Link href={t.switchHref} className="footer__link" hrefLang={t.locale === "fr" ? "en" : "fr"}>
+              {t.switchLabel}
+            </Link>
           </nav>
         </div>
 
-        <p className="footer__signature">{FOOTER.signature}</p>
+        <p className="footer__signature">{t.footer.signature}</p>
       </div>
     </footer>
   );

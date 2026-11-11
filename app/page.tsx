@@ -1,18 +1,7 @@
 import type { Metadata } from "next";
 import "./landing.css";
-import { InstalledRedirect } from "@/components/landing/InstalledRedirect";
-import { ScrollReveal } from "@/components/landing/ScrollReveal";
-import { LandingHeader } from "@/components/landing/LandingHeader";
-import { HeroSection } from "@/components/landing/HeroSection";
-import { DayStory } from "@/components/landing/DayStory";
-import { MemorySection } from "@/components/landing/MemorySection";
-import { PublicDemo } from "@/components/landing/PublicDemo";
-import { RoadmapSection } from "@/components/landing/RoadmapSection";
-import { SelfHostSection } from "@/components/landing/SelfHostSection";
-import { FinalCTA } from "@/components/landing/FinalCTA";
-import { LandingFooter } from "@/components/landing/LandingFooter";
-import { PhotoBand } from "@/components/landing/PhotoBand";
-import { PHOTOS } from "@/app/landing-content";
+import { FR_CONTENT } from "@/app/landing-content";
+import { LandingPage } from "@/components/landing/LandingPage";
 import { SITE_URL } from "@/lib/site-url";
 
 export const metadata: Metadata = {
@@ -20,10 +9,14 @@ export const metadata: Metadata = {
   title: "Backstage — Votre second cerveau personnel",
   description:
     "Backstage réunit vos mails, vos cours, votre agenda, vos photos et une IA qui s'en souvient. Un espace personnel privé, installé chez vous.",
-  alternates: { canonical: "/" },
+  alternates: {
+    canonical: "/",
+    languages: { fr: "/", en: "/en" },
+  },
   openGraph: {
     type: "website",
     locale: "fr_FR",
+    alternateLocale: ["en_US"],
     url: "/",
     siteName: "Backstage",
     title: "Backstage — Votre second cerveau personnel",
@@ -41,27 +34,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return (
-    <>
-      <InstalledRedirect />
-      <ScrollReveal />
-      <div className="landing-page">
-        <LandingHeader />
-        <main id="main" className="landing">
-          <HeroSection />
-          <PhotoBand {...PHOTOS.afterHero} priority />
-          <DayStory />
-          <PhotoBand {...PHOTOS.afterStory} />
-          <MemorySection />
-          <PhotoBand {...PHOTOS.afterMemory} />
-          <PublicDemo />
-          <RoadmapSection />
-          <SelfHostSection />
-          <PhotoBand {...PHOTOS.beforeClose} />
-          <FinalCTA />
-        </main>
-        <LandingFooter />
-      </div>
-    </>
-  );
+  return <LandingPage t={FR_CONTENT} />;
 }

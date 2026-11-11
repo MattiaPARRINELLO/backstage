@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { PHOTOS } from "@/app/landing-content";
 
 type PhotoBandProps = {
   src: string;
@@ -8,6 +7,7 @@ type PhotoBandProps = {
   /** Cadrage vertical du bandeau, ex. "50% 72%". */
   position?: string;
   priority?: boolean;
+  credit: string;
 };
 
 /**
@@ -15,7 +15,7 @@ type PhotoBandProps = {
  * et le crédit. C'est le seul endroit où la page respire autrement
  * que par la typographie.
  */
-export function PhotoBand({ src, alt, caption, position, priority }: PhotoBandProps) {
+export function PhotoBand({ src, alt, caption, position, priority, credit }: PhotoBandProps) {
   return (
     <section className="band" aria-label={caption}>
       <figure>
@@ -33,7 +33,7 @@ export function PhotoBand({ src, alt, caption, position, priority }: PhotoBandPr
         </div>
         <figcaption className="band__cap">
           <span>{caption}</span>
-          <span>{PHOTOS.credit}</span>
+          <span>{credit}</span>
         </figcaption>
       </figure>
     </section>

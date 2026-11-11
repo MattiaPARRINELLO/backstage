@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { FINAL_CTA, GITHUB_URL } from "@/app/landing-content";
+import type { LandingContent } from "@/app/landing-content";
 import { HeroDemoLink } from "./HeroDemoLink";
 
 /**
  * Clôture : le nom à l'échelle de l'affiche, une phrase, trois actions.
  * La page se referme sur la marque.
  */
-export function FinalCTA() {
+export function FinalCTA({ t }: { t: LandingContent }) {
   return (
     <section id="fin" className="close">
       <div className="wrap">
@@ -16,22 +16,22 @@ export function FinalCTA() {
 
         <div className="close__row">
           <div>
-            <h2 className="close__desc">{FINAL_CTA.title}</h2>
-            <p className="close__note">{FINAL_CTA.note}</p>
+            <h2 className="close__desc">{t.finalCta.title}</h2>
+            <p className="close__note">{t.finalCta.note}</p>
           </div>
 
           <div className="close__actions">
-            <HeroDemoLink label={FINAL_CTA.primaryCta} />
+            <HeroDemoLink label={t.finalCta.primaryCta} />
             <Link href="/login" className="btn btn--ghost">
-              {FINAL_CTA.secondaryCta}
+              {t.finalCta.secondaryCta}
             </Link>
             <a
-              href={GITHUB_URL}
+              href={t.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn--text"
             >
-              {FINAL_CTA.tertiaryCta}
+              {t.finalCta.tertiaryCta}
             </a>
           </div>
         </div>

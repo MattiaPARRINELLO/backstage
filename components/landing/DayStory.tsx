@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DAY_STORY } from "@/app/landing-content";
-
-const BEATS = DAY_STORY.beats;
+import type { LandingContent } from "@/app/landing-content";
 
 type Outcome = "confirm" | "dismiss";
 
@@ -12,25 +10,22 @@ type Outcome = "confirm" | "dismiss";
  * le contexte qui se relie. Le titre reste collé à gauche pendant
  * qu'on lit.
  */
-export function DayStory() {
+export function DayStory({ t }: { t: LandingContent }) {
   const [outcomes, setOutcomes] = useState<Record<number, Outcome>>({});
+  const story = t.dayStory;
 
   return (
     <section id="journee" className="sec sec--roomy">
       <div className="wrap story">
         <div className="story__head">
-          <h2 className="h2 mt-5">
-            {DAY_STORY.title}
-          </h2>
-          <p className="lead mt-4">
-            {DAY_STORY.lead}
-          </p>
-          <p className="small mt-3">{DAY_STORY.disclaimer}</p>
-          <p className="lead story__outro">{DAY_STORY.outro}</p>
+          <h2 className="h2 mt-5">{story.title}</h2>
+          <p className="lead mt-4">{story.lead}</p>
+          <p className="small mt-3">{story.disclaimer}</p>
+          <p className="lead story__outro">{story.outro}</p>
         </div>
 
         <div className="story__list">
-          {BEATS.map((beat, i) => {
+          {story.beats.map((beat, i) => {
             const outcome = outcomes[i];
             return (
               <article key={beat.time} className="beat">

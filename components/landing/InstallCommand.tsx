@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
-import { INSTALL_COMMAND, SELF_HOST } from "@/app/landing-content";
+import type { LandingContent } from "@/app/landing-content";
 
 /**
  * Bloc d'installation en une commande (style terminal).
@@ -10,7 +10,7 @@ import { INSTALL_COMMAND, SELF_HOST } from "@/app/landing-content";
  * n'a rien à retaper et ne peut pas se tromper d'URL. C'est le seul
  * monospace de la page, et il s'agit de vrai code.
  */
-export function InstallCommand() {
+export function InstallCommand({ t }: { t: LandingContent }) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -23,7 +23,7 @@ export function InstallCommand() {
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(INSTALL_COMMAND);
+      await navigator.clipboard.writeText(t.installCommand);
       setCopied(true);
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => setCopied(false), 2400);
@@ -36,12 +36,12 @@ export function InstallCommand() {
   return (
     <div className="terminal">
       <div className="terminal__bar">
-        <span>{SELF_HOST.terminalTitle}</span>
+        <span>{t.selfHost.terminalTitle}</span>
         <button
           type="button"
           onClick={() => void copy()}
           className="terminal__copy"
-          aria-label={copied ? "Commande copiée" : "Copier la commande d'installation"}
+          aria-label={copied ? t.ui.commandCopied : t.ui.copyCommand}
         >
           <span className="inline-flex items-center gap-2">
             {copied ? (
@@ -49,14 +49,14 @@ export function InstallCommand() {
             ) : (
               <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden />
             )}
-            {copied ? "Copié" : "Copier"}
+            {copied ? t.ui.copied : t.ui.copy}
           </span>
         </button>
       </div>
       <pre className="terminal__pre">
-        <code>{INSTALL_COMMAND}</code>
+        <code>{t.installCommand}</code>
       </pre>
-      <p className="terminal__note">{SELF_HOST.terminalNote}</p>
+      <p className="terminal__note">{t.selfHost.terminalNote}</p>
     </div>
   );
 }

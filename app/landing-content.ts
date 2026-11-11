@@ -12,6 +12,9 @@ export const GITHUB_URL = "https://github.com/MattiaPARRINELLO/backstage";
 /** Guide d'auto-hébergement (licence MIT, Docker, variables, backups). */
 export const SELF_HOST_URL =
   "https://github.com/MattiaPARRINELLO/backstage/blob/main/docs/self-hosting.md";
+/** Roadmap multi-utilisateurs et BYOK, sur la branche de développement. */
+export const ROADMAP_URL =
+  "https://github.com/MattiaPARRINELLO/backstage/blob/feat/multi-utilisateurs-byok/docs/roadmap-multi-utilisateurs.md";
 export const LICENSE_LABEL = "MIT";
 /** Commande d'installation en une ligne, servie par /install.sh. */
 export const INSTALL_COMMAND = `curl -fsSL ${SITE_URL}/install.sh | bash`;
@@ -21,6 +24,7 @@ export const NAV_LINKS = [
   { href: "#memoire", label: "Mémoire" },
   { href: "#journee", label: "Une journée" },
   { href: "#demo", label: "Démo" },
+  { href: "#comptes", label: "Comptes" },
   { href: "#chez-vous", label: "Auto-hébergement" },
 ] as const;
 
@@ -33,7 +37,7 @@ export const HERO = {
   primaryCta: "Essayer la démo",
   secondaryCta: "Voir le code",
   loginCta: "Se connecter",
-  note: "Démonstration publique à données fictives · Application complète en accès privé",
+  note: "Démonstration publique à données fictives · Comptes publics en préparation",
   shot: {
     src: "/screenshots/hero-flux.jpg",
     alt: "L'application Backstage ouverte sur le chat, avec à droite le panneau de flux : cours du lendemain, rappels en retard et mails non lus.",
@@ -274,8 +278,43 @@ export const PUBLIC_DEMO = {
     text: "L'application complète est réservée aux personnes disposant déjà d'un accès.",
     loginCta: "Se connecter",
     githubCta: "Voir le code",
-    note: "La création de compte n'est pas encore disponible.",
+    note: "Les comptes publics sont en développement : voir la section « Comptes ».",
   },
+} as const;
+
+// --- Comptes et clés (chantier en cours) ---------------------------
+// Annonce honnête du passage au multi-utilisateur : pas de promesse de
+// disponibilité, capacité gratuite limitée, branche de développement nommée.
+
+export const ROADMAP = {
+  badge: "Chantier en cours",
+  title: "Comptes, clés, espace personnel.",
+  lead: "Backstage prépare son ouverture : un socle commun (chat, mémoire, rappels, agenda, mails), des modules que chacun active selon ses besoins, et ses propres clés API. Le travail est en cours sur une branche dédiée, rien de tout cela n'est encore accessible.",
+  facts: [
+    {
+      title: "Compte personnel",
+      desc: "Inscription par passkey et code de secours. Un espace vide au départ, isolé de tous les autres comptes.",
+    },
+    {
+      title: "Vos clés, votre coût",
+      desc: "IA, Google, Microsoft, météo, recherche : vous branchez ce que vous voulez avec vos propres clés. Aucune clé partagée entre comptes.",
+    },
+    {
+      title: "Socle et modules",
+      desc: "Le socle est identique pour tous. Photos, concerts, LeetCode et les autres modules s'activent au cas par cas, à la demande et selon les retours.",
+    },
+    {
+      title: "Gratuit et limité",
+      desc: "L'accès restera gratuit pendant la phase de test, avec une capacité de 10 à 15 comptes. Ce n'est pas un service illimité.",
+    },
+  ],
+  status: {
+    label: "Branche",
+    value: "feat/multi-utilisateurs-byok",
+  },
+  roadmapCta: "Lire la roadmap",
+  codeCta: "Voir le code",
+  note: "Pas encore disponible : inscription ouverte, récupération de compte, quotas, facturation. La démo publique reste la seule entrée sans compte.",
 } as const;
 
 // --- Chez vous ---------------------------------------------------
@@ -346,7 +385,7 @@ export const FINAL_CTA = {
   primaryCta: "Essayer la démo",
   secondaryCta: "Se connecter",
   tertiaryCta: "Voir le code",
-  note: "Démonstration à données fictives · Application complète en accès privé",
+  note: "Démonstration à données fictives · Comptes publics en préparation",
 } as const;
 
 // --- Footer ------------------------------------------------------

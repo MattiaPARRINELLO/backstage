@@ -289,7 +289,7 @@ export const PUBLIC_DEMO = {
 export const ROADMAP = {
   badge: "Chantier en cours",
   title: "Comptes, clés, espace personnel.",
-  lead: "Backstage prépare son ouverture : chaque personne crée son compte, apporte ses propres clés et retrouve un espace isolé du reste. Le travail est en cours sur une branche dédiée, rien de tout cela n'est encore accessible.",
+  lead: "Backstage prépare son ouverture : un socle commun (chat, mémoire, rappels, agenda, mails), des modules que chacun active selon ses besoins, et ses propres clés API. Le travail est en cours sur une branche dédiée, rien de tout cela n'est encore accessible.",
   facts: [
     {
       title: "Compte personnel",
@@ -300,12 +300,12 @@ export const ROADMAP = {
       desc: "IA, Google, Microsoft, météo, recherche : vous branchez ce que vous voulez avec vos propres clés. Aucune clé partagée entre comptes.",
     },
     {
-      title: "Gratuit et limité",
-      desc: "L'accès restera gratuit pendant la phase de test, avec une capacité de 10 à 15 comptes. Ce n'est pas un service illimité.",
+      title: "Socle et modules",
+      desc: "Le socle est identique pour tous. Photos, concerts, LeetCode et les autres modules s'activent au cas par cas, à la demande et selon les retours.",
     },
     {
-      title: "Simple d'abord",
-      desc: "Un dossier de fichiers par compte, pas de base de données. Suffisant à cette échelle ; Postgres viendra seulement si nécessaire.",
+      title: "Gratuit et limité",
+      desc: "L'accès restera gratuit pendant la phase de test, avec une capacité de 10 à 15 comptes. Ce n'est pas un service illimité.",
     },
   ],
   status: {

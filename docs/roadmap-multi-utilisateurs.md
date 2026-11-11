@@ -23,6 +23,10 @@ niveau (voir § Migration future).
 | Clés IA | BYOK obligatoire, clé fournie par l'utilisateur | Aucun coût de tokens pour l'hébergeur |
 | Chiffrement des clés | AES-256-GCM au repos, master key en variable d'env | Une fuite du dossier `data/` ne livre pas les clés |
 | Instance self-host | Conservée, mode mono-utilisateur | Ne pas casser l'usage actuel |
+| Périmètre du produit public | Socle générique + modules activables par compte | Le public n'a pas les besoins personnels de l'owner |
+| Modules personnels | Désactivés par défaut, activables au cas par cas | Photos, concerts, CESAR, LeetCode ne concernent pas tout le monde |
+| CESAR | Reste privé, jamais proposé aux autres comptes en v1 | Identifiants ENT scolaires, responsabilité et conditions d'usage |
+| Nouveaux modules | Créés à partir des retours utilisateurs | Le socle reste petit, la valeur vient des modules |
 | Inscription | Ouverte mais limitée par une liste d'attente / capacité | Éviter l'abus pendant la phase gratuite |
 | Facturation | Hors périmètre v1 | À traiter quand la capacité devra grandir |
 
@@ -186,6 +190,49 @@ code source à la recherche de `"data"` concaténé hors du helper.
 
 ---
 
+### Phase 2.5 : registre de modules et socle générique (4 à 6 jours)
+
+Objectif : le produit public ne vend pas les besoins personnels de l'owner.
+Un socle commun pour tout le monde, des modules activables par compte.
+
+- [ ] Créer `lib/modules.ts` : registre déclaratif unique.
+      Chaque entrée déclare `id`, `label`, `description`, `scope`
+      (`core` ou `personal`), `requires` (clés ou intégrations nécessaires),
+      `defaultEnabled`, la route et les entrées de navigation.
+- [ ] Socle `core` activé par défaut : chat, mémoire, rappels, agenda, mails.
+- [ ] Modules `personal` désactivés par défaut : photos et shootings,
+      concerts et accréditations, LeetCode, watch-later, intentions, CESAR.
+- [ ] CESAR marqué `private`: visible et activable uniquement sur le compte de
+      l'owner, jamais proposé à l'inscription.
+- [ ] Stocker l'activation dans `config.json` du compte :
+      `modules: { photos: false, concerts: false, cesar: false, ... }`.
+- [ ] Filtrer partout où un module peut apparaître :
+  - [ ] navigation et menu mobile
+  - [ ] panneau de contexte et flux de la journée
+  - [ ] recherche globale
+  - [ ] prompt système du chat et outils exposés au modèle
+  - [ ] crons et notifications (brief quotidien, rappels, sync)
+  - [ ] route directe : module désactivé = redirection propre, pas d'écran
+        cassé
+- [ ] Un module dont les prérequis manquent (clé, OAuth, identifiants) est
+      masqué automatiquement, avec un message clair dans les paramètres.
+- [ ] Page Paramètres > Modules : liste, description, état, prérequis,
+      activation. Une seule source de vérité, pas de doublon avec `features`.
+- [ ] Onboarding : étape « qu'est-ce que tu veux utiliser ? », socle coché,
+      le reste décoché.
+- [ ] Retirer CESAR, photos et LeetCode de la promesse publique de la landing.
+- [ ] Boucle de retour : formulaire « proposer un module » dans l'app, stocké
+      hors données utilisateur, et consigné pour arbitrage.
+- [ ] Documenter le contrat d'un module dans `docs/modules.md` : comment en
+      ajouter un sans toucher au socle.
+- [ ] Tests : module désactivé invisible, route directe neutralisée, module
+      activé sans prérequis masqué, prompt sans les outils du module éteint.
+
+**Sortie** : un compte neuf voit cinq écrans du socle, aucun module personnel,
+et peut en activer un depuis les paramètres.
+
+---
+
 ### Phase 3 : BYOK et coffre de clés (4 à 5 jours)
 
 - [ ] Créer `lib/secrets.ts` : coffre par compte, AES-256-GCM, IV aléatoire par
@@ -326,16 +373,17 @@ nouveaux comptes opérationnels.
 Phase 0
   └─ Phase 1 (auth)
        └─ Phase 2 (isolation)  ← bloque tout le reste
-            ├─ Phase 3 (BYOK + coffre)
-            │    └─ Phase 4 (compte + onboarding)
-            └─ Phase 6 (exploitation)
-                 └─ Phase 7 (sécurité)
-                      └─ Phase 8 (tests, docs, mise en ligne)
+            ├─ Phase 2.5 (modules)
+            │    ├─ Phase 3 (BYOK + coffre)
+            │    │    └─ Phase 4 (compte + onboarding)
+            │    └─ Phase 6 (exploitation)
+            │         └─ Phase 7 (sécurité)
+            │              └─ Phase 8 (tests, docs, mise en ligne)
 
 Phase 5 (landing) : peut avancer en parallèle dès la Phase 0
 ```
 
-Durée totale estimée : **3 à 4 semaines à temps plein**, plus la phase
+Durée totale estimée : **4 à 5 semaines à temps plein**, plus la phase
 d'ouverture progressive. Ne pas commencer la Phase 3 avant que la Phase 2 soit
 terminée sur au moins 3 domaines, pour valider le pattern de scope.
 
@@ -369,6 +417,13 @@ terminée sur au moins 3 domaines, pour valider le pattern de scope.
 onboarding, `components/landing/*`, `app/page.tsx`, `app/landing-content.ts`,
 `app/landing.css`.
 
+### Modules
+
+`lib/modules.ts` (nouveau registre), `docs/modules.md` (contrat d'ajout),
+`app/settings/modules` (page d'activation), `lib/config.ts` (état par compte),
+plus chaque point d'entrée qui affiche un module : navigation, flux, recherche,
+prompt du chat, crons.
+
 ### Exploitation
 
 `scripts/setup.ts`, `scripts/install.sh`, `deploy.sh`, `Dockerfile`,
@@ -388,6 +443,8 @@ onboarding, `components/landing/*`, `app/page.tsx`, `app/landing-content.ts`,
 | Dépendance à un seul serveur | Indisponibilité totale | Backups quotidiens, procédure de restauration testée |
 | Abus de l'endpoint démo | Coût IA alors que c'est gratuit | Rate limit par IP, plafond quotidien, pas de clé utilisateur |
 | OAuth partagé par erreur | Un compte lit la boîte d'un autre | `state` lié au `userId`, tokens dans le coffre du compte |
+| Module personnel exposé par défaut | Promesse produit trompeuse, écrans inutiles | Socle `core` seul actif, modules `personal` décochés à l'inscription |
+| Nouveau module qui touche au socle | Effets de bord sur tous les comptes | Contrat `docs/modules.md`, activation par compte, test de désactivation |
 
 ---
 
@@ -399,6 +456,9 @@ onboarding, `components/landing/*`, `app/page.tsx`, `app/landing-content.ts`,
 - Partage d'espace entre plusieurs comptes.
 - Rôles administrateur avancés.
 - Migration automatique des données d'un compte vers un autre.
+- Ouverture de CESAR aux comptes autres que celui de l'owner.
+- Place de marché de modules : les nouveaux modules sont développés par
+  l'owner à partir des retours, pas installés par les utilisateurs.
 
 ---
 
@@ -420,6 +480,8 @@ nécessaire au moment de la bascule.
 ## 9. Definition of done
 
 - [ ] Un visiteur crée un compte depuis la landing et note son code de secours.
+- [ ] Un compte neuf voit le socle générique, aucun module personnel.
+- [ ] Il active un module, il le voit ; il le désactive, il disparaît partout.
 - [ ] Il configure sa clé IA et obtient une réponse de son propre modèle.
 - [ ] Un second compte ne voit rien du premier, sur aucun écran ni route API.
 - [ ] Les clés sont chiffrées dans `data/`, jamais affichées ni journalisées.

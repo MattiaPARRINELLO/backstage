@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { api, type ChatStreamEvent } from "@/lib/api-client";
+import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { Markdown } from "@/components/ui/Markdown";
 import { ChatComposer } from "@/components/chat/ChatComposer";
@@ -24,6 +24,7 @@ import {
   abortLiveRun,
   resumeLiveRun,
   clearLiveRun,
+  type LiveRunEvent,
 } from "@/components/chat/live-run";
 import { formatTime } from "@/lib/date";
 import { SIDE_EFFECT_TOOL_NAMES } from "@/lib/tool-result";
@@ -272,6 +273,40 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     });
   }, [messages, sessionId, sessionTitle]);
 
+  // Recharge la conversation depuis l'historique serveur. Utilisé quand une
+  // génération interrompue (app en arrière-plan) a fini côté serveur : la
+  // réponse est persistée, il suffit de la relire.
+  const reloadFromHistory = useCallback(async () => {
+    if (!sessionId) return;
+    const seq = ++loadSeqRef.current;
+    try {
+      const { getChatHistory } = await import("@/app/actions/chat-history");
+      const history = await getChatHistory();
+      if (seq !== loadSeqRef.current) return;
+      const session = history.sessions.find((s) => s.id === sessionId);
+      if (!session) return;
+      const restored = restoreMessages(session.messages);
+      setMessages(restored);
+      bufferRef.current = "";
+      finishedToolsRef.current = [];
+      appliedEventsRef.current = getLiveRun(sessionId)?.events.length ?? 0;
+      setStreamingContent("");
+      streamingActiveRef.current = false;
+      setStreamingActive(false);
+      setLoading(false);
+      activeToolsRef.current = {};
+      chatCtx.clearActiveTools();
+      // Dernier message utilisateur sans réponse : le tour a échoué avant
+      // d'être persisté, on le signale au lieu de laisser croire qu'il tourne.
+      const last = restored[restored.length - 1];
+      if (last?.role === "user") {
+        setError("La réponse a été interrompue. Renvoie ton message.");
+      }
+    } catch (err) {
+      console.warn("[chat] rechargement de l'historique impossible", err);
+    }
+  }, [sessionId, chatCtx]);
+
   useEffect(() => {
     if (!sessionId || messages.length <= 1 || messages[0]?.id === "welcome") return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -358,7 +393,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   // Applique un évènement du flux à l'état affiché. Extrait de `send` pour être
   // rejoué à l'identique quand on se réattache à une génération en cours.
   const applyEvent = useCallback(
-    (event: ChatStreamEvent) => {
+    (event: LiveRunEvent) => {
       if (event.type === "delta") {
         bufferRef.current += event.content;
         setStreamingContent(bufferRef.current);
@@ -499,9 +534,23 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
         }
       } else if (event.type === "done") {
         finishAssistant(bufferRef.current || event.content || "");
+      } else if (event.type === "reload") {
+        // La génération a abouti côté serveur : on relit l'historique.
+        void reloadFromHistory();
+      } else if (event.type === "failed") {
+        // Plus de réponse possible : on affiche ce qui a été reçu et on lève
+        // l'état « en train d'écrire » au lieu de laisser tourner le spinner.
+        if (bufferRef.current) finishAssistant(bufferRef.current);
+        else {
+          setLoading(false);
+          streamingActiveRef.current = false;
+          setStreamingActive(false);
+          setStreamingContent("");
+        }
+        setError(event.message);
       }
     },
-    [chatCtx, toast, finishAssistant]
+    [chatCtx, toast, finishAssistant, reloadFromHistory]
   );
 
   // Abonnement au gestionnaire de génération : les évènements arrivent même

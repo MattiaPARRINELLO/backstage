@@ -151,9 +151,17 @@ Le tour de chat **n'est plus possédé par la page**. Trois pièces :
 | Pièce | Rôle |
 | ----- | ---- |
 | `lib/chat-runs.ts` (serveur) | Registre en mémoire d'un run par `sessionId` : instantané (texte accumulé, outils, lots à confirmer), abonnés, `AbortController`. Purge 10 min après la fin, 20 runs max. |
-| `components/chat/live-run.ts` (client) | Le `fetch` SSE vit **hors React** : changer de page démonte `ChatView` sans couper la requête ; les évènements sont bufferisés et rejoués au retour. |
+| `components/chat/live-run.ts` (client) | Le `fetch` SSE vit **hors React** : changer de page démonte `ChatView` sans couper la requête ; les évènements sont bufferisés et rejoués au retour. Une coupure réseau (app en arrière-plan, réseau mobile) déclenche une **reconnexion automatique** vers `/api/chat/stream`, sans jamais afficher le `Failed to fetch` brut. |
 | `ChatLayout` | Mémorise la conversation active dans `sessionStorage` (`pb:active-chat-session`) pour rouvrir la bonne conversation au retour sur `/chat`. |
 
+- **Coupure réseau = détachement, pas erreur.** `live-run.ts` attend le retour
+  au premier plan (`visibilitychange`) et le réseau (`online`) avant de se
+  réattacher, avec un backoff plafonné. Si le run serveur a disparu, il
+  recharge l'historique ; si la requête initiale n'est jamais arrivée, il
+  demande de renvoyer le message.
+- **Battement de cœur SSE** (`: keep-alive` toutes les 15 s) sur `/api/chat` et
+  `/api/chat/stream` : une longue recherche d'outil laissait la connexion
+  muette assez longtemps pour qu'Apache/Passenger ou nginx la coupe.
 - **`cancel()` du flux ne coupe plus la génération.** Une déconnexion (navigation,
   onglet fermé) détache seulement le listener ; la boucle IA continue.
 - **La réponse est écrite côté serveur** (`appendAssistantTurn`) avant

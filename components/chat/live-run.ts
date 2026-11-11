@@ -7,17 +7,33 @@
 // conservés, et revenir sur la conversation rejoue l'état exact. Fermer
 // l'onglet coupe la requête, mais le serveur poursuit la génération et la
 // persiste (`GET /api/chat/stream` permet de s'y réattacher).
+//
+// Sur mobile, mettre l'app en arrière-plan suffit à faire tomber la connexion
+// SSE (le navigateur suspend le socket). Ce n'est pas une erreur : le serveur
+// continue, on se réattache donc automatiquement au retour au premier plan au
+// lieu d'afficher un « Failed to fetch » brut.
 
 import { api, type ChatStreamEvent } from "@/lib/api-client";
 import type { Message } from "@/components/chat/types";
 
 export type LiveRunStatus = "running" | "done" | "aborted" | "error";
 
+// Évènements purement locaux (jamais reçus du réseau) : signalent qu'il faut
+// recharger la conversation depuis l'historique serveur, ou abandonner.
+export type LiveRunEvent =
+  | ChatStreamEvent
+  | { type: "reload" }
+  | { type: "failed"; message: string };
+
 export interface LiveRun {
   sessionId: string;
   userMessage: Message | null;
-  events: ChatStreamEvent[];
+  events: LiveRunEvent[];
   status: LiveRunStatus;
+  startedAt: number;
+  // Longueur du texte reçu : sert à savoir si une reprise a réellement
+  // progressé (sinon on espace les tentatives au lieu de boucler).
+  contentLength: number;
 }
 
 type Listener = () => void;
@@ -28,6 +44,19 @@ const controllers = new Map<string, AbortController>();
 
 // Une réponse très longue produit beaucoup de deltas : on borne la mémoire.
 const MAX_BUFFERED_EVENTS = 20_000;
+
+// Rétention serveur d'une génération terminée (`lib/chat-runs.ts`) : au-delà,
+// une génération introuvable a été purgée et la réponse est dans l'historique.
+const RUN_RETENTION_MS = 10 * 60_000;
+
+const RECONNECT_BASE_DELAY_MS = 1_000;
+const RECONNECT_MAX_DELAY_MS = 10_000;
+const MAX_RECONNECT_ATTEMPTS = 8;
+
+const NETWORK_FAILURE_MESSAGE =
+  "Connexion interrompue. La réponse en cours sera disponible dans l'historique.";
+const SEND_FAILURE_MESSAGE =
+  "Impossible de joindre le serveur. Vérifie ta connexion puis renvoie ton message.";
 
 function notify(sessionId: string) {
   const set = listeners.get(sessionId);
@@ -61,13 +90,53 @@ export function subscribeLiveRun(
   };
 }
 
-function pushEvent(run: LiveRun, event: ChatStreamEvent) {
+// Erreur réseau (socket coupé, app en arrière-plan, Wi-Fi perdu), par
+// opposition à une erreur applicative renvoyée par le serveur.
+export function isNetworkError(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+  const candidate = err as { name?: string; message?: string };
+  if (candidate.name === "TypeError") return true;
+  return /fetch|network|load failed|networkerror/i.test(candidate.message ?? "");
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function inBackground(): boolean {
+  return typeof document !== "undefined" && document.visibilityState === "hidden";
+}
+
+function offline(): boolean {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
+}
+
+// Attend le retour au premier plan ET le réseau, sans timer (un onglet en
+// arrière-plan voit ses timers fortement ralentis, voire gelés).
+function waitForForeground(): Promise<void> {
+  if (!inBackground() && !offline()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const check = () => {
+      if (inBackground() || offline()) return;
+      document.removeEventListener("visibilitychange", check);
+      window.removeEventListener("online", check);
+      resolve();
+    };
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("online", check);
+  });
+}
+
+function pushEvent(run: LiveRun, event: LiveRunEvent) {
   run.events.push(event);
   if (run.events.length > MAX_BUFFERED_EVENTS) {
     run.events.splice(0, run.events.length - MAX_BUFFERED_EVENTS);
   }
   if (event.type === "done") run.status = "done";
-  if (event.type === "error") run.status = "error";
+  if (event.type === "reload") run.status = "done";
+  if (event.type === "error" || event.type === "failed") run.status = "error";
+  if (event.type === "delta") run.contentLength += event.content.length;
+  if (event.type === "snapshot") run.contentLength = event.content.length;
   notify(run.sessionId);
 }
 
@@ -86,6 +155,72 @@ function pruneRuns() {
   for (const [id] of finished.slice(0, runs.size - 10)) runs.delete(id);
 }
 
+// Se réattache au run serveur, en boucle, en attendant le retour au premier
+// plan entre deux tentatives. Le serveur poursuit la génération : il suffit de
+// retrouver le flux pour afficher le reste de la réponse.
+async function reconnectLiveRun(
+  run: LiveRun,
+  controller: AbortController
+): Promise<void> {
+  let attempt = 0;
+
+  while (!controller.signal.aborted && run.status === "running") {
+    await waitForForeground();
+    if (controller.signal.aborted || run.status !== "running") return;
+
+    if (attempt > 0) {
+      const delay = Math.min(
+        RECONNECT_BASE_DELAY_MS * 2 ** (attempt - 1),
+        RECONNECT_MAX_DELAY_MS
+      );
+      await sleep(delay);
+      if (controller.signal.aborted || run.status !== "running") return;
+    }
+
+    const before = run.contentLength;
+    try {
+      const found = await api.chat.resume(
+        run.sessionId,
+        (event) => pushEvent(run, event),
+        controller.signal
+      );
+
+      if (found) {
+        // On a bien récupéré un flux (instantané + suite). S'il s'est refermé
+        // sans `done`, on retente ; le compteur ne recule que si du texte a
+        // progressé, pour ne pas boucler à vide.
+        if (run.status !== "running") return;
+        attempt = run.contentLength > before ? 0 : attempt + 1;
+      } else {
+        // Aucun run côté serveur. Deux cas : la requête initiale n'est jamais
+        // arrivée (échec d'envoi) ou la génération a été purgée après coup
+        // (la réponse est alors dans l'historique).
+        if (Date.now() - run.startedAt < RUN_RETENTION_MS) {
+          pushEvent(run, { type: "failed", message: SEND_FAILURE_MESSAGE });
+        } else {
+          pushEvent(run, { type: "reload" });
+        }
+        return;
+      }
+    } catch (err) {
+      if (controller.signal.aborted) return;
+      if (!isNetworkError(err)) {
+        pushEvent(run, {
+          type: "failed",
+          message: err instanceof Error ? err.message : "Erreur réseau",
+        });
+        return;
+      }
+      attempt += 1;
+    }
+
+    if (attempt > MAX_RECONNECT_ATTEMPTS) {
+      pushEvent(run, { type: "failed", message: NETWORK_FAILURE_MESSAGE });
+      return;
+    }
+  }
+}
+
 export function startLiveRun(input: {
   sessionId: string;
   userMessage: Message;
@@ -100,6 +235,8 @@ export function startLiveRun(input: {
     userMessage,
     events: [],
     status: "running",
+    startedAt: Date.now(),
+    contentLength: 0,
   };
   runs.set(sessionId, run);
   pruneRuns();
@@ -117,31 +254,31 @@ export function startLiveRun(input: {
         sessionId,
         actionContext
       );
-      // Flux fermé sans évènement final (coupure réseau) : on ne laisse pas
-      // la vue bloquée en « en train d'écrire ».
-      if (run.status === "running") {
-        run.status = "error";
-        run.events.push({
-          type: "error",
-          message: "La connexion a été interrompue.",
-        });
-        notify(sessionId);
-      }
+      // Flux fermé sans évènement final : coupure réseau. On ne laisse ni la
+      // vue bloquée en « en train d'écrire » ni un faux message d'erreur.
+      if (run.status === "running") await reconnectLiveRun(run, controller);
     } catch (err) {
-      if ((err as Error)?.name === "AbortError") {
+      if (controller.signal.aborted || (err as Error)?.name === "AbortError") {
         run.status = "aborted";
+        notify(sessionId);
+      } else if (isNetworkError(err)) {
+        // Coupure réseau (app en arrière-plan, réseau mobile…) : la génération
+        // continue côté serveur, on se réattache.
+        await reconnectLiveRun(run, controller);
       } else {
-        run.status = "error";
-        run.events.push({
-          type: "error",
+        pushEvent(run, {
+          type: "failed",
           message: err instanceof Error ? err.message : "Erreur réseau",
         });
       }
-      notify(sessionId);
     } finally {
+      if (run.status === "running" && controller.signal.aborted) {
+        run.status = "aborted";
+      }
       if (controllers.get(sessionId) === controller) {
         controllers.delete(sessionId);
       }
+      notify(sessionId);
     }
   })();
 }
@@ -168,6 +305,8 @@ export async function resumeLiveRun(sessionId: string): Promise<boolean> {
     userMessage: existing?.userMessage ?? null,
     events: [],
     status: "running",
+    startedAt: Date.now(),
+    contentLength: 0,
   };
   const controller = new AbortController();
   controllers.set(sessionId, controller);

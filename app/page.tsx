@@ -7,6 +7,7 @@ import { HeroSection } from "@/components/landing/HeroSection";
 import { DayStory } from "@/components/landing/DayStory";
 import { MemorySection } from "@/components/landing/MemorySection";
 import { PublicDemo } from "@/components/landing/PublicDemo";
+import { RoadmapSection } from "@/components/landing/RoadmapSection";
 import { SelfHostSection } from "@/components/landing/SelfHostSection";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 import { LandingFooter } from "@/components/landing/LandingFooter";
@@ -54,6 +55,7 @@ export default function Home() {
           <MemorySection />
           <PhotoBand {...PHOTOS.afterMemory} />
           <PublicDemo />
+          <RoadmapSection />
           <SelfHostSection />
           <PhotoBand {...PHOTOS.beforeClose} />
           <FinalCTA />

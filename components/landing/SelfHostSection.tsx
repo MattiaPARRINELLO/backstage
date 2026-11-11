@@ -1,4 +1,4 @@
-import { GITHUB_URL, SELF_HOST, SELF_HOST_URL } from "@/app/landing-content";
+import type { LandingContent } from "@/app/landing-content";
 import { InstallCommand } from "./InstallCommand";
 
 /**
@@ -6,28 +6,23 @@ import { InstallCommand } from "./InstallCommand";
  * dans un bloc sombre à droite. Le seul monospace de la page qui ne soit
  * pas une étiquette — c'est du vrai code.
  */
-export function SelfHostSection() {
+export function SelfHostSection({ t }: { t: LandingContent }) {
   return (
     <section id="chez-vous" className="sec sec--tight">
       <div className="wrap self">
         <div>
-          <h2 className="h2 mt-5">
-            {SELF_HOST.title}
-          </h2>
-          <p className="lead mt-4">
-            {SELF_HOST.lead}
-          </p>
-
+          <h2 className="h2 mt-5">{t.selfHost.title}</h2>
+          <p className="lead mt-4">{t.selfHost.lead}</p>
         </div>
 
         <div>
-          <InstallCommand />
+          <InstallCommand t={t} />
         </div>
       </div>
 
       <div className="wrap">
         <div className="self__facts">
-          {SELF_HOST.facts.map((fact) => (
+          {t.selfHost.facts.map((fact) => (
             <article key={fact.title} className="mini">
               <h3 className="mini__title">{fact.title}</h3>
               <p className="mini__desc">{fact.desc}</p>
@@ -37,20 +32,20 @@ export function SelfHostSection() {
 
         <div className="self__actions">
           <a
-            href={SELF_HOST_URL}
+            href={t.selfHostUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn--solid"
           >
-            {SELF_HOST.cta}
+            {t.selfHost.cta}
           </a>
           <a
-            href={GITHUB_URL}
+            href={t.githubUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn--ghost"
           >
-            {SELF_HOST.codeCta}
+            {t.selfHost.codeCta}
           </a>
         </div>
       </div>

@@ -22,7 +22,12 @@ import type { DemoCallOutcome } from "@/lib/types";
 
 const bodySchema = z.object({
   message: z.string().trim().min(1, "Message requis").max(400, "Message trop long"),
+  lang: z.enum(["fr", "en"]).optional(),
 });
+
+function demoMessage(lang: "fr" | "en", fr: string, en: string): string {
+  return lang === "en" ? en : fr;
+}
 
 // Modele le plus leger du provider. Attention : un identifiant mort fait
 // repondre 400 "Model is unavailable" au provider, ce qui rend la demo
@@ -99,6 +104,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Requête invalide" }, { status: 400 });
   }
 
+  let earlyLang: "fr" | "en" = "fr";
+  try {
+    const early = JSON.parse(rawBody) as { lang?: unknown };
+    if (early?.lang === "en") earlyLang = "en";
+  } catch {
+    // Corps illisible : la validation ci-dessous s'en charge.
+  }
+
   if (
     !checkRateLimit(`demo:${ip}`, RATE_LIMIT) ||
     !checkRateLimit("demo:global", GLOBAL_RATE_LIMIT)
@@ -115,7 +128,7 @@ export async function POST(request: NextRequest) {
       "Quota de requêtes dépassé"
     );
     return NextResponse.json(
-      { error: "Trop de demandes. Réessayez dans un instant." },
+      { error: demoMessage(earlyLang, "Trop de demandes. Réessayez dans un instant.", "Too many requests. Try again in a moment.") },
       { status: 429 }
     );
   }
@@ -146,6 +159,7 @@ export async function POST(request: NextRequest) {
   }
 
   const message = parsed.data.message;
+  const lang = parsed.data.lang ?? "fr";
   const sources = selectSources(message);
 
   let client: OpenAI;
@@ -164,7 +178,7 @@ export async function POST(request: NextRequest) {
       "Configuration IA absente"
     );
     return NextResponse.json(
-      { error: "Démonstration indisponible" },
+      { error: demoMessage(lang, "Démonstration indisponible", "Demo unavailable") },
       { status: 503 }
     );
   }
@@ -179,6 +193,14 @@ export async function POST(request: NextRequest) {
         messages: [
           { role: "system", content: DEMO_SYSTEM_PROMPT },
           { role: "system", content: buildDemoContext().slice(0, MAX_CONTEXT_CHARS) },
+          ...(lang === "en"
+            ? [
+                {
+                  role: "system" as const,
+                  content: "Answer in English, in the same concise tone.",
+                },
+              ]
+            : []),
           { role: "user", content: message },
         ],
         temperature: 0.4,
@@ -201,7 +223,7 @@ export async function POST(request: NextRequest) {
         "Réponse vide du modèle"
       );
       return NextResponse.json(
-        { error: "Réponse vide du modèle. Réessayez." },
+        { error: demoMessage(lang, "Réponse vide du modèle. Réessayez.", "Empty model response. Try again.") },
         { status: 502 }
       );
     }
@@ -211,8 +233,8 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const aborted = err instanceof Error && err.name === "AbortError";
     const errorMessage = aborted
-      ? "La démonstration a mis trop de temps à répondre. Réessayez."
-      : "La démonstration est momentanément indisponible. Réessayez.";
+      ? demoMessage(lang, "La démonstration a mis trop de temps à répondre. Réessayez.", "The demo took too long to answer. Try again.")
+      : demoMessage(lang, "La démonstration est momentanément indisponible. Réessayez.", "The demo is temporarily unavailable. Try again.");
     await persistDemoCall(
       request,
       ip,

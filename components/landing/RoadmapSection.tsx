@@ -1,22 +1,24 @@
-import { GITHUB_URL, ROADMAP, ROADMAP_URL } from "@/app/landing-content";
+import type { LandingContent } from "@/app/landing-content";
 
 /**
  * Comptes et clés : le chantier en cours. Une annonce franche, pas une
  * promesse : la section dit ce qui arrive, sur quelle branche, et quelle
  * capacité gratuite est visée.
  */
-export function RoadmapSection() {
+export function RoadmapSection({ t }: { t: LandingContent }) {
+  const roadmap = t.roadmap;
+
   return (
     <section id="comptes" className="sec">
       <div className="wrap">
         <div className="sec__head">
-          <p className="wip__badge">{ROADMAP.badge}</p>
-          <h2 className="h2">{ROADMAP.title}</h2>
-          <p className="lead">{ROADMAP.lead}</p>
+          <p className="wip__badge">{roadmap.badge}</p>
+          <h2 className="h2">{roadmap.title}</h2>
+          <p className="lead">{roadmap.lead}</p>
         </div>
 
         <div className="self__facts">
-          {ROADMAP.facts.map((fact) => (
+          {roadmap.facts.map((fact) => (
             <article key={fact.title} className="mini">
               <h3 className="mini__title">{fact.title}</h3>
               <p className="mini__desc">{fact.desc}</p>
@@ -26,31 +28,31 @@ export function RoadmapSection() {
 
         <div className="wip__foot">
           <p className="wip__status mono">
-            <span>{ROADMAP.status.label}</span>
-            <code>{ROADMAP.status.value}</code>
+            <span>{roadmap.status.label}</span>
+            <code>{roadmap.status.value}</code>
           </p>
 
           <div className="self__actions">
             <a
-              href={ROADMAP_URL}
+              href={t.roadmapUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn--solid"
             >
-              {ROADMAP.roadmapCta}
+              {roadmap.roadmapCta}
             </a>
             <a
-              href={GITHUB_URL}
+              href={t.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn--ghost"
             >
-              {ROADMAP.codeCta}
+              {roadmap.codeCta}
             </a>
           </div>
         </div>
 
-        <p className="small wip__note">{ROADMAP.note}</p>
+        <p className="small wip__note">{roadmap.note}</p>
       </div>
     </section>
   );

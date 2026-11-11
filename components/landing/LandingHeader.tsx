@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
-import { NAV_LINKS } from "@/app/landing-content";
+import type { LandingContent } from "@/app/landing-content";
 import { scrollToSection } from "./scroll";
 import { ThemeToggle } from "./ThemeToggle";
 
-export function LandingHeader() {
+export function LandingHeader({ t }: { t: LandingContent }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -23,7 +23,7 @@ export function LandingHeader() {
     <>
       <header data-scrolled={scrolled} className="site-header">
         <div className="site-header__inner">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="Backstage, accueil">
+          <Link href="/" className="flex items-center gap-2.5" aria-label="Backstage, home">
             <Image
               src="/backstage-logo-simple.png"
               alt=""
@@ -35,8 +35,8 @@ export function LandingHeader() {
             <span className="wordmark">Backstage</span>
           </Link>
 
-          <nav className="hidden items-center gap-7 lg:flex" aria-label="Navigation principale">
-            {NAV_LINKS.map((link) => (
+          <nav className="hidden items-center gap-7 lg:flex" aria-label={t.ui.navLabel}>
+            {t.nav.map((link) => (
               <button
                 key={link.href}
                 type="button"
@@ -54,18 +54,21 @@ export function LandingHeader() {
               onClick={() => scrollToSection("demo")}
               className="nav-cta hidden sm:inline-flex"
             >
-              Essayer la démo
+              {t.hero.primaryCta}
             </button>
             <ThemeToggle />
+            <Link href={t.switchHref} className="nav-link hidden sm:inline-flex" hrefLang={t.locale === "fr" ? "en" : "fr"}>
+              {t.switchLabel}
+            </Link>
             <Link href="/login" className="nav-link hidden sm:inline-flex">
-              Se connecter
+              {t.hero.loginCta}
             </Link>
             <button
               type="button"
               className="icon-button lg:hidden"
               aria-expanded={menuOpen}
               aria-controls="menu-mobile"
-              aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-label={menuOpen ? t.ui.closeMenu : t.ui.openMenu}
               onClick={() => setMenuOpen((v) => !v)}
             >
               {menuOpen ? (
@@ -80,8 +83,8 @@ export function LandingHeader() {
 
       {menuOpen && (
         <div id="menu-mobile" className="mobile-menu lg:hidden">
-          <nav aria-label="Navigation mobile" className="flex flex-col">
-            {NAV_LINKS.map((link) => (
+          <nav aria-label={t.ui.mobileNavLabel} className="flex flex-col">
+            {t.nav.map((link) => (
               <button
                 key={link.href}
                 type="button"
@@ -95,7 +98,10 @@ export function LandingHeader() {
               </button>
             ))}
             <Link href="/login" className="mobile-menu__link">
-              Se connecter
+              {t.hero.loginCta}
+            </Link>
+            <Link href={t.switchHref} className="mobile-menu__link" hrefLang={t.locale === "fr" ? "en" : "fr"}>
+              {t.switchLabel}
             </Link>
             <button
               type="button"
@@ -105,7 +111,7 @@ export function LandingHeader() {
               }}
               className="btn btn--solid mt-2 w-full"
             >
-              Essayer la démo
+              {t.hero.primaryCta}
             </button>
           </nav>
         </div>

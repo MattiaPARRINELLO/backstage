@@ -1,7 +1,7 @@
 # APK Android — BACKSTAGE
 
 L'application Android n'est pas un portage : c'est un **Trusted Web Activity**
-(TWA), c'est-à-dire Chrome qui affiche `https://brain.mprnl.fr` en plein écran,
+(TWA), c'est-à-dire Chrome qui affiche `https://backstage.mprnl.fr` en plein écran,
 plus un module natif de notifications (FCM). Conséquences :
 
 - l'origine reste la vraie → **passkeys WebAuthn et session identiques à la PWA**,
@@ -78,14 +78,14 @@ Reporter l'empreinte dans `ANDROID_CERT_SHA256` (env serveur) ou dans
 ## Déployer
 
 L'APK se vérifie auprès du domaine. Il faut donc que
-`https://brain.mprnl.fr/.well-known/assetlinks.json` réponde `200` avec
+`https://backstage.mprnl.fr/.well-known/assetlinks.json` réponde `200` avec
 l'empreinte **de la clé qui a signé l'APK**. Tant que ce n'est pas le cas, le
 TWA s'ouvre avec une barre d'URL (fonctionnel, mais pas plein écran).
 
 Vérification :
 
 ```bash
-curl -s https://brain.mprnl.fr/.well-known/assetlinks.json
+curl -s https://backstage.mprnl.fr/.well-known/assetlinks.json
 ```
 
 ---

@@ -523,8 +523,23 @@ export async function checkIntentions() {
   }
 }
 
-export async function triggerDailyBrief(
+// Le cron cPanel et le scheduler interne tombent sur la meme minute a 7h :
+// sans serialisation, les deux lancaient une generation et deux briefs du
+// meme jour partaient chez le provider (constate en production). Les appels
+// sont donc chaines ; le second relit le brief ecrit par le premier.
+let briefTriggerQueue: Promise<unknown> = Promise.resolve();
+
+export function triggerDailyBrief(
   source: "cron" | "page-test" | "interne" = "interne",
+  ip?: string
+): Promise<{ sent: boolean; devices: number } | { skipped: string }> {
+  const run = briefTriggerQueue.then(() => runDailyBriefTrigger(source, ip));
+  briefTriggerQueue = run.catch(() => undefined);
+  return run;
+}
+
+async function runDailyBriefTrigger(
+  source: "cron" | "page-test" | "interne",
   ip?: string
 ): Promise<
   { sent: boolean; devices: number } | { skipped: string }

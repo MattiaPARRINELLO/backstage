@@ -1,7 +1,7 @@
 import { getReminders, getConcerts, getLeetcode, getCalendar, getCourses, getCoursesForDay, writeJsonAtomic, readJsonSafe, prepareConcert, formatCourse } from "./storage";
 import { fetchGoogleCalendarEvents, fetchGmailMessages } from "./google-actions";
 import { chatCompletion } from "./ai-providers";
-import { getConfig } from "./config";
+import { getConfig, getModel } from "./config";
 import { toISODate, toHHMM } from "./utils";
 import type { DailyBrief } from "./types";
 
@@ -122,7 +122,9 @@ export async function generateDailyBrief(): Promise<string | null> {
       prompt += "\nRien de particulier de prévu aujourd'hui.\n";
     }
 
-    const model = config.models.general;
+    // Meme resolution que le chat : un identifiant de modele retire par le
+    // provider ne doit pas condamner le brief (400 « Model is unavailable »).
+    const { primary: model } = await getModel("general");
     const result = await chatCompletion(
       model,
       [

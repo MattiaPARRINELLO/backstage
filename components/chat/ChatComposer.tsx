@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Square, Plus, AtSign } from "lucide-react";
+import { Send, Square, Plus, AtSign, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VoiceInput } from "@/components/chat/VoiceInput";
+import type { MessageQuote } from "@/components/chat/chat-data";
 
 export interface ChatComposerProps {
   value: string;
@@ -13,6 +14,8 @@ export interface ChatComposerProps {
   loading: boolean;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   onKey: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  quotes?: MessageQuote[];
+  onRemoveQuote?: (id: string) => void;
 }
 
 export function ChatComposer({
@@ -23,6 +26,8 @@ export function ChatComposer({
   loading: isLoading,
   inputRef: ref,
   onKey,
+  quotes = [],
+  onRemoveQuote,
 }: ChatComposerProps) {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -77,8 +82,40 @@ export function ChatComposer({
   const iconButton =
     "shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] transition-colors duration-150";
 
+  const canSend = displayValue.trim().length > 0 || quotes.length > 0;
+
   return (
     <div className="relative">
+      {quotes.length > 0 && (
+        <div className="mb-1.5 space-y-1">
+          {quotes.map((quote) => (
+            <div
+              key={quote.id}
+              className="flex items-start gap-2 rounded-[var(--r-sm)] border border-[var(--line)] border-l-2 border-l-[var(--accent)] bg-[var(--surface-2)] px-2.5 py-2"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="ui-mono text-[var(--text-4)]">Extrait</p>
+                <p className="mt-0.5 text-[length:var(--t-small)] leading-[1.5] text-[var(--text-3)] line-clamp-2">
+                  {quote.text}
+                </p>
+                <p className="mt-1 text-[length:var(--t-small)] leading-[1.5] text-[var(--text-1)] line-clamp-2">
+                  {quote.comment}
+                </p>
+              </div>
+              {onRemoveQuote && (
+                <button
+                  onClick={() => onRemoveQuote(quote.id)}
+                  className="shrink-0 p-1 rounded-[var(--r-sm)] text-[var(--text-4)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] transition-colors duration-150"
+                  title="Retirer l'extrait"
+                  aria-label="Retirer l'extrait"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       {showMentionMenu && (
         <div className="absolute bottom-full left-2 mb-2 w-60 rounded-[var(--r-tile)] border border-[var(--line)] bg-[var(--surface-1)] shadow-[var(--shadow-float)] p-1 z-50">
           <p className="px-2.5 pt-1.5 pb-1 ui-mono text-[var(--text-4)]">
@@ -159,7 +196,13 @@ export function ChatComposer({
           autoCorrect="on"
           onChange={handleChange}
           onKeyDown={onKey}
-          placeholder={voiceActive ? "Parle maintenant…" : "Écris un message…"}
+          placeholder={
+            voiceActive
+              ? "Parle maintenant…"
+              : quotes.length > 0
+                ? "Commente l'extrait…"
+                : "Écris un message…"
+          }
           rows={1}
           className="flex-1 bg-transparent text-[length:var(--t-body)] text-[var(--text-1)] placeholder:text-[var(--text-3)] outline-none resize-none font-sans px-2 py-2.5 max-h-[200px]"
         />
@@ -175,7 +218,7 @@ export function ChatComposer({
         ) : (
           <button
             onClick={onSubmit}
-            disabled={!displayValue.trim()}
+            disabled={!canSend}
             className="ui-btn ui-btn--primary ui-btn--icon shrink-0"
             title="Envoyer"
             aria-label="Envoyer"

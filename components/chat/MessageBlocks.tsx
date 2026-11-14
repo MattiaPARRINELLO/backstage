@@ -17,7 +17,7 @@ import { Markdown } from "@/components/ui/Markdown";
 import { api } from "@/lib/api-client";
 import { useToast } from "@/components/ui/Toast";
 import type { Message, ToolCall } from "@/components/chat/types";
-import { toolMeta, FUNNY_THOUGHTS } from "@/components/chat/chat-data";
+import { toolMeta, FUNNY_THOUGHTS, parseQuotedMessage } from "@/components/chat/chat-data";
 
 export function AssistantAvatar({ size = "md" }: { size?: "sm" | "md" }) {
   return (
@@ -141,21 +141,59 @@ function ActionChips({ message }: { message: Message }) {
 // Memoïsé : la saisie (setInput) re-rend ChatView à chaque frappe, mais les
 // messages existants sont des références stables — on évite de re-parser tout
 // le markdown de la conversation à chaque keypress.
+// Message utilisateur : les extraits commentés forment des modules au-dessus
+// du texte libre, plutôt qu'un bloc de Markdown brut.
+function UserMessage({ content }: { content: string }) {
+  const { quotes, body } = parseQuotedMessage(content);
+
+  if (quotes.length === 0) {
+    return (
+      <div className="max-w-[85%] sm:max-w-[75%] rounded-[var(--r-tile)] bg-[var(--surface-2)] px-4 py-2.5 text-[length:var(--t-body)] leading-[1.6] text-[var(--text-1)] whitespace-pre-wrap break-words">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-[85%] sm:max-w-[75%] space-y-2">
+      {quotes.map((quote, index) => (
+        <div
+          key={index}
+          className="rounded-[var(--r-tile)] border border-[var(--line)] border-l-2 border-l-[var(--accent)] bg-[var(--surface-1)] px-3.5 py-2.5"
+        >
+          <p className="ui-mono text-[var(--text-4)]">Extrait</p>
+          <p className="mt-1 text-[length:var(--t-small)] leading-[1.6] text-[var(--text-2)] whitespace-pre-wrap break-words">
+            {quote.text}
+          </p>
+          {quote.comment && (
+            <p className="mt-2 text-[length:var(--t-body)] leading-[1.6] text-[var(--text-1)] whitespace-pre-wrap break-words">
+              {quote.comment}
+            </p>
+          )}
+        </div>
+      ))}
+      {body && (
+        <div className="rounded-[var(--r-tile)] bg-[var(--surface-2)] px-4 py-2.5 text-[length:var(--t-body)] leading-[1.6] text-[var(--text-1)] whitespace-pre-wrap break-words">
+          {body}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export const MessageBlock = memo(function MessageBlock({ message }: { message: Message }) {
   const isUser = message.role === "user";
 
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] sm:max-w-[75%] rounded-[var(--r-tile)] bg-[var(--surface-2)] px-4 py-2.5 text-[length:var(--t-body)] leading-[1.6] text-[var(--text-1)] whitespace-pre-wrap break-words">
-          {message.content}
-        </div>
+        <UserMessage content={message.content} />
       </div>
     );
   }
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-3" data-chat-role="assistant">
       <AssistantAvatar />
       <div className="min-w-0 flex-1 pt-0.5">
         <div className="text-[length:var(--t-body)] leading-[1.75] text-[var(--text-1)]">

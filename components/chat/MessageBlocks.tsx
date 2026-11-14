@@ -11,6 +11,8 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
+  Quote,
+  CornerDownRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Markdown } from "@/components/ui/Markdown";
@@ -159,15 +161,29 @@ function UserMessage({ content }: { content: string }) {
       {quotes.map((quote, index) => (
         <div
           key={index}
-          className="rounded-[var(--r-tile)] border border-[var(--line)] border-l-2 border-l-[var(--accent)] bg-[var(--surface-1)] px-3.5 py-2.5"
+          className="relative overflow-hidden rounded-[var(--r-tile)] border border-[var(--line)] bg-[var(--surface-1)] pl-4 pr-3.5 py-3"
         >
-          <p className="ui-mono text-[var(--text-4)]">Extrait</p>
+          <span
+            aria-hidden
+            className="absolute inset-y-0 left-0 w-[2px]"
+            style={{
+              background: "linear-gradient(to bottom, var(--accent), transparent)",
+            }}
+          />
+          <p className="flex items-center gap-1.5 ui-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-4)]">
+            <Quote className="w-2.5 h-2.5 text-[var(--accent)]" strokeWidth={2.5} />
+            Extrait
+          </p>
           <p className="mt-1 text-[length:var(--t-small)] leading-[1.6] text-[var(--text-2)] whitespace-pre-wrap break-words">
             {quote.text}
           </p>
           {quote.comment && (
-            <p className="mt-2 text-[length:var(--t-body)] leading-[1.6] text-[var(--text-1)] whitespace-pre-wrap break-words">
-              {quote.comment}
+            <p className="mt-2 flex items-start gap-1.5 text-[length:var(--t-body)] leading-[1.6] text-[var(--text-1)]">
+              <CornerDownRight
+                className="w-3.5 h-3.5 mt-[5px] shrink-0 text-[var(--text-4)]"
+                strokeWidth={2}
+              />
+              <span className="min-w-0 whitespace-pre-wrap break-words">{quote.comment}</span>
             </p>
           )}
         </div>

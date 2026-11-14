@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Square, Plus, AtSign, X } from "lucide-react";
+import { Send, Square, Plus, AtSign, X, Quote, CornerDownRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VoiceInput } from "@/components/chat/VoiceInput";
 import type { MessageQuote } from "@/components/chat/chat-data";
@@ -16,6 +16,7 @@ export interface ChatComposerProps {
   onKey: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   quotes?: MessageQuote[];
   onRemoveQuote?: (id: string) => void;
+  highlightedId?: string | null;
 }
 
 export function ChatComposer({
@@ -28,6 +29,7 @@ export function ChatComposer({
   onKey,
   quotes = [],
   onRemoveQuote,
+  highlightedId = null,
 }: ChatComposerProps) {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,31 +89,50 @@ export function ChatComposer({
   return (
     <div className="relative">
       {quotes.length > 0 && (
-        <div className="mb-1.5 space-y-1">
+        <div className="mb-2 space-y-1.5">
           {quotes.map((quote) => (
             <div
               key={quote.id}
-              className="flex items-start gap-2 rounded-[var(--r-sm)] border border-[var(--line)] border-l-2 border-l-[var(--accent)] bg-[var(--surface-2)] px-2.5 py-2"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="ui-mono text-[var(--text-4)]">Extrait</p>
-                <p className="mt-0.5 text-[length:var(--t-small)] leading-[1.5] text-[var(--text-3)] line-clamp-2">
-                  {quote.text}
-                </p>
-                <p className="mt-1 text-[length:var(--t-small)] leading-[1.5] text-[var(--text-1)] line-clamp-2">
-                  {quote.comment}
-                </p>
-              </div>
-              {onRemoveQuote && (
-                <button
-                  onClick={() => onRemoveQuote(quote.id)}
-                  className="shrink-0 p-1 rounded-[var(--r-sm)] text-[var(--text-4)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] transition-colors duration-150"
-                  title="Retirer l'extrait"
-                  aria-label="Retirer l'extrait"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+              className={cn(
+                "group relative overflow-hidden rounded-[var(--r-sm)] border border-[var(--line)] bg-[var(--surface-2)] pl-3 pr-1.5 py-2",
+                quote.id === highlightedId && "quote-land"
               )}
+            >
+              <span
+                aria-hidden
+                className="absolute inset-y-0 left-0 w-[2px]"
+                style={{
+                  background: "linear-gradient(to bottom, var(--accent), transparent)",
+                }}
+              />
+              <div className="flex items-start gap-1.5">
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5 ui-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-4)]">
+                    <Quote className="w-2.5 h-2.5 text-[var(--accent)]" strokeWidth={2.5} />
+                    Extrait
+                  </p>
+                  <p className="mt-1 text-[length:var(--t-small)] leading-[1.5] text-[var(--text-2)] line-clamp-2">
+                    {quote.text}
+                  </p>
+                  <p className="mt-1.5 flex items-start gap-1.5 text-[length:var(--t-small)] leading-[1.5] text-[var(--text-1)]">
+                    <CornerDownRight
+                      className="w-3 h-3 mt-[3px] shrink-0 text-[var(--text-4)]"
+                      strokeWidth={2}
+                    />
+                    <span className="min-w-0 line-clamp-2">{quote.comment}</span>
+                  </p>
+                </div>
+                {onRemoveQuote && (
+                  <button
+                    onClick={() => onRemoveQuote(quote.id)}
+                    className="shrink-0 mt-0.5 p-1 rounded-[var(--r-sm)] text-[var(--text-4)] opacity-60 hover:opacity-100 hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] transition-all duration-150 active:scale-90"
+                    title="Retirer l'extrait"
+                    aria-label="Retirer l'extrait"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MessageSquarePlus, X } from "lucide-react";
+import { MessageSquarePlus, Quote, X } from "lucide-react";
 
 interface Anchor {
   top: number;
@@ -30,14 +30,25 @@ export function SelectionCommentLayer({
   const [selection, setSelection] = useState<PendingSelection | null>(null);
   const [commenting, setCommenting] = useState(false);
   const [comment, setComment] = useState("");
+  const [closing, setClosing] = useState(false);
   const popRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLTextAreaElement>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const close = useCallback(() => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     setSelection(null);
     setCommenting(false);
     setComment("");
+    setClosing(false);
   }, []);
+
+  useEffect(
+    () => () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    },
+    []
+  );
 
   useEffect(() => {
     if (!enabled) return;
@@ -82,6 +93,7 @@ export function SelectionCommentLayer({
       });
       setCommenting(false);
       setComment("");
+      setClosing(false);
     };
 
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -140,40 +152,63 @@ export function SelectionCommentLayer({
       data-chat-role="quote-popover"
     >
       {commenting ? (
-        <div className="w-[272px] rounded-[var(--r-tile)] border border-[var(--line-2)] bg-[var(--surface-1)] shadow-[var(--shadow-float)] p-2.5">
-          <div className="flex items-start gap-2">
-            <p className="flex-1 min-w-0 text-[length:var(--t-small)] leading-[1.5] text-[var(--text-3)] line-clamp-3">
-              {selection.text}
+        <div
+          className={`w-[288px] rounded-[var(--r-tile)] border border-[var(--line-2)] bg-[var(--surface-1)] shadow-[var(--shadow-float)] ${
+            closing ? "quote-pop-out" : "fade-in-up"
+          }`}
+        >
+          <div className="flex items-center gap-2 px-3 pt-2.5">
+            <Quote className="w-3 h-3 shrink-0 text-[var(--accent)]" strokeWidth={2.5} />
+            <p className="flex-1 min-w-0 ui-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-4)]">
+              Commenter l&apos;extrait
             </p>
             <button
               onClick={close}
-              className="shrink-0 -mt-0.5 -mr-0.5 p-1 rounded-[var(--r-sm)] text-[var(--text-4)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors duration-150"
+              className="-mr-1 p-1 rounded-[var(--r-sm)] text-[var(--text-4)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors duration-150"
               aria-label="Fermer"
               onMouseDown={(e) => e.preventDefault()}
             >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
-          <textarea
-            ref={areaRef}
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                submit();
-              }
-            }}
-            rows={2}
-            placeholder="Ton commentaire…"
-            aria-label="Commentaire sur l'extrait"
-            className="mt-2 w-full resize-none rounded-[var(--r-sm)] border border-[var(--line)] bg-[var(--surface-2)] px-2.5 py-2 text-[length:var(--t-small)] text-[var(--text-1)] placeholder:text-[var(--text-4)] outline-none focus:border-[var(--accent)]"
-          />
-          <div className="mt-2 flex items-center justify-end gap-1.5">
+
+          <div className="mt-2 mx-3 flex gap-2 rounded-[var(--r-sm)] bg-[var(--surface-2)] px-2.5 py-2">
+            <span
+              aria-hidden
+              className="w-[2px] shrink-0 rounded-full"
+              style={{
+                background: "linear-gradient(to bottom, var(--accent), transparent)",
+              }}
+            />
+            <p className="min-w-0 text-[length:var(--t-small)] leading-[1.5] text-[var(--text-3)] line-clamp-3">
+              {selection.text}
+            </p>
+          </div>
+
+          <div className="mx-3 mt-2">
+            <textarea
+              ref={areaRef}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  submit();
+                }
+              }}
+              rows={2}
+              placeholder="Ton commentaire…"
+              aria-label="Commentaire sur l'extrait"
+              className="w-full resize-none rounded-[var(--r-sm)] border border-[var(--line)] bg-[var(--surface-2)] px-2.5 py-2 text-[length:var(--t-small)] text-[var(--text-1)] placeholder:text-[var(--text-4)] outline-none transition-colors duration-150 focus:border-[var(--accent)]"
+            />
+          </div>
+
+          <div className="mt-2 mb-2.5 px-3 flex items-center justify-between gap-2">
+            <span className="ui-mono text-[10px] text-[var(--text-4)]">Entrée</span>
             <button
               onClick={() => submit()}
               disabled={!comment.trim()}
-              className="ui-btn ui-btn--primary ui-btn--xs disabled:opacity-50"
+              className="ui-btn ui-btn--primary ui-btn--xs disabled:opacity-50 active:scale-95 transition-transform duration-150"
               onMouseDown={(e) => e.preventDefault()}
             >
               Ajouter
@@ -183,10 +218,13 @@ export function SelectionCommentLayer({
       ) : (
         <button
           onClick={() => setCommenting(true)}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line-2)] bg-[var(--surface-1)] px-3 py-1.5 text-[length:var(--t-small)] text-[var(--text-2)] shadow-[var(--shadow-float)] hover:text-[var(--text-1)] hover:border-[var(--text-3)] transition-colors duration-150"
+          className="group inline-flex items-center gap-1.5 rounded-full border border-[var(--line-2)] bg-[var(--surface-1)] py-1.5 pl-2.5 pr-3 text-[length:var(--t-small)] text-[var(--text-2)] shadow-[var(--shadow-float)] hover:text-[var(--text-1)] hover:border-[var(--text-3)] transition-all duration-150 active:scale-95"
           onMouseDown={(e) => e.preventDefault()}
         >
-          <MessageSquarePlus className="w-3.5 h-3.5" />
+          <MessageSquarePlus
+            className="w-3.5 h-3.5 text-[var(--accent)] transition-transform duration-200 group-hover:-rotate-6"
+            strokeWidth={2}
+          />
           Commenter
         </button>
       )}
@@ -198,6 +236,8 @@ export function SelectionCommentLayer({
     if (!trimmed || !selection) return;
     onAdd({ text: selection.text, comment: trimmed });
     window.getSelection()?.removeAllRanges();
-    close();
+    setClosing(true);
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = setTimeout(close, 150);
   }
 }

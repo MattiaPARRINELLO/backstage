@@ -79,6 +79,9 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   const [input, setInput] = useState("");
   // Extraits commentés (sélection dans une réponse de l'IA) en attente d'envoi.
   const [pendingQuotes, setPendingQuotes] = useState<MessageQuote[]>([]);
+  // Dernier extrait ajouté : il « atterrit » avec une animation dans le champ.
+  const [highlightedQuoteId, setHighlightedQuoteId] = useState<string | null>(null);
+  const quoteAnimRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionCards, setActionCards] = useState<{ id: string; toolName: string; result: string; timestamp: string }[]>([]);
@@ -119,6 +122,15 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  // Le minuteur d'animation du dernier extrait ne doit pas survivre au
+  // démontage de la vue.
+  useEffect(
+    () => () => {
+      if (quoteAnimRef.current) clearTimeout(quoteAnimRef.current);
+    },
+    []
+  );
 
   // Consentement IA : rien n'est envoyé au provider tant que l'utilisateur
   // n'a pas accepté l'écran de consentement (voir /privacy).
@@ -811,7 +823,11 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       <SelectionCommentLayer
         containerRef={scrollRef}
         onAdd={({ text, comment }) => {
-          setPendingQuotes((prev) => [...prev, { id: generateId(), text, comment }]);
+          const id = generateId();
+          setPendingQuotes((prev) => [...prev, { id, text, comment }]);
+          setHighlightedQuoteId(id);
+          if (quoteAnimRef.current) clearTimeout(quoteAnimRef.current);
+          quoteAnimRef.current = setTimeout(() => setHighlightedQuoteId(null), 720);
           inputRef.current?.focus();
         }}
       />
@@ -946,6 +962,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
               inputRef={inputRef}
               onKey={handleKey}
               quotes={pendingQuotes}
+              highlightedId={highlightedQuoteId}
               onRemoveQuote={(id) =>
                 setPendingQuotes((prev) => prev.filter((q) => q.id !== id))
               }

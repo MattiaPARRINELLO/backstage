@@ -1,5 +1,5 @@
 import type { ChatHistory, ChatSession } from "../types";
-import type { ChatRunTool } from "../chat-run-types";
+import type { ChatRunStep, ChatRunTool } from "../chat-run-types";
 import { mutateJson, readJsonSafe } from "../storage-core";
 
 type ChatSessionMessage = ChatSession["messages"][number];
@@ -44,8 +44,10 @@ export async function appendAssistantTurn(input: {
   userContent?: string;
   assistantContent: string;
   toolCalls?: ChatRunTool[];
+  steps?: ChatRunStep[];
+  activityMs?: number;
 }): Promise<void> {
-  const { sessionId, userContent, assistantContent, toolCalls } = input;
+  const { sessionId, userContent, assistantContent, toolCalls, steps, activityMs } = input;
   const now = new Date().toISOString();
 
   await mutateJson<ChatHistory>("chat-history.json", defaultChatHistory, (data) => {
@@ -76,6 +78,8 @@ export async function appendAssistantTurn(input: {
         role: "assistant",
         content: assistantContent,
         timestamp: now,
+        ...(activityMs ? { activityMs } : {}),
+        ...(steps?.length ? { steps } : {}),
         toolCalls: toolCalls?.map((tc) => ({
           id: tc.id,
           name: tc.name,

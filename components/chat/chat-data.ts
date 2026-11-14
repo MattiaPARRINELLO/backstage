@@ -1,18 +1,45 @@
-import { Sparkles, Globe, Mail, SendHorizontal, CalendarPlus, Brain, Bookmark, Bell } from "lucide-react";
+import {
+  Sparkles,
+  Globe,
+  Mail,
+  SendHorizontal,
+  CalendarPlus,
+  Brain,
+  Bookmark,
+  Bell,
+  CloudSun,
+  Camera,
+  ListChecks,
+} from "lucide-react";
 import type { Message, ToolCall } from "./types";
 
-export const toolMeta: Record<string, { label: string; icon: typeof Globe }> = {
-  web_search: { label: "Recherche web", icon: Globe },
-  fetch_and_search_emails: { label: "Consultation Gmail", icon: Mail },
+export const toolMeta: Record<
+  string,
+  { label: string; icon: typeof Globe; unit?: string }
+> = {
+  web_search: { label: "Recherche web", icon: Globe, unit: "résultats" },
+  fetch_and_search_emails: { label: "Consultation Gmail", icon: Mail, unit: "mails" },
   send_email_response: { label: "Envoi email", icon: SendHorizontal },
   create_calendar_event: { label: "Création calendrier", icon: CalendarPlus },
-  add_memory_fact: { label: "Mémoire", icon: Brain },
+  update_calendar_event: { label: "Modification calendrier", icon: CalendarPlus },
+  delete_calendar_event: { label: "Suppression calendrier", icon: CalendarPlus },
+  search_calendar_events: { label: "Calendrier", icon: CalendarPlus, unit: "évènements" },
+  lookup_concerts: { label: "Concerts", icon: Globe, unit: "concerts" },
+  triage_emails: { label: "Tri emails", icon: Mail, unit: "mails" },
+  add_memory_fact: { label: "Mémoire", icon: Brain, unit: "faits" },
   add_reminder: { label: "Rappel", icon: Bell },
-  add_watch_later: { label: "Ajout à la liste", icon: Bookmark },
-  search_calendar_events: { label: "Calendrier", icon: CalendarPlus },
-  lookup_concerts: { label: "Concerts", icon: Globe },
-  triage_emails: { label: "Tri emails", icon: Mail },
+  list_reminders: { label: "Rappels", icon: Bell, unit: "rappels" },
+  update_reminder: { label: "Rappel", icon: Bell },
+  schedule_followup: { label: "Relance", icon: Bell },
+  add_watch_later: { label: "À voir plus tard", icon: Bookmark },
   fetch_page_meta: { label: "Aperçu lien", icon: Globe },
+  scan_accreditations: { label: "Accréditations", icon: Mail },
+  prepare_concert: { label: "Concert", icon: CalendarPlus },
+  get_weather: { label: "Météo", icon: CloudSun },
+  add_photo_shoot: { label: "Shoot photo", icon: Camera },
+  update_photo_shoot: { label: "Shoot photo", icon: Camera },
+  list_photo_shoots: { label: "Shoots photo", icon: Camera, unit: "shoots" },
+  get_schedule: { label: "Emploi du temps", icon: ListChecks },
 };
 
 // Repli de l'accueil du chat quand aucun raccourci contextuel ne s'applique.

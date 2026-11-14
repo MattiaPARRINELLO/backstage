@@ -8,14 +8,13 @@ import { ChatComposer } from "@/components/chat/ChatComposer";
 import { HomeHero } from "@/components/chat/HomeHero";
 import { useChatContext } from "@/lib/chat-context";
 import { useToast } from "@/components/ui/Toast";
-import type { Message, ToolCall } from "@/components/chat/types";
+import type { ActivityStep, Message, ToolCall } from "@/components/chat/types";
+import type { ChatSession } from "@/lib/types";
 import {
   FUNNY_THOUGHTS,
   welcomeMessage,
   generateId,
   generateTitle,
-  activeToolsList,
-  toolMeta,
   formatQuotedMessage,
   parseQuotedMessage,
   type MessageQuote,
@@ -30,9 +29,8 @@ import {
   clearLiveRun,
   type LiveRunEvent,
 } from "@/components/chat/live-run";
-import { formatTime } from "@/lib/date";
 import { SIDE_EFFECT_TOOL_NAMES } from "@/lib/tool-result";
-import { MessageBlock, ToolCallTray, ThinkingIndicator, AssistantAvatar, GroupActionCard } from "@/components/chat/MessageBlocks";
+import { MessageBlock, ActivityTrail, AssistantAvatar, GroupActionCard } from "@/components/chat/MessageBlocks";
 import { KeyboardSafe } from "@/components/ui/KeyboardSafe";
 
 // Scroll doux désactivé quand l'utilisateur demande un mouvement réduit.
@@ -84,7 +82,6 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   const quoteAnimRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [actionCards, setActionCards] = useState<{ id: string; toolName: string; result: string; timestamp: string }[]>([]);
   const [pendingGroups, setPendingGroups] = useState<
     {
       id: string;
@@ -97,7 +94,9 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   const chatCtx = useChatContext();
   const toast = useToast();
   const activeToolsRef = useRef<Record<string, ToolCall>>({});
-  const [, forceRender] = useState(0);
+
+  // Fil d'activité du tour en cours : pensées et outils, dans l'ordre.
+  const [liveSteps, setLiveSteps] = useState<ActivityStep[]>([]);
   const [streamingContent, setStreamingContent] = useState("");
   const [streamingActive, setStreamingActive] = useState(false);
   const streamingActiveRef = useRef(false);
@@ -115,6 +114,8 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   // rejouable tel quel quand on se réattache à une génération.
   const bufferRef = useRef("");
   const finishedToolsRef = useRef<ToolCall[]>([]);
+  const liveStepsRef = useRef<ActivityStep[]>([]);
+  const toolStartsRef = useRef<Record<string, number>>({});
   const appliedEventsRef = useRef(0);
   const turnStartRef = useRef(0);
   const messagesRef = useRef<Message[]>(messages);
@@ -131,6 +132,20 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     },
     []
   );
+
+  // Remet à zéro l'état du tour en cours (texte, outils, fil d'activité).
+  // Appelé à chaque nouveau tour, changement de session et arrêt.
+  const resetTurnState = useCallback(() => {
+    bufferRef.current = "";
+    finishedToolsRef.current = [];
+    liveStepsRef.current = [];
+    toolStartsRef.current = {};
+    activeToolsRef.current = {};
+    setLiveSteps([]);
+    setStreamingContent("");
+    streamingActiveRef.current = false;
+    setStreamingActive(false);
+  }, []);
 
   // Consentement IA : rien n'est envoyé au provider tant que l'utilisateur
   // n'a pas accepté l'écran de consentement (voir /privacy).
@@ -164,13 +179,18 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     }
   };
 
-  function restoreMessages(raw: { id: string; role: "user" | "assistant"; content: string; timestamp: string; toolCalls?: { id: string; name: string; arguments?: string; result?: string; status?: string; duration?: number; resultCount?: number }[] }[]): Message[] {
+  function restoreMessages(raw: ChatSession["messages"]): Message[] {
     const restored: Message[] = raw.map((m) => ({
       ...m,
       toolCalls: m.toolCalls?.map((tc) => ({
         ...tc,
         status: (tc.status as ToolCall["status"]) || "success",
       })),
+      steps: m.steps?.map((step) =>
+        step.kind === "tool"
+          ? { ...step, status: (step.status as ToolCall["status"]) || "success" }
+          : step
+      ),
     }));
     return restored.length > 0 ? restored : [welcomeMessage];
   }
@@ -207,15 +227,10 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
             setMessages(display);
             setInput("");
             setPendingQuotes([]);
-            bufferRef.current = "";
-            finishedToolsRef.current = [];
+            resetTurnState();
             appliedEventsRef.current = 0;
-            setStreamingContent("");
-            setStreamingActive(false);
-            streamingActiveRef.current = false;
             setLoading(false);
             setError(null);
-            setActionCards([]);
             setPendingGroups([]);
             activeToolsRef.current = {};
             chatCtx.clearActiveTools();
@@ -244,12 +259,8 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     setMessages([welcomeMessage]);
     setInput("");
     setPendingQuotes([]);
-    bufferRef.current = "";
-    finishedToolsRef.current = [];
+    resetTurnState();
     appliedEventsRef.current = 0;
-    setStreamingContent("");
-    setStreamingActive(false);
-    streamingActiveRef.current = false;
     setLoading(false);
     setError(null);
     activeToolsRef.current = {};
@@ -286,6 +297,8 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
             duration: tc.duration,
             resultCount: tc.resultCount,
           })),
+          steps: m.steps,
+          activityMs: m.activityMs,
         })),
         createdAt: filtered[0]?.timestamp || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -307,12 +320,8 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       if (!session) return;
       const restored = restoreMessages(session.messages);
       setMessages(restored);
-      bufferRef.current = "";
-      finishedToolsRef.current = [];
+      resetTurnState();
       appliedEventsRef.current = getLiveRun(sessionId)?.events.length ?? 0;
-      setStreamingContent("");
-      streamingActiveRef.current = false;
-      setStreamingActive(false);
       setLoading(false);
       activeToolsRef.current = {};
       chatCtx.clearActiveTools();
@@ -325,7 +334,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     } catch (err) {
       console.warn("[chat] rechargement de l'historique impossible", err);
     }
-  }, [sessionId, chatCtx]);
+  }, [sessionId, chatCtx, resetTurnState]);
 
   useEffect(() => {
     if (!sessionId || messages.length <= 1 || messages[0]?.id === "welcome") return;
@@ -337,13 +346,15 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   }, [messages, sessionId, saveSession]);
 
   useEffect(() => {
-    if (loading && streamingActive) {
+    // Rotation des pensées humoristiques : uniquement tant qu'aucune vraie
+    // pensée ni aucun outil n'alimente le fil.
+    if (loading && liveSteps.length === 0) {
       const interval = setInterval(() => {
         setThinkingIndex(Math.floor(Math.random() * FUNNY_THOUGHTS.length));
       }, 2500);
       return () => clearInterval(interval);
     }
-  }, [loading, streamingActive]);
+  }, [loading, liveSteps.length]);
 
   const prevMessagesLenRef = useRef(messages.length);
   useEffect(() => {
@@ -368,12 +379,21 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   // lieu d'en ajouter une seconde.
   const finishAssistant = useCallback((content: string) => {
     const toolCalls = finishedToolsRef.current;
+    const steps = liveStepsRef.current;
+    const activityMs =
+      turnStartRef.current > 0 ? Date.now() - turnStartRef.current : undefined;
     setMessages((prev) => {
       const last = prev[prev.length - 1];
       if (last && last.role === "assistant") {
         return [
           ...prev.slice(0, -1),
-          { ...last, content, toolCalls: toolCalls.length > 0 ? toolCalls : last.toolCalls },
+          {
+            ...last,
+            content,
+            toolCalls: toolCalls.length > 0 ? toolCalls : last.toolCalls,
+            steps: steps.length > 0 ? steps : last.steps,
+            activityMs: activityMs ?? last.activityMs,
+          },
         ];
       }
       return [
@@ -384,11 +404,16 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
           content,
           timestamp: new Date().toISOString(),
           toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+          steps: steps.length > 0 ? steps : undefined,
+          activityMs,
         },
       ];
     });
     activeToolsRef.current = {};
     finishedToolsRef.current = [];
+    liveStepsRef.current = [];
+    toolStartsRef.current = {};
+    setLiveSteps([]);
     bufferRef.current = "";
     setStreamingContent("");
     streamingActiveRef.current = false;
@@ -414,6 +439,23 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   // rejoué à l'identique quand on se réattache à une génération en cours.
   const applyEvent = useCallback(
     (event: LiveRunEvent) => {
+      if (event.type === "reasoning") {
+        // Pensée du modèle : on l'ajoute au fil, en continu tant que la
+        // dernière étape est une pensée (même règle que côté serveur).
+        const steps = [...liveStepsRef.current];
+        const last = steps[steps.length - 1];
+        if (last?.kind === "thought") {
+          steps[steps.length - 1] = {
+            kind: "thought",
+            text: (last.text + event.content).slice(0, 4000),
+          };
+        } else {
+          steps.push({ kind: "thought", text: event.content.slice(0, 4000) });
+        }
+        liveStepsRef.current = steps;
+        setLiveSteps(steps);
+        return;
+      }
       if (event.type === "delta") {
         bufferRef.current += event.content;
         setStreamingContent(bufferRef.current);
@@ -431,17 +473,28 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
             status: "running",
           },
         };
+        toolStartsRef.current[event.toolCallId] = Date.now();
+        const steps: ActivityStep[] = [
+          ...liveStepsRef.current,
+          {
+            kind: "tool",
+            id: event.toolCallId,
+            name: event.name,
+            arguments: event.arguments,
+            status: "running",
+          },
+        ];
+        liveStepsRef.current = steps;
+        setLiveSteps(steps);
         chatCtx.registerToolStart({ id: event.toolCallId, name: event.name, arguments: event.arguments });
-        if (!streamingActiveRef.current) {
-          forceRender((n) => n + 1);
-        }
       } else if (event.type === "tool_result") {
-        const toolEnd = Date.now();
         const key = Object.keys(activeToolsRef.current).find(
           (k) => activeToolsRef.current[k].name === event.name
         );
         const existing = key ? activeToolsRef.current[key] : null;
-        const duration = (toolEnd - turnStartRef.current) / 1000;
+        // Durée mesurée par outil, et non cumulée depuis le début du tour.
+        const startedAt = existing ? toolStartsRef.current[existing.id] : undefined;
+        const duration = startedAt ? (Date.now() - startedAt) / 1000 : 0;
         const resultCount = event.result
           ? event.result.split("\n").filter(Boolean).length
           : 0;
@@ -450,34 +503,31 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
         const isError = event.status
           ? event.status === "error" || event.status === "blocked"
           : event.result.includes("Erreur");
+        const status: "success" | "error" = isError ? "error" : "success";
         if (existing) {
           const remaining = { ...activeToolsRef.current };
           delete remaining[key!];
           activeToolsRef.current = remaining;
+          delete toolStartsRef.current[existing.id];
           finishedToolsRef.current = [
             ...finishedToolsRef.current,
             {
               ...existing,
               result: event.result,
-              status: isError ? "error" : "success",
+              status,
               duration,
               resultCount: resultCount || 1,
             },
           ];
+          const steps = liveStepsRef.current.map((step) =>
+            step.kind === "tool" && step.id === existing.id
+              ? { ...step, result: event.result, status, duration, resultCount: resultCount || 1 }
+              : step
+          );
+          liveStepsRef.current = steps;
+          setLiveSteps(steps);
         }
         chatCtx.registerToolResult(event.name, event.result, isError, duration);
-        if (!isError) {
-          setActionCards((prev) => [
-            ...prev,
-            {
-              id: `action-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-              toolName: event.name,
-              result: event.result,
-              timestamp: new Date().toISOString(),
-            },
-          ]);
-        }
-        forceRender((n) => n + 1);
       } else if (event.type === "group_confirm") {
         setPendingGroups((prev) => [
           ...prev,
@@ -517,6 +567,15 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
         }));
         activeToolsRef.current = Object.fromEntries(
           event.activeTools.map((t) => [t.id, { ...t, status: "running" as const }])
+        );
+        liveStepsRef.current = event.steps.map((step) =>
+          step.kind === "tool"
+            ? { ...step, status: step.status ?? "success" }
+            : step
+        );
+        setLiveSteps(liveStepsRef.current);
+        toolStartsRef.current = Object.fromEntries(
+          event.activeTools.map((t) => [t.id, Date.now()])
         );
         chatCtx.clearActiveTools();
         for (const t of event.activeTools) {
@@ -641,16 +700,11 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       setPendingQuotes([]);
       setError(null);
       activeToolsRef.current = {};
-      finishedToolsRef.current = [];
-      bufferRef.current = "";
+      resetTurnState();
       turnStartRef.current = Date.now();
       chatCtx.clearActiveTools();
-      setStreamingContent("");
-      setActionCards([]);
       setPendingGroups([]);
       setLoading(true);
-      streamingActiveRef.current = false;
-      setStreamingActive(false);
 
       const next = [...messages.filter((m) => m.id !== "welcome"), userMsg];
       setMessages(next);
@@ -691,18 +745,14 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       // est fermé, et GET /api/chat/stream permet de s'y réattacher.
       startLiveRun({ sessionId, userMessage: userMsg, messages: apiMessages, actionContext });
     },
-    [loading, messages, sessionId, onSessionChange, chatCtx, consent, pendingQuotes]
+    [loading, messages, sessionId, onSessionChange, chatCtx, consent, pendingQuotes, resetTurnState]
   );
 
   const stop = useCallback(() => {
     abortLiveRun(sessionId);
-    bufferRef.current = "";
-    activeToolsRef.current = {};
-    finishedToolsRef.current = [];
+    resetTurnState();
     setLoading(false);
-    streamingActiveRef.current = false;
-    setStreamingActive(false);
-  }, [sessionId]);
+  }, [sessionId, resetTurnState]);
 
   const confirmGroup = useCallback(
     async (group: { id: string; tools: { toolCallId: string; name: string; args: Record<string, unknown>; argsLabel: string }[] }) => {
@@ -715,43 +765,38 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
         if (!res.ok && res.error) {
           throw new Error(res.error);
         }
-        // Chaque résultat (succès ou échec) est reporté dans une carte d'action.
+        // Reporte le résultat réel sur l'appel d'outil bloqué : il est
+        // persisté avec la session et rejoué au modèle au tour suivant, sinon
+        // l'IA continue de croire que l'action attend une confirmation.
         const results = res.results ?? [];
-        if (results.length > 0) {
-          setActionCards((prev) => [
-            ...prev,
-            ...results.map((r) => ({
-              id: `action-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-              toolName: r.name,
-              result: r.ok ? (r.result ?? "OK") : (r.error ?? "Échec"),
-              timestamp: new Date().toISOString(),
-            })),
-          ]);
-
-          // Reporte le résultat réel sur l'appel d'outil bloqué : il est
-          // persisté avec la session et rejoué au modèle au tour suivant, sinon
-          // l'IA continue de croire que l'action attend une confirmation.
-          const byToolCallId = new Map(
-            group.tools.map((t, i) => [t.toolCallId, results[i]])
-          );
-          setMessages((prev) =>
-            prev.map((m) => {
-              if (!m.toolCalls?.some((tc) => byToolCallId.has(tc.id))) return m;
-              return {
-                ...m,
-                toolCalls: m.toolCalls.map((tc) => {
-                  const r = byToolCallId.get(tc.id);
-                  if (!r) return tc;
-                  return {
-                    ...tc,
-                    result: r.ok ? (r.result ?? "OK") : (r.error ?? "Échec"),
-                    status: r.ok ? ("success" as const) : ("error" as const),
-                  };
-                }),
-              };
-            })
-          );
-        }
+        const byToolCallId = new Map(
+          group.tools.map((t, i) => [t.toolCallId, results[i]])
+        );
+        const patchResult = (id: string, ok: boolean, result?: string, error?: string) => ({
+          result: ok ? (result ?? "OK") : (error ?? "Échec"),
+          status: ok ? ("success" as const) : ("error" as const),
+        });
+        setMessages((prev) =>
+          prev.map((m) => {
+            const hasTool = m.toolCalls?.some((tc) => byToolCallId.has(tc.id));
+            const hasStep = m.steps?.some(
+              (s) => s.kind === "tool" && byToolCallId.has(s.id)
+            );
+            if (!hasTool && !hasStep) return m;
+            return {
+              ...m,
+              toolCalls: m.toolCalls?.map((tc) => {
+                const r = byToolCallId.get(tc.id);
+                return r ? { ...tc, ...patchResult(tc.id, r.ok, r.result, r.error) } : tc;
+              }),
+              steps: m.steps?.map((s) => {
+                if (s.kind !== "tool") return s;
+                const r = byToolCallId.get(s.id);
+                return r ? { ...s, ...patchResult(s.id, r.ok, r.result, r.error) } : s;
+              }),
+            };
+          })
+        );
         // Une seule toast groupée qui liste ce qui a été fait.
         const lines = results
           .map((r, i) => {
@@ -884,47 +929,24 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
                   </div>
                 );
               })}
-              {actionCards.length > 0 && !streamingActive && (
-                <div className="flex flex-col items-center gap-1.5 fade-in-up">
-                  {actionCards.map((ac) => (
-                    <div key={ac.id} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--surface-1)] border border-[var(--line)] ui-mono">
-                      <span className={cn(
-                        "w-1.5 h-1.5 rounded-full shrink-0",
-                        ac.toolName === "add_reminder" || ac.toolName === "update_reminder"
-                          ? "bg-[var(--accent)]"
-                          : ac.toolName === "add_watch_later"
-                          ? "bg-[var(--success)]"
-                          : "bg-[var(--success)]"
-                      )} />
-                      <span className="text-[var(--text-3)]">{toolMeta[ac.toolName]?.label || ac.toolName}</span>
-                      <span className="text-[var(--text-2)] max-w-[360px] truncate">{ac.result}</span>
-                      <span className="text-[var(--text-4)]">{formatTime(ac.timestamp)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {streamingActive && streamingContent && (
-                <div key="streaming" className="flex gap-3 scale-in">
+              {loading && (
+                <div key="live" className="flex gap-3 fade-in-up">
                   <AssistantAvatar />
                   <div className="min-w-0 flex-1 pt-0.5">
-                    <div className="text-[length:var(--t-body)] leading-[1.75] text-[var(--text-1)]">
-                      <Markdown>{streamingContent}</Markdown>
-                      <span className="blink-cursor">█</span>
-                    </div>
+                    <ActivityTrail
+                      steps={liveSteps}
+                      running
+                      pendingLabel={FUNNY_THOUGHTS[thinkingIndex % FUNNY_THOUGHTS.length]}
+                    />
+                    {streamingActive && streamingContent && (
+                      <div className="text-[length:var(--t-body)] leading-[1.75] text-[var(--text-1)]">
+                        <Markdown>{streamingContent}</Markdown>
+                        <span className="blink-cursor">█</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
-              {loading && !streamingActive && (activeToolsList(chatCtx.activeTools).length > 0 ? (
-                <div key="loading-tools" className="fade-in-up">
-                  <div className="pl-10">
-                    <ToolCallTray tools={activeToolsList(chatCtx.activeTools)} />
-                  </div>
-                </div>
-              ) : (
-                <div key="loading-thinking" className="fade-in-up pl-10">
-                  <ThinkingIndicator index={thinkingIndex} />
-                </div>
-              ))}
             </div>
           )}
 

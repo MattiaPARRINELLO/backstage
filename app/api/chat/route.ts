@@ -584,6 +584,8 @@ export async function POST(request: NextRequest) {
             userContent: lastUserContent,
             assistantContent: content,
             toolCalls: run.tools,
+            steps: run.steps,
+            activityMs: Date.now() - run.startedAt,
           });
         } catch (err) {
           void serverLog("chat", "error", "Persist turn failed", err, true);

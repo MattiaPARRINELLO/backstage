@@ -195,6 +195,27 @@ modules au-dessus du champ d'envoi.
   pop-up ne doit pas voler la sélection (`mousedown` neutralisé), et les
   boutons d'envoi restent actifs même sans texte libre.
 
+### Fil d'activité du tour
+
+Chaque tour assistant affiche **un seul fil d'activité**, au-dessus de la
+réponse : une ligne repliée, un rail vertical une fois ouvert.
+
+- `lib/chat-runs.ts` conserve `steps` (`thought` | `tool`), dans l'ordre réel de
+  la génération. Les évènements `reasoning` (thinking Anthropic,
+  `reasoning_content` OpenAI) sont cumulés dans l'étape pensée courante,
+  plafonnés à `MAX_THOUGHT_CHARS` (4 000). Ils restent absents si le modèle
+  n'expose pas sa réflexion : aucune pensée n'est inventée.
+- L'instantané (`snapshot`) transporte `steps` en plus de `tools` /
+  `activeTools` : une reprise au milieu d'un tour restitue le fil complet.
+- Chaque outil porte sa **durée réelle** (`toolStartedAt`, mesurée par appel) ;
+  l'en-tête affiche la durée totale du tour (`activityMs`).
+- Le fil est persisté avec le message (`steps`, `activityMs` dans
+  `chat-history.json`). Les tours antérieurs, qui n'ont que `toolCalls`, sont
+  reconstruits à l'affichage (`stepsOf`).
+- Rendu : `ActivityTrail` dans `components/chat/MessageBlocks.tsx`. Les cartes
+  d'action du bas ont disparu : un résultat d'outil ne s'affiche plus que dans
+  le fil.
+
 ### Statut des outils IA — ne jamais annoncer une action non faite
 
 `lib/tool-result.ts` (module **pur**, sans import) définit le statut machine
@@ -210,8 +231,9 @@ d'une exécution d'outil : `ok` / `error` / `empty` / `blocked`.
   retrouvé après enregistrement, l'outil renvoie une erreur. C'est ce qui
   empêche l'agent d'annoncer « rappel créé » alors que rien n'a été écrit.
 - `app/api/chat/route.ts` envoie `status` dans l'événement SSE `tool_result`
-  (consommé par `ChatView` / `MessageBlocks`, badge « échec ») et injecte
-  `TOOL_HONESTY_RULE` dès qu'un résultat n'est pas `[OK]`.
+  (consommé par `ChatView` / `MessageBlocks`, ligne d'outil en échec dans le
+  fil d'activité) et injecte `TOOL_HONESTY_RULE` dès qu'un résultat n'est pas
+  `[OK]`.
 - `/api/chat/confirm-batch` dérive `ok` du **statut**, plus du texte : un
   résultat « Rappel introuvable. » sans exception est affiché comme un échec.
 - Après une confirmation, le client reporte le résultat sur l'appel d'outil

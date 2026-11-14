@@ -61,6 +61,7 @@ describe("live-run", () => {
         content: "Réponse complète",
         tools: [],
         activeTools: [],
+        steps: [],
         groups: [],
         error: null,
         finished: true,

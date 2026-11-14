@@ -13,6 +13,13 @@ export interface ChatRunTool {
   resultCount?: number;
 }
 
+// Étape du fil d'activité : pensée du modèle ou appel d'outil, dans l'ordre.
+// Même forme que `ActivityStep` côté client, dupliquée pour la même raison que
+// `ChatRunTool` (importable côté client sans tirer le registre serveur).
+export type ChatRunStep =
+  | { kind: "thought"; text: string }
+  | ({ kind: "tool" } & ChatRunTool);
+
 // Évènement synthétique envoyé à un client qui se réattache à une génération
 // déjà en cours (navigation, fermeture puis réouverture d'onglet). Il contient
 // de quoi reconstruire l'état affiché sans rejouer tous les deltas.
@@ -22,6 +29,7 @@ export interface ChatRunSnapshotEvent {
   content: string;
   tools: ChatRunTool[];
   activeTools: ChatRunTool[];
+  steps: ChatRunStep[];
   groups: {
     id: string;
     summary: string;

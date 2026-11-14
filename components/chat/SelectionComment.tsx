@@ -84,11 +84,11 @@ export function SelectionCommentLayer({
       setComment("");
     };
 
-    let frame = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     const scheduleRead = () => {
-      cancelAnimationFrame(frame);
+      if (timer) clearTimeout(timer);
       // Laisse le navigateur stabiliser la sélection (souris et tactile).
-      frame = requestAnimationFrame(() => setTimeout(readSelection, 0));
+      timer = setTimeout(readSelection, 0);
     };
 
     const onPointerUp = (e: PointerEvent) => {
@@ -114,7 +114,7 @@ export function SelectionCommentLayer({
     container.addEventListener("scroll", onScroll, true);
 
     return () => {
-      cancelAnimationFrame(frame);
+      if (timer) clearTimeout(timer);
       document.removeEventListener("pointerup", onPointerUp);
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keyup", onKeyUp);

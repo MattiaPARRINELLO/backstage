@@ -207,13 +207,17 @@ function ActivityToolRow({ step }: { step: Extract<ActivityStep, { kind: "tool" 
   const Icon = toolMeta[step.name]?.icon ?? Sparkles;
   const label = toolMeta[step.name]?.label ?? step.name;
   const unit = toolMeta[step.name]?.unit ?? "résultats";
+  const unitLabel =
+    step.resultCount != null && step.resultCount <= 1 && unit.endsWith("s")
+      ? unit.slice(0, -1)
+      : unit;
   const arg = argSummary(step);
   const isRunning = step.status === "running";
   const isError = step.status === "error";
 
   const meta = [
     step.duration != null && !isRunning ? formatDuration(step.duration) : null,
-    step.resultCount != null && !isRunning ? `${step.resultCount} ${unit}` : null,
+    step.resultCount != null && !isRunning ? `${step.resultCount} ${unitLabel}` : null,
   ].filter(Boolean) as string[];
 
   return (
@@ -314,7 +318,7 @@ export function ActivityTrail({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         disabled={steps.length === 0}
-        className="-ml-1.5 flex h-[26px] max-w-full items-center gap-2.5 rounded-[8px] px-1.5 text-left transition-colors duration-150 enabled:hover:bg-[var(--surface-2)] disabled:cursor-default"
+        className="-ml-1.5 flex h-[26px] w-[calc(100%+0.75rem)] items-center gap-2.5 rounded-[8px] px-1.5 text-left transition-colors duration-150 enabled:hover:bg-[var(--surface-2)] disabled:cursor-default"
       >
         <span className="grid w-3.5 shrink-0 place-items-center">
           {running ? (
@@ -337,7 +341,12 @@ export function ActivityTrail({
           {headline}
         </span>
         {meta && (
-          <span className="ui-mono ml-auto shrink-0 pl-3 text-[11.5px] text-[var(--text-4)]">
+          <span
+            className={cn(
+              "ui-mono ml-auto shrink-0 pl-3 text-[11.5px] text-[var(--text-4)]",
+              !running && errorCount > 0 && "text-[var(--danger)]"
+            )}
+          >
             {meta}
           </span>
         )}

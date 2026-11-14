@@ -17,8 +17,7 @@ function collect(sessionId: string) {
 }
 
 describe("chat-runs", () => {
-  it("accumule le texte et les outils dans l'instantané", () => {
-    const run = createRun("run-contenu");
+  it("accumule le texte et les outils dans l'instantané", () => {    const run = createRun("run-contenu");
 
     publish(run, { type: "delta", content: "Bon" });
     publish(run, { type: "delta", content: "jour" });
@@ -95,6 +94,61 @@ describe("chat-runs", () => {
     publish(run, { type: "done", content: "ok" });
 
     expect(snapshotOf(run).finished).toBe(true);
+  });
+
+  it("construit le fil d'activité : pensées cumulées puis outils dans l'ordre", () => {
+    const run = createRun("run-fil");
+    publish(run, { type: "reasoning", content: "Je regarde" });
+    publish(run, { type: "reasoning", content: " les salles." });
+    publish(run, {
+      type: "tool_start",
+      toolCallId: "t1",
+      name: "web_search",
+      arguments: '{"query":"salles Paris"}',
+    });
+    publish(run, {
+      type: "tool_result",
+      name: "web_search",
+      result: "La Cigale\nLe Trabendo",
+      status: "ok",
+    });
+    publish(run, { type: "reasoning", content: "Je croise avec les rappels." });
+
+    const steps = snapshotOf(run).steps;
+    expect(steps).toHaveLength(3);
+    expect(steps[0]).toEqual({ kind: "thought", text: "Je regarde les salles." });
+    expect(steps[1]).toMatchObject({
+      kind: "tool",
+      name: "web_search",
+      status: "success",
+      resultCount: 2,
+    });
+    expect(steps[2]).toEqual({
+      kind: "thought",
+      text: "Je croise avec les rappels.",
+    });
+  });
+
+  it("mesure la durée par outil, pas depuis le début du tour", () => {
+    vi.useFakeTimers();
+    try {
+      const run = createRun("run-duree");
+      publish(run, { type: "tool_start", toolCallId: "t1", name: "get_weather", arguments: "{}" });
+      vi.advanceTimersByTime(400);
+      publish(run, { type: "tool_result", name: "get_weather", result: "ok", status: "ok" });
+
+      publish(run, { type: "tool_start", toolCallId: "t2", name: "get_schedule", arguments: "{}" });
+      vi.advanceTimersByTime(2_000);
+      publish(run, { type: "tool_result", name: "get_schedule", result: "ok", status: "ok" });
+
+      const [first, second] = snapshotOf(run).steps;
+      expect(first.kind).toBe("tool");
+      expect(second.kind).toBe("tool");
+      expect(first.kind === "tool" && first.duration).toBeCloseTo(0.4, 1);
+      expect(second.kind === "tool" && second.duration).toBeCloseTo(2, 1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("abandonne la génération précédente quand une nouvelle démarre", () => {

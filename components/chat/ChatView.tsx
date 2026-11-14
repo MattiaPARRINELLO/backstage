@@ -807,6 +807,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       if ((e.metaKey || e.ctrlKey) && e.key === "l") {
         e.preventDefault();
         setMessages([welcomeMessage]);
+        setPendingQuotes([]);
       }
       if (e.key === "Escape" && loading) {
         stop();

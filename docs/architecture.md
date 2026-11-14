@@ -177,6 +177,24 @@ Le tour de chat **n'est plus possédé par la page**. Trois pièces :
   rate-limit). Un redéploiement en cours de génération la perd ; un déploiement
   multi-instance nécessiterait un stockage partagé.
 
+### Commenter un extrait de réponse (`components/chat/SelectionComment.tsx`)
+
+Sélectionner du texte dans une réponse de l'IA ouvre une micro pop-up
+(`pointerup` + `keyup`, jamais dans un message utilisateur grâce à
+`data-chat-role="assistant"`). L'extrait et son commentaire s'empilent comme
+modules au-dessus du champ d'envoi.
+
+- **Format du message** : `formatQuotedMessage` (`components/chat/chat-data.ts`)
+  sérialise chaque extrait en citation Markdown suivie de `Commentaire : …`. Le
+  modèle reçoit donc une citation lisible, et `parseQuotedMessage` reconstruit
+  les cartes à l'affichage comme à la relecture de l'historique.
+- **Pas de champ dédié en base** : le contenu du message porte tout ; les
+  conversations existantes restent lisibles.
+- **Pièges évités** : ne pas différer la lecture de la sélection avec
+  `requestAnimationFrame` (un onglet non peint ne le déclenche jamais) ; la
+  pop-up ne doit pas voler la sélection (`mousedown` neutralisé), et les
+  boutons d'envoi restent actifs même sans texte libre.
+
 ### Statut des outils IA — ne jamais annoncer une action non faite
 
 `lib/tool-result.ts` (module **pur**, sans import) définit le statut machine

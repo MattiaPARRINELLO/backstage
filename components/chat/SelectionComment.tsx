@@ -80,7 +80,12 @@ export function SelectionCommentLayer({
 
       const rect = range.getBoundingClientRect();
       if (!rect || (rect.width === 0 && rect.height === 0)) return;
-      const above = rect.top > 120;
+      // On réserve la hauteur de la carte dépliée pour ne pas la faire sortir
+      // de l'écran ; si aucun côté ne suffit, on garde le plus spacieux.
+      const spaceAbove = rect.top;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const above =
+        spaceAbove >= 250 ? true : spaceBelow >= 250 ? false : spaceAbove > spaceBelow;
       const half = 160;
       const left = Math.min(
         Math.max(rect.left + rect.width / 2, half),
@@ -138,7 +143,9 @@ export function SelectionCommentLayer({
     if (commenting) areaRef.current?.focus();
   }, [commenting]);
 
-  if (!selection) return null;
+  // Le champ de saisie remplace le pop-up : une sélection en cours n'a plus de
+  // sens, on ne rend rien tant que la couche est désactivée.
+  if (!selection || !enabled) return null;
 
   return (
     <div
@@ -150,6 +157,8 @@ export function SelectionCommentLayer({
         transform: `translate(-50%, ${selection.above ? "-100%" : "0"})`,
       }}
       data-chat-role="quote-popover"
+      role="dialog"
+      aria-label="Commenter l'extrait"
     >
       {commenting ? (
         <div
@@ -218,6 +227,7 @@ export function SelectionCommentLayer({
       ) : (
         <button
           onClick={() => setCommenting(true)}
+          aria-label="Commenter l'extrait sélectionné"
           className="group inline-flex items-center gap-1.5 rounded-full border border-[var(--line-2)] bg-[var(--surface-1)] py-1.5 pl-2.5 pr-3 text-[length:var(--t-small)] text-[var(--text-2)] shadow-[var(--shadow-float)] hover:text-[var(--text-1)] hover:border-[var(--text-3)] transition-all duration-150 active:scale-95"
           onMouseDown={(e) => e.preventDefault()}
         >

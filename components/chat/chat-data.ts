@@ -239,3 +239,62 @@ export function generateTitle(text: string): string {
 export function activeToolsList(tools: Record<string, ToolCall>): ToolCall[] {
   return Object.values(tools);
 }
+
+// Extrait d'un message assistant sur lequel l'utilisateur a réagi, plus son
+// commentaire. Plusieurs extraits peuvent être joints à un même envoi.
+export interface MessageQuote {
+  id: string;
+  text: string;
+  comment: string;
+}
+
+const COMMENT_PREFIX = "Commentaire :";
+const QUOTE_LINE = /^>\s?/;
+
+// Sérialise les extraits + le texte libre en un message unique, lisible par le
+// modèle : chaque extrait devient une citation Markdown suivie de son
+// commentaire. Le format est volontairement stable, `parseQuotedMessage` le
+// relit pour l'affichage.
+export function formatQuotedMessage(quotes: MessageQuote[], body: string): string {
+  const blocks = quotes.map((q) => {
+    const quoted = q.text
+      .split("\n")
+      .map((line) => `> ${line}`)
+      .join("\n");
+    const comment = q.comment.replace(/\n{2,}/g, "\n").trim();
+    return `${quoted}\n\n${COMMENT_PREFIX}${comment ? ` ${comment}` : ""}`;
+  });
+  const free = body.trim();
+  return [...blocks, free].filter(Boolean).join("\n\n");
+}
+
+// Relit un message produit par `formatQuotedMessage`. Tolère un message
+// ordinaire (aucune citation) : `quotes` est alors vide et `body` vaut le
+// contenu intégral.
+export function parseQuotedMessage(content: string): {
+  quotes: { text: string; comment: string }[];
+  body: string;
+} {
+  const paragraphs = content.split(/\n{2,}/);
+  const quotes: { text: string; comment: string }[] = [];
+  let i = 0;
+
+  while (i < paragraphs.length) {
+    const lines = paragraphs[i].split("\n");
+    if (!lines.every((line) => QUOTE_LINE.test(line))) break;
+    // Une citation est toujours suivie de son commentaire (le pop-up l'exige).
+    // Sans ce marqueur, un message qui commence simplement par « > » reste du
+    // texte libre.
+    const next = paragraphs[i + 1];
+    if (!next || !next.startsWith(COMMENT_PREFIX)) break;
+    const text = lines
+      .map((line) => line.replace(QUOTE_LINE, ""))
+      .join("\n")
+      .trim();
+    const comment = next.slice(COMMENT_PREFIX.length).trim();
+    i += 2;
+    if (text) quotes.push({ text, comment });
+  }
+
+  return { quotes, body: paragraphs.slice(i).join("\n\n").trim() };
+}

@@ -221,6 +221,38 @@ textarea::placeholder {
     to { opacity: 1; transform: translateY(0); }
   }
 
+  /* Un extrait commenté qui « atterrit » dans le composeur : il descend de
+     quelques pixels et son liseré accent s'allume puis s'efface. */
+  .quote-land {
+    animation: quote-land 640ms var(--ease);
+  }
+
+  @keyframes quote-land {
+    0% {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.98);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent);
+    }
+    45% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      box-shadow: 0 0 0 1px transparent;
+    }
+  }
+
+  .quote-pop-out {
+    animation: quote-pop-out 150ms ease-in forwards;
+  }
+
+  @keyframes quote-pop-out {
+    to { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  }
+
   .slide-up {
     animation: slide-up 280ms var(--ease);
   }

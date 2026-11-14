@@ -16,7 +16,11 @@ import {
   generateTitle,
   activeToolsList,
   toolMeta,
+  formatQuotedMessage,
+  parseQuotedMessage,
+  type MessageQuote,
 } from "@/components/chat/chat-data";
+import { SelectionCommentLayer } from "@/components/chat/SelectionComment";
 import {
   getLiveRun,
   subscribeLiveRun,
@@ -73,6 +77,11 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       : [welcomeMessage]
   );
   const [input, setInput] = useState("");
+  // Extraits commentés (sélection dans une réponse de l'IA) en attente d'envoi.
+  const [pendingQuotes, setPendingQuotes] = useState<MessageQuote[]>([]);
+  // Dernier extrait ajouté : il « atterrit » avec une animation dans le champ.
+  const [highlightedQuoteId, setHighlightedQuoteId] = useState<string | null>(null);
+  const quoteAnimRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionCards, setActionCards] = useState<{ id: string; toolName: string; result: string; timestamp: string }[]>([]);
@@ -113,6 +122,15 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  // Le minuteur d'animation du dernier extrait ne doit pas survivre au
+  // démontage de la vue.
+  useEffect(
+    () => () => {
+      if (quoteAnimRef.current) clearTimeout(quoteAnimRef.current);
+    },
+    []
+  );
 
   // Consentement IA : rien n'est envoyé au provider tant que l'utilisateur
   // n'a pas accepté l'écran de consentement (voir /privacy).
@@ -188,6 +206,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
             hasTitleRef.current = true;
             setMessages(display);
             setInput("");
+            setPendingQuotes([]);
             bufferRef.current = "";
             finishedToolsRef.current = [];
             appliedEventsRef.current = 0;
@@ -224,6 +243,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     hasTitleRef.current = false;
     setMessages([welcomeMessage]);
     setInput("");
+    setPendingQuotes([]);
     bufferRef.current = "";
     finishedToolsRef.current = [];
     appliedEventsRef.current = 0;
@@ -584,7 +604,10 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
 
   const send = useCallback(
     async (text: string) => {
-      const trimmed = text.trim();
+      // Les extraits commentés sont sérialisés dans le message : le modèle voit
+      // la citation et la réaction, l'utilisateur retrouve les modules à
+      // l'affichage (voir `parseQuotedMessage`).
+      const trimmed = formatQuotedMessage(pendingQuotes, text).trim();
       if (!trimmed || loading) return;
 
       if (consent.loaded && !consent.accepted) {
@@ -615,6 +638,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       }
 
       setInput("");
+      setPendingQuotes([]);
       setError(null);
       activeToolsRef.current = {};
       finishedToolsRef.current = [];
@@ -667,7 +691,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       // est fermé, et GET /api/chat/stream permet de s'y réattacher.
       startLiveRun({ sessionId, userMessage: userMsg, messages: apiMessages, actionContext });
     },
-    [loading, messages, sessionId, onSessionChange, chatCtx, consent]
+    [loading, messages, sessionId, onSessionChange, chatCtx, consent, pendingQuotes]
   );
 
   const stop = useCallback(() => {
@@ -773,7 +797,8 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     } else if (e.key === "ArrowUp" && !input && messages.length > 1) {
       e.preventDefault();
       const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
-      if (lastUserMsg) setInput(lastUserMsg.content);
+      // On rappelle le texte libre, pas les extraits déjà consommés.
+      if (lastUserMsg) setInput(parseQuotedMessage(lastUserMsg.content).body);
     }
   };
 
@@ -782,6 +807,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       if ((e.metaKey || e.ctrlKey) && e.key === "l") {
         e.preventDefault();
         setMessages([welcomeMessage]);
+        setPendingQuotes([]);
       }
       if (e.key === "Escape" && loading) {
         stop();
@@ -795,6 +821,17 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
 
   return (
     <div className="flex flex-col h-full min-h-0 relative">
+      <SelectionCommentLayer
+        containerRef={scrollRef}
+        onAdd={({ text, comment }) => {
+          const id = generateId();
+          setPendingQuotes((prev) => [...prev, { id, text, comment }]);
+          setHighlightedQuoteId(id);
+          if (quoteAnimRef.current) clearTimeout(quoteAnimRef.current);
+          quoteAnimRef.current = setTimeout(() => setHighlightedQuoteId(null), 720);
+          inputRef.current?.focus();
+        }}
+      />
       {consent.loaded && !consent.accepted && (
         <div className="shrink-0 pl-14 pr-4 py-3 lg:px-4 bg-[var(--surface-2)] fade-in">
           <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
@@ -925,10 +962,15 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
               loading={loading}
               inputRef={inputRef}
               onKey={handleKey}
+              quotes={pendingQuotes}
+              highlightedId={highlightedQuoteId}
+              onRemoveQuote={(id) =>
+                setPendingQuotes((prev) => prev.filter((q) => q.id !== id))
+              }
             />
           </KeyboardSafe>
           <p className="hidden sm:block ui-mono text-[var(--text-4)] mt-2.5 text-center">
-            Ctrl+Entrée envoie · Shift+Entrée nouvelle ligne · Ctrl+L effacer · Esc arrêter
+            Sélectionne un passage de l&apos;IA pour le commenter · Ctrl+Entrée envoie · Shift+Entrée nouvelle ligne · Esc arrêter
           </p>
         </div>
       </div>

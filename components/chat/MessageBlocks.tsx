@@ -11,13 +11,15 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
+  Quote,
+  CornerDownRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Markdown } from "@/components/ui/Markdown";
 import { api } from "@/lib/api-client";
 import { useToast } from "@/components/ui/Toast";
 import type { Message, ToolCall } from "@/components/chat/types";
-import { toolMeta, FUNNY_THOUGHTS } from "@/components/chat/chat-data";
+import { toolMeta, FUNNY_THOUGHTS, parseQuotedMessage } from "@/components/chat/chat-data";
 
 export function AssistantAvatar({ size = "md" }: { size?: "sm" | "md" }) {
   return (
@@ -141,21 +143,73 @@ function ActionChips({ message }: { message: Message }) {
 // Memoïsé : la saisie (setInput) re-rend ChatView à chaque frappe, mais les
 // messages existants sont des références stables — on évite de re-parser tout
 // le markdown de la conversation à chaque keypress.
+// Message utilisateur : les extraits commentés forment des modules au-dessus
+// du texte libre, plutôt qu'un bloc de Markdown brut.
+function UserMessage({ content }: { content: string }) {
+  const { quotes, body } = parseQuotedMessage(content);
+
+  if (quotes.length === 0) {
+    return (
+      <div className="max-w-[85%] sm:max-w-[75%] rounded-[var(--r-tile)] bg-[var(--surface-2)] px-4 py-2.5 text-[length:var(--t-body)] leading-[1.6] text-[var(--text-1)] whitespace-pre-wrap break-words">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-[85%] sm:max-w-[75%] space-y-2">
+      {quotes.map((quote, index) => (
+        <div
+          key={index}
+          className="relative overflow-hidden rounded-[var(--r-tile)] border border-[var(--line)] bg-[var(--surface-1)] pl-4 pr-3.5 py-3"
+        >
+          <span
+            aria-hidden
+            className="absolute inset-y-0 left-0 w-[2px]"
+            style={{
+              background: "linear-gradient(to bottom, var(--accent), transparent)",
+            }}
+          />
+          <p className="flex items-center gap-1.5 ui-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-4)]">
+            <Quote className="w-2.5 h-2.5 text-[var(--accent)]" strokeWidth={2.5} />
+            Extrait
+          </p>
+          <p className="mt-1 text-[length:var(--t-small)] leading-[1.6] text-[var(--text-2)] whitespace-pre-wrap break-words">
+            {quote.text}
+          </p>
+          {quote.comment && (
+            <p className="mt-2 flex items-start gap-1.5 text-[length:var(--t-body)] leading-[1.6] text-[var(--text-1)]">
+              <CornerDownRight
+                className="w-3.5 h-3.5 mt-[5px] shrink-0 text-[var(--text-4)]"
+                strokeWidth={2}
+              />
+              <span className="min-w-0 whitespace-pre-wrap break-words">{quote.comment}</span>
+            </p>
+          )}
+        </div>
+      ))}
+      {body && (
+        <div className="rounded-[var(--r-tile)] bg-[var(--surface-2)] px-4 py-2.5 text-[length:var(--t-body)] leading-[1.6] text-[var(--text-1)] whitespace-pre-wrap break-words">
+          {body}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export const MessageBlock = memo(function MessageBlock({ message }: { message: Message }) {
   const isUser = message.role === "user";
 
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] sm:max-w-[75%] rounded-[var(--r-tile)] bg-[var(--surface-2)] px-4 py-2.5 text-[length:var(--t-body)] leading-[1.6] text-[var(--text-1)] whitespace-pre-wrap break-words">
-          {message.content}
-        </div>
+        <UserMessage content={message.content} />
       </div>
     );
   }
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-3" data-chat-role="assistant">
       <AssistantAvatar />
       <div className="min-w-0 flex-1 pt-0.5">
         <div className="text-[length:var(--t-body)] leading-[1.75] text-[var(--text-1)]">

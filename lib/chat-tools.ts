@@ -39,6 +39,12 @@ import {
   updateGoogleCalendarEvent,
   deleteGoogleCalendarEvent,
 } from "@/lib/google-actions";
+import {
+  createGithubIssue,
+  listGithubIssues,
+  getGithubRepo,
+  isGithubConfigured,
+} from "@/lib/github-actions";
 
 // Seule l'envoi d'emails exige une confirmation explicite de l'utilisateur
 // via /api/chat/confirm. Le modèle ne peut jamais l'exécuter seul. Les autres
@@ -345,6 +351,41 @@ export const tools: UnifiedTool[] = [  {
         subject: { type: "string", description: "Filtre matiere (optionnel, ex: 'base de donnees')" },
       },
       required: ["scope"],
+    },
+  },
+  {
+    name: "create_github_issue",
+    description:
+      "Ouvre une issue sur le depot GitHub du projet Backstage. Utilise-la quand l'utilisateur te demande d'ouvrir/creer une issue, de signaler un bug, ou quand il rapporte un dysfonctionnement de Backstage qu'il veut faire tracer. " +
+      "Pour un bug, le corps doit contenir : ce qui se passe, ce qui etait attendu, les etapes de reproduction, et les infos de debug disponibles (message d'erreur exact, page/route concernee, heure, navigateur ou appareil). " +
+      "Pour une fonctionnalite, le corps doit contenir : le besoin, le comportement souhaite et la valeur attendue. " +
+      "Renseigne les libelles : 'bug' pour un dysfonctionnement, 'enhancement' pour une fonctionnalite, 'documentation' pour la doc. " +
+      "L'issue est publiee immediatement, sans confirmation : annonce toujours l'URL renvoyee et ne l'invente jamais.",
+    parameters: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Titre court et explicite, en francais (max 80 caracteres)" },
+        body: { type: "string", description: "Corps de l'issue en Markdown : contexte, comportement observe, comportement attendu, reproduction, infos de debug" },
+        labels: {
+          type: "array",
+          items: { type: "string", enum: ["bug", "enhancement", "documentation"] },
+          description: "Libelles a appliquer (optionnel)",
+        },
+      },
+      required: ["title", "body"],
+    },
+  },
+  {
+    name: "list_github_issues",
+    description:
+      "Liste les issues recentes du depot GitHub du projet Backstage (numero, titre, etat, libelles). Utilise-la avant create_github_issue pour eviter un doublon, ou quand l'utilisateur demande ce qui est deja ouvert.",
+    parameters: {
+      type: "object",
+      properties: {
+        state: { type: "string", enum: ["open", "closed", "all"], description: "Etat des issues (defaut: open)" },
+        limit: { type: "number", description: "Nombre max d'issues (defaut: 10, max 30)" },
+      },
+      required: [],
     },
   },
 ];
@@ -778,6 +819,34 @@ export async function executeTool(
       });
       if (!upcoming.length) return "Pas de cours a venir cette semaine.";
       return `Cours a venir (7 jours) :\n${upcoming.slice(0, 40).map(formatCourse).join("\n")}`;
+    }
+    case "create_github_issue": {
+      if (!isGithubConfigured()) {
+        return "GitHub non configure : GITHUB_TOKEN et GITHUB_REPO doivent etre definis dans .env.local.";
+      }
+      const title = String(args.title ?? "").trim();
+      const body = String(args.body ?? "").trim();
+      if (!title) return "Erreur : titre de l'issue requis.";
+      if (!body) return "Erreur : corps de l'issue requis.";
+      const issue = await createGithubIssue({ title, body, labels: args.labels });
+      return `Issue #${issue.number} creee sur ${getGithubRepo()} : ${issue.title}\n${issue.url}${
+        issue.labels.length > 0 ? `\nLibelles : ${issue.labels.join(", ")}` : ""
+      }`;
+    }
+    case "list_github_issues": {
+      if (!isGithubConfigured()) {
+        return "GitHub non configure : GITHUB_TOKEN et GITHUB_REPO doivent etre definis dans .env.local.";
+      }
+      const state = (["open", "closed", "all"] as const).find((s) => s === args.state) ?? "open";
+      const limit = typeof args.limit === "number" ? args.limit : 10;
+      const issues = await listGithubIssues({ state, limit });
+      if (issues.length === 0) return `Aucune issue ${state} sur ${getGithubRepo()}.`;
+      return issues
+        .map(
+          (i) =>
+            `- #${i.number} [${i.state}] ${i.title}${i.labels.length > 0 ? ` (${i.labels.join(", ")})` : ""}`
+        )
+        .join("\n");
     }
     default:
       return `Outil inconnu : ${name}`;

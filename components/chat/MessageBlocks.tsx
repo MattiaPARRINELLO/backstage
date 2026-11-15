@@ -183,6 +183,8 @@ const ARG_KEYS: Record<string, string[]> = {
   add_memory_fact: ["content"],
   add_photo_shoot: ["title", "client"],
   get_weather: ["city", "location"],
+  create_github_issue: ["title"],
+  list_github_issues: ["state"],
 };
 
 function argSummary(step: Extract<ActivityStep, { kind: "tool" }>): string | null {

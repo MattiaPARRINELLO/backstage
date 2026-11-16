@@ -14,6 +14,8 @@ pourquoi elles existent et ce qui casse si on les ignore.
   avec les widgets du panneau de droite (`CALENDAR_CACHE_KEY`, `GMAIL_CACHE_KEY`
   exportés par `components/widgets/`). ➡️ Ne jamais dupliquer ces fetchers : réutiliser
   les mêmes clés, sinon l'accueil déclenche des requêtes réseau en double.
+  La direction des imports entre couches n'est pas décrite ici : elle est
+  encodée dans `.dependency-cruiser.cjs` et vérifiée par `bun run boundaries`.
   L'ancienne exception visuelle (dégradés radiaux, sheen, particules,
   animations d'inactivité) est **supprimée** : l'accueil suit la direction
   commune (cf. `design.md` §1 et §6). Il ne reste que `home-rise`, `home-swap`

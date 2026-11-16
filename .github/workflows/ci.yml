@@ -28,6 +28,9 @@ jobs:
       - name: Typecheck
         run: bunx tsc --noEmit
 
+      - name: Frontieres de dependance
+        run: bun run boundaries
+
       - name: Tests unitaires
         run: bun run test
 

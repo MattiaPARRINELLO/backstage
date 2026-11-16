@@ -39,6 +39,11 @@ describe("extractReferences", () => {
     expect(reference.reference).toBe("lib/config.ts");
   });
 
+  it("retire aussi le suffixe de ligne d'un lien Markdown", () => {
+    const [reference] = extractReferences("[vue](../lib/config.ts:42)");
+    expect(reference.reference).toBe("../lib/config.ts");
+  });
+
   it("ignore les liens externes et les ancres", () => {
     expect(
       extractReferences("[site](https://example.com) [ici](#section) [mail](mailto:a@b.c)")

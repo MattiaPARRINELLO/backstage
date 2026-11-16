@@ -270,10 +270,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  // Rate limit keyé sur l'utilisateur (l'IP seule est spoofable via
-  // x-forwarded-for) : un tiers ne peut pas contourner le quota.
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
-  if (!checkRateLimit(`${session.userId}:${ip}`)) {
+  // Rate limit keyé sur l'identité serveur seule : application mono-utilisateur,
+  // une seule identité, donc un budget partagé. Aucune valeur cliente
+  // (x-forwarded-for est controlable) ne peut créer de bucket neuf.
+  if (!checkRateLimit(`chat:${session.userId}`)) {
     return new Response(JSON.stringify({ error: "Trop de requêtes. Réessaie dans une minute." }), {
       status: 429,
       headers: { "Content-Type": "application/json" },

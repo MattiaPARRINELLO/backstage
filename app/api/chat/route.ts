@@ -26,6 +26,8 @@ import {
   runTool,
   tools,
   REQUIRE_CONFIRMATION,
+  UNTRUSTED_TOOLS,
+  WRITE_TOOLS,
   confirmationMessage,
   registerPendingAction,
 } from "@/lib/chat-tools";
@@ -80,6 +82,26 @@ function parseToolArguments(argumentsRaw: string): Record<string, unknown> {
     throw new Error("arguments d'outil invalides (JSON)");
   }
   return parsed as Record<string, unknown>;
+}
+
+// Résultat d'outil délimité, tel que réinjecté dans l'historique.
+const TOOL_RESULT_NAME_PATTERN = /<tool_result\s+name="([^"]+)"/g;
+
+/**
+ * Le tour est-il contaminé par du contenu tiers déjà présent dans les messages
+ * reçus ? Détection sans état serveur : tout `<tool_result name="...">` portant
+ * un nom de `UNTRUSTED_TOOLS` suffit, même sur un message utilisateur
+ * postérieur (l'historique reste contaminé tant que le contenu y figure).
+ */
+function historyHasUntrustedToolResult(messages: ChatMessage[]): boolean {
+  for (const message of messages) {
+    if (typeof message.content !== "string") continue;
+    if (!message.content.includes("<tool_result")) continue;
+    for (const match of message.content.matchAll(TOOL_RESULT_NAME_PATTERN)) {
+      if (UNTRUSTED_TOOLS.has(match[1])) return true;
+    }
+  }
+  return false;
 }
 
 // Libellé lisible d'une action en attente de confirmation (aucun argument
@@ -275,6 +297,11 @@ export async function POST(request: NextRequest) {
   // Identifiant de session transmis au provider (routage + cache de prompt) :
   // celui de la conversation côté client, sinon une session globale stable.
   const sessionId = body.sessionId || DEFAULT_SESSION_ID;
+
+  // Contamination par provenance : calculée à partir des messages de la
+  // requête, sans état serveur à réinitialiser. Un nouveau message utilisateur
+  // dans une conversation sans contenu externe repart en comportement direct.
+  let provenanceTainted = historyHasUntrustedToolResult(body.messages);
 
   // Auto-parsing des liens dans le dernier message utilisateur
   const lastUserMsg = [...body.messages].reverse().find((m) => m.role === "user");
@@ -512,6 +539,13 @@ export async function POST(request: NextRequest) {
           });
         };
 
+        // Le lot courant est contaminé dès qu'un de ses appels lit du contenu
+        // tiers (cas du PoC : lire un email et modifier un rappel dans le même
+        // lot). La contamination s'accumule sur le tour : une lecture faite à
+        // une itération précédente gate aussi les écritures suivantes.
+        provenanceTainted = provenanceTainted ||
+          toolCallsToExecute.some((tc) => UNTRUSTED_TOOLS.has(tc.name));
+
         for (const tc of toolCallsToExecute) {
           let run: ToolRunResult;
           try {
@@ -519,12 +553,19 @@ export async function POST(request: NextRequest) {
             // devenir un appel silencieux avec `{}` ni une carte de
             // confirmation cassée.
             const args = parseToolArguments(tc.arguments);
-            if (REQUIRE_CONFIRMATION.has(tc.name)) {
+            const requiresConfirmation = REQUIRE_CONFIRMATION.has(tc.name);
+            // Provenance : une écriture dans un tour contaminé est mise en
+            // attente, même si l'outil s'exécute normalement sans confirmation.
+            const blockedByProvenance =
+              !requiresConfirmation && provenanceTainted && WRITE_TOOLS.has(tc.name);
+            if (requiresConfirmation || blockedByProvenance) {
               // Action à effet externe : bloquée en attente de confirmation.
               // On l'enregistre côté serveur (nom + arguments parsés) avant de
               // la proposer : /api/chat/confirm[-batch] refusera toute action
               // absente du registre, substituée ou rejouée.
-              const reason: PendingActionReason = "policy";
+              const reason: PendingActionReason = requiresConfirmation
+                ? "policy"
+                : "provenance";
               registerPendingAction(tc.name, args, reason);
               // On la met de côté pour la proposer en lot à l'utilisateur ;
               // l'exécution réelle passera par POST /api/chat/confirm-batch.

@@ -29,7 +29,7 @@ import {
   clearLiveRun,
   type LiveRunEvent,
 } from "@/components/chat/live-run";
-import { SIDE_EFFECT_TOOL_NAMES } from "@/lib/tool-result";
+import { SIDE_EFFECT_TOOL_NAMES, type PendingActionReason } from "@/lib/tool-result";
 import { MessageBlock, ActivityTrail, AssistantAvatar, GroupActionCard } from "@/components/chat/MessageBlocks";
 import { KeyboardSafe } from "@/components/ui/KeyboardSafe";
 
@@ -86,6 +86,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     {
       id: string;
       summary: string;
+      reason: PendingActionReason;
       tools: { toolCallId: string; name: string; args: Record<string, unknown>; argsLabel: string }[];
     }[]
   >([]);
@@ -534,6 +535,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
           {
             id: event.id,
             summary: event.summary,
+            reason: event.reason,
             tools: event.tools.map((t) => {
               let args: Record<string, unknown> = {};
               try { args = JSON.parse(t.arguments); } catch { args = {}; }
@@ -592,6 +594,8 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
           event.groups.map((g) => ({
             id: g.id,
             summary: g.summary,
+            // Instantané d'un run antérieur à la raison : politique par défaut.
+            reason: g.reason ?? "policy",
             tools: g.tools.map((t) => {
               let args: Record<string, unknown> = {};
               try { args = JSON.parse(t.arguments); } catch { args = {}; }
@@ -967,6 +971,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
                 <GroupActionCard
                   key={g.id}
                   summary={g.summary}
+                  reason={g.reason}
                   tools={g.tools}
                   busy={confirmBusy === g.id}
                   onConfirm={() => void confirmGroup(g)}

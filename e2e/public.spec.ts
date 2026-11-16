@@ -31,4 +31,10 @@ test.describe("Deny-by-default : redirections et 401 sans session", () => {
     const body = await res.json();
     expect(body.error).toBeTruthy();
   });
+
+  // /notif reste public (deep links), mais la page de rappel exige une session.
+  test("/notif/reminder/<id> redirige vers /login sans session", async ({ page }) => {
+    await page.goto("/notif/reminder/id-inexistant");
+    await expect(page).toHaveURL(/\/login/);
+  });
 });

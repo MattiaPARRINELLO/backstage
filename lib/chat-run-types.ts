@@ -1,4 +1,5 @@
 import type { StreamEvent } from "./ai-providers/types";
+import type { PendingActionReason } from "./tool-result";
 
 // Outil exposé dans un instantané de génération en cours (même forme que
 // `ToolCall` côté client, dupliquée ici pour rester importable côté client
@@ -33,6 +34,7 @@ export interface ChatRunSnapshotEvent {
   groups: {
     id: string;
     summary: string;
+    reason: PendingActionReason;
     tools: { toolCallId: string; name: string; arguments: string }[];
   }[];
   error: string | null;

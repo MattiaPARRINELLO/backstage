@@ -9,6 +9,15 @@
  */
 export type ToolStatus = "ok" | "error" | "empty" | "blocked";
 
+/**
+ * Raison d'une action mise en attente de confirmation.
+ *
+ * `policy` : l'outil exige une confirmation permanente (envoi d'email).
+ * `provenance` : le tour a lu du contenu tiers non fiable, l'écriture doit être
+ * validée même si l'outil s'exécute normalement sans confirmation.
+ */
+export type PendingActionReason = "policy" | "provenance";
+
 /** Préfixe employé dans le texte renvoyé au modèle. */
 export const TOOL_STATUS_MARKER: Record<ToolStatus, string> = {
   ok: "OK",

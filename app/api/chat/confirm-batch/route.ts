@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { runTool, REQUIRE_CONFIRMATION } from "@/lib/chat-tools";
+import {
+  runTool,
+  REQUIRE_CONFIRMATION,
+  consumePendingAction,
+  hasPendingAction,
+  pendingActionKey,
+} from "@/lib/chat-tools";
 import { isFailedStatus, type ToolStatus } from "@/lib/tool-result";
 import { logActivity } from "@/lib/storage";
 
@@ -32,13 +38,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Action non confirmable" }, { status: 400 });
   }
 
-  const results: { name: string; ok: boolean; status: ToolStatus; result?: string; error?: string }[] = [];
+  // Validation INTÉGRALE du lot avant tout effet de bord : une action absente
+  // du registre serveur (inventée, substituée ou déjà consommée) ou un doublon
+  // dans le lot refuse le lot entier, sans exécution partielle.
+  const normalized: { name: string; args: Record<string, unknown> }[] = [];
+  const seen = new Set<string>();
   for (const action of actions) {
     const name = action.name as string;
     const args =
       action.arguments && typeof action.arguments === "object"
         ? (action.arguments as Record<string, unknown>)
         : {};
+    const key = pendingActionKey(name, args);
+    if (seen.has(key)) {
+      return NextResponse.json({ error: "Lot invalide : action en double" }, { status: 400 });
+    }
+    seen.add(key);
+    if (!hasPendingAction(name, args)) {
+      return NextResponse.json({ error: "Action non confirmee par le serveur" }, { status: 400 });
+    }
+    normalized.push({ name, args });
+  }
+
+  const results: { name: string; ok: boolean; status: ToolStatus; result?: string; error?: string }[] = [];
+  for (const { name, args } of normalized) {
+    // Consommation juste avant l'exécution : une action ne s'exécute qu'une
+    // seule fois, même si la même requête est rejouée.
+    const reason = consumePendingAction(name, args);
+    if (!reason) {
+      return NextResponse.json({ error: "Action non confirmee par le serveur" }, { status: 400 });
+    }
     const run = await runTool(name, args, true);
     // Le statut machine fait foi : un texte « Rappel introuvable. » renvoyé
     // sans lever d'exception n'est PAS un succès. Le client affiche donc un

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { runTool, REQUIRE_CONFIRMATION } from "@/lib/chat-tools";
+import { runTool, REQUIRE_CONFIRMATION, consumePendingAction } from "@/lib/chat-tools";
 import { isFailedStatus } from "@/lib/tool-result";
 import { logActivity } from "@/lib/storage";
 
@@ -31,6 +31,14 @@ export async function POST(request: Request) {
   // jamais devenir une porte d'exécution arbitraire des outils.
   if (!REQUIRE_CONFIRMATION.has(name)) {
     return NextResponse.json({ error: "Action non confirmable" }, { status: 400 });
+  }
+
+  // Le nom et les arguments doivent correspondre à une action réellement
+  // proposée par le serveur (usage unique) : une action inventée, substituée
+  // ou rejouée est refusée AVANT tout effet de bord.
+  const reason = consumePendingAction(name, args);
+  if (!reason) {
+    return NextResponse.json({ error: "Action non confirmee par le serveur" }, { status: 400 });
   }
 
   try {

@@ -121,6 +121,21 @@ chore(deps): met a jour vitest
 - Pas de reformatage massif, pas de renommage sans rapport, pas de fichier
   genere (`.next/`, `coverage/`, `test-results/`).
 
+### Dependances
+
+Une dependance visuelle (animation, defilement, carrousel, icones) doit etre
+**utilisee par au moins une page** au moment ou elle entre. Une bibliotheque
+declaree mais importee nulle part coute du temps d'installation, du disque et
+une surface de CVE a suivre pour rien : c'est exactement ce qui a fait retirer
+`framer-motion` et `lenis` avant le refactor.
+
+- verifie l'usage reel avec `rg "<nom-du-paquet>"` dans `app/`, `components/` et
+  `lib/`, imports dynamiques et CSS compris ;
+- une dependance chargee uniquement par la toolchain (Next, PostCSS, Tailwind,
+  types) est justifiee dans la PR, pas ajoutee au hasard ;
+- le retrait d'une dependance morte ne se melange pas a une montee de version
+  ni a une optimisation de bundle.
+
 ### Avant d'ouvrir la PR
 
 ```bash

@@ -115,6 +115,11 @@ chore(deps): met a jour vitest
 
 - Une PR traite **un seul sujet** et reste sous **400 lignes** modifiees.
   Au-dela, decoupe-la.
+- Avant de decouper du code, lis la charte de responsabilite unique
+  ([docs/architecture/srp.md](docs/architecture/srp.md)) : elle definit ce
+  qu'est une responsabilite aux echelles fonction, fichier et dossier, avec la
+  checklist de revue. La question utile n'est pas « ce fichier est-il trop
+  long ? » mais « quels changements exterieurs obligent a le modifier ? ».
 - Une correction de bug inclut un test qui echoue avant et passe apres.
 - Une modification d'interface inclut une capture avant/apres.
 - Une modification de comportement met a jour la documentation concernee.

@@ -2,7 +2,8 @@
  * Client CESAR 100% HTTP (aucun navigateur) — fonctionne en prod standalone.
  *
  * Pipeline : GET /connexion (CSRF) → POST login → skip écran CVEC →
- * GET /schedule → extraction de l'attribut data-tui-calendar-event-lesson-schedules-value
+ * POST /session/update (année académique courante) → GET /schedule → extraction
+ * de l'attribut data-tui-calendar-event-lesson-schedules-value
  * (JSON complet de toutes les séances) → normalisation.
  *
  * Identifiants : CESAR_USERNAME / CESAR_PASSWORD (env), base optionnelle CESAR_BASE.
@@ -69,6 +70,38 @@ export function _extractLessonsJson(html: string): string {
     .replace(/&gt;/g, ">");
 }
 
+/** Année académique courante au format CESAR ("2026-2027" à partir de septembre). */
+export function currentAcademicYear(now = new Date()): string {
+  const y = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+  return `${y}-${y + 1}`;
+}
+
+/** Session a utiliser : l'annee courante si proposee, sinon la plus recente de la liste. */
+export function pickSession(options: string[], now = new Date()): string | null {
+  if (!options.length) return null;
+  const target = currentAcademicYear(now);
+  return options.includes(target) ? target : options[0];
+}
+
+export type SessionSelect = { selected: string; options: string[]; token: string };
+
+/** Extrait le select `training_session_select[sessions]` (annee scolaire active dans CESAR). */
+export function _extractSessionSelect(html: string): SessionSelect | null {
+  const nameAt = html.indexOf('name="training_session_select[sessions]"');
+  if (nameAt === -1) return null;
+  const open = html.lastIndexOf("<select", nameAt);
+  const close = html.indexOf("</select>", nameAt);
+  if (open === -1 || close === -1) return null;
+  const block = html.slice(open, close);
+  const options = [...block.matchAll(/<option value="([^"]*)"/g)].map((m) => m[1]).filter(Boolean);
+  const selected = /<option value="([^"]*)"[^>]*selected="selected"/.exec(block)?.[1] ?? "";
+  const formOpen = html.lastIndexOf("<form", nameAt);
+  const formClose = html.indexOf("</form>", nameAt);
+  const form = formOpen !== -1 && formClose !== -1 ? html.slice(formOpen, formClose) : html;
+  const token = /name="training_session_select\[_token\]"[^>]*value="([^"]*)"/.exec(form)?.[1] ?? "";
+  return { selected, options, token };
+}
+
 /** Récupère l'input hidden CSRF d'un formulaire. */
 function extractCsrf(html: string, formNameRe: RegExp): string {
   const inputs = html.match(/<input[^>]*>/g) || [];
@@ -127,6 +160,7 @@ export async function fetchCesarSchedule(): Promise<ScheduleCourse[]> {
   const home = await fetch(cesarBase() + "/", { headers: { Cookie: cookieHeader() }, redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS) });
   track(home);
   const homePath = home.status === 302 ? home.headers.get("location") || "/" : "/";
+  let homeHtml = home.status === 302 ? "" : await home.text();
   if (homePath.includes("/televersement/cvec")) {
     const rc = await fetch(cesarBase() + homePath, { headers: { Cookie: cookieHeader() }, signal: AbortSignal.timeout(TIMEOUT_MS) });
     track(rc);
@@ -142,6 +176,29 @@ export async function fetchCesarSchedule(): Promise<ScheduleCourse[]> {
       console.log(`[cesar] ecran CVEC ignore (${rs.status})`);
     }
   }
+
+  // 3bis) CESAR ouvre sur l'annee precedente : basculer sur la session courante.
+  // Sans cela, on scrape l'EDT de l'an dernier (aucune seance a venir).
+  if (!homeHtml) {
+    const rh = await get(homePath);
+    track(rh);
+    homeHtml = await rh.text();
+  }
+  const session = _extractSessionSelect(homeHtml);
+  const wanted = session ? pickSession(session.options) : null;
+  if (session && wanted && session.token && wanted !== session.selected) {
+    const ru = await postForm(
+      "/session/update",
+      new URLSearchParams({
+        "training_session_select[sessions]": wanted,
+        "training_session_select[_token]": session.token,
+      }),
+      "/"
+    );
+    track(ru);
+    console.log(`[cesar] session ${session.selected} -> ${wanted} (${ru.status})`);
+  }
+
 
   // 4) page EDT — chemins connus
   const candidatePaths = ["/schedule", "/emploi-du-temps"];

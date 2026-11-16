@@ -352,9 +352,18 @@ moteur d'écriture (`lib/memory-autosave.ts`) :
 
 ⚠️ **Aucun navigateur en prod** (cPanel `npm install --production`, pas de
 Chromium) : le client est du **fetch HTTP pur** — `GET /connexion` (CSRF) →
-`POST` login → skip de l'écran CVEC → `GET /schedule` → décodage de l'attribut
+`POST` login → skip de l'écran CVEC → **sélection de la session d'entraînement**
+(`POST /session/update`) → `GET /schedule` → décodage de l'attribut
 `data-tui-calendar-event-lesson-schedules-value` (JSON de toutes les séances).
 Ne jamais réintroduire Playwright ici : ça casse la prod standalone.
+
+- ⚠️ **Piège de rentrée** : CESAR rouvre sur la session de l'an dernier
+  (`2025-2026` sélectionnée par défaut). Sans le `POST /session/update` vers
+  l'année académique courante, le scrape réussit (200, `ok: true`) mais renvoie
+  l'EDT périmé : **0 séance à venir**, plus de notifs ni de prochain cours.
+  `pickSession()` choisit l'année courante si elle est proposée, sinon la plus
+  récente. Si toutes les séances sont passées, `syncSchedule()` log un `warn`
+  (`session ou annee scolaire perimee ?`).
 
 - Sortie normalisée : `ScheduleCourse` (matière, prof, salle+bâtiment, start/end
   en ms, annulés filtrés) dans `data/schedule.json`.

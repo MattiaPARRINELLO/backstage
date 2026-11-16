@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { saveTokens, clearGoogleBroken, exchangeAuthorizationCode, type GoogleAccountType } from "@/lib/google-client";
 import { requireSession } from "@/lib/session";
+import {
+  OAUTH_STATE_COOKIE,
+  clearOAuthStateCookie,
+  decodeOAuthState,
+  oauthNonceMatches,
+} from "@/lib/oauth-state";
 import { serverLog } from "@/lib/logger";
+
+function invalidState(): NextResponse {
+  return clearOAuthStateCookie(
+    NextResponse.json({ error: "state OAuth invalide" }, { status: 400 })
+  );
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,31 +25,40 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get("code");
   const error = searchParams.get("error");
-  const stateRaw = searchParams.get("state");
 
-  let type: GoogleAccountType = "gmail";
-  // Destination retour : par défaut l'application. Le state n'est pas signé,
-  // on ne suit donc que des chemins relatifs simples (anti open-redirect).
-  let redirect = "/chat";
-  try {
-    if (stateRaw) {
-      const parsed = JSON.parse(Buffer.from(stateRaw, "base64url").toString("utf-8")) as { type?: GoogleAccountType; redirect?: string };
-      if (parsed.type === "calendar") type = "calendar";
-      if (typeof parsed.redirect === "string" && /^\/[^/]/.test(parsed.redirect)) {
-        redirect = parsed.redirect;
-      }
-    }
-  } catch {
-    type = "gmail";
+  // Le `state` doit être lisible ET porter le nonce du cookie émis par ce
+  // navigateur. Sinon : 400, sans repli silencieux sur gmail ni sur /chat.
+  const state = decodeOAuthState(searchParams.get("state"));
+  const cookieNonce = request.cookies.get(OAUTH_STATE_COOKIE)?.value;
+  if (!oauthNonceMatches(state, cookieNonce)) {
+    return invalidState();
   }
 
+  if (state.type !== "gmail" && state.type !== "calendar") {
+    return invalidState();
+  }
+  const type: GoogleAccountType = state.type;
+
   if (error) {
-    return NextResponse.json({ error: `Google OAuth error: ${error}` }, { status: 400 });
+    return clearOAuthStateCookie(
+      NextResponse.json({ error: `Google OAuth error: ${error}` }, { status: 400 })
+    );
   }
 
   if (!code) {
-    return NextResponse.json({ error: "Missing authorization code" }, { status: 400 });
+    return clearOAuthStateCookie(
+      NextResponse.json({ error: "Missing authorization code" }, { status: 400 })
+    );
   }
+
+  // Dernier verrou : même si le state a été forgé, la destination doit
+  // rester sur l'origine de l'application. `/\evil.com` est bloqué ici,
+  // avant tout échange de code.
+  const destination = new URL(state.redirect, request.url);
+  if (destination.origin !== new URL(request.url).origin) {
+    return invalidState();
+  }
+  destination.searchParams.set(type, "linked");
 
   try {
     // Échange du code via fetch direct avec timeout (google-auth-library
@@ -50,9 +71,11 @@ export async function GET(request: NextRequest) {
     const tokens = await exchangeAuthorizationCode(code, redirectUri);
 
     if (!tokens.refresh_token) {
-      return NextResponse.json(
-        { error: "Aucun refresh token recu. Revoque l'acces depuis ton compte Google et reessaie." },
-        { status: 400 }
+      return clearOAuthStateCookie(
+        NextResponse.json(
+          { error: "Aucun refresh token recu. Revoque l'acces depuis ton compte Google et reessaie." },
+          { status: 400 }
+        )
       );
     }
 
@@ -60,12 +83,11 @@ export async function GET(request: NextRequest) {
     // Re-link réussi : lève la bannière « à reconnecter » sans attendre
     // le premier refresh suivant (le marqueur de casse serait sinon obsolète).
     await clearGoogleBroken(type);
-    const destination = new URL(redirect, request.url);
-    destination.searchParams.set(type, "linked");
-    return NextResponse.redirect(destination);
+
+    return clearOAuthStateCookie(NextResponse.redirect(destination));
   } catch (err) {
     void serverLog("google-callback", "error", "Google callback error", err, true);
     const message = err instanceof Error ? err.message : "Erreur inconnue";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return clearOAuthStateCookie(NextResponse.json({ error: message }, { status: 500 }));
   }
 }

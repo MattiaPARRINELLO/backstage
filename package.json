@@ -60,5 +60,11 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.9"
+  },
+  "overrides": {
+    "baseline-browser-mapping": "2.11.37",
+    "nanoid": "3.3.20",
+    "postcss": "8.5.33",
+    "source-map-js": "1.2.2"
   }
 }

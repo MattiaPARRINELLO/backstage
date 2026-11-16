@@ -428,6 +428,70 @@ describe("chat-tools — registre des actions en attente", () => {
   });
 });
 
+describe("chat-tools — statut de fetch_and_search_emails", () => {
+  const message = (snippet: string) => ({
+    id: "m1",
+    threadId: "t1",
+    from: "facturation@exemple.fr",
+    to: "moi@exemple.fr",
+    subject: "Erreur de facturation, abonnement expire",
+    date: "Tue, 10 Nov 2026 10:00:00 +0000",
+    snippet,
+    body: snippet,
+    unread: true,
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("reste ok quand un email legitime contient un mot d'echec", async () => {
+    // Cause racine de #47 : ERROR_PATTERN cherchait « erreur » n'importe ou,
+    // y compris dans le sujet ou l'extrait d'un mail. Le statut doit venir du
+    // resultat de l'appel Gmail, pas du contenu externe.
+    mockGoogleActions.fetchGmailMessages.mockResolvedValue([
+      message("Le paiement a echoue : erreur 500, token expire."),
+    ]);
+
+    const result = await runTool("fetch_and_search_emails", { query: "facture" });
+
+    expect(result.status).toBe("ok");
+    expect(result.rendered.startsWith("[OK]")).toBe(true);
+    expect(result.text).toContain("Erreur de facturation");
+  });
+
+  it("classe un lot vide en empty, jamais en error", async () => {
+    mockGoogleActions.fetchGmailMessages.mockResolvedValue([]);
+
+    const result = await runTool("fetch_and_search_emails", { query: "inexistant" });
+
+    expect(result.status).toBe("empty");
+    expect(result.rendered.startsWith("[VIDE]")).toBe(true);
+  });
+
+  it("classe un token OAuth expire en error avec le message fourni", async () => {
+    mockGoogleActions.fetchGmailMessages.mockRejectedValue(
+      new Error("Google access token manquant. Reconnecte ton compte Google.")
+    );
+
+    const result = await runTool("fetch_and_search_emails", {});
+
+    expect(result.status).toBe("error");
+    expect(result.text).toContain("Reconnecte ton compte Google");
+  });
+
+  it("classe un quota Gmail depasse (429) en error", async () => {
+    mockGoogleActions.fetchGmailMessages.mockRejectedValue(
+      new Error("Google API error 429: quota exceeded")
+    );
+
+    const result = await runTool("fetch_and_search_emails", {});
+
+    expect(result.status).toBe("error");
+    expect(result.text).toContain("429");
+  });
+});
+
 describe("chat-tools — classement provenance des outils", () => {
   it("classe les lectures externes comme non fiables", () => {
     for (const name of [

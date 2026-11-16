@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   classifyToolText,
+  classifyExternalContentText,
   renderToolText,
   parseToolText,
   isFailedStatus,
@@ -42,6 +43,21 @@ describe("classifyToolText", () => {
     );
     expect(classifyToolText("Fait deja connu, prioritise en memoire : X")).toBe("empty");
     expect(classifyToolText("Deja memorise.")).toBe("empty");
+  });
+});
+
+describe("classifyExternalContentText", () => {
+  it("ignore les mots d'echec presents dans le contenu email", () => {
+    const batch =
+      "ID: m1\nSujet: Erreur de facturation\nExtrait: le token a expire, echec du paiement.";
+    expect(classifyToolText(batch)).toBe("error");
+    expect(classifyExternalContentText(batch)).toBe("ok");
+  });
+
+  it("conserve le classement vide et n'invente jamais un echec", () => {
+    expect(classifyExternalContentText("Aucun email trouve.")).toBe("empty");
+    expect(classifyExternalContentText("")).toBe("empty");
+    expect(classifyExternalContentText("Rappel cree.")).toBe("ok");
   });
 });
 

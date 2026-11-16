@@ -54,6 +54,26 @@ export function classifyToolText(text: string): ToolStatus {
   return "ok";
 }
 
+/**
+ * Statut d'un outil dont le texte contient du **contenu externe** (emails).
+ *
+ * `classifyToolText` cherche ses libellés d'échec n'importe où dans le texte.
+ * Appliqué à une liste d'emails, un sujet ou un extrait légitime contenant
+ * « erreur » ou « expire » faisait passer un appel réussi en `error` alors que
+ * le payload était complet (issue #47). Le statut de ces outils ne peut donc
+ * venir que du résultat de l'appel : une exception est déjà convertie en
+ * `error` par `runTool`, et une liste vide est un résultat nominal.
+ *
+ * `ERROR_PATTERN` reste inchangé pour les autres outils, dont les messages
+ * d'erreur sont rédigés par le code du projet.
+ */
+export function classifyExternalContentText(text: string): ToolStatus {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return "empty";
+  if (EMPTY_PATTERN.test(trimmed)) return "empty";
+  return "ok";
+}
+
 /** Texte transmis au modèle, statut en tête : `[ERREUR] Rappel introuvable.` */
 export function renderToolText(status: ToolStatus, text: string): string {
   const body = (text ?? "").trim();

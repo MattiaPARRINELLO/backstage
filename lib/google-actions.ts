@@ -172,9 +172,33 @@ export async function fetchGmailMessages(query?: string, maxResults = 10): Promi
     })
   );
 
-  return results
+  const fulfilled = results
     .filter((r) => r.status === "fulfilled")
     .map((r) => (r as { status: "fulfilled"; value: GmailMessage }).value);
+
+  // Un message dont le MIME ne se decode pas est ignore seul : les autres
+  // restent exploitables. On le signale sans exposer son contenu.
+  const rejected = results.length - fulfilled.length;
+  if (rejected > 0) {
+    console.warn(`[gmail] ${rejected} message(s) illisible(s) ignore(s)`);
+  }
+
+  // Tri deterministe : Gmail ne garantit pas l'ordre de /messages. Deux appels
+  // identiques doivent selectionner le meme lot.
+  return fulfilled.sort(compareGmailMessages);
+}
+
+function gmailTimestamp(date: string): number {
+  const parsed = Date.parse(date);
+  return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+}
+
+function compareGmailMessages(a: GmailMessage, b: GmailMessage): number {
+  const ta = gmailTimestamp(a.date);
+  const tb = gmailTimestamp(b.date);
+  if (ta !== tb) return tb - ta;
+  // Dates identiques ou illisibles : l'ID departage.
+  return a.id.localeCompare(b.id);
 }
 
 export async function sendGmailReply(emailId: string, responseText: string): Promise<string> {

@@ -25,6 +25,7 @@ import {
 } from "@/lib/storage";
 import {
   classifyToolText,
+  classifyExternalContentText,
   renderToolText,
   type PendingActionReason,
   type ToolStatus,
@@ -216,7 +217,7 @@ export const tools: UnifiedTool[] = [  {
   },
   {
     name: "fetch_and_search_emails",
-    description: "Recupere les emails Gmail (recus et envoyes) et cherche par mot-cle dans les expediteurs, destinataires, sujets ou contenus. Utilise 'in:sent' pour les mails envoyes, 'is:unread' pour les non-lus.",
+    description: "Recupere les emails Gmail (recus et envoyes) et cherche par mot-cle dans les expediteurs, destinataires, sujets ou contenus. Utilise 'in:sent' pour les mails envoyes, 'is:unread' pour les non-lus. Renvoie au maximum 10 messages, tries par date decroissante (le plus recent d'abord) ; sans mot-cle, ce sont donc les 10 derniers emails.",
     parameters: {
       type: "object",
       properties: {
@@ -560,6 +561,13 @@ export interface ToolRunResult {
 }
 
 /**
+ * Outils dont le texte renvoyé contient du contenu externe tel quel (sujets et
+ * extraits d'emails). Leur statut est dérivé du résultat de l'appel, jamais
+ * des mots présents dans ce contenu. Voir `classifyExternalContentText`.
+ */
+const EXTERNAL_CONTENT_TOOLS = new Set<string>(["fetch_and_search_emails"]);
+
+/**
  * Exécute un outil et renvoie son statut. Point d'entrée unique pour tout
  * appelant (chat, confirmations, autres agents) : le statut est déduit du
  * résultat, jamais d'une supposition de l'appelant.
@@ -570,12 +578,16 @@ export async function runTool(
   confirmed = false
 ): Promise<ToolRunResult> {
   let text: string;
+  let status: ToolStatus;
   try {
     text = await executeTool(name, args, confirmed);
+    status = EXTERNAL_CONTENT_TOOLS.has(name)
+      ? classifyExternalContentText(text)
+      : classifyToolText(text);
   } catch (err) {
     text = `Erreur: ${err instanceof Error ? err.message : String(err)}`;
+    status = "error";
   }
-  const status = classifyToolText(text);
   return { status, text, rendered: renderToolText(status, text) };
 }
 

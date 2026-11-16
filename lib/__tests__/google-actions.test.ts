@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("../google-client", () => ({
   getCalendarClient: () => Promise.resolve({ credentials: { access_token: "tok" } }),
   getGmailClient: () => Promise.resolve({ credentials: { access_token: "tok" } }),
 }));
 
-import { extractBody, createGoogleCalendarEvent } from "../google-actions";
+import { extractBody, createGoogleCalendarEvent, fetchGmailMessages } from "../google-actions";
 
 const b64 = (text: string) => Buffer.from(text, "utf-8").toString("base64");
 
@@ -71,6 +71,96 @@ describe("extractBody", () => {
   it("retourne une chaîne vide quand il n'y a aucun contenu", () => {
     expect(extractBody(undefined, "text/html", undefined)).toBe("");
     expect(extractBody([{ mimeType: "image/png", body: { data: b64("img") } }], "multipart/mixed", undefined)).toBe("");
+  });
+});
+
+describe("fetchGmailMessages — tri deterministe et messages illisibles", () => {
+  type Listed = { id: string; date: string };
+
+  function stubGmail(list: Listed[], broken: string[] = []) {
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/messages?")) {
+        return new Response(JSON.stringify({ messages: list.map((m) => ({ id: m.id })) }), {
+          status: 200,
+        });
+      }
+      const id = /\/messages\/([^?]+)\?format=full/.exec(url)?.[1] ?? "";
+      if (broken.includes(id)) {
+        // Reponse MIME inexploitable : le message doit etre isole, pas le lot.
+        return new Response("<html>erreur serveur</html>", { status: 500 });
+      }
+      const entry = list.find((m) => m.id === id);
+      if (!entry) return new Response("not found", { status: 404 });
+      return new Response(
+        JSON.stringify({
+          id,
+          threadId: `t-${id}`,
+          labelIds: ["INBOX"],
+          payload: {
+            mimeType: "text/plain",
+            headers: [
+              { name: "From", value: "expediteur@exemple.fr" },
+              { name: "Subject", value: `Sujet ${id}` },
+              { name: "Date", value: entry.date },
+            ],
+            body: { data: b64(`corps ${id}`) },
+          },
+        }),
+        { status: 200 }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+    return fetchMock;
+  }
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("trie par date decroissante, quel que soit l'ordre de l'API", async () => {
+    stubGmail([
+      { id: "vieux", date: "Mon, 09 Nov 2026 08:00:00 +0000" },
+      { id: "recent", date: "Wed, 11 Nov 2026 18:00:00 +0000" },
+      { id: "milieu", date: "Tue, 10 Nov 2026 12:00:00 +0000" },
+    ]);
+
+    const messages = await fetchGmailMessages(undefined, 10);
+
+    expect(messages.map((m) => m.id)).toEqual(["recent", "milieu", "vieux"]);
+  });
+
+  it("isole un message illisible sans faire echouer le lot", async () => {
+    const list: Listed[] = [
+      { id: "m1", date: "Tue, 10 Nov 2026 12:00:00 +0000" },
+      { id: "casse", date: "Tue, 10 Nov 2026 11:00:00 +0000" },
+      { id: "m2", date: "Tue, 10 Nov 2026 10:00:00 +0000" },
+    ];
+    stubGmail(list, ["casse"]);
+
+    const messages = await fetchGmailMessages(undefined, 10);
+
+    expect(messages.map((m) => m.id)).toEqual(["m1", "m2"]);
+    expect(messages.find((m) => m.id === "casse")).toBeUndefined();
+    expect(messages.every((m) => m.subject.startsWith("Sujet"))).toBe(true);
+  });
+
+  it("renvoie la meme selection pour deux appels identiques", async () => {
+    const list: Listed[] = [
+      { id: "a", date: "Tue, 10 Nov 2026 12:00:00 +0000" },
+      { id: "b", date: "Tue, 10 Nov 2026 12:00:00 +0000" },
+      { id: "c", date: "Tue, 10 Nov 2026 09:00:00 +0000" },
+    ];
+    stubGmail(list);
+
+    const first = await fetchGmailMessages(undefined, 10);
+    const second = await fetchGmailMessages(undefined, 10);
+
+    expect(first.map((m) => m.id)).toEqual(second.map((m) => m.id));
+  });
+
+  it("renvoie une liste vide quand Gmail ne trouve aucun message", async () => {
+    stubGmail([]);
+
+    await expect(fetchGmailMessages("inexistant", 10)).resolves.toEqual([]);
   });
 });
 

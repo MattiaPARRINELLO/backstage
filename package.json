@@ -19,6 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:agent": "vitest run lib/__tests__/agent-scenarios.test.ts",
     "analyze": "ANALYZE=true bun run build",
     "cron:reminders": "bun scripts/cron-scheduler.ts reminders",
     "cron:daily-brief": "bun scripts/cron-scheduler.ts daily-brief",

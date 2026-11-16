@@ -15,6 +15,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "check:docs": "bun scripts/check-docs.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

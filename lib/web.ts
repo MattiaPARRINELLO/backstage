@@ -80,8 +80,8 @@ function extractYouTubeId(url: string): string | null {
 // privées/réservées (localhost, RFC1918, link-local, metadata cloud) pour que
 // le fetch automatique d'URLs utilisateur ne puisse pas atteindre le réseau
 // interne ni les endpoints de métadonnées cloud.
-// Si la résolution DNS échoue (hors-ligne), on laisse le fetch décider :
-// une cible injoignable échouera naturellement sans exposer le réseau interne.
+// Si la résolution DNS échoue, on refuse : un fail-open laisserait passer une
+// cible dont la résolution est contrôlée par l'attaquant (DNS rebinding).
 
 const PRIVATE_IPV4_PATTERNS = [
   /^127\./,
@@ -94,8 +94,6 @@ const PRIVATE_IPV4_PATTERNS = [
   /^224\./,
   /^240\./,
 ];
-
-const PRIVATE_IPV6_PATTERNS = [/^::1$/, /^fe80:/, /^fc/, /^fd/];
 
 // Convertit un hostname en adresse IPv4 "dotted" si c'en est une, en gérant
 // les formes exotiques (décimale 32-bit, octale, hexadécimale, IPv4-mapped)
@@ -132,21 +130,73 @@ function normalizeIpv4(hostname: string): string | null {
   return bytes.join(".");
 }
 
-// IPv4-mapped IPv6 normalisée par le runtime en hexa : ::ffff:7f00:1 → 127.0.0.1
-function ipv6MappedToIpv4(hostname: string): string | null {
-  const clean = hostname.replace(/^\[|\]$/g, "");
-  const m = clean.match(/^::(?:ffff:)?([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i);
-  if (!m) return null;
-  const hi = parseInt(m[1], 16);
-  const lo = parseInt(m[2], 16);
-  if (hi > 0xffff || lo > 0xffff) return null;
-  return `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+// Développe une IPv6 en 8 groupes hexadécimaux (16 bits chacun). Gère la
+// compression "::", une éventuelle zone d'interface et une queue IPv4
+// (::ffff:127.0.0.1). Retourne null si ce n'est pas une IPv6 valide.
+function expandIpv6(hostname: string): number[] | null {
+  let clean = hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  clean = clean.split("%")[0];
+  if (!clean.includes(":")) return null;
+
+  // Queue en notation IPv4 (::ffff:127.0.0.1) : la convertir en deux groupes.
+  const lastColon = clean.lastIndexOf(":");
+  const tail = clean.slice(lastColon + 1);
+  if (tail.includes(".")) {
+    const v4 = normalizeIpv4(tail);
+    if (v4 === null) return null;
+    const [a, b, c, d] = v4.split(".").map(Number);
+    clean = `${clean.slice(0, lastColon + 1)}${(((a << 8) | b) >>> 0).toString(16)}:${(
+      ((c << 8) | d) >>> 0
+    ).toString(16)}`;
+  }
+
+  const halves = clean.split("::");
+  if (halves.length > 2) return null;
+  const splitGroups = (part: string): string[] => (part === "" ? [] : part.split(":"));
+
+  let groups: string[];
+  if (halves.length === 1) {
+    groups = splitGroups(halves[0]);
+    if (groups.length !== 8) return null;
+  } else {
+    const head = splitGroups(halves[0]);
+    const rest = splitGroups(halves[1]);
+    const missing = 8 - head.length - rest.length;
+    if (missing < 1) return null;
+    groups = [...head, ...Array<string>(missing).fill("0"), ...rest];
+  }
+
+  const parsed: number[] = [];
+  for (const group of groups) {
+    if (!/^[0-9a-f]{1,4}$/.test(group)) return null;
+    parsed.push(parseInt(group, 16));
+  }
+  return parsed;
+}
+
+function isPrivateIpv6(hostname: string): boolean {
+  const groups = expandIpv6(hostname);
+  if (groups === null) return false;
+
+  // :: (non spécifié), ::1 (loopback) et la famille IPv4-mapped/compatible
+  // (::ffff:0:0, ::ffff:127.0.0.1, ::127.0.0.1) : les cinq premiers groupes
+  // sont nuls et le sixième vaut 0 ou ffff.
+  const firstFiveZero = groups.slice(0, 5).every((g) => g === 0);
+  if (firstFiveZero && (groups[5] === 0 || groups[5] === 0xffff)) return true;
+
+  // fe80::/10 link-local
+  if ((groups[0] & 0xffc0) === 0xfe80) return true;
+  // fc00::/7 unique local (fc00:: et fd00::)
+  if ((groups[0] & 0xfe00) === 0xfc00) return true;
+
+  return false;
 }
 
 function isPrivateAddress(address: string): boolean {
   const a = address.toLowerCase().replace(/^\[|\]$/g, "");
-  if (PRIVATE_IPV6_PATTERNS.some((p) => p.test(a))) return true;
-  const ipv4 = normalizeIpv4(a) ?? ipv6MappedToIpv4(a);
+  if (a.includes(":")) return isPrivateIpv6(a);
+
+  const ipv4 = normalizeIpv4(a);
   if (ipv4 !== null) {
     return PRIVATE_IPV4_PATTERNS.some((p) => p.test(ipv4));
   }
@@ -170,13 +220,15 @@ export async function isSafeFetchUrl(rawUrl: string): Promise<boolean> {
     return !isPrivateAddress(hostname);
   }
 
-  // Hostname DNS : refuser si l'une des adresses résolues est privée.
+  // Hostname DNS : refuser si l'une des adresses résolues est privée, et
+  // refuser par défaut si la résolution échoue (fail-closed).
   try {
     const { lookup } = await import("dns/promises");
     const addresses = await lookup(hostname, { all: true, verbatim: true });
+    if (addresses.length === 0) return false;
     return !addresses.some(({ address }) => isPrivateAddress(address));
   } catch {
-    return true;
+    return false;
   }
 }
 

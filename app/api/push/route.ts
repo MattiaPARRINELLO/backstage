@@ -4,8 +4,9 @@ import type { StoredPushSubscription } from "@/lib/push-subscriptions";
 import { configureVapid, sendPushNotification } from "@/lib/send-push";
 import { getSession } from "@/lib/session";
 
-// Le POST d'abonnement reste public (appelé par le service worker en
-// arrière-plan), mais la liste, le test et la suppression exigent une session.
+// Toutes les opérations exigent une session, y compris le POST d'abonnement :
+// sans cette garde, n'importe qui pouvait enregistrer son endpoint et recevoir
+// les notifications privées (titres et notes de rappels).
 async function requireSessionOr401(): Promise<NextResponse | null> {
   const session = await getSession();
   return session ? null : NextResponse.json({ error: "Non authentifié" }, { status: 401 });
@@ -19,6 +20,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const denied = await requireSessionOr401();
+  if (denied) return denied;
   try {
     const sub = (await request.json()) as StoredPushSubscription;
     if (!sub.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) {

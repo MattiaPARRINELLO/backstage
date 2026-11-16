@@ -1,6 +1,7 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getReminders } from "@/lib/storage";
+import { getSession } from "@/lib/session";
 import { formatRelative, isOverdue } from "@/lib/date";
 import { ArrowLeft, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,13 @@ export default async function ReminderNotifPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  // /notif reste public dans proxy.ts (deep links de notifications, écrans
+  // hors ligne), mais la page affiche un rappel privé : la session est exigée
+  // ici, avant toute lecture du stockage.
+  const session = await getSession();
+  if (!session) redirect("/login");
+
   const data = await getReminders();
   const reminder = data.reminders.find((r) => r.id === id);
 

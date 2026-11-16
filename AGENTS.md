@@ -237,6 +237,9 @@ périment) : `docs/architecture.md` § *Contrat du provider IA*.
   `"use client"` sur les composants interactifs.
 - **Langue** : messages utilisateur et commits en français ; code et identifiants
   en anglais.
+- **Responsabilité unique** : avant de découper, lire `docs/architecture/srp.md`.
+  Le critère est « quels changements extérieurs obligent à modifier cette
+  unité ? », pas le nombre de lignes.
 - Ne jamais committer `.env*`, `.deploy.env`, `data/`, `android/data/`,
   `coverage/`, `test-results/`, `*.tsbuildinfo`, `e2e/.auth/`.
 
@@ -254,6 +257,7 @@ périment) : `docs/architecture.md` § *Contrat du provider IA*.
 | `docs/utilisation.md`  | fonctionnalités, écrans, décisions techniques            |
 | `docs/contributing/`   | carte du code, tutoriel première PR, tests E2E           |
 | `docs/architecture.md` | invariants détaillés (chat, mémoire, CESAR, push, OAuth) |
+| `docs/architecture/srp.md` | charte de responsabilité unique + checklist de revue |
 | `docs/design.md`       | tokens, typographie, composants `.ui-*`, motion          |
 | `docs/product.md`      | objectif, utilisateurs, modules, ton                      |
 | `docs/self-hosting.md` | Docker, variables, HTTPS, backups                        |

@@ -4,6 +4,7 @@ import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import { getRpID, getOrigin, saveCredential, hasCredentials, markSetupConsumed, isOpenBootstrapAllowed } from "@/lib/auth";
 import { consumeChallenge, createSession, getSession } from "@/lib/session";
 import { consumePasskeyPairCode } from "@/lib/passkey-pairing";
+import { getConfig } from "@/lib/config";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as {
@@ -29,8 +30,8 @@ export async function POST(request: NextRequest) {
     if (!session && !(await consumePasskeyPairCode(body.pairCode ?? ""))) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
-  } else if (process.env.SETUP_TOKEN) {
-    if (body.setupToken !== process.env.SETUP_TOKEN) {
+  } else if (getConfig().SETUP_TOKEN) {
+    if (body.setupToken !== getConfig().SETUP_TOKEN) {
       return NextResponse.json(
         { error: "Bootstrap protégé : le token de configuration est requis ou invalide." },
         { status: 403 }

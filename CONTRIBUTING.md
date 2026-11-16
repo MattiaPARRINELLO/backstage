@@ -140,13 +140,22 @@ une surface de CVE a suivre pour rien : c'est exactement ce qui a fait retirer
 
 ```bash
 bun run lint
+bun run check:docs
 bunx tsc --noEmit
 bun run test
 bun run build
 ```
 
-La checklist de la PR reprend ces quatre commandes. Coche uniquement celles que
-tu as reellement lancees.
+La checklist de la PR reprend ces commandes. Coche uniquement celles que tu as
+reellement lancees.
+
+`bun run check:docs` (`scripts/check-docs.ts`) verifie que chaque fichier cite
+dans la documentation existe encore. Regles : un chemin se resout depuis la
+racine du depot, un nom seul doit exister quelque part dans le depot, un lien
+Markdown relatif se resout depuis son fichier, `data/` est ignore (gitignore),
+et les placeholders (`PascalCase.tsx`, `kebab-case.ts`) sont declares dans une
+liste unique en tete du script. Si tu renommes un fichier cite, la CI te donne
+le document, la ligne et le fichier le plus proche.
 
 ## 6. Ce qui est bienvenu, ce qui est hors perimetre
 

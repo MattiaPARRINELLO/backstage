@@ -55,7 +55,11 @@ bun dev              # http://localhost:3000
 ```
 
 `bun run setup` is idempotent: it never overwrites a value already present in
-`.env.local`, and re-running it keeps the same secrets.
+`.env.local`, and re-running it keeps the same secrets. The script only rewrites
+the keys it manages (`AUTH_SECRET`, `SETUP_TOKEN`, VAPID, WebAuthn). Variables
+you added by hand — Google, Microsoft, `CESAR_*`, `CRON_SECRET`,
+`OPENWEATHERMAP_API_KEY`, etc. — and their comments stay untouched, so it is safe
+to run on an existing installation.
 
 Then:
 

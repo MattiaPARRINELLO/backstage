@@ -23,11 +23,13 @@ vi.mock("@/lib/chat-prompts", () => ({ buildSystemPrompt: mockBuildSystemPrompt 
 
 const mockRunTool = vi.fn();
 const mockConfirmationMessage = vi.fn();
+const mockRegisterPendingAction = vi.fn();
 vi.mock("@/lib/chat-tools", () => ({
   tools: [],
   REQUIRE_CONFIRMATION: new Set(["send_email_response"]),
   runTool: mockRunTool,
   confirmationMessage: mockConfirmationMessage,
+  registerPendingAction: mockRegisterPendingAction,
 }));
 
 const mockPersistExtractedFacts = vi.fn().mockResolvedValue([]);
@@ -202,6 +204,14 @@ describe("POST /api/chat", () => {
     expect(text).toContain('"type":"group_confirm"');
     expect(text).toContain('"summary":"Résumé du lot d\'actions"');
     expect(text).toContain("ACTION_BLOCKED");
+    expect(text).toContain('"reason":"policy"');
+    // L'action est enregistrée côté serveur avec ses arguments reparsés :
+    // /api/chat/confirm ne pourra exécuter qu'elle.
+    expect(mockRegisterPendingAction).toHaveBeenCalledWith(
+      "send_email_response",
+      { email_id: "a", response_text: "ok" },
+      "policy"
+    );
     expect(mockRunTool).not.toHaveBeenCalled();
     expect(mockConfirmationMessage).toHaveBeenCalled();
   });

@@ -3,16 +3,21 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockGetSession = vi.fn();
 vi.mock("@/lib/session", () => ({ getSession: mockGetSession }));
 
+// Registre réel : c'est le lien entre l'action proposée et son exécution qui
+// est testé ici. Seule l'exécution de l'outil est simulée.
 const mockRunTool = vi.fn();
-vi.mock("@/lib/chat-tools", () => ({
-  runTool: mockRunTool,
-  REQUIRE_CONFIRMATION: new Set(["send_email_response"]),
-}));
+vi.mock("@/lib/chat-tools", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/chat-tools")>();
+  return { ...actual, runTool: mockRunTool };
+});
 
 const mockLogActivity = vi.fn();
 vi.mock("@/lib/storage", () => ({ logActivity: mockLogActivity }));
 
 const { POST } = await import("@/app/api/chat/confirm/route");
+const { registerPendingAction, clearPendingActions } = await import("@/lib/chat-tools");
+
+const EMAIL_ARGS = { email_id: "a", response_text: "ok" };
 
 function makeRequest(body: unknown): Request {
   return new Request("http://localhost/api/chat/confirm", {
@@ -25,13 +30,19 @@ function makeRequest(body: unknown): Request {
 describe("POST /api/chat/confirm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearPendingActions();
     mockGetSession.mockResolvedValue({ userId: "owner" });
     mockLogActivity.mockResolvedValue(undefined);
+    mockRunTool.mockResolvedValue({
+      status: "ok",
+      text: "Reponse envoyee (message id: m1).",
+      rendered: "[OK] Reponse envoyee (message id: m1).",
+    });
   });
 
   it("refuse sans session", async () => {
     mockGetSession.mockResolvedValue(null);
-    const res = await POST(makeRequest({ name: "send_email_response", arguments: {} }));
+    const res = await POST(makeRequest({ name: "send_email_response", arguments: EMAIL_ARGS }));
     expect(res.status).toBe(401);
     expect(mockRunTool).not.toHaveBeenCalled();
   });
@@ -42,21 +53,44 @@ describe("POST /api/chat/confirm", () => {
     expect(mockRunTool).not.toHaveBeenCalled();
   });
 
-  it("exécute un outil confirmable avec la confirmation", async () => {
-    mockRunTool.mockResolvedValue({
-      status: "ok",
-      text: "Reponse envoyee (message id: m1).",
-      rendered: "[OK] Reponse envoyee (message id: m1).",
-    });
+  it("refuse une action jamais proposée par le serveur", async () => {
+    const res = await POST(makeRequest({ name: "send_email_response", arguments: EMAIL_ARGS }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "Action non confirmee par le serveur" });
+    expect(mockRunTool).not.toHaveBeenCalled();
+  });
+
+  it("refuse des arguments substitués après l'enregistrement", async () => {
+    registerPendingAction("send_email_response", EMAIL_ARGS);
     const res = await POST(
-      makeRequest({ name: "send_email_response", arguments: { email_id: "a", response_text: "ok" } })
+      makeRequest({
+        name: "send_email_response",
+        arguments: { email_id: "a", response_text: "texte different" },
+      })
     );
-    expect(res.status).toBe(200);
-    expect(mockRunTool).toHaveBeenCalledWith("send_email_response", { email_id: "a", response_text: "ok" }, true);
+    expect(res.status).toBe(400);
+    expect(mockRunTool).not.toHaveBeenCalled();
+  });
+
+  it("exécute une action enregistrée, puis refuse son rejeu", async () => {
+    registerPendingAction("send_email_response", EMAIL_ARGS);
+
+    const first = await POST(
+      makeRequest({ name: "send_email_response", arguments: EMAIL_ARGS })
+    );
+    expect(first.status).toBe(200);
+    expect(mockRunTool).toHaveBeenCalledTimes(1);
     expect(mockLogActivity).toHaveBeenCalled();
+
+    const replay = await POST(
+      makeRequest({ name: "send_email_response", arguments: EMAIL_ARGS })
+    );
+    expect(replay.status).toBe(400);
+    expect(mockRunTool).toHaveBeenCalledTimes(1);
   });
 
   it("marque un echec meme sans exception (statut non OK)", async () => {
+    registerPendingAction("send_email_response", {});
     mockRunTool.mockResolvedValue({
       status: "error",
       text: "Erreur : email_id et response_text requis.",
@@ -68,6 +102,7 @@ describe("POST /api/chat/confirm", () => {
   });
 
   it("répond 500 et journalise en cas d'échec", async () => {
+    registerPendingAction("send_email_response", {});
     mockRunTool.mockRejectedValue(new Error("boom"));
     const res = await POST(makeRequest({ name: "send_email_response", arguments: {} }));
     expect(res.status).toBe(500);

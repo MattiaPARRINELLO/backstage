@@ -85,6 +85,23 @@ Full template with comments: [`.env.example`](../.env.example).
 Brave search, CESAR timetable, VAPID push, `CRON_SECRET` +
 `CRON_BASE_URL` for `/api/cron/*`.
 
+### Startup configuration check
+
+On every start, the Node runtime calls `checkDevEnv()` (`lib/env-check.ts`) and
+logs a readable warning if the configuration is incomplete:
+
+```text
+[env] Configuration incomplete (1 probleme(s)) :
+  - IA_API_KEY est absent : renseigner la cle du provider IA dans .env.local, ...
+```
+
+The check never blocks startup: the app still answers on `/login`, which is what
+you need to fix the configuration. It covers `NEXT_PUBLIC_API_URL` and
+`IA_API_KEY` (skipped when `AI_PROVIDER=mock`), `AUTH_SECRET`, the pair
+`WEBAUTHN_RP_ID` / `WEBAUTHN_ORIGIN`, and warns about a missing `SETUP_TOKEN` in
+production. It never prints a secret value, only the variable name and what to
+do. A complete configuration logs nothing.
+
 ### Security notes
 
 - **`SETUP_TOKEN` is not optional in production.** Without it, the server
@@ -175,6 +192,7 @@ AI chat only needs the endpoint + key.
 | 503 on the passkey registration | `SETUP_TOKEN` not set on the server |
 | "Non authentifié" on every API | session cookie missing/expired — log in again |
 | Chat reports an AI configuration error | `NEXT_PUBLIC_API_URL` / `IA_API_KEY` missing or wrong |
+| `[env] Configuration incomplete` at startup | read the listed line: it names the variable and the fix. The app still serves `/login`; complete `.env.local` and restart |
 | Push never arrives | VAPID keys changed between builds, or no `VAPID_SUBJECT` |
 | Passkey fails with a domain error | `WEBAUTHN_ORIGIN` does not match the URL in the browser |
 | `docker compose` fails with "port is already allocated" | another service uses 3000 — run `BACKSTAGE_PORT=8080 docker compose up -d --build` |

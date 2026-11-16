@@ -32,7 +32,9 @@ export function getClientConfig(sessionId?: string) {
     };
   }
   if (!API_URL || !API_KEY) {
-    throw new Error("NEXT_PUBLIC_API_URL et IA_API_KEY doivent etre configures");
+    throw new Error(
+      "Configuration IA incomplete : renseigner NEXT_PUBLIC_API_URL (URL du provider compatible OpenAI) et IA_API_KEY dans .env.local, puis redemarrer le serveur. Pour developper sans cle, utiliser AI_PROVIDER=mock."
+    );
   }
   return {
     baseURL: API_URL,

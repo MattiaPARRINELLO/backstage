@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createSession } from "@/lib/session";
+import { getConfig } from "@/lib/config";
 
 // Connexion locale simplifiee pour le developpement.
 //
@@ -9,7 +10,8 @@ import { createSession } from "@/lib/session";
 // voir l'app sans enregistrer de passkey. En production, la route repond 404
 // meme si la variable est presente par erreur.
 export async function GET(request: NextRequest) {
-  if (process.env.NODE_ENV === "production" || process.env.DEV_AUTH_BYPASS !== "true") {
+  const config = getConfig();
+  if (config.NODE_ENV === "production" || !config.DEV_AUTH_BYPASS) {
     return NextResponse.json({ error: "Introuvable" }, { status: 404 });
   }
 

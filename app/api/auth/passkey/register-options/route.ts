@@ -3,6 +3,7 @@ import { generateRegistrationOptions } from "@simplewebauthn/server";
 import { getRpID, getOrigin, hasCredentials, isSetupConsumed, isOpenBootstrapAllowed } from "@/lib/auth";
 import { createChallenge, getSession } from "@/lib/session";
 import { isValidPasskeyPairCode } from "@/lib/passkey-pairing";
+import { getConfig } from "@/lib/config";
 
 export async function GET(request: NextRequest) {
   const alreadyRegistered = await hasCredentials();
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
     if (!session && !(await isValidPasskeyPairCode(pairCode))) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
-  } else if (process.env.SETUP_TOKEN) {
+  } else if (getConfig().SETUP_TOKEN) {
     // Le token est one-time : une fois le bootstrap consommé, il ne peut plus
     // être réutilisé (même si credentials a été vidé manuellement). Seul
     // `bun run reset:passkey` purge le marqueur et réouvre le setup.
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
     // one-time (défini via SETUP_TOKEN) pour empêcher qu'un attaquant
     // s'enregistre comme propriétaire avant l'installation.
     const provided = request.headers.get("x-setup-token");
-    if (provided !== process.env.SETUP_TOKEN) {
+    if (provided !== getConfig().SETUP_TOKEN) {
       return NextResponse.json(
         { error: "Bootstrap protégé : le token de configuration est requis ou invalide." },
         { status: 403 }

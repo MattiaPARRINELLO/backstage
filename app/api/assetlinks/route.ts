@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getConfig } from "@/lib/config";
 
 /**
  * Digital Asset Links : prouve à Chrome que l'APK `BACKSTAGE` et le domaine
@@ -17,7 +18,7 @@ const DEFAULT_SHA256 =
   "E2:F9:AC:96:EC:B2:97:0E:BF:9C:5D:A8:7B:77:C4:28:BC:AC:1D:88:91:03:E3:DF:C4:98:3F:0F:DE:00:86:3E";
 
 export async function GET() {
-  const fingerprint = (process.env.ANDROID_CERT_SHA256 || DEFAULT_SHA256)
+  const fingerprint = (getConfig().ANDROID_CERT_SHA256 || DEFAULT_SHA256)
     .trim()
     .toUpperCase();
 

@@ -38,6 +38,7 @@ Variables minimales :
 | `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN` | le domaine public (`https://…`) |
 | `SETUP_TOKEN` | token one-time du premier passkey |
 | `CRON_SECRET`, `CRON_BASE_URL` | protection et URL des routes `/api/cron/*` |
+| `GITHUB_TOKEN`, `GITHUB_REPO` | issues GitHub creees par l'agent (jeton fine-grained, `Issues: write`) |
 
 Les lignes OAuth (Google, Microsoft) doivent pointer vers le **domaine de
 production** : `https://VOTRE-DOMAINE/api/auth/google/callback`.

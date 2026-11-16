@@ -77,6 +77,7 @@ Objectif : écrire du code qui respecte les couches existantes.
 | [`product.md`](product.md) | objectif, utilisateurs, modules, ton |
 | [`architecture.md`](architecture.md) | invariants techniques détaillés |
 | [`traces.md`](traces.md) | trois traces verticales : chat, rappel, OAuth |
+| [`glossaire.md`](glossaire.md) | vingt-huit termes du projet, définition et fichier propriétaire |
 | [`design.md`](design.md) | système visuel `.ui-*` |
 | [`code-map.md`](contributing/code-map.md) | carte du code |
 | [`premiere-pr.md`](contributing/premiere-pr.md) | première PR |

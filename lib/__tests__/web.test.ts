@@ -29,6 +29,21 @@ describe("isSafeFetchUrl — anti-SSRF", () => {
     }
   });
 
+  it("refuse l'IPv6 non spécifiée et les formes compressées", async () => {
+    const blocked = [
+      "http://[::]/x", // non spécifiée
+      "http://[0:0:0:0:0:0:0:0]/x", // non spécifiée, forme longue
+      "http://[::ffff:0:0]/x", // IPv4-mapped / translated
+      "http://[::1]/x", // loopback
+      "http://[0:0:0:0:0:0:0:1]/x", // loopback, forme longue
+      "http://[fe80::1]/x", // link-local
+      "http://[fd00::1]/x", // unique local
+    ];
+    for (const url of blocked) {
+      expect(await isSafeFetchUrl(url), url).toBe(false);
+    }
+  });
+
   it("refuse les formes d'IP exotiques (décimal, octal, hexa, IPv4-mapped)", async () => {
     const blocked = [
       "http://2130706433/x", // 127.0.0.1 en décimal
@@ -53,6 +68,17 @@ describe("isSafeFetchUrl — anti-SSRF", () => {
   it("accepte une IP publique et un hostname public (DNS mocké)", async () => {
     expect(await isSafeFetchUrl("http://93.184.216.34/x")).toBe(true);
     expect(await isSafeFetchUrl("https://example.com/x")).toBe(true);
+  });
+
+  it("accepte une IPv6 publique", async () => {
+    expect(await isSafeFetchUrl("http://[2606:4700:4700::1111]/x")).toBe(true);
+  });
+
+  it("refuse par défaut quand la résolution DNS échoue (fail-closed)", async () => {
+    const { lookup } = await import("dns/promises");
+    vi.mocked(lookup).mockRejectedValueOnce(new Error("ENOTFOUND"));
+
+    expect(await isSafeFetchUrl("https://inconnu.example/x")).toBe(false);
   });
 });
 

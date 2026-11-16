@@ -50,7 +50,49 @@ import {
 // Seule l'envoi d'emails exige une confirmation explicite de l'utilisateur
 // via /api/chat/confirm. Le modèle ne peut jamais l'exécuter seul. Les autres
 // outils (calendrier, rappels, scan, lecture) s'exécutent directement.
-export const REQUIRE_CONFIRMATION = new Set<string>(["send_email_response"]);
+//
+// Exception permanente : `add_memory_fact` est aussi gate, car un fait piégé
+// est reinjecte dans le prompt systeme des tours suivants (empoisonnement
+// durable de la memoire). Cf. #74.
+export const REQUIRE_CONFIRMATION = new Set<string>([
+  "send_email_response",
+  "add_memory_fact",
+]);
+
+// Outils dont le resultat provient d'une source exterieure non fiable (page
+// web, email, issue GitHub, meteo, description d'evenement). Lire l'un d'eux
+// contamine le tour : toute ecriture qui suit doit etre confirmee.
+export const UNTRUSTED_TOOLS: ReadonlySet<string> = new Set([
+  "web_search",
+  "fetch_and_search_emails",
+  "fetch_page_meta",
+  "triage_emails",
+  "search_calendar_events",
+  "list_github_issues",
+  "lookup_concerts",
+  "get_weather",
+  // prepare_concert renvoie le resultat d'un web_search (infos salle).
+  "prepare_concert",
+]);
+
+// Outils qui modifient des donnees (locales, calendrier, email, GitHub,
+// memoire). En tour contamine, ils passent par la meme carte de confirmation
+// que `send_email_response`.
+export const WRITE_TOOLS: ReadonlySet<string> = new Set([
+  "send_email_response",
+  "create_calendar_event",
+  "update_calendar_event",
+  "delete_calendar_event",
+  "add_reminder",
+  "update_reminder",
+  "schedule_followup",
+  "add_watch_later",
+  "add_photo_shoot",
+  "update_photo_shoot",
+  "scan_accreditations",
+  "add_memory_fact",
+  "create_github_issue",
+]);
 
 // Raison pour laquelle une action est mise en attente de confirmation.
 // `policy` : l'outil exige une confirmation permanente (envoi d'email).

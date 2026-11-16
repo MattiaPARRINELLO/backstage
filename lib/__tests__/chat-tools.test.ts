@@ -51,6 +51,8 @@ const {
   runTool,
   REQUIRE_CONFIRMATION,
   ACTION_BLOCKED_PREFIX,
+  UNTRUSTED_TOOLS,
+  WRITE_TOOLS,
   pendingActionKey,
   registerPendingAction,
   hasPendingAction,
@@ -67,8 +69,11 @@ describe("chat-tools — confirmation des actions IA", () => {
     mockStorage.getPhotoShoots.mockResolvedValue({ shoots: [] });
   });
 
-  it("liste les outils exigeant une confirmation (uniquement l'envoi d'emails)", () => {
+  it("liste les outils exigeant une confirmation (emails + memoire)", () => {
     expect(REQUIRE_CONFIRMATION.has("send_email_response")).toBe(true);
+    // Exception permanente : un fait piege est reinjecte dans le prompt des
+    // tours suivants, donc add_memory_fact est gate lui aussi.
+    expect(REQUIRE_CONFIRMATION.has("add_memory_fact")).toBe(true);
     // Calendrier, rappels, scan, lectures : exécution directe sans confirmation.
     expect(REQUIRE_CONFIRMATION.has("create_calendar_event")).toBe(false);
     expect(REQUIRE_CONFIRMATION.has("update_calendar_event")).toBe(false);
@@ -197,7 +202,7 @@ describe("chat-tools — verification des ecritures", () => {
     const out = await executeTool("add_memory_fact", {
       content: "Utilise TypeScript au quotidien",
       category: "dev",
-    });
+    }, true);
 
     expect(mockStorage.addMemoryFact).not.toHaveBeenCalled();
     expect(mockStorage.touchMemoryFact).toHaveBeenCalledWith("f1");
@@ -231,7 +236,7 @@ describe("chat-tools — verification des ecritures", () => {
     const out = await executeTool("add_memory_fact", {
       content: "Collaboré avec Rapstar (@rapstar_france, ~21k abonnés)",
       category: "photo",
-    });
+    }, true);
 
     expect(mockStorage.addMemoryFact).toHaveBeenCalledWith(
       "Collaboré avec Rapstar (@rapstar_france, ~21k abonnés)",
@@ -254,15 +259,24 @@ describe("chat-tools — verification des ecritures", () => {
     const out = await executeTool("add_memory_fact", {
       content: "Aime photographier en 35mm",
       category: "photo",
-    });
+    }, true);
 
     expect(mockStorage.addMemoryFact).toHaveBeenCalledWith("Aime photographier en 35mm", "photo", { source: "tool" });
     expect(out).toContain("Fait memorise");
   });
 
   it("add_memory_fact refuse un contenu vide", async () => {
-    const out = await executeTool("add_memory_fact", { content: "   ", category: "dev" });
+    const out = await executeTool("add_memory_fact", { content: "   ", category: "dev" }, true);
     expect(out.startsWith("Erreur")).toBe(true);
+    expect(mockStorage.addMemoryFact).not.toHaveBeenCalled();
+  });
+
+  it("bloque add_memory_fact sans confirmation", async () => {
+    const out = await executeTool("add_memory_fact", {
+      content: "Aime photographier en 35mm",
+      category: "photo",
+    });
+    expect(out.startsWith(ACTION_BLOCKED_PREFIX)).toBe(true);
     expect(mockStorage.addMemoryFact).not.toHaveBeenCalled();
   });
 
@@ -411,5 +425,48 @@ describe("chat-tools — registre des actions en attente", () => {
     // Les 50 autres ont expiré : le plafond ne les compte plus.
     expect(hasPendingAction("send_email_response", { email_id: "neuf" })).toBe(true);
     expect(hasPendingAction("send_email_response", { email_id: "id-49" })).toBe(false);
+  });
+});
+
+describe("chat-tools — classement provenance des outils", () => {
+  it("classe les lectures externes comme non fiables", () => {
+    for (const name of [
+      "web_search",
+      "fetch_and_search_emails",
+      "fetch_page_meta",
+      "triage_emails",
+      "search_calendar_events",
+      "list_github_issues",
+      "lookup_concerts",
+      "get_weather",
+      "prepare_concert",
+    ]) {
+      expect(UNTRUSTED_TOOLS.has(name)).toBe(true);
+    }
+    // Lecture de donnees locales : fiable.
+    expect(UNTRUSTED_TOOLS.has("list_reminders")).toBe(false);
+    expect(UNTRUSTED_TOOLS.has("get_schedule")).toBe(false);
+  });
+
+  it("classe toutes les ecritures dans WRITE_TOOLS", () => {
+    for (const name of [
+      "create_calendar_event",
+      "update_calendar_event",
+      "delete_calendar_event",
+      "add_reminder",
+      "update_reminder",
+      "schedule_followup",
+      "add_watch_later",
+      "add_photo_shoot",
+      "update_photo_shoot",
+      "scan_accreditations",
+      "add_memory_fact",
+      "create_github_issue",
+      "send_email_response",
+    ]) {
+      expect(WRITE_TOOLS.has(name)).toBe(true);
+    }
+    // prepare_concert ne fait que lire (meteo + infos salle).
+    expect(WRITE_TOOLS.has("prepare_concert")).toBe(false);
   });
 });

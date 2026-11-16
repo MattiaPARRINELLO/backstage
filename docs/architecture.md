@@ -248,6 +248,36 @@ d'une exécution d'outil : `ok` / `error` / `empty` / `blocked`.
 relecture. Tout nouvel consommateur doit utiliser le statut, jamais une
 recherche de sous-chaîne dans le texte.
 
+### Provenance des écritures (`UNTRUSTED_TOOLS` / `WRITE_TOOLS`)
+
+La politique produit ne généralise pas les confirmations : seul
+`send_email_response` est sensible par nature. En revanche, une écriture
+**induite par du contenu tiers** (corps d'email, page web, issue GitHub, météo,
+description d'événement) ne peut pas être distinguée d'une demande utilisateur
+par le seul texte du modèle. Le serveur la gate donc :
+
+- `UNTRUSTED_TOOLS` = outils dont le résultat vient d'une source externe
+  (`web_search`, `fetch_and_search_emails`, `fetch_page_meta`, `triage_emails`,
+  `search_calendar_events`, `list_github_issues`, `lookup_concerts`,
+  `get_weather`, `prepare_concert`).
+- `WRITE_TOOLS` = outils qui modifient des données (rappels, calendrier,
+  shootings, accréditations, watch-later, mémoire, issue GitHub, email).
+- Le taint est calculé **sans état serveur** : tout `<tool_result
+  name="...">` d'un outil non fiable présent dans les messages reçus, ou tout
+  appel non fiable du lot courant, contamine le tour. Il s'accumule sur les
+  itérations du tour et reste actif tant que le contenu figure dans
+  l'historique.
+- Une écriture d'un tour contaminé n'est pas exécutée : elle est enregistrée
+  dans le registre d'actions en attente avec `reason: "provenance"` et proposée
+  via une carte de confirmation. Sans contenu externe, `add_reminder` et
+  `create_calendar_event` restent directs.
+- Exception permanente : `add_memory_fact` est dans `REQUIRE_CONFIRMATION`
+  (`reason: "policy"`), car un fait piégé est réinjecté dans le prompt système
+  des tours suivants.
+- `lib/chat-prompts.ts` place les faits mémorisés **sous** l'avertissement
+  « contenu non fiable », dans `<memory_facts source="donnees">`. Ce n'est pas
+  un contrôle d'autorisation : l'autorisation est dans `app/api/chat/route.ts`.
+
 ### Mémoire automatique — deux chemins, une seule écriture
 
 L'IA alimente `data/memory.json` par **deux** voies, qui partagent le même
@@ -448,8 +478,10 @@ fonctionnalité.
   peut changer la cible, donc un contenu externe injecté (email, page web) ne
   peut pas détourner l'écriture vers un autre dépôt.
 - **Pas de confirmation** : la création s'exécute directement, comme les autres
-  écritures locales. Un jeton limité aux issues (`issues: write`) est la seule
-  protection de périmètre — le révoquer désactive proprement la fonctionnalité.
+  écritures locales, sauf si le tour est contaminé par du contenu externe
+  (cf. § *Provenance des écritures*). Un jeton limité aux issues
+  (`issues: write`) est la seule protection de périmètre — le révoquer désactive
+  proprement la fonctionnalité.
 - **Libellés restreints** à `bug`, `enhancement`, `documentation` : un libellé
   absent du dépôt ferait échouer la création.
 - `list_github_issues` écarte les pull requests (l'API les renvoie dans

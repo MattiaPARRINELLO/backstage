@@ -18,6 +18,7 @@ import { Markdown } from "@/components/ui/Markdown";
 import { api } from "@/lib/api-client";
 import { useToast } from "@/components/ui/Toast";
 import type { ActivityStep, Message } from "@/components/chat/types";
+import type { PendingActionReason } from "@/lib/tool-result";
 import { toolMeta, parseQuotedMessage } from "@/components/chat/chat-data";
 
 export function AssistantAvatar({ size = "md" }: { size?: "sm" | "md" }) {
@@ -479,17 +480,23 @@ export const MessageBlock = memo(function MessageBlock({ message }: { message: M
 // liste des actions. « Confirmer tout » exécute le lot entier.
 export function GroupActionCard({
   summary,
+  reason,
   tools,
   onConfirm,
   onCancel,
   busy,
 }: {
   summary: string;
+  reason: PendingActionReason;
   tools: { name: string; argsLabel: string }[];
   onConfirm: () => void;
   onCancel: () => void;
   busy?: boolean;
 }) {
+  const reasonLabel =
+    reason === "provenance"
+      ? "Proposé après lecture d'un contenu externe (email, page, recherche) : à valider."
+      : "Action sensible : elle ne part pas sans ton accord.";
   return (
     <div className="ui-tile px-4 py-3.5 text-[length:var(--t-small)] fade-in-up">
       <div className="flex items-center gap-2 text-[var(--text-1)]">
@@ -503,6 +510,7 @@ export function GroupActionCard({
           {tools.length > 1 ? `${tools.length} actions` : "1 action"}
         </span>
       </div>
+      <p className="mt-1 ui-mono text-[var(--text-3)]">{reasonLabel}</p>
       {summary && (
         <p className="mt-2 text-[var(--text-2)] leading-relaxed">
           {summary}

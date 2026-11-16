@@ -105,7 +105,7 @@ export async function proxy(request: NextRequest) {
     return withRequestId(request, NextResponse.redirect(new URL("/login", request.url)));
   }
 
-  const payload = await verifyJwt<{ sub: string }>(token);
+  const payload = await verifyJwt<{ sub: string }>(token, "session");
 
   if (!payload) {
     if (pathname.startsWith("/api/")) {

@@ -9,8 +9,10 @@ const baseUrl = process.env.BASE_URL ?? "http://localhost:3100";
 const outDir = path.join(projectRoot, process.env.OUT_DIR ?? "public/screenshots");
 fs.mkdirSync(outDir, { recursive: true });
 
-const { signJwt } = await import(path.join(projectRoot, "lib/session-core.ts"));
-const token = await signJwt({ sub: "owner" });
+const { signJwt, TOKEN_PURPOSE } = await import(
+  path.join(projectRoot, "lib/session-core.ts")
+);
+const token = await signJwt({ sub: "owner", purpose: TOKEN_PURPOSE.session });
 
 const exe = fs.existsSync(
   "/home/mattia/.cache/ms-playwright/chromium-1223/chrome-linux64/chrome"

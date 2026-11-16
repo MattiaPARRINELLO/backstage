@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 // Génère un JWT de session valide compatible avec lib/session-core.ts
-// (HS256, header {alg,typ}, payload {sub,iat,exp}, signature HMAC-SHA256).
+// (HS256, header {alg,typ}, payload {sub,purpose,iat,exp}, signature HMAC-SHA256).
 // Le secret doit être le MÊME que celui du serveur de test : lancer les E2E
 // avec AUTH_SECRET défini dans l'environnement (il prime sur .env.local).
 export function signSessionToken(sub = "owner", ttlSeconds = 7 * 24 * 3600): string {
@@ -15,7 +15,9 @@ export function signSessionToken(sub = "owner", ttlSeconds = 7 * 24 * 3600): str
   const b64url = (input: string | Buffer) => Buffer.from(input).toString("base64url").replace(/=+$/, "");
   const header = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const now = Math.floor(Date.now() / 1000);
-  const payload = b64url(JSON.stringify({ sub, iat: now, exp: now + ttlSeconds }));
+  const payload = b64url(
+    JSON.stringify({ sub, purpose: "session", iat: now, exp: now + ttlSeconds })
+  );
   const signingInput = `${header}.${payload}`;
   const signature = b64url(createHmac("sha256", key).update(signingInput).digest());
   return `${signingInput}.${signature}`;

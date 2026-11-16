@@ -6,6 +6,17 @@ export const CHALLENGE_COOKIE = "pb_challenge";
 export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 export const CHALLENGE_TTL_SECONDS = 5 * 60;
 
+// Usage déclaré dans le claim "purpose" de chaque JWT. Un jeton de challenge
+// présenté comme session (et inversement) est rejeté : sans ce claim, le
+// cookie pb_challenge obtenu sur /api/auth/passkey/auth-options pouvait être
+// rejoué comme pb_session.
+export const TOKEN_PURPOSE = {
+  session: "session",
+  challenge: "challenge",
+} as const;
+
+export type TokenPurpose = (typeof TOKEN_PURPOSE)[keyof typeof TOKEN_PURPOSE];
+
 const SECRET_FILE = path.join(process.cwd(), "data", ".auth-secret");
 
 // Décode la valeur hex (openssl rand -hex 32) en bytes ; sinon raw.
@@ -72,7 +83,10 @@ export async function signJwt(payload: Record<string, unknown>): Promise<string>
   return `${signingInput}.${base64UrlEncode(signature)}`;
 }
 
-export async function verifyJwt<T extends Record<string, unknown>>(token: string): Promise<T | null> {
+export async function verifyJwt<T extends Record<string, unknown>>(
+  token: string,
+  expected: TokenPurpose
+): Promise<T | null> {
   const parts = token.split(".");
   if (parts.length !== 3) return null;
 
@@ -94,7 +108,11 @@ export async function verifyJwt<T extends Record<string, unknown>>(token: string
     if (!valid) return null;
 
     const payloadBytes = base64UrlDecode(encodedPayload);
-    const payload = JSON.parse(new TextDecoder().decode(payloadBytes)) as T & { exp?: number };
+    const payload = JSON.parse(new TextDecoder().decode(payloadBytes)) as T & {
+      exp?: number;
+      purpose?: string;
+    };
+    if (payload.purpose !== expected) return null;
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
 
     return payload;

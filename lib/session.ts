@@ -4,6 +4,7 @@ import {
   CHALLENGE_COOKIE,
   SESSION_TTL_SECONDS,
   CHALLENGE_TTL_SECONDS,
+  TOKEN_PURPOSE,
   signJwt,
   verifyJwt,
 } from "./session-core";
@@ -13,6 +14,7 @@ export {
   CHALLENGE_COOKIE,
   SESSION_TTL_SECONDS,
   CHALLENGE_TTL_SECONDS,
+  TOKEN_PURPOSE,
   signJwt,
   verifyJwt,
 };
@@ -27,6 +29,7 @@ const cookieOptions = {
 export async function createSession(userId: string): Promise<void> {
   const token = await signJwt({
     sub: userId,
+    purpose: TOKEN_PURPOSE.session,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS,
   });
@@ -57,7 +60,7 @@ export async function getSession(): Promise<{ userId: string } | null> {
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  const payload = await verifyJwt<{ sub: string }>(token);
+  const payload = await verifyJwt<{ sub: string }>(token, TOKEN_PURPOSE.session);
   if (!payload) return null;
 
   return { userId: payload.sub };
@@ -66,6 +69,7 @@ export async function getSession(): Promise<{ userId: string } | null> {
 export async function createChallenge(challenge: string): Promise<void> {
   const token = await signJwt({
     challenge,
+    purpose: TOKEN_PURPOSE.challenge,
     exp: Math.floor(Date.now() / 1000) + CHALLENGE_TTL_SECONDS,
   });
 
@@ -81,7 +85,7 @@ export async function consumeChallenge(): Promise<string | null> {
   const token = cookieStore.get(CHALLENGE_COOKIE)?.value;
   if (!token) return null;
 
-  const payload = await verifyJwt<{ challenge: string }>(token);
+  const payload = await verifyJwt<{ challenge: string }>(token, TOKEN_PURPOSE.challenge);
   if (!payload) return null;
 
   cookieStore.set(CHALLENGE_COOKIE, "", {

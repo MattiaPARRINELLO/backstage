@@ -1,5 +1,9 @@
 const SESSION_COOKIE = "pb_session";
 
+// Doit rester aligné sur TOKEN_PURPOSE de lib/session-core.ts (module séparé
+// pour rester chargeable en edge, sans fs).
+export type TokenPurpose = "session" | "challenge";
+
 let cachedKey: CryptoKey | null = null;
 
 // Décode la valeur hex (openssl rand -hex 32) en bytes ; sinon raw.
@@ -38,7 +42,10 @@ function base64UrlDecode(input: string): Uint8Array {
   return new Uint8Array(Buffer.from(input + padding, "base64url"));
 }
 
-export async function verifyJwt<T extends Record<string, unknown>>(token: string): Promise<T | null> {
+export async function verifyJwt<T extends Record<string, unknown>>(
+  token: string,
+  expected: TokenPurpose
+): Promise<T | null> {
   const parts = token.split(".");
   if (parts.length !== 3) return null;
 
@@ -60,7 +67,11 @@ export async function verifyJwt<T extends Record<string, unknown>>(token: string
     if (!valid) return null;
 
     const payloadBytes = base64UrlDecode(encodedPayload);
-    const payload = JSON.parse(new TextDecoder().decode(payloadBytes)) as T & { exp?: number };
+    const payload = JSON.parse(new TextDecoder().decode(payloadBytes)) as T & {
+      exp?: number;
+      purpose?: string;
+    };
+    if (payload.purpose !== expected) return null;
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
 
     return payload;

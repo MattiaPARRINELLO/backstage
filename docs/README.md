@@ -48,10 +48,12 @@ Objectif : suivre un message de chat de la route jusqu'au rendu.
    d'outils.
 2. [`code-map.md`](contributing/code-map.md) — la carte des
    dossiers.
-3. `app/api/chat/route.ts` — la route SSE qui porte la génération.
-4. `lib/chat-tools.ts` — les outils exposés à l'agent et leur dispatch.
-5. `components/chat/ChatView.tsx` — le rendu du fil et des appels d'outils.
-6. [`design.md`](design.md) — pourquoi les états de streaming ressemblent à ça.
+3. [`traces.md`](traces.md) — la trace verticale du message de chat, étape
+   par étape.
+4. `app/api/chat/route.ts` — la route SSE qui porte la génération.
+5. `lib/chat-tools.ts` — les outils exposés à l'agent et leur dispatch.
+6. `components/chat/ChatView.tsx` — le rendu du fil et des appels d'outils.
+7. [`design.md`](design.md) — pourquoi les états de streaming ressemblent à ça.
 
 ### En 1 heure : ajouter une capacité
 
@@ -74,6 +76,7 @@ Objectif : écrire du code qui respecte les couches existantes.
 | --- | --- |
 | [`product.md`](product.md) | objectif, utilisateurs, modules, ton |
 | [`architecture.md`](architecture.md) | invariants techniques détaillés |
+| [`traces.md`](traces.md) | trois traces verticales : chat, rappel, OAuth |
 | [`design.md`](design.md) | système visuel `.ui-*` |
 | [`code-map.md`](contributing/code-map.md) | carte du code |
 | [`premiere-pr.md`](contributing/premiere-pr.md) | première PR |

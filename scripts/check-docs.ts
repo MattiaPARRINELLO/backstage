@@ -196,8 +196,9 @@ export function extractReferences(content: string): ExtractedReference[] {
       const target = match[1].trim();
       if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(target)) continue; // http, mailto, ancre
       const [withoutAnchor] = target.split("#");
-      if (!withoutAnchor) continue;
-      references.push({ line, reference: decodeURI(withoutAnchor), fromSourceDir: true });
+      const linked = withoutAnchor?.replace(LINE_SUFFIX, "");
+      if (!linked) continue;
+      references.push({ line, reference: decodeURI(linked), fromSourceDir: true });
     }
   });
 

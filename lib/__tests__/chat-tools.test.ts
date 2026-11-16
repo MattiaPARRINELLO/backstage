@@ -46,7 +46,17 @@ vi.mock("@/lib/storage", () => mockStorage);
 vi.mock("@/lib/storage/schedule", () => mockSchedule);
 vi.mock("@/lib/google-actions", () => mockGoogleActions);
 
-const { executeTool, runTool, REQUIRE_CONFIRMATION, ACTION_BLOCKED_PREFIX } = await import("@/lib/chat-tools");
+const {
+  executeTool,
+  runTool,
+  REQUIRE_CONFIRMATION,
+  ACTION_BLOCKED_PREFIX,
+  pendingActionKey,
+  registerPendingAction,
+  hasPendingAction,
+  consumePendingAction,
+  clearPendingActions,
+} = await import("@/lib/chat-tools");
 
 describe("chat-tools — confirmation des actions IA", () => {
   beforeEach(() => {
@@ -321,5 +331,85 @@ describe("chat-tools — get_schedule", () => {
 
     expect(mockSchedule.getNextCourse).toHaveBeenCalled();
     expect(out).toContain("Prochain cours");
+  });
+});
+
+describe("chat-tools — registre des actions en attente", () => {
+  let now = 1_700_000_000_000;
+
+  beforeEach(() => {
+    clearPendingActions();
+    now = 1_700_000_000_000;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    clearPendingActions();
+  });
+
+  it("calcule une cle canonique insensible a l'ordre des cles et aux undefined", () => {
+    const a = pendingActionKey("send_email_response", {
+      email_id: "a",
+      response_text: "ok",
+    });
+    const b = pendingActionKey("send_email_response", {
+      response_text: "ok",
+      email_id: "a",
+      inutile: undefined,
+    });
+    expect(a).toBe(b);
+    expect(pendingActionKey("web_search", { query: "x" })).not.toBe(a);
+  });
+
+  it("ne confond pas deux valeurs differentes", () => {
+    expect(
+      pendingActionKey("send_email_response", { email_id: "a", response_text: "ok" })
+    ).not.toBe(
+      pendingActionKey("send_email_response", { email_id: "b", response_text: "ok" })
+    );
+  });
+
+  it("conserve la raison et ne consomme qu'une seule fois", () => {
+    registerPendingAction("send_email_response", { email_id: "a" }, "provenance");
+    expect(hasPendingAction("send_email_response", { email_id: "a" })).toBe(true);
+    expect(consumePendingAction("send_email_response", { email_id: "a" })).toBe("provenance");
+    expect(hasPendingAction("send_email_response", { email_id: "a" })).toBe(false);
+    expect(consumePendingAction("send_email_response", { email_id: "a" })).toBeNull();
+  });
+
+  it("applique la raison policy par defaut", () => {
+    registerPendingAction("send_email_response", { email_id: "a" });
+    expect(consumePendingAction("send_email_response", { email_id: "a" })).toBe("policy");
+  });
+
+  it("expire une action apres 15 minutes", () => {
+    registerPendingAction("send_email_response", { email_id: "a" });
+    now += 15 * 60 * 1000 - 1;
+    expect(hasPendingAction("send_email_response", { email_id: "a" })).toBe(true);
+    now += 1;
+    expect(hasPendingAction("send_email_response", { email_id: "a" })).toBe(false);
+    expect(consumePendingAction("send_email_response", { email_id: "a" })).toBeNull();
+  });
+
+  it("plafonne le registre a 50 entrees en evacuant la plus ancienne", () => {
+    for (let i = 0; i < 50; i++) {
+      registerPendingAction("send_email_response", { email_id: `id-${i}` });
+    }
+    expect(hasPendingAction("send_email_response", { email_id: "id-0" })).toBe(true);
+    registerPendingAction("send_email_response", { email_id: "id-50" });
+    expect(hasPendingAction("send_email_response", { email_id: "id-0" })).toBe(false);
+    expect(hasPendingAction("send_email_response", { email_id: "id-50" })).toBe(true);
+  });
+
+  it("purge les entrees expirees lors d'un nouvel enregistrement", () => {
+    for (let i = 0; i < 50; i++) {
+      registerPendingAction("send_email_response", { email_id: `id-${i}` });
+    }
+    now += 15 * 60 * 1000;
+    registerPendingAction("send_email_response", { email_id: "neuf" });
+    // Les 50 autres ont expiré : le plafond ne les compte plus.
+    expect(hasPendingAction("send_email_response", { email_id: "neuf" })).toBe(true);
+    expect(hasPendingAction("send_email_response", { email_id: "id-49" })).toBe(false);
   });
 });

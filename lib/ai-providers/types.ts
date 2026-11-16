@@ -1,4 +1,4 @@
-import type { ToolStatus } from "../tool-result";
+import type { PendingActionReason, ToolStatus } from "../tool-result";
 
 export interface UnifiedMessage {
   role: "system" | "user" | "assistant" | "tool";
@@ -33,6 +33,7 @@ export type StreamEvent =
       type: "group_confirm";
       id: string;
       summary: string;
+      reason: PendingActionReason;
       tools: { toolCallId: string; name: string; arguments: string }[];
     }
   | { type: "memory_facts"; facts: { content: string; category: string; confidence: number }[] }

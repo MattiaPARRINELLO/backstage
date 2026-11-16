@@ -3,16 +3,22 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockGetSession = vi.fn();
 vi.mock("@/lib/session", () => ({ getSession: mockGetSession }));
 
+// Registre réel : un lot ne s'exécute que si chaque action a bien été proposée
+// par le serveur. Seule l'exécution des outils est simulée.
 const mockRunTool = vi.fn();
-vi.mock("@/lib/chat-tools", () => ({
-  runTool: mockRunTool,
-  REQUIRE_CONFIRMATION: new Set(["send_email_response"]),
-}));
+vi.mock("@/lib/chat-tools", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/chat-tools")>();
+  return { ...actual, runTool: mockRunTool };
+});
 
 const mockLogActivity = vi.fn();
 vi.mock("@/lib/storage", () => ({ logActivity: mockLogActivity }));
 
 const { POST } = await import("@/app/api/chat/confirm-batch/route");
+const { registerPendingAction, clearPendingActions } = await import("@/lib/chat-tools");
+
+const FIRST = { email_id: "a", response_text: "ok" };
+const SECOND = { email_id: "b", response_text: "merci" };
 
 function makeRequest(body: unknown): Request {
   return new Request("http://localhost/api/chat/confirm-batch", {
@@ -25,8 +31,14 @@ function makeRequest(body: unknown): Request {
 describe("POST /api/chat/confirm-batch", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearPendingActions();
     mockGetSession.mockResolvedValue({ userId: "owner" });
     mockLogActivity.mockResolvedValue(undefined);
+    mockRunTool.mockImplementation(async (name: string) => ({
+      status: "ok",
+      text: `ok:${name}`,
+      rendered: `[OK] ok:${name}`,
+    }));
   });
 
   it("refuse sans session", async () => {
@@ -45,17 +57,44 @@ describe("POST /api/chat/confirm-batch", () => {
     expect(mockRunTool).not.toHaveBeenCalled();
   });
 
-  it("exécute toutes les actions du lot et renvoie les résultats", async () => {
-    mockRunTool.mockImplementation(async (name: string) => ({
-      status: "ok",
-      text: `ok:${name}`,
-      rendered: `[OK] ok:${name}`,
-    }));
+  it("refuse un lot contenant une action jamais proposée, sans rien exécuter", async () => {
+    registerPendingAction("send_email_response", FIRST);
     const res = await POST(
       makeRequest({
         actions: [
-          { name: "send_email_response", arguments: { email_id: "a", response_text: "ok" } },
-          { name: "send_email_response", arguments: { email_id: "b", response_text: "merci" } },
+          { name: "send_email_response", arguments: FIRST },
+          { name: "send_email_response", arguments: SECOND },
+        ],
+      })
+    );
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "Action non confirmee par le serveur" });
+    expect(mockRunTool).not.toHaveBeenCalled();
+  });
+
+  it("refuse un lot avec un doublon, sans exécution partielle", async () => {
+    registerPendingAction("send_email_response", FIRST);
+    const res = await POST(
+      makeRequest({
+        actions: [
+          { name: "send_email_response", arguments: FIRST },
+          { name: "send_email_response", arguments: FIRST },
+        ],
+      })
+    );
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "Lot invalide : action en double" });
+    expect(mockRunTool).not.toHaveBeenCalled();
+  });
+
+  it("exécute toutes les actions proposées et renvoie les résultats", async () => {
+    registerPendingAction("send_email_response", FIRST);
+    registerPendingAction("send_email_response", SECOND);
+    const res = await POST(
+      makeRequest({
+        actions: [
+          { name: "send_email_response", arguments: FIRST },
+          { name: "send_email_response", arguments: SECOND },
         ],
       })
     );
@@ -64,21 +103,36 @@ describe("POST /api/chat/confirm-batch", () => {
     expect(body.results).toHaveLength(2);
     expect(body.results.every((r: { ok: boolean }) => r.ok)).toBe(true);
     expect(mockRunTool).toHaveBeenCalledTimes(2);
-    expect(mockRunTool).toHaveBeenCalledWith("send_email_response", { email_id: "a", response_text: "ok" }, true);
-    expect(mockRunTool).toHaveBeenCalledWith("send_email_response", { email_id: "b", response_text: "merci" }, true);
+    expect(mockRunTool).toHaveBeenCalledWith("send_email_response", FIRST, true);
+    expect(mockRunTool).toHaveBeenCalledWith("send_email_response", SECOND, true);
     expect(mockLogActivity).toHaveBeenCalledTimes(2);
+  });
+
+  it("refuse de rejouer un lot déjà exécuté", async () => {
+    registerPendingAction("send_email_response", FIRST);
+    registerPendingAction("send_email_response", SECOND);
+    const actions = [
+      { name: "send_email_response", arguments: FIRST },
+      { name: "send_email_response", arguments: SECOND },
+    ];
+    const first = await POST(makeRequest({ actions }));
+    expect(first.status).toBe(200);
+    const replay = await POST(makeRequest({ actions }));
+    expect(replay.status).toBe(400);
+    expect(mockRunTool).toHaveBeenCalledTimes(2);
   });
 
   it("marque en echec un résultat texte sans exception (statut non OK)", async () => {
     // « Rappel introuvable. » ne lève rien : sans statut, le lot serait
     // affiché comme un succès alors que rien n'a été fait.
+    registerPendingAction("send_email_response", FIRST);
     mockRunTool.mockResolvedValue({
       status: "error",
       text: "Rappel introuvable.",
       rendered: "[ERREUR] Rappel introuvable.",
     });
     const res = await POST(
-      makeRequest({ actions: [{ name: "send_email_response", arguments: { email_id: "a", response_text: "ok" } }] })
+      makeRequest({ actions: [{ name: "send_email_response", arguments: FIRST }] })
     );
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -88,6 +142,9 @@ describe("POST /api/chat/confirm-batch", () => {
   });
 
   it("continue le lot et marque en échec une action qui échoue", async () => {
+    const BAD = { email_id: "bad", response_text: "x" };
+    registerPendingAction("send_email_response", BAD);
+    registerPendingAction("send_email_response", FIRST);
     mockRunTool.mockImplementation(async (name: string, args: { email_id?: string }) => {
       if (args?.email_id === "bad") {
         return { status: "error", text: "boom", rendered: "[ERREUR] boom" };
@@ -97,8 +154,8 @@ describe("POST /api/chat/confirm-batch", () => {
     const res = await POST(
       makeRequest({
         actions: [
-          { name: "send_email_response", arguments: { email_id: "bad", response_text: "x" } },
-          { name: "send_email_response", arguments: { email_id: "a", response_text: "ok" } },
+          { name: "send_email_response", arguments: BAD },
+          { name: "send_email_response", arguments: FIRST },
         ],
       })
     );

@@ -22,8 +22,14 @@ import {
   persistExtractedFacts,
 } from "@/lib/memory-autosave";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { runTool, tools, REQUIRE_CONFIRMATION, confirmationMessage } from "@/lib/chat-tools";
-import type { ToolRunResult } from "@/lib/chat-tools";
+import {
+  runTool,
+  tools,
+  REQUIRE_CONFIRMATION,
+  confirmationMessage,
+  registerPendingAction,
+} from "@/lib/chat-tools";
+import type { PendingActionReason, ToolRunResult } from "@/lib/chat-tools";
 import { parseToolText, isFailedStatus, renderToolText, TOOL_HONESTY_RULE } from "@/lib/tool-result";
 import { buildSystemPrompt } from "@/lib/chat-prompts";
 import { serverLog } from "@/lib/logger";
@@ -482,7 +488,13 @@ export async function POST(request: NextRequest) {
         // au lieu d'une carte par outil. Chaque action reste exécutée
         // individuellement via POST /api/chat/confirm-batch quand l'utilisateur
         // valide le lot.
-        const pendingConfirms: { toolCallId: string; name: string; arguments: string }[] = [];
+        const pendingConfirms: {
+          toolCallId: string;
+          name: string;
+          arguments: string;
+          args: Record<string, unknown>;
+          reason: PendingActionReason;
+        }[] = [];
 
         const pushToolResult = (
           tc: { toolCallId: string; name: string },
@@ -509,9 +521,14 @@ export async function POST(request: NextRequest) {
             const args = parseToolArguments(tc.arguments);
             if (REQUIRE_CONFIRMATION.has(tc.name)) {
               // Action à effet externe : bloquée en attente de confirmation.
+              // On l'enregistre côté serveur (nom + arguments parsés) avant de
+              // la proposer : /api/chat/confirm[-batch] refusera toute action
+              // absente du registre, substituée ou rejouée.
+              const reason: PendingActionReason = "policy";
+              registerPendingAction(tc.name, args, reason);
               // On la met de côté pour la proposer en lot à l'utilisateur ;
               // l'exécution réelle passera par POST /api/chat/confirm-batch.
-              pendingConfirms.push(tc);
+              pendingConfirms.push({ ...tc, args, reason });
               continue;
             }
             run = await runTool(tc.name, args);
@@ -528,10 +545,18 @@ export async function POST(request: NextRequest) {
         if (pendingConfirms.length > 0) {
           // Résumé du lot rédigé par le modèle + évènement unique de lot.
           const summary = await summarizeConfirmBatch(modelName, pendingConfirms, describeToolAction, sessionId);
+          // Une seule raison par carte : si une action du lot est liée à du
+          // contenu tiers, la carte l'annonce (la plus prudente l'emporte).
+          const reason: PendingActionReason = pendingConfirms.some(
+            (tc) => tc.reason === "provenance"
+          )
+            ? "provenance"
+            : "policy";
           send({
             type: "group_confirm",
             id: `group-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
             summary,
+            reason,
             tools: pendingConfirms.map((tc) => ({
               toolCallId: tc.toolCallId,
               name: tc.name,

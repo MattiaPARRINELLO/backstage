@@ -37,6 +37,11 @@ session locale (`owner`) sans WebAuthn et redirige vers `/chat`.
 - `AI_PROVIDER=mock` : reponses IA scriptees, aucun appel reseau ;
 - `DEV_AUTH_BYPASS=true` : connexion locale sans passkey.
 
+Seules les cles gerees par le script sont reecrites : une variable ajoutee a la
+main (`GOOGLE_CLIENT_ID`, `CESAR_USERNAME`, `CRON_SECRET`…) et son commentaire
+sont conserves. Relancer `setup` sur une installation existante ne casse donc
+pas les integrations configurees.
+
 Ces deux dernieres variables sont ignorees en production. Si tu as deja un
 `.env.local` de production, ne lance pas `setup:dev` dessus : garde-le et ajoute
 les variables a la main.

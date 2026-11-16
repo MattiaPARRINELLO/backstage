@@ -39,6 +39,9 @@ export async function syncSchedule(): Promise<ScheduleData> {
       const data: ScheduleData = { syncedAt: new Date().toISOString(), ok: true, courses };
       await saveSchedule(data);
       console.log(`[schedule] Sync OK : ${courses.length} seances`);
+      if (!courses.some((c) => c.end > Date.now())) {
+        void serverLog("schedule", "warn", "Sync CESAR sans seance a venir (session ou annee scolaire perimee ?)");
+      }
       return data;
     } catch (err) {
       void serverLog("schedule", "error", "Sync CESAR en echec", err);

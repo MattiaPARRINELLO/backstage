@@ -10,6 +10,7 @@ import {
   CloudSun,
   Camera,
   ListChecks,
+  CircleDot,
 } from "lucide-react";
 import type { Message, ToolCall } from "./types";
 
@@ -40,6 +41,8 @@ export const toolMeta: Record<
   update_photo_shoot: { label: "Shoot photo", icon: Camera },
   list_photo_shoots: { label: "Shoots photo", icon: Camera, unit: "shoots" },
   get_schedule: { label: "Emploi du temps", icon: ListChecks },
+  create_github_issue: { label: "Issue GitHub", icon: CircleDot },
+  list_github_issues: { label: "Issues GitHub", icon: CircleDot, unit: "issues" },
 };
 
 // Repli de l'accueil du chat quand aucun raccourci contextuel ne s'applique.

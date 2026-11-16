@@ -17,6 +17,7 @@ import {
   Inbox,
   ListChecks,
   Lightbulb,
+  CircleDot,
 } from "lucide-react";
 import { CalendarWidget } from "@/components/widgets/CalendarWidget";
 import { GmailWidget } from "@/components/widgets/GmailWidget";
@@ -319,6 +320,8 @@ const TOOL_LABELS: Record<string, { label: string; icon: typeof Sparkles }> = {
   lookup_concerts: { label: "Concerts", icon: Globe },
   triage_emails: { label: "Tri emails", icon: ListChecks },
   fetch_page_meta: { label: "Aperçu lien", icon: Inbox },
+  create_github_issue: { label: "Issue GitHub", icon: CircleDot },
+  list_github_issues: { label: "Issues GitHub", icon: CircleDot },
 };
 
 function ToolResultCard({

@@ -87,6 +87,7 @@ export const SIDE_EFFECT_TOOL_NAMES = new Set<string>([
   "prepare_concert",
   "add_photo_shoot",
   "update_photo_shoot",
+  "create_github_issue",
 ]);
 
 /**

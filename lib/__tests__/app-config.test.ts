@@ -1,13 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { readJsonSafe } from "@/lib/storage";
+import { readJsonSafe } from "@/lib/storage-core";
+
+const { mockMutateJson } = vi.hoisted(() => ({ mockMutateJson: vi.fn() }));
 
 vi.mock("@/lib/storage", () => ({
   readJsonSafe: vi.fn(),
   writeJsonAtomic: vi.fn(),
 }));
 
-const mockMutateJson = vi.fn();
-vi.mock("@/lib/storage-core", () => ({ mutateJson: mockMutateJson }));
+vi.mock("@/lib/storage-core", () => ({
+  readJsonSafe: vi.fn(),
+  writeJsonAtomic: vi.fn(),
+  mutateJson: mockMutateJson,
+}));
 
 const mockPeekAvailableModels = vi.fn<() => string[] | null>();
 const mockWarmModelCatalog = vi.fn();

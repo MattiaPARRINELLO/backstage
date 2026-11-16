@@ -63,6 +63,7 @@ WebAuthn cassent sous Capacitor. Voir `docs/android-apk.md`.
 | Prod              | `bun run start`                               |
 | Lint              | `bun run lint`                                |
 | Refs doc          | `bun run check:docs`                          |
+| Frontières        | `bun run boundaries`                          |
 | Typecheck         | `bunx tsc --noEmit`                           |
 | Tests unitaires   | `bun run test`                                |
 | Tests E2E         | `bun run test:e2e`                            |

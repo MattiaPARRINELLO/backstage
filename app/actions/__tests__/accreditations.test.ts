@@ -21,7 +21,7 @@ const mockAiProviders = {
 vi.mock("@/lib/storage", () => mockStorage);
 vi.mock("@/lib/google-actions", () => mockGoogleActions);
 vi.mock("@/lib/ai-providers", () => mockAiProviders);
-vi.mock("@/lib/config", () => ({
+vi.mock("@/lib/app-config", () => ({
   getModel: vi.fn().mockResolvedValue({ primary: "deepseek-v4-flash", alt: "deepseek-v4-flash" }),
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));

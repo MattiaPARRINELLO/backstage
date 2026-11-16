@@ -43,7 +43,7 @@ vi.mock("@/lib/storage-core", () => ({
   ),
 }));
 
-vi.mock("@/lib/config", () => ({
+vi.mock("@/lib/app-config", () => ({
   getConfig: vi.fn(async () => ({ features: { dailyBrief: true } })),
 }));
 

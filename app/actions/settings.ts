@@ -1,7 +1,7 @@
 "use server";
 
 import { requireSession } from "@/lib/session";
-import { getConfig, updateConfig } from "@/lib/config";
+import { getConfig, updateConfig } from "@/lib/app-config";
 import { getSubscriptions } from "@/lib/push-subscriptions";
 import { fetchAvailableModels } from "@/lib/ai-providers/models";
 import { z } from "zod";

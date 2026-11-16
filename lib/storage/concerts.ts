@@ -1,6 +1,7 @@
 import type { ConcertPrep, ConcertsData } from "../types";
 import { maybeBackup, readOrCreate, writeJsonAtomic } from "../storage-core";
 import { webSearch } from "../web";
+import { getConfig } from "@/lib/config";
 
 export const defaultConcerts: ConcertsData = {
   events: [
@@ -30,7 +31,7 @@ export async function prepareConcert(concertId: string): Promise<ConcertPrep> {
   if (!concert) throw new Error(`Concert ${concertId} introuvable`);
 
   const weather = await (async () => {
-    const apiKey = process.env.OPENWEATHERMAP_API_KEY;
+    const apiKey = getConfig().OPENWEATHERMAP_API_KEY;
     if (!apiKey) return "Météo non disponible";
     try {
       const res = await fetch(
@@ -80,7 +81,7 @@ export async function prepareConcert(concertId: string): Promise<ConcertPrep> {
 }
 
 export async function getWeather(city: string): Promise<string> {
-  const apiKey = process.env.OPENWEATHERMAP_API_KEY;
+  const apiKey = getConfig().OPENWEATHERMAP_API_KEY;
   if (!apiKey) return "Erreur : clé API météo non configurée.";
   try {
     const res = await fetch(

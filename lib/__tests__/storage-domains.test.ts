@@ -6,7 +6,7 @@ import os from "os";
 vi.mock("@/lib/ai-providers", () => ({
   chatCompletion: vi.fn(),
 }));
-vi.mock("@/lib/config", () => ({
+vi.mock("@/lib/app-config", () => ({
   getConfig: vi.fn().mockResolvedValue({
     models: { generalAlt: "deepseek-v4-flash" },
     llm: { temperature: 0, maxTokens: 128 },

@@ -9,9 +9,13 @@
  */
 import type { ScheduleCourse } from "@/lib/types/schedule";
 import { serverLog } from "./logger";
+import { getConfig } from "@/lib/config";
 
-const CESAR_BASE = (process.env.CESAR_BASE || "https://cesar.emineo-education.fr").replace(/\/$/, "");
 const TIMEOUT_MS = 45_000;
+
+function cesarBase(): string {
+  return getConfig().CESAR_BASE.replace(/\/$/, "");
+}
 
 /** Normalise une séance brute CESAR (payload data-tui-calendar-event-lesson-schedules-value). */
 export function normalizeLesson(item: Record<string, unknown>): ScheduleCourse | null {
@@ -76,8 +80,7 @@ function extractCsrf(html: string, formNameRe: RegExp): string {
 }
 
 export async function fetchCesarSchedule(): Promise<ScheduleCourse[]> {
-  const user = process.env.CESAR_USERNAME;
-  const pass = process.env.CESAR_PASSWORD;
+  const { CESAR_USERNAME: user, CESAR_PASSWORD: pass } = getConfig();
   if (!user || !pass) throw new Error("CESAR_USERNAME / CESAR_PASSWORD manquants");
 
   const cookies = new Map<string, string>();
@@ -90,16 +93,16 @@ export async function fetchCesarSchedule(): Promise<ScheduleCourse[]> {
   };
   const cookieHeader = () => [...cookies].map(([k, v]) => `${k}=${v}`).join("; ");
   const postForm = (path: string, body: URLSearchParams, referer?: string) =>
-    fetch(CESAR_BASE + path, {
+    fetch(cesarBase() + path, {
       method: "POST",
       redirect: "manual",
-      headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: cookieHeader(), ...(referer ? { Referer: CESAR_BASE + referer } : {}) },
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: cookieHeader(), ...(referer ? { Referer: cesarBase() + referer } : {}) },
       body,
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
 
   const get = (path: string) =>
-    fetch(CESAR_BASE + path, { headers: { Cookie: cookieHeader() }, redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS) });
+    fetch(cesarBase() + path, { headers: { Cookie: cookieHeader() }, redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS) });
 
   // 1) page de login → token CSRF
   const r1 = await get("/connexion");
@@ -121,11 +124,11 @@ export async function fetchCesarSchedule(): Promise<ScheduleCourse[]> {
   }
 
   // 3) écran CVEC éventuel → bouton "Rappeler plus tard"
-  const home = await fetch(CESAR_BASE + "/", { headers: { Cookie: cookieHeader() }, redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS) });
+  const home = await fetch(cesarBase() + "/", { headers: { Cookie: cookieHeader() }, redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS) });
   track(home);
   const homePath = home.status === 302 ? home.headers.get("location") || "/" : "/";
   if (homePath.includes("/televersement/cvec")) {
-    const rc = await fetch(CESAR_BASE + homePath, { headers: { Cookie: cookieHeader() }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const rc = await fetch(cesarBase() + homePath, { headers: { Cookie: cookieHeader() }, signal: AbortSignal.timeout(TIMEOUT_MS) });
     track(rc);
     const hc = await rc.text();
     const skipName = /<button[^>]*name="(cvec_file\[[^\]]*\]|[^"]*skip[^"]*)"/.exec(hc)?.[1];

@@ -1,3 +1,4 @@
+import { getConfig } from "@/lib/config";
 import type { NextResponse } from "next/server";
 
 // Cookie de nonce OAuth : lie le `state` au navigateur qui a initié le flux.
@@ -19,7 +20,9 @@ export function oauthStateCookieOptions() {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    get secure() {
+    return getConfig().NODE_ENV === "production";
+  },
     path: "/",
     maxAge: OAUTH_STATE_MAX_AGE,
   };

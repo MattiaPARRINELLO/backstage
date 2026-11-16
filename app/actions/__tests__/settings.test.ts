@@ -13,7 +13,7 @@ const mockModels = {
   fetchAvailableModels: vi.fn(),
 };
 
-vi.mock("@/lib/config", () => mockConfig);
+vi.mock("@/lib/app-config", () => mockConfig);
 vi.mock("@/lib/push-subscriptions", () => mockSubs);
 vi.mock("@/lib/ai-providers/models", () => mockModels);
 vi.mock("@/lib/session", () => ({ requireSession: vi.fn().mockResolvedValue({ userId: "test-user" }) }));

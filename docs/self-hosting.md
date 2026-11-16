@@ -91,11 +91,17 @@ Brave search, CESAR timetable, VAPID push, `CRON_SECRET` +
 
 ### Startup configuration check
 
-On every start, the Node runtime calls `checkDevEnv()` (`lib/env-check.ts`) and
-logs a readable warning if the configuration is incomplete:
+On every start, the Node runtime validates the environment once, in
+`lib/config.ts` (the only module allowed to read `process.env`). Two outcomes:
+
+- a **blocking** problem (no `AUTH_SECRET`, invalid `WEBAUTHN_*` outside
+  `DEV_AUTH_BYPASS`) stops the process with an actionable message and exit code
+  1, because authentication itself is impossible;
+- a **partial** problem (missing AI keys, missing `SETUP_TOKEN` in production)
+  logs a warning and the app still starts, so `/login` stays reachable.
 
 ```text
-[env] Configuration incomplete (1 probleme(s)) :
+[config] Configuration incomplete (1 probleme(s)) :
   - IA_API_KEY est absent : renseigner la cle du provider IA dans .env.local, ...
 ```
 

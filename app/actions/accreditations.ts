@@ -190,7 +190,7 @@ export async function generateFollowUpDraft(accreditationId: string): Promise<st
   if (!acc) throw new Error("Accréditation introuvable");
 
   const { chatCompletion } = await import("@/lib/ai-providers");
-  const { getModel } = await import("@/lib/config");
+  const { getModel } = await import("@/lib/app-config");
   const { primary: model } = await getModel("general");
 
   const prompt = `Rédige un email de relance poli et professionnel en français pour une demande d'accréditation photo.

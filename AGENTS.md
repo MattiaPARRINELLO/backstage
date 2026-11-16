@@ -92,6 +92,8 @@ lib/
   storage/          CRUD par domaine
   types/            types par domaine (barrel @/lib/types)
   ai-providers/     openai, anthropic, models, config
+  app-config.ts     réglages applicatifs (data/config.json), lus par getConfig()
+  config.ts         lecteur unique de process.env (schéma Zod, démarrage)
   chat-runs.ts      registre des générations de chat
   cesar-client.ts   CESAR, fetch HTTP pur
 e2e/  scripts/  android/  public/
@@ -210,6 +212,9 @@ Toujours importer depuis `@/lib/types`.
 ## Variables d'environnement
 
 `.env.local` contient des credentials réels : ne jamais l'afficher ni le logger.
+`process.env` ne se lit **que** dans `lib/config.ts` (schéma Zod, une seule
+source de vérité). Ailleurs, importer `getConfig()` : `app-config.ts` porte les
+réglages applicatifs JSON, `config.ts` porte l'environnement.
 Modèle commenté : [`.env.example`](.env.example).
 
 Obligatoires : `NEXT_PUBLIC_API_URL`, `IA_API_KEY`, `AUTH_SECRET`,

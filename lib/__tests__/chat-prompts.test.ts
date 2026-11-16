@@ -15,7 +15,7 @@ vi.mock("@/lib/storage", () => ({
 
 vi.mock("@/lib/chat-tools", () => ({ tools: [] }));
 
-vi.mock("@/lib/config", () => ({
+vi.mock("@/lib/app-config", () => ({
   getConfig: vi.fn(async () => ({ features: { dailyBrief: false } })),
 }));
 

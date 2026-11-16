@@ -1,11 +1,10 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-const API_KEY = process.env.IA_API_KEY;
+import { getConfig } from "@/lib/config";
 
 // Mode de developpement sans cle API : `AI_PROVIDER=mock` remplace tous les
 // appels au provider par des reponses scriptees (lib/ai-providers/mock.ts).
 // Toute autre valeur (ou l'absence de valeur) garde le provider reel.
 export function isMockAiEnabled(): boolean {
-  return process.env.AI_PROVIDER === "mock";
+  return getConfig().AI_PROVIDER === "mock";
 }
 
 // Le provider (OpenCode Go) exige un identifiant de session stable par
@@ -31,6 +30,7 @@ export function getClientConfig(sessionId?: string) {
       },
     };
   }
+  const { NEXT_PUBLIC_API_URL: API_URL, IA_API_KEY: API_KEY } = getConfig();
   if (!API_URL || !API_KEY) {
     throw new Error(
       "Configuration IA incomplete : renseigner NEXT_PUBLIC_API_URL (URL du provider compatible OpenAI) et IA_API_KEY dans .env.local, puis redemarrer le serveur. Pour developper sans cle, utiliser AI_PROVIDER=mock."

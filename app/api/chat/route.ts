@@ -12,7 +12,7 @@ import {
   appendAssistantTurn,
 } from "@/lib/storage";
 import { createRun, publish, subscribe, finishRun } from "@/lib/chat-runs";
-import { getModel, getTitleModel } from "@/lib/config";
+import { getModel, getTitleModel } from "@/lib/app-config";
 import { DEFAULT_SESSION_ID } from "@/lib/ai-providers/config";
 import type { ChatMessage, MemoryCategory } from "@/lib/types";
 import { getSession } from "@/lib/session";

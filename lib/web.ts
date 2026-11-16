@@ -1,8 +1,9 @@
 // Utilitaires web partagés : recherche, récupération de métadonnées de page,
 // extraction de texte et garde-fou anti-SSRF (bloque les URLs privées/réservées).
+import { getConfig } from "@/lib/config";
 
 export async function webSearch(query: string): Promise<string> {
-  const braveKey = process.env.BRAVE_SEARCH_API_KEY;
+  const braveKey = getConfig().BRAVE_SEARCH_API_KEY;
   if (braveKey) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10_000);

@@ -1,3 +1,4 @@
+import { getConfig } from "@/lib/config";
 import { promises as fs } from "fs";
 import path from "path";
 import { writeJsonAtomic, readJsonSafe } from "./storage";
@@ -19,7 +20,7 @@ export const SETUP_CONSUMED_FILE = path.join(process.cwd(), "data", ".setup-cons
  * on refuse plutôt que de compter sur l'administrateur pour lire un warning.
  */
 export function isOpenBootstrapAllowed(): boolean {
-  return process.env.NODE_ENV !== "production";
+  return getConfig().NODE_ENV !== "production";
 }
 
 export async function markSetupConsumed(): Promise<void> {
@@ -96,7 +97,7 @@ export async function getCredentialById(id: string): Promise<PasskeyCredential |
 }
 
 export function getRpID(request: Request): string {
-  const envRpID = process.env.WEBAUTHN_RP_ID;
+  const envRpID = getConfig().WEBAUTHN_RP_ID;
   if (envRpID) return envRpID;
 
   const host = request.headers.get("host") ?? "localhost";
@@ -105,7 +106,7 @@ export function getRpID(request: Request): string {
 }
 
 export function getOrigin(request: Request): string {
-  const envOrigin = process.env.WEBAUTHN_ORIGIN;
+  const envOrigin = getConfig().WEBAUTHN_ORIGIN;
   if (envOrigin) return envOrigin;
 
   const forwardedProto = request.headers.get("x-forwarded-proto");

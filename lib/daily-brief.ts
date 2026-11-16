@@ -1,9 +1,10 @@
 import { getReminders, getConcerts, getLeetcode, getCalendar, getCourses, getCoursesForDay, writeJsonAtomic, readJsonSafe, prepareConcert, formatCourse } from "./storage";
 import { fetchGoogleCalendarEvents, fetchGmailMessages } from "./google-actions";
 import { chatCompletion } from "./ai-providers";
-import { getConfig, getModel } from "./config";
+import { getConfig, getModel } from "./app-config";
 import { toISODate, toHHMM } from "./utils";
 import type { DailyBrief } from "./types";
+import { getConfig as getEnvConfig } from "@/lib/config";
 
 const BRIEF_FILENAME = "daily-briefs.json";
 
@@ -61,7 +62,7 @@ export async function generateDailyBrief(): Promise<string | null> {
 
     // Météo du jour (via OpenWeatherMap)
     let weather = "";
-    const apiKey = process.env.OPENWEATHERMAP_API_KEY;
+    const apiKey = getEnvConfig().OPENWEATHERMAP_API_KEY;
     if (apiKey) {
       try {
         const res = await fetch(

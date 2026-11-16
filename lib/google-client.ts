@@ -4,6 +4,7 @@ import path from "path";
 import { writeJsonAtomic } from "./storage";
 import { invalidateServerCache } from "./server-cache";
 import { serverLog } from "./logger";
+import { getConfig } from "@/lib/config";
 import {
   deriveGoogleHealth,
   type GoogleAccountHealth,
@@ -29,9 +30,7 @@ function tokenPath(type: GoogleAccountType): string {
 }
 
 export function createOAuth2Client() {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  const { GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: clientSecret, GOOGLE_REDIRECT_URI: redirectUri } = getConfig();
 
   if (!clientId || !clientSecret || !redirectUri) {
     throw new Error("GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET et GOOGLE_REDIRECT_URI doivent etre configures");
@@ -180,8 +179,7 @@ export async function exchangeAuthorizationCode(
   code: string,
   redirectUri: string
 ): Promise<GoogleTokens> {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const { GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: clientSecret } = getConfig();
   if (!clientId || !clientSecret) {
     throw new Error("GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET doivent etre configures");
   }
@@ -290,6 +288,6 @@ export async function getGoogleHealth(type: GoogleAccountType): Promise<GoogleAc
     obtainedAtMs: tokens?._obtainedAt ?? null,
     nowMs: Date.now(),
     // Avertissement d'âge actif uniquement en mode Testing Google (limite ~7 j).
-    testingExpiry: process.env.GOOGLE_TESTING_EXPIRY === "true",
+    testingExpiry: getConfig().GOOGLE_TESTING_EXPIRY,
   });
 }

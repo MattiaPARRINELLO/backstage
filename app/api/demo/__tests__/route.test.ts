@@ -98,6 +98,31 @@ describe("POST /api/demo", () => {
     }));
   });
 
+  it("rejette une charge surdimensionnee sans appeler le provider", async () => {
+    // Regression GHSA-mrhx-c7xc-m3w5 : la validation d'une chaine bornee doit
+    // rester proportionnelle a la borne, pas a la taille de l'entree.
+    const request = new NextRequest("http://localhost/api/demo", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-forwarded-for": "203.0.113.9",
+      },
+      body: JSON.stringify({ message: "a".repeat(500_000) }),
+    });
+
+    const startedAt = performance.now();
+    const response = await POST(request);
+    const elapsedMs = performance.now() - startedAt;
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Message trop long" });
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(elapsedMs).toBeLessThan(1_000);
+    expect(mockRecordDemoCall).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: "invalid_input", status: 400 })
+    );
+  });
+
   it("conserve un plafond global de protection du provider", async () => {
     mockCheckRateLimit.mockImplementation((key) => key !== "demo:global");
 

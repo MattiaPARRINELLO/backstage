@@ -10,7 +10,7 @@ const mockCheckRateLimit = vi.fn();
 vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: mockCheckRateLimit }));
 
 const mockGetModel = vi.fn();
-vi.mock("@/lib/config", () => ({ getModel: mockGetModel }));
+vi.mock("@/lib/app-config", () => ({ getModel: mockGetModel }));
 
 const mockStorage = {
   fetchPageMeta: vi.fn(),

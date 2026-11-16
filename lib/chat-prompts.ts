@@ -166,7 +166,7 @@ Preferences : ${prefs}`;
   // Daily Brief contextuel
   let briefBlock = "";
   try {
-    const { getConfig } = await import("./config");
+    const { getConfig } = await import("./app-config");
     const config = await getConfig();
     if (config.features.dailyBrief) {
       const { getTodayBrief } = await import("./daily-brief");

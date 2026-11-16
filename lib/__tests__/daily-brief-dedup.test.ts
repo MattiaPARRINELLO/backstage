@@ -68,7 +68,7 @@ vi.mock("@/lib/send-push", () => ({
   }),
 }));
 
-vi.mock("@/lib/config", () => ({
+vi.mock("@/lib/app-config", () => ({
   getConfig: vi.fn(async () => ({ features: { dailyBrief: true } })),
 }));
 

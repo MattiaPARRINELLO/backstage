@@ -570,7 +570,7 @@ réécrire une liste à la main comme source de vérité :
   `chat-completions` → OpenAI, `responses`, `generate-content`).
   `getModelProtocol()` est **synchrone** (cache seulement) car le routage SDK ne
   peut pas attendre un appel réseau ; cache froid → repli statique.
-- `lib/config.ts` (`getModel`, `getTitleModel`) remplace automatiquement un
+- `lib/app-config.ts` (`getModel`, `getTitleModel`) remplace automatiquement un
   modèle configuré qui n'existe plus par un modèle vivant du catalogue déjà en
   cache, et rafraîchit ce catalogue en arrière-plan sinon.
 - Les constantes `OPENAI_MODELS` / `ANTHROPIC_MODELS` de

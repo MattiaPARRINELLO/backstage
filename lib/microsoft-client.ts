@@ -2,6 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { writeJsonAtomic } from "./storage";
 import { serverLog } from "./logger";
+import { getConfig } from "@/lib/config";
 import type { MicrosoftTodoList, MicrosoftTodoTask } from "./types";
 
 export type { MicrosoftTodoList, MicrosoftTodoTask };
@@ -36,9 +37,7 @@ function tokenPath(): string {
 }
 
 function requiredEnv() {
-  const clientId = process.env.MICROSOFT_CLIENT_ID;
-  const clientSecret = process.env.MICROSOFT_CLIENT_SECRET;
-  const redirectUri = process.env.MICROSOFT_REDIRECT_URI;
+  const { MICROSOFT_CLIENT_ID: clientId, MICROSOFT_CLIENT_SECRET: clientSecret, MICROSOFT_REDIRECT_URI: redirectUri } = getConfig();
 
   if (!clientId || !clientSecret || !redirectUri) {
     throw new Error("MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET et MICROSOFT_REDIRECT_URI doivent etre configures");

@@ -1,10 +1,9 @@
 import webpush from "web-push";
+import { getConfig } from "@/lib/config";
 
 export function getVapidDetails() {
-  const subject = process.env.VAPID_SUBJECT || "mailto:backstage@localhost";
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
-  const privateKey = process.env.VAPID_PRIVATE_KEY || "";
-  return { subject, publicKey, privateKey };
+  const { VAPID_SUBJECT: subject, NEXT_PUBLIC_VAPID_PUBLIC_KEY: publicKey, VAPID_PRIVATE_KEY: privateKey } = getConfig();
+    return { subject, publicKey, privateKey };
 }
 
 export function configureVapid() {

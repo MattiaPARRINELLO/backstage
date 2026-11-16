@@ -1,6 +1,6 @@
 import { getReminders, getCourses, getCoursesStartingSoon, courseNotifKey } from "./storage";
 import { getSubscriptions, type StoredPushSubscription } from "./push-subscriptions";
-import { getConfig } from "./config";
+import { getConfig } from "./app-config";
 import { configureVapid, getVapidDetails, sendPushNotification } from "./send-push";
 import { serverLog } from "./logger";
 import { markdownToText } from "./utils";

@@ -2,6 +2,7 @@
 // fixé par `GITHUB_REPO` : le modèle ne choisit jamais la cible d'une écriture
 // externe, sinon un contenu injecté (email, page web) pourrait la détourner.
 const API_BASE = "https://api.github.com";
+import { getConfig } from "@/lib/config";
 const TIMEOUT_MS = 15_000;
 
 // Libellés acceptés. Le modèle devine parfois des libellés inexistants sur le
@@ -23,8 +24,8 @@ interface GithubConfig {
 }
 
 function readConfig(): GithubConfig {
-  const token = process.env.GITHUB_TOKEN?.trim();
-  const repo = process.env.GITHUB_REPO?.trim();
+  const token = getConfig().GITHUB_TOKEN;
+  const repo = getConfig().GITHUB_REPO;
   if (!token || !repo) {
     throw new Error(
       "GitHub non configure : definis GITHUB_TOKEN et GITHUB_REPO (owner/nom) dans .env.local."
@@ -37,11 +38,11 @@ function readConfig(): GithubConfig {
 }
 
 export function isGithubConfigured(): boolean {
-  return Boolean(process.env.GITHUB_TOKEN?.trim() && process.env.GITHUB_REPO?.trim());
+  return Boolean(getConfig().GITHUB_TOKEN && getConfig().GITHUB_REPO);
 }
 
 export function getGithubRepo(): string | null {
-  const repo = process.env.GITHUB_REPO?.trim();
+  const repo = getConfig().GITHUB_REPO;
   return repo && /^[\w.-]+\/[\w.-]+$/.test(repo) ? repo : null;
 }
 

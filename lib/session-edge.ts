@@ -1,3 +1,4 @@
+import { getConfig } from "@/lib/config";
 const SESSION_COOKIE = "pb_session";
 
 // Doit rester aligné sur TOKEN_PURPOSE de lib/session-core.ts (module séparé
@@ -20,13 +21,14 @@ function secretBytes(secret: string): Uint8Array {
 async function getSigningKey(): Promise<CryptoKey> {
   if (cachedKey) return cachedKey;
 
-  if (!process.env.AUTH_SECRET) {
+  const configured = getConfig().AUTH_SECRET;
+  if (!configured) {
     throw new Error(
       "AUTH_SECRET non configuré. Définissez-le dans .env.local"
     );
   }
 
-  const secret = secretBytes(process.env.AUTH_SECRET);
+  const secret = secretBytes(configured);
   cachedKey = await crypto.subtle.importKey(
     "raw",
     secret as unknown as BufferSource,

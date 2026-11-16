@@ -7,10 +7,13 @@
  * En développement, l'appel local sans secret est autorisé pour ne pas
  * casser le workflow `bun scripts/cron-scheduler.ts`.
  */
+
+import { getConfig } from "@/lib/config";
+
 export function isAuthorizedCron(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
+  const secret = getConfig().CRON_SECRET;
   if (!secret) {
-    return process.env.NODE_ENV !== "production";
+    return getConfig().NODE_ENV !== "production";
   }
 
   const authHeader = request.headers.get("authorization");

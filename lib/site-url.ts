@@ -8,7 +8,5 @@
  * Le repli est le domaine de production actuel, jamais `localhost` : une
  * instance déployée sans `NEXT_PUBLIC_SITE_URL` garde des URL valides.
  */
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://backstage.mprnl.fr").replace(
-  /\/$/,
-  ""
-);
+import { getConfig } from "@/lib/config";
+export const SITE_URL = getConfig().NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");

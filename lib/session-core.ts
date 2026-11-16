@@ -1,3 +1,4 @@
+import { getConfig } from "@/lib/config";
 import { promises as fs } from "fs";
 import path from "path";
 
@@ -32,8 +33,9 @@ function secretBytes(secret: string): Uint8Array {
 }
 
 async function getSecret(): Promise<Uint8Array> {
-  if (process.env.AUTH_SECRET) {
-    return secretBytes(process.env.AUTH_SECRET);
+  const configured = getConfig().AUTH_SECRET;
+  if (configured) {
+    return secretBytes(configured);
   }
 
   try {

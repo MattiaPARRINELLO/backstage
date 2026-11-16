@@ -23,7 +23,7 @@ export async function deleteChatSession(id: string) {
 export async function generateConversationTitle(content: string): Promise<string> {
   await requireSession();
   const { chatCompletion } = await import("@/lib/ai-providers");
-  const { getTitleModel } = await import("@/lib/config");
+  const { getTitleModel } = await import("@/lib/app-config");
   const model = await getTitleModel();
 
   const prompt = `Génère un titre très court (3-6 mots) pour cette conversation. Réponds UNIQUEMENT par le titre, sans guillemets ni préambule.

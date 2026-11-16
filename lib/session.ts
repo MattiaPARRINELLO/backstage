@@ -1,3 +1,4 @@
+import { getConfig } from "@/lib/config";
 import { cookies } from "next/headers";
 import {
   SESSION_COOKIE,
@@ -21,7 +22,9 @@ export {
 
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  get secure() {
+    return getConfig().NODE_ENV === "production";
+  },
   sameSite: "lax" as const,
   path: "/",
 };

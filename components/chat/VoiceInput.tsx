@@ -136,17 +136,21 @@ export function VoiceInput({ onResult, onInterim, onListeningChange, disabled }:
 
   if (!supported) return null;
 
+  const label = listening ? "Arrêter la dictée" : "Dicter un message";
+
   return (
     <button
       type="button"
       onClick={toggleListening}
       disabled={disabled}
+      aria-label={label}
+      aria-pressed={listening}
       className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200 ${
         listening
           ? "bg-[var(--danger)]/20 text-[var(--danger)] animate-pulse"
           : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)]"
       }`}
-      title={listening ? "Arrêter l'écoute" : "Commande vocale"}
+      title={label}
     >
       {listening ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mic className="w-4 h-4" />}
     </button>

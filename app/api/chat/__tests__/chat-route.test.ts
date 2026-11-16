@@ -74,10 +74,10 @@ vi.mock("@/lib/ai-providers", () => ({
 
 const { POST } = await import("@/app/api/chat/route");
 
-function makeRequest(body: unknown): NextRequest {
+function makeRequest(body: unknown, headers: Record<string, string> = {}): NextRequest {
   return new NextRequest("http://localhost/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify(body),
   });
 }
@@ -106,10 +106,37 @@ describe("POST /api/chat", () => {
     expect(res.status).toBe(401);
   });
 
-  it("refuse au-delà du rate limit (429)", async () => {
+  it("refuse au-delà du rate limit (429) avec la cle de session", async () => {
     mockCheckRateLimit.mockReturnValue(false);
     const res = await POST(makeRequest({ messages: [{ role: "user", content: "Salut" }] }));
     expect(res.status).toBe(429);
+    expect(mockCheckRateLimit).toHaveBeenCalledWith("chat:owner");
+  });
+
+  it("partage le meme bucket quels que soient les x-forwarded-for", async () => {
+    mockStream.mockImplementation(() => fakeStream([{ type: "done", content: "ok" }]));
+    const first = await POST(
+      makeRequest(
+        { messages: [{ role: "user", content: "Salut" }] },
+        { "x-forwarded-for": "203.0.113.10" }
+      )
+    );
+    await first.text();
+    const second = await POST(
+      makeRequest(
+        { messages: [{ role: "user", content: "Salut" }] },
+        { "x-forwarded-for": "198.51.100.99" }
+      )
+    );
+    await second.text();
+
+    expect(mockCheckRateLimit).toHaveBeenCalledTimes(2);
+    expect(mockCheckRateLimit).toHaveBeenNthCalledWith(1, "chat:owner");
+    expect(mockCheckRateLimit).toHaveBeenNthCalledWith(2, "chat:owner");
+    // Aucune valeur cliente n'entre dans la clé.
+    for (const call of mockCheckRateLimit.mock.calls) {
+      expect(call[0]).toBe("chat:owner");
+    }
   });
 
   it("refuse un corps invalide (400)", async () => {

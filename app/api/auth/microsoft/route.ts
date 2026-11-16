@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createMicrosoftAuthUrl } from "@/lib/microsoft-client";
 import { requireSession } from "@/lib/session";
+import {
+  OAUTH_STATE_COOKIE,
+  encodeOAuthState,
+  oauthStateCookieOptions,
+} from "@/lib/oauth-state";
 
 export async function GET() {
   try {
@@ -9,6 +14,9 @@ export async function GET() {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  const state = Buffer.from(JSON.stringify({ redirect: "/reminders" })).toString("base64url");
-  return NextResponse.redirect(createMicrosoftAuthUrl(state));
+  const nonce = crypto.randomUUID();
+  const state = encodeOAuthState({ redirect: "/reminders", nonce });
+  const response = NextResponse.redirect(createMicrosoftAuthUrl(state));
+  response.cookies.set(OAUTH_STATE_COOKIE, nonce, oauthStateCookieOptions());
+  return response;
 }

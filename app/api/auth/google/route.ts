@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOAuth2Client, type GoogleAccountType } from "@/lib/google-client";
 import { requireSession } from "@/lib/session";
+import {
+  OAUTH_STATE_COOKIE,
+  encodeOAuthState,
+  oauthStateCookieOptions,
+  resolveAppDestination,
+} from "@/lib/oauth-state";
 
 const SCOPES: Record<GoogleAccountType, string[]> = {
   gmail: [
@@ -27,10 +33,14 @@ export async function GET(request: NextRequest) {
   }
 
   const oauth2Client = createOAuth2Client();
-  // Retour dans l'application après connexion, pas sur la landing marketing.
-  // Un `?redirect=` explicite (jamais utilisé par l'UI actuelle) reste possible.
-  const redirect = request.nextUrl.searchParams.get("redirect") ?? "/chat";
-  const state = Buffer.from(JSON.stringify({ type, redirect })).toString("base64url");
+  // Destination résolue MAINTENANT, contre l'origine de l'application : le
+  // callback ne fera que vérifier qu'elle reste sur cette origine.
+  const redirect = resolveAppDestination(
+    request.nextUrl.searchParams.get("redirect"),
+    request.nextUrl.origin
+  );
+  const nonce = crypto.randomUUID();
+  const state = encodeOAuthState({ type, redirect, nonce });
 
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",
@@ -39,5 +49,9 @@ export async function GET(request: NextRequest) {
     state,
   });
 
-  return NextResponse.redirect(authUrl);
+  // Le nonce part dans un cookie httpOnly : un `state` rejoué depuis un autre
+  // navigateur ne pourra pas fournir le même cookie.
+  const response = NextResponse.redirect(authUrl);
+  response.cookies.set(OAUTH_STATE_COOKIE, nonce, oauthStateCookieOptions());
+  return response;
 }

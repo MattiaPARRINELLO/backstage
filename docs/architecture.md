@@ -78,6 +78,26 @@ Le pont est un **code d'appairage** :
 - Ne pas remplacer ce mécanisme par un `SETUP_TOKEN` réutilisable : cela
   rouvrirait l'enregistrement public d'une nouvelle passkey.
 
+### OAuth : `state` lié au navigateur (`lib/oauth-state.ts`)
+
+Les callbacks Google et Microsoft ne font plus confiance au `state` seul : il
+est du JSON base64url non signé, donc forgeable. Le nonce est émis par le
+serveur à l'initiation et renvoyé dans un cookie `httpOnly` `pb_oauth_state`
+(`sameSite: "lax"`, `secure` en production, `path: "/"`, 10 min).
+
+- Callback : `state` illisible, nonce absent ou différent du cookie →
+  **400 `state OAuth invalide`**, avant tout échange de code. Aucun repli
+  silencieux sur `gmail` ni sur une destination par défaut.
+- Google : le `type` (`gmail` | `calendar`) doit être explicite ; la destination
+  `?redirect=` est résolue **à l'initiation** contre l'origine du serveur, donc
+  `//evil.com`, `/\evil.com` et les URL absolues retombent sur `/chat`. Le
+  callback revérifie `destination.origin === new URL(request.url).origin` et
+  refuse sinon en 400.
+- Microsoft : mêmes contrôles, destination finale `/reminders?todo=linked`.
+- Le cookie de nonce est effacé sur toutes les réponses terminales, succès
+  comme erreur.
+- Pas de PKCE dans ce lot : le modèle d'authentification est inchangé.
+
 ### Routes notables hors `/api/auth`
 
 - `/api/chat/confirm` — **exécute les outils IA à effet externe après

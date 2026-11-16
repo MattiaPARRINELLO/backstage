@@ -158,6 +158,10 @@ Le detail des invariants est dans `docs/architecture.md` (section Chat).
 | Server Action | `app/actions/__tests__/` | idem |
 | E2E Playwright | `e2e/` | `bun run test:e2e` |
 
+Le lancement detaille des tests E2E (Chromium, `AUTH_SECRET`, `e2e/.auth/`,
+un seul fichier ou un seul test) est documente dans
+[`tests-e2e.md`](./tests-e2e.md).
+
 Un test qui touche au systeme de fichiers mocke `process.cwd()` **puis**
 importe dynamiquement le module de stockage (voir
 `lib/__tests__/__fs-mock-helper.ts`).

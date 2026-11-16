@@ -88,6 +88,8 @@ bunx vitest run -t "repond sans cle API"
 Les tests unitaires vivent dans `lib/__tests__/`, `app/actions/__tests__/`,
 `app/calendar/__tests__/` et `app/api/chat/__tests__/`. Les tests E2E sont dans
 `e2e/` et ne doivent provoquer aucune mutation ni appeler un vrai provider IA.
+Installation de Chromium, `AUTH_SECRET`, contenu de `e2e/.auth/` et lancement
+d'un seul test : [`docs/contributing/tests-e2e.md`](./docs/contributing/tests-e2e.md).
 
 ## 4. Branches et commits
 
@@ -179,6 +181,8 @@ contact.mprnl@gmail.com.
 - Carte du code : [docs/contributing/code-map.md](./docs/contributing/code-map.md)
 - Premiere PR en 15 minutes :
   [docs/contributing/premiere-pr.md](./docs/contributing/premiere-pr.md)
+- Lancer les tests E2E :
+  [docs/contributing/tests-e2e.md](./docs/contributing/tests-e2e.md)
 - Architecture detaillee : [docs/architecture.md](./docs/architecture.md)
 - Auto-hebergement : [docs/self-hosting.md](./docs/self-hosting.md)
 - Ouvrir une issue : les modeles dans `.github/ISSUE_TEMPLATE/` demandent le

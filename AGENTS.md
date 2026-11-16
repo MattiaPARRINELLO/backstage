@@ -62,6 +62,7 @@ WebAuthn cassent sous Capacitor. Voir `docs/android-apk.md`.
 | Build             | `bun run build`                               |
 | Prod              | `bun run start`                               |
 | Lint              | `bun run lint`                                |
+| Refs doc          | `bun run check:docs`                          |
 | Typecheck         | `bunx tsc --noEmit`                           |
 | Tests unitaires   | `bun run test`                                |
 | Tests E2E         | `bun run test:e2e`                            |
@@ -245,10 +246,13 @@ périment) : `docs/architecture.md` § *Contrat du provider IA*.
 
 | Fichier                | Contenu                                                  |
 | ---------------------- | -------------------------------------------------------- |
-| `README.md`            | présentation, installation, structure                    |
+| `docs/README.md`       | **point d'entrée unique** : ordre de lecture et trois parcours |
+| `README.md`            | vitrine courte, pointe vers `docs/README.md`             |
 | `AGENTS.md`            | règles agent (ce fichier)                                |
 | `CONTRIBUTING.md`      | installation dev, commandes, conventions, périmètre      |
-| `docs/contributing/`   | carte du code, tutoriel première PR                      |
+| `docs/installation.md` | installation, variables, commandes, structure du dépôt    |
+| `docs/utilisation.md`  | fonctionnalités, écrans, décisions techniques            |
+| `docs/contributing/`   | carte du code, tutoriel première PR, tests E2E           |
 | `docs/architecture.md` | invariants détaillés (chat, mémoire, CESAR, push, OAuth) |
 | `docs/design.md`       | tokens, typographie, composants `.ui-*`, motion          |
 | `docs/product.md`      | objectif, utilisateurs, modules, ton                      |

@@ -92,7 +92,7 @@ Liste commentée : [`.env.example`](../.env.example).
 ```bash
 bun dev              # dev server
 bun run build        # production build
-bun run start        # production server
+bun run start        # production server (standalone + .env.local + assets)
 bun run setup        # génère les secrets locaux (.env.local)
 bun run lint         # eslint (flat config)
 bun run check:docs   # vérifie les références de fichiers de la documentation

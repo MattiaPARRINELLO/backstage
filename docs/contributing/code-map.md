@@ -13,7 +13,9 @@ pieges de build, lire [`AGENTS.md`](../../AGENTS.md).
 app/                pages Next.js (App Router), Server Actions et Route Handlers
 components/         composants React partages
 lib/                logique serveur, stockage, clients externes, types
+  kernel/           registre : vue des modules actives (registry-core pur)
 packages/           contrats distribuables (module-kit)
+modules/            capacites autonomes, activables (reminders en premier)
 scripts/            setup, crons, reset de passkey
 e2e/                tests Playwright
 public/             service worker, manifeste, icones, captures
@@ -158,6 +160,19 @@ fiabilite (`trust`) dans sa definition, et les listes `REQUIRE_CONFIRMATION`,
 dans [le kit de modules](../../packages/module-kit/src/tool.ts) et tranche dans
 [l'ADR 0001](../adr/0001-noyau-modulaire.md). Tant que la phase 6 n'est pas
 livree, la procedure ci-dessus reste la seule qui s'applique.
+
+### Ajouter un module (#84)
+
+1. Ecrire `modules/<id>/` : `module.ts` (le manifeste), `tools.ts`, `store.ts`,
+   `schema.ts`. Un module n'importe jamais un autre module.
+2. Ajouter le module a `modules/index.ts` et l'activer dans
+   `modules.config.json`.
+3. Aucun fichier du noyau ne change : le registre lit les manifestes.
+4. Verifier avec `bun run test` et `bun run boundaries` (imports inter-modules
+   et acces interne depuis `app/` refuses).
+
+Le module pilote `reminders` sert de modele : ses outils declarent leur effet,
+son store pointe encore sur le fichier historique par `legacyPath`.
 
 ## 7. Ajouter un test
 

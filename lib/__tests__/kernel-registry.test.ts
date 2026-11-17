@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-import { createRegistry, RegistryError } from "@/lib/kernel/registry";
+import { createRegistry, RegistryError } from "@/lib/kernel/registry-core";
 import {
   defineModule,
   defineTool,

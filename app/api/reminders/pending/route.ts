@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { getReminders } from "@/lib/storage";
+
 import { getSession } from "@/lib/session";
+import { listPendingReminders } from "@/modules/reminders";
 
 export async function GET() {
   // Route publique (pollée par le service worker) : sans session active, on
@@ -14,12 +15,8 @@ export async function GET() {
     );
   }
 
-  const data = await getReminders();
-  const pending = data.reminders.filter(
-    (r) => r.status === "pending" && new Date(r.dueAt).getTime() <= Date.now() + 60000
-  );
   return NextResponse.json(
-    { reminders: pending },
+    { reminders: await listPendingReminders() },
     { headers: { "sw-cached-at": new Date().toISOString() } }
   );
 }

@@ -13,6 +13,7 @@ pieges de build, lire [`AGENTS.md`](../../AGENTS.md).
 app/                pages Next.js (App Router), Server Actions et Route Handlers
 components/         composants React partages
 lib/                logique serveur, stockage, clients externes, types
+packages/           contrats distribuables (module-kit)
 scripts/            setup, crons, reset de passkey
 e2e/                tests Playwright
 public/             service worker, manifeste, icones, captures
@@ -150,6 +151,13 @@ externe : `lib/storage/reminders.ts`.
 5. Documenter le comportement dans `docs/architecture.md`.
 
 Le detail des invariants est dans `docs/architecture.md` (section Chat).
+
+**Chantier #84 en cours** : un outil declarera son effet (`sideEffect`) et sa
+fiabilite (`trust`) dans sa definition, et les listes `REQUIRE_CONFIRMATION`,
+`WRITE_TOOLS` et `CONFIRMABLE_TOOLS` disparaitront. Le contrat est deja ecrit
+dans [le kit de modules](../../packages/module-kit/src/tool.ts) et tranche dans
+[l'ADR 0001](../adr/0001-noyau-modulaire.md). Tant que la phase 6 n'est pas
+livree, la procedure ci-dessus reste la seule qui s'applique.
 
 ## 7. Ajouter un test
 

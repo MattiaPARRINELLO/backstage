@@ -168,7 +168,10 @@ export async function createReminder(input: {
 ## Data layer
 
 `lib/storage-core.ts` fournit `writeJsonAtomic`, `mutateJson`, `readJsonSafe`,
-`readOrCreate`, `maybeBackup`.
+`readOrCreate`, `maybeBackup`. Depuis #84, le moteur vit dans
+`packages/module-kit/src/storage-core.ts` ; `lib/storage-core.ts` ne fait plus
+que le ré-exporter, pour qu'un module distribué puisse persister sans importer
+l'intérieur du noyau.
 
 ⚠️ `lib/storage.ts` est un barrel **partiel** : il ne ré-exporte de
 `storage-core` que `readJsonSafe` et `writeJsonAtomic`. Pour `mutateJson`,

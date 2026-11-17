@@ -37,4 +37,5 @@ export {
   type ToolOutput,
   type TrustLevel,
 } from "./tool";
+export { verifyWrite } from "./verify-write";
 export { KERNEL_API } from "./version";

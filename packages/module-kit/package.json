@@ -6,7 +6,8 @@
   "description": "Contrat de module du noyau BACKSTAGE (#84).",
   "exports": {
     ".": "./src/index.ts",
-    "./storage-core": "./src/storage-core.ts"
+    "./storage-core": "./src/storage-core.ts",
+    "./json-store": "./src/json-store.ts"
   },
   "peerDependencies": {
     "react": "^19.2.4",

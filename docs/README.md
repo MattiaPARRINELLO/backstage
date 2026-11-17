@@ -87,3 +87,4 @@ Objectif : écrire du code qui respecte les couches existantes.
 | [`android-apk.md`](android-apk.md) | TWA + FCM, build et appairage |
 | [`roadmap-multi-utilisateurs.md`](roadmap-multi-utilisateurs.md) | prospectif, hors périmètre actuel |
 | [journal du chantier modulaire](refactor/decision-log.md) | une entrée par constat mesuré, avec preuve `fichier:ligne` (#84) |
+| [ADR 0001, noyau modulaire](adr/0001-noyau-modulaire.md) | contrat de module, frontière du noyau, confirmation typée (#84) |

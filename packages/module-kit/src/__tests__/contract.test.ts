@@ -12,6 +12,7 @@ import {
   ModuleIncompatibleError,
   qualifiedName,
   requiresConfirmation,
+  toolEmpty,
   toolError,
   toolOk,
 } from "@backstage/module-kit";
@@ -94,6 +95,10 @@ describe("resultats d'outil", () => {
     expect(toolError("Erreur : introuvable")).toEqual({
       status: "error",
       text: "Erreur : introuvable",
+    });
+    expect(toolEmpty("Aucun rappel.")).toEqual({
+      status: "empty",
+      text: "Aucun rappel.",
     });
   });
 });

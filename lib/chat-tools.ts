@@ -452,23 +452,6 @@ const legacyTools: UnifiedTool[] = [  {
     },
   },
   {
-    name: "get_schedule",
-    description:
-      "Emploi du temps de l'utilisateur (cours du format CESAR). scope='today' → les cours du jour ; scope='tomorrow' → ceux du lendemain ; scope='week' → cours des 7 prochains jours ; scope='next' → le prochain cours, avec subject optionnel pour filtrer une matiere. Utilise 'next' pour toute question sur la salle, l'heure ou le lieu du cours en cours ou a venir (ex: 'c'est dans quelle salle mon cours ?', 'je dois aller ou ?'). Retourne matiere, horaires, salle et prof.",
-    parameters: {
-      type: "object",
-      properties: {
-        scope: {
-          type: "string",
-          enum: ["today", "tomorrow", "week", "next"],
-          description: "Periode demandee",
-        },
-        subject: { type: "string", description: "Filtre matiere (optionnel, ex: 'base de donnees')" },
-      },
-      required: ["scope"],
-    },
-  },
-  {
     name: "create_github_issue",
     description:
       "Ouvre une issue sur le depot GitHub du projet Backstage. Utilise-la quand l'utilisateur te demande d'ouvrir/creer une issue, de signaler un bug, ou quand il rapporte un dysfonctionnement de Backstage qu'il veut faire tracer. " +
@@ -927,46 +910,6 @@ export async function executeTool(
       return data.shoots.map((s) =>
         `- ${s.title} (${s.client}) le ${new Date(s.date).toLocaleDateString("fr-FR")} [${s.status}]${s.galleryLink ? ` - ${s.galleryLink}` : ""}${s.photosSent ? ` - ${s.photosSent} photos` : ""}`
       ).join("\n");
-    }
-    case "get_schedule": {
-      const { getCourses, formatCourse, getCoursesForDay, getNextCourse, getUpcomingCourses } = await import("@/lib/storage/schedule");
-      const courses = await getCourses();
-      if (!courses.length) return "Emploi du temps inconnu (aucun sync CESAR effectue).";
-      const scope = String(args.scope ?? "next");
-      const subject = args.subject ? String(args.subject) : undefined;
-      if (scope === "next") {
-        const next = getNextCourse(courses, subject);
-        if (!next) return subject ? `Aucun cours a venir pour "${subject}".` : "Aucun cours a venir.";
-        return `Prochain cours${subject ? ` (${subject})` : ""} :\n${formatCourse(next)}`;
-      }
-      const isoDay = (offset: number) => {
-        const t = new Date();
-        t.setDate(t.getDate() + offset);
-        return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
-      };
-      if (scope === "today" || scope === "tomorrow") {
-        const offset = scope === "tomorrow" ? 1 : 0;
-        const day = getCoursesForDay(courses, isoDay(offset));
-        if (!day.length) {
-          return offset === 1
-            ? "Pas de cours demain."
-            : "Pas de cours aujourd'hui.";
-        }
-        const label = offset === 1
-          ? new Date(Date.now() + 86_400_000).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })
-          : "aujourd'hui";
-        return `Cours ${label} :\n${day.map(formatCourse).join("\n")}`;
-      }
-      // week : cours restants de la semaine en cours
-      const now = new Date();
-      const nowMs = Date.now();
-      const upcoming = getUpcomingCourses(courses, nowMs).filter((c) => {
-        const d = new Date(c.start);
-        const diffDays = Math.floor((new Date(c.start).setHours(0,0,0,0) - new Date(now).setHours(0,0,0,0)) / 86_400_000);
-        return diffDays < 7 && d.getTime() >= nowMs - 86_400_000;
-      });
-      if (!upcoming.length) return "Pas de cours a venir cette semaine.";
-      return `Cours a venir (7 jours) :\n${upcoming.slice(0, 40).map(formatCourse).join("\n")}`;
     }
     case "create_github_issue": {
       if (!isGithubConfigured()) {

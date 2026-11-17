@@ -316,6 +316,7 @@ const TOOL_LABELS: Record<string, { label: string; icon: typeof Sparkles }> = {
   create_calendar_event: { label: "Création événement", icon: CalendarPlus },
   add_memory_fact: { label: "Mémorisation", icon: Brain },
   "reminders.add": { label: "Nouveau rappel", icon: Bell },
+  "schedule.get": { label: "Emploi du temps", icon: CalendarRange },
   "reminders.list": { label: "Rappels", icon: Bell },
   "reminders.update": { label: "Rappel", icon: Bell },
   add_watch_later: { label: "Ajout à la liste", icon: Bookmark },

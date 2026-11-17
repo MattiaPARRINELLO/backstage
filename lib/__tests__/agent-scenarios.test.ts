@@ -57,7 +57,7 @@ const scenarios: AgentScenario[] = [
   },
   {
     intent: "quels cours j'ai jeudi ?",
-    expectedTool: "get_schedule",
+    expectedTool: "schedule.get",
     expectArgs: { scope: "week" },
     forbidTools: ["reminders.add", "send_email_response"],
   },
@@ -205,7 +205,7 @@ describe("registre d'outils", () => {
         "delete_calendar_event",
         "fetch_and_search_emails",
         "fetch_page_meta",
-        "get_schedule",
+        "schedule.get",
         "get_weather",
         "list_github_issues",
         "list_photo_shoots",

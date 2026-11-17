@@ -1,25 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getReminders, addReminder, computeNextRecurrence } from "@/lib/storage";
-import { requireSession } from "@/lib/session";
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireSession(); } catch {
+import { requireSession } from "@/lib/session";
+import { recurReminder } from "@/modules/reminders";
+
+export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    await requireSession();
+  } catch {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
+
   const { id } = await params;
-  const data = await getReminders();
-  const reminder = data.reminders.find((r) => r.id === id);
-  if (!reminder) return NextResponse.json({ error: "Rappel introuvable" }, { status: 404 });
+  const result = await recurReminder(id);
 
-  const nextDue = computeNextRecurrence(reminder.dueAt, reminder.recurrence);
-  if (!nextDue) return NextResponse.json({ ok: false, reason: "Pas de récurrence" });
+  if (!result.ok) {
+    // La règle « pas de récurrence » n'est pas une erreur de transport : le
+    // client affiche le motif. Un identifiant inconnu reste un 404.
+    if (result.reason === "Rappel introuvable") {
+      return NextResponse.json({ error: result.reason }, { status: 404 });
+    }
+    return NextResponse.json({ ok: false, reason: result.reason });
+  }
 
-  await addReminder({
-    title: reminder.title,
-    notes: reminder.notes,
-    dueAt: nextDue,
-    recurrence: reminder.recurrence,
-  });
-
-  return NextResponse.json({ ok: true, nextDue });
+  return NextResponse.json({ ok: true, nextDue: result.nextDue });
 }

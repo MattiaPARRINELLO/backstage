@@ -50,7 +50,7 @@ interface AgentScenario {
 const scenarios: AgentScenario[] = [
   {
     intent: "rappelle-moi d'appeler le CROUS demain a 9h",
-    expectedTool: "add_reminder",
+    expectedTool: "reminders.add",
     expectArgs: { title: "Appeler le CROUS", due_at: "2026-11-17T09:00:00.000Z" },
     forbidTools: ["send_email_response", "delete_calendar_event"],
     writes: true,
@@ -59,13 +59,13 @@ const scenarios: AgentScenario[] = [
     intent: "quels cours j'ai jeudi ?",
     expectedTool: "get_schedule",
     expectArgs: { scope: "week" },
-    forbidTools: ["add_reminder", "send_email_response"],
+    forbidTools: ["reminders.add", "send_email_response"],
   },
   {
     intent: "envoie un mail a la salle pour confirmer l'accreditation",
     expectedTool: "send_email_response",
     expectArgs: { email_id: "18c9f0", response_text: "Bonjour, je confirme ma presence." },
-    forbidTools: ["add_reminder", "web_search"],
+    forbidTools: ["reminders.add", "web_search"],
     writes: true,
     blockedWithoutConfirmation: true,
   },
@@ -94,9 +94,9 @@ const scenarios: AgentScenario[] = [
   },
   {
     intent: "quels sont mes rappels en attente ?",
-    expectedTool: "list_reminders",
+    expectedTool: "reminders.list",
     expectArgs: {},
-    forbidTools: ["add_reminder", "update_reminder", "send_email_response"],
+    forbidTools: ["reminders.add", "reminders.update", "send_email_response"],
   },
   {
     intent: "il fera quel temps a Paris samedi ?",
@@ -198,7 +198,7 @@ describe("registre d'outils", () => {
       [
         "add_memory_fact",
         "add_photo_shoot",
-        "add_reminder",
+        "reminders.add",
         "add_watch_later",
         "create_calendar_event",
         "create_github_issue",
@@ -209,7 +209,7 @@ describe("registre d'outils", () => {
         "get_weather",
         "list_github_issues",
         "list_photo_shoots",
-        "list_reminders",
+        "reminders.list",
         "lookup_concerts",
         "prepare_concert",
         "scan_accreditations",
@@ -219,7 +219,7 @@ describe("registre d'outils", () => {
         "triage_emails",
         "update_calendar_event",
         "update_photo_shoot",
-        "update_reminder",
+        "reminders.update",
         "web_search",
       ].sort()
     );

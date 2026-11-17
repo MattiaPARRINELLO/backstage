@@ -1,13 +1,10 @@
 import type { UnifiedTool } from "@/lib/ai-providers";
 import {
   webSearch,
-  addReminder,
-  updateReminder,
   addWatchLaterItem,
   fetchPageMeta,
   getConcerts,
   getAccreditations,
-  getReminders,
   addAccreditation,
   prepareConcert,
   getWeather,
@@ -47,6 +44,11 @@ import {
   getGithubRepo,
   isGithubConfigured,
 } from "@/lib/github-actions";
+import {
+  moduleTools,
+  resolveModuleTool,
+  runModuleTool,
+} from "@/lib/kernel/tool-bridge";
 
 // Seule l'envoi d'emails exige une confirmation explicite de l'utilisateur
 // via /api/chat/confirm. Le modèle ne peut jamais l'exécuter seul. Les autres
@@ -84,8 +86,6 @@ export const WRITE_TOOLS: ReadonlySet<string> = new Set([
   "create_calendar_event",
   "update_calendar_event",
   "delete_calendar_event",
-  "add_reminder",
-  "update_reminder",
   "schedule_followup",
   "add_watch_later",
   "add_photo_shoot",
@@ -215,7 +215,7 @@ export function confirmationMessage(name: string): string {
   );
 }
 
-export const tools: UnifiedTool[] = [  {
+const legacyTools: UnifiedTool[] = [  {
     name: "web_search",
     description: "Effectue une recherche web pour recuperer des informations d'actualite ou des faits generaux.",
     parameters: {
@@ -340,43 +340,6 @@ export const tools: UnifiedTool[] = [  {
         },
       },
       required: ["content", "category"],
-    },
-  },
-  {
-    name: "add_reminder",
-    description: "Cree un rappel avec une date d'echeance ISO 8601.",
-    parameters: {
-      type: "object",
-      properties: {
-        title: { type: "string", description: "Titre court du rappel" },
-        notes: { type: "string", description: "Details optionnels" },
-        due_at: { type: "string", description: "Date d'echeance ISO 8601" },
-      },
-      required: ["title", "due_at"],
-    },
-  },
-  {
-    name: "list_reminders",
-    description: "Liste tous les rappels existants avec leur ID, titre et date.",
-    parameters: {
-      type: "object",
-      properties: {},
-      required: [],
-    },
-  },
-  {
-    name: "update_reminder",
-    description: "Modifie un rappel existant (titre, notes, date, statut). Necessite l'ID du rappel (utilise list_reminders d'abord pour trouver l'ID).",
-    parameters: {
-      type: "object",
-      properties: {
-        id: { type: "string", description: "ID du rappel a modifier" },
-        title: { type: "string", description: "Nouveau titre (optionnel)" },
-        notes: { type: "string", description: "Nouvelles notes (optionnel)" },
-        due_at: { type: "string", description: "Nouvelle date ISO 8601 (optionnel)" },
-        status: { type: "string", enum: ["pending", "done", "snoozed"], description: "Nouveau statut (optionnel)" },
-      },
-      required: ["id"],
     },
   },
   {
@@ -543,6 +506,46 @@ export const tools: UnifiedTool[] = [  {
 ];
 
 /**
+ * Outils exposés au modèle : les outils historiques du noyau et ceux des
+ * modules activés, sous leur nom qualifié (`reminders.add`). Un module
+ * désactivé n'apparaît pas.
+ */
+export const tools: UnifiedTool[] = [...legacyTools, ...moduleTools()];
+
+/**
+ * Politique d'un outil, quelle que soit son origine.
+ *
+ * Un nom ancien (`add_reminder`) est normalisé avant la recherche : les
+ * historiques de conversation et les cartes déjà enregistrées continuent de
+ * répondre correctement après le renommage.
+ */
+export interface ToolPolicy {
+  readonly requiresConfirmation: boolean;
+  readonly confirmable: boolean;
+  /** Une écriture, donc sensible à la provenance du tour. */
+  readonly write: boolean;
+  readonly untrusted: boolean;
+}
+
+export function toolPolicy(name: string): ToolPolicy {
+  const moduleTool = resolveModuleTool(name);
+  if (moduleTool) {
+    return {
+      requiresConfirmation: moduleTool.requiresConfirmation,
+      confirmable: moduleTool.confirmable,
+      write: moduleTool.definition.sideEffect === "write",
+      untrusted: moduleTool.untrusted,
+    };
+  }
+  return {
+    requiresConfirmation: REQUIRE_CONFIRMATION.has(name),
+    confirmable: CONFIRMABLE_TOOLS.has(name),
+    write: WRITE_TOOLS.has(name),
+    untrusted: UNTRUSTED_TOOLS.has(name),
+  };
+}
+
+/**
  * Vérification par relecture : après une écriture, on relit les données pour
  * confirmer que l'élément est bien là. Sans ça, un échec silencieux du stockage
  * serait renvoyé au modèle comme un succès (« rappel créé ») alors qu'aucun
@@ -588,6 +591,21 @@ export async function runTool(
   args: Record<string, unknown>,
   confirmed = false
 ): Promise<ToolRunResult> {
+  // Outil d'un module : le statut est porté par la donnée, plus déduit du texte.
+  const moduleTool = resolveModuleTool(name);
+  if (moduleTool) {
+    if (moduleTool.requiresConfirmation && !confirmed) {
+      const text = confirmationMessage(name);
+      return { status: "blocked", text, rendered: renderToolText("blocked", text) };
+    }
+    const result = await runModuleTool(moduleTool, args);
+    return {
+      status: result.status,
+      text: result.text,
+      rendered: renderToolText(result.status, result.text),
+    };
+  }
+
   let text: string;
   let status: ToolStatus;
   try {
@@ -611,6 +629,11 @@ export async function executeTool(
   // une action à effet externe n'est jamais exécutée sans confirmation.
   if (REQUIRE_CONFIRMATION.has(name) && !confirmed) {
     return confirmationMessage(name);
+  }
+  const moduleTool = resolveModuleTool(name);
+  if (moduleTool) {
+    if (moduleTool.requiresConfirmation && !confirmed) return confirmationMessage(name);
+    return (await runModuleTool(moduleTool, args)).text;
   }
   switch (name) {
     case "web_search": {
@@ -729,44 +752,6 @@ export async function executeTool(
       });
       if (problem) return problem;
       return `Fait memorise : ${content}`;
-    }
-    case "add_reminder": {
-      const title = String(args.title ?? "");
-      const notes = args.notes ? String(args.notes) : undefined;
-      const dueAt = String(args.due_at ?? "");
-      if (!title || !dueAt) return "Erreur : title et due_at requis.";
-      const r = await addReminder({ title, notes, dueAt });
-      // Relecture : le rappel existe-t-il vraiment dans les données ?
-      const problem = await verifyWrite(`le rappel "${r.title}"`, async () => {
-        const after = await getReminders();
-        return after.reminders.some((x) => x.id === r.id);
-      });
-      if (problem) return problem;
-      return `Rappel cree : "${r.title}" pour le ${new Date(r.dueAt).toLocaleString("fr-FR")}.`;
-    }
-    case "list_reminders": {
-      const data = await getReminders();
-      if (data.reminders.length === 0) return "Aucun rappel pour le moment.";
-      return data.reminders
-        .map((r) => `- [${r.id}] "${r.title}" → ${new Date(r.dueAt).toLocaleString("fr-FR")} (${r.status})`)
-        .join("\n");
-    }
-    case "update_reminder": {
-      const id = String(args.id ?? "");
-      if (!id) return "Erreur : id requis. Utilise list_reminders pour trouver l'ID.";
-      const validStatuses = ["pending", "done", "snoozed"];
-      const updates: Record<string, unknown> = {};
-      if (args.title !== undefined) updates.title = String(args.title);
-      if (args.notes !== undefined) updates.notes = String(args.notes);
-      if (args.due_at !== undefined) updates.dueAt = String(args.due_at);
-      if (args.status !== undefined) {
-        const s = String(args.status);
-        if (!validStatuses.includes(s)) return `Erreur : status invalide (${s}). Valeurs acceptees : ${validStatuses.join(", ")}`;
-        updates.status = s;
-      }
-      const r = await updateReminder(id, updates as Parameters<typeof updateReminder>[1]);
-      if (!r) return "Rappel introuvable.";
-      return `Rappel modifie : "${r.title}" → ${new Date(r.dueAt).toLocaleString("fr-FR")} (${r.status}).`;
     }
     case "schedule_followup": {
       const subject = String(args.subject ?? "");

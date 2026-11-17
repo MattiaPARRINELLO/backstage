@@ -25,12 +25,11 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import {
   runTool,
   tools,
-  REQUIRE_CONFIRMATION,
-  UNTRUSTED_TOOLS,
-  WRITE_TOOLS,
+  toolPolicy,
   confirmationMessage,
   registerPendingAction,
 } from "@/lib/chat-tools";
+import { resolveModuleTool } from "@/lib/kernel/tool-bridge";
 import type { PendingActionReason, ToolRunResult } from "@/lib/chat-tools";
 import { parseToolText, isFailedStatus, renderToolText, TOOL_HONESTY_RULE } from "@/lib/tool-result";
 import { buildSystemPrompt } from "@/lib/chat-prompts";
@@ -98,7 +97,7 @@ function historyHasUntrustedToolResult(messages: ChatMessage[]): boolean {
     if (typeof message.content !== "string") continue;
     if (!message.content.includes("<tool_result")) continue;
     for (const match of message.content.matchAll(TOOL_RESULT_NAME_PATTERN)) {
-      if (UNTRUSTED_TOOLS.has(match[1])) return true;
+      if (toolPolicy(match[1]).untrusted) return true;
     }
   }
   return false;
@@ -108,6 +107,16 @@ function historyHasUntrustedToolResult(messages: ChatMessage[]): boolean {
 // affiché intégralement, confidentialité). Reflet serveur de
 // `describeAction` côté client (ChatView) pour le résumé du lot.
 function describeToolAction(name: string, args: Record<string, unknown>): string {
+  // Un outil de module fournit son propre libelle ; le noyau ne connait plus
+  // ses arguments metier.
+  const moduleTool = resolveModuleTool(name);
+  if (moduleTool) {
+    try {
+      return moduleTool.definition.describeAction?.(args) ?? name;
+    } catch {
+      return name;
+    }
+  }
   switch (name) {
     case "send_email_response":
       return `Répondre à l'email ${String(args.email_id ?? "?")}`;
@@ -544,7 +553,7 @@ export async function POST(request: NextRequest) {
         // lot). La contamination s'accumule sur le tour : une lecture faite à
         // une itération précédente gate aussi les écritures suivantes.
         provenanceTainted = provenanceTainted ||
-          toolCallsToExecute.some((tc) => UNTRUSTED_TOOLS.has(tc.name));
+          toolCallsToExecute.some((tc) => toolPolicy(tc.name).untrusted);
 
         for (const tc of toolCallsToExecute) {
           let run: ToolRunResult;
@@ -553,11 +562,12 @@ export async function POST(request: NextRequest) {
             // devenir un appel silencieux avec `{}` ni une carte de
             // confirmation cassée.
             const args = parseToolArguments(tc.arguments);
-            const requiresConfirmation = REQUIRE_CONFIRMATION.has(tc.name);
+            const policy = toolPolicy(tc.name);
+            const requiresConfirmation = policy.requiresConfirmation;
             // Provenance : une écriture dans un tour contaminé est mise en
             // attente, même si l'outil s'exécute normalement sans confirmation.
             const blockedByProvenance =
-              !requiresConfirmation && provenanceTainted && WRITE_TOOLS.has(tc.name);
+              !requiresConfirmation && provenanceTainted && policy.write;
             if (requiresConfirmation || blockedByProvenance) {
               // Action à effet externe : bloquée en attente de confirmation.
               // On l'enregistre côté serveur (nom + arguments parsés) avant de

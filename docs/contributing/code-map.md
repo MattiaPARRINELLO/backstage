@@ -180,6 +180,11 @@ livree, la procedure ci-dessus reste la seule qui s'applique.
 Le module pilote `reminders` sert de modele : ses outils declarent leur effet,
 son store pointe encore sur le fichier historique par `legacyPath`.
 
+Un outil de module apparait sous `<id>.<nom>` (`reminders.add`) et n'ajoute
+aucun `case` au dispatch du chat : `lib/kernel/tool-bridge.ts` convertit son
+schema Zod et l'execute. Les anciens noms (`add_reminder`) restent lisibles dans
+l'historique par `lib/chat-tool-aliases.ts`.
+
 ## 7. Ajouter un test
 
 | Type | Dossier | Commande |

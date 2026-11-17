@@ -24,10 +24,9 @@ vi.mock("@/lib/chat-prompts", () => ({ buildSystemPrompt: mockBuildSystemPrompt 
 const mockRunTool = vi.fn();
 const mockConfirmationMessage = vi.fn();
 const mockRegisterPendingAction = vi.fn();
-vi.mock("@/lib/chat-tools", () => ({
-  tools: [],
-  REQUIRE_CONFIRMATION: new Set(["send_email_response", "add_memory_fact"]),
-  UNTRUSTED_TOOLS: new Set([
+vi.mock("@/lib/chat-tools", () => {
+  const requireConfirmation = new Set(["send_email_response", "add_memory_fact"]);
+  const untrusted = new Set([
     "web_search",
     "fetch_and_search_emails",
     "fetch_page_meta",
@@ -37,8 +36,8 @@ vi.mock("@/lib/chat-tools", () => ({
     "lookup_concerts",
     "get_weather",
     "prepare_concert",
-  ]),
-  WRITE_TOOLS: new Set([
+  ]);
+  const writes = new Set([
     "send_email_response",
     "create_calendar_event",
     "update_calendar_event",
@@ -52,11 +51,25 @@ vi.mock("@/lib/chat-tools", () => ({
     "scan_accreditations",
     "add_memory_fact",
     "create_github_issue",
-  ]),
-  runTool: mockRunTool,
-  confirmationMessage: mockConfirmationMessage,
-  registerPendingAction: mockRegisterPendingAction,
-}));
+  ]);
+  return {
+    tools: [],
+    REQUIRE_CONFIRMATION: requireConfirmation,
+    UNTRUSTED_TOOLS: untrusted,
+    WRITE_TOOLS: writes,
+    // Le route ne lit plus les ensembles directement : elle interroge la
+    // politique, qui reste ici le miroir des ensembles mockes.
+    toolPolicy: (name: string) => ({
+      requiresConfirmation: requireConfirmation.has(name),
+      confirmable: requireConfirmation.has(name) || writes.has(name),
+      write: writes.has(name),
+      untrusted: untrusted.has(name),
+    }),
+    runTool: mockRunTool,
+    confirmationMessage: mockConfirmationMessage,
+    registerPendingAction: mockRegisterPendingAction,
+  };
+});
 
 const mockPersistExtractedFacts = vi.fn().mockResolvedValue([]);
 // Parsing et liste des faits restent reels : seule l'ecriture est simulee.

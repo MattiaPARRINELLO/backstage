@@ -5,6 +5,7 @@ const mockStorage = {
   addReminder: vi.fn(),
   updateReminder: vi.fn(),
   addWatchLaterItem: vi.fn(),
+  getWatchLater: vi.fn(),
   fetchPageMeta: vi.fn(),
   getConcerts: vi.fn(),
   getAccreditations: vi.fn(),
@@ -173,32 +174,36 @@ describe("chat-tools — verification des ecritures", () => {
     vi.clearAllMocks();
   });
 
-  it("add_reminder confirme l'ecriture par relecture", async () => {
-    mockStorage.addReminder.mockResolvedValue({
-      id: "r1",
-      title: "Envoyer le devis",
-      dueAt: "2026-10-20T10:00:00.000Z",
-      status: "pending",
+  it("add_watch_later confirme l'ecriture par relecture", async () => {
+    mockStorage.addWatchLaterItem.mockResolvedValue({
+      id: "w1",
+      title: "Un article",
+      source: "example.com",
     });
-    mockStorage.getReminders.mockResolvedValue({ reminders: [{ id: "r1" }] });
+    mockStorage.getWatchLater.mockResolvedValue({ items: [{ id: "w1" }] });
 
-    const out = await executeTool("add_reminder", { title: "Envoyer le devis", due_at: "2026-10-20T10:00:00.000Z" });
+    const out = await executeTool("add_watch_later", {
+      url: "https://example.com/article",
+      title: "Un article",
+    });
 
-    expect(out).toContain("Rappel cree");
+    expect(out).toContain("A voir plus tard");
   });
 
-  it("add_reminder signale un echec si la relecture ne retrouve pas le rappel", async () => {
+  it("add_watch_later signale un echec si la relecture ne retrouve pas le lien", async () => {
     // Ecriture silencieusement perdue : sans verification, l'agent annoncerait
-    // « rappel cree » alors qu'aucun rappel n'existe.
-    mockStorage.addReminder.mockResolvedValue({
-      id: "r1",
-      title: "Envoyer le devis",
-      dueAt: "2026-10-20T10:00:00.000Z",
-      status: "pending",
+    // « ajoute » alors que rien n'existe.
+    mockStorage.addWatchLaterItem.mockResolvedValue({
+      id: "w1",
+      title: "Un article",
+      source: "example.com",
     });
-    mockStorage.getReminders.mockResolvedValue({ reminders: [] });
+    mockStorage.getWatchLater.mockResolvedValue({ items: [] });
 
-    const out = await executeTool("add_reminder", { title: "Envoyer le devis", due_at: "2026-10-20T10:00:00.000Z" });
+    const out = await executeTool("add_watch_later", {
+      url: "https://example.com/article",
+      title: "Un article",
+    });
 
     expect(out).toContain("ecriture non confirmee");
     expect(out.startsWith("Erreur")).toBe(true);
@@ -295,24 +300,29 @@ describe("chat-tools — verification des ecritures", () => {
   });
 
   it("runTool renvoie le statut machine du resultat", async () => {
-    mockStorage.addReminder.mockResolvedValue({
-      id: "r1",
-      title: "Rappel",
-      dueAt: "2026-10-20T10:00:00.000Z",
-      status: "pending",
+    mockStorage.addWatchLaterItem.mockResolvedValue({
+      id: "w1",
+      title: "Un article",
+      source: "example.com",
     });
-    mockStorage.getReminders.mockResolvedValue({ reminders: [{ id: "r1" }] });
+    mockStorage.getWatchLater.mockResolvedValue({ items: [{ id: "w1" }] });
 
-    const run = await runTool("add_reminder", { title: "Rappel", due_at: "2026-10-20T10:00:00.000Z" });
+    const run = await runTool("add_watch_later", {
+      url: "https://example.com/article",
+      title: "Un article",
+    });
 
     expect(run.status).toBe("ok");
     expect(run.rendered.startsWith("[OK]")).toBe(true);
   });
 
   it("runTool propage une exception en statut error", async () => {
-    mockStorage.addReminder.mockRejectedValue(new Error("disque plein"));
+    mockStorage.addWatchLaterItem.mockRejectedValue(new Error("disque plein"));
 
-    const run = await runTool("add_reminder", { title: "Rappel", due_at: "2026-10-20T10:00:00.000Z" });
+    const run = await runTool("add_watch_later", {
+      url: "https://example.com/article",
+      title: "Un article",
+    });
 
     expect(run.status).toBe("error");
     expect(run.rendered).toContain("disque plein");
@@ -359,6 +369,28 @@ describe("chat-tools — get_schedule", () => {
 
     expect(mockSchedule.getNextCourse).toHaveBeenCalled();
     expect(out).toContain("Prochain cours");
+  });
+});
+
+describe("chat-tools — politique des outils de module", () => {
+  it("derive la politique d'un outil de module depuis le registre", async () => {
+    const { toolPolicy } = await import("@/lib/chat-tools");
+    const policy = toolPolicy("reminders.add");
+    expect(policy.write).toBe(true);
+    expect(policy.confirmable).toBe(true);
+    expect(policy.untrusted).toBe(false);
+  });
+
+  it("applique la meme politique a l'ancien nom d'outil", async () => {
+    const { toolPolicy } = await import("@/lib/chat-tools");
+    expect(toolPolicy("add_reminder")).toEqual(toolPolicy("reminders.add"));
+  });
+
+  it("une lecture de module n'est ni confirmable ni ecrite", async () => {
+    const { toolPolicy } = await import("@/lib/chat-tools");
+    const policy = toolPolicy("reminders.list");
+    expect(policy.write).toBe(false);
+    expect(policy.confirmable).toBe(false);
   });
 });
 
@@ -522,29 +554,34 @@ describe("chat-tools — classement provenance des outils", () => {
       expect(UNTRUSTED_TOOLS.has(name)).toBe(true);
     }
     // Lecture de donnees locales : fiable.
-    expect(UNTRUSTED_TOOLS.has("list_reminders")).toBe(false);
+    expect(UNTRUSTED_TOOLS.has("reminders.list")).toBe(false);
     expect(UNTRUSTED_TOOLS.has("get_schedule")).toBe(false);
   });
 
-  it("classe toutes les ecritures dans WRITE_TOOLS", () => {
+  it("classe toutes les ecritures, d'ou qu'elles viennent", async () => {
+    const { toolPolicy } = await import("@/lib/chat-tools");
+    // Les trois premiers vivent dans un module ; les suivants dans le noyau.
+    // `toolPolicy` est la seule question a poser, la reponse ne depend plus de
+    // l'origine de l'outil.
     for (const name of [
+      "reminders.add",
+      "reminders.update",
+      "add_memory_fact",
       "create_calendar_event",
       "update_calendar_event",
       "delete_calendar_event",
-      "add_reminder",
-      "update_reminder",
       "schedule_followup",
       "add_watch_later",
       "add_photo_shoot",
       "update_photo_shoot",
       "scan_accreditations",
-      "add_memory_fact",
       "create_github_issue",
       "send_email_response",
     ]) {
-      expect(WRITE_TOOLS.has(name)).toBe(true);
+      expect(toolPolicy(name).write, name).toBe(true);
+      expect(toolPolicy(name).confirmable, name).toBe(true);
     }
     // prepare_concert ne fait que lire (meteo + infos salle).
-    expect(WRITE_TOOLS.has("prepare_concert")).toBe(false);
+    expect(toolPolicy("prepare_concert").write).toBe(false);
   });
 });

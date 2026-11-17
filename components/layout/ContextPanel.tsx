@@ -1,5 +1,6 @@
 "use client";
 
+import { normalizeToolName } from "@/lib/chat-tool-aliases";
 import { useState, useEffect } from "react";
 import {
   Settings2,
@@ -277,7 +278,7 @@ function RunningToolsCard({ tools }: { tools: ContextTool[] }) {
       </div>
       <ul className="divide-y divide-[var(--line)]">
         {tools.map((t) => {
-          const meta = TOOL_LABELS[t.name];
+          const meta = TOOL_LABELS[normalizeToolName(t.name)];
           const Icon = meta?.icon ?? Sparkles;
           return (
             <li
@@ -314,7 +315,9 @@ const TOOL_LABELS: Record<string, { label: string; icon: typeof Sparkles }> = {
   send_email_response: { label: "Envoi email", icon: SendHorizontal },
   create_calendar_event: { label: "Création événement", icon: CalendarPlus },
   add_memory_fact: { label: "Mémorisation", icon: Brain },
-  add_reminder: { label: "Nouveau rappel", icon: Bell },
+  "reminders.add": { label: "Nouveau rappel", icon: Bell },
+  "reminders.list": { label: "Rappels", icon: Bell },
+  "reminders.update": { label: "Rappel", icon: Bell },
   add_watch_later: { label: "Ajout à la liste", icon: Bookmark },
   search_calendar_events: { label: "Recherche agenda", icon: CalendarRange },
   lookup_concerts: { label: "Concerts", icon: Globe },

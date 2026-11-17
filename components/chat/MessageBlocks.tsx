@@ -20,6 +20,7 @@ import { useToast } from "@/components/ui/Toast";
 import type { ActivityStep, Message } from "@/components/chat/types";
 import type { PendingActionReason } from "@/lib/tool-result";
 import { toolMeta, parseQuotedMessage } from "@/components/chat/chat-data";
+import { normalizeToolName } from "@/lib/chat-tool-aliases";
 
 export function AssistantAvatar({ size = "md" }: { size?: "sm" | "md" }) {
   return (
@@ -167,7 +168,7 @@ function summarize(steps: ActivityStep[]): string | null {
       const sentence = text.split(/(?<=[.!?…])\s+/).pop() ?? text;
       return truncate(sentence, 92);
     }
-    const label = toolMeta[step.name]?.label ?? step.name;
+    const label = toolMeta[normalizeToolName(step.name)]?.label ?? step.name;
     return step.status === "running" ? `${label}…` : label;
   }
   return null;
@@ -207,9 +208,9 @@ function argSummary(step: Extract<ActivityStep, { kind: "tool" }>): string | nul
 
 function ActivityToolRow({ step }: { step: Extract<ActivityStep, { kind: "tool" }> }) {
   const [open, setOpen] = useState(false);
-  const Icon = toolMeta[step.name]?.icon ?? Sparkles;
-  const label = toolMeta[step.name]?.label ?? step.name;
-  const unit = toolMeta[step.name]?.unit ?? "résultats";
+  const Icon = toolMeta[normalizeToolName(step.name)]?.icon ?? Sparkles;
+  const label = toolMeta[normalizeToolName(step.name)]?.label ?? step.name;
+  const unit = toolMeta[normalizeToolName(step.name)]?.unit ?? "résultats";
   const unitLabel =
     step.resultCount != null && step.resultCount <= 1 && unit.endsWith("s")
       ? unit.slice(0, -1)
@@ -501,7 +502,7 @@ export function GroupActionCard({
     <div className="ui-tile px-4 py-3.5 text-[length:var(--t-small)] fade-in-up">
       <div className="flex items-center gap-2 text-[var(--text-1)]">
         {tools[0] ? (() => {
-          const meta = toolMeta[tools[0].name];
+          const meta = toolMeta[normalizeToolName(tools[0].name)];
           const Icon = meta?.icon ?? Sparkles;
           return <Icon className="w-3.5 h-3.5 shrink-0 text-[var(--accent)]" />;
         })() : null}

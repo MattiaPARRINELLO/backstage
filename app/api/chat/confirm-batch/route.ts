@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import {
   runTool,
-  CONFIRMABLE_TOOLS,
+  toolPolicy,
   consumePendingAction,
   hasPendingAction,
   pendingActionKey,
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Aucune action à confirmer" }, { status: 400 });
   }
 
-  const invalid = actions.find((a) => !a || typeof a.name !== "string" || !CONFIRMABLE_TOOLS.has(a.name));
+  const invalid = actions.find((a) => !a || typeof a.name !== "string" || !toolPolicy(a.name).confirmable);
   if (invalid) {
     return NextResponse.json({ error: "Action non confirmable" }, { status: 400 });
   }

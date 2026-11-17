@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { runTool, REQUIRE_CONFIRMATION, consumePendingAction } from "@/lib/chat-tools";
+import { runTool, CONFIRMABLE_TOOLS, consumePendingAction } from "@/lib/chat-tools";
 import { isFailedStatus } from "@/lib/tool-result";
 import { logActivity } from "@/lib/storage";
 
@@ -27,9 +27,11 @@ export async function POST(request: Request) {
       ? (body.arguments as Record<string, unknown>)
       : {};
 
-  // Seuls les outils marqués sont exécutables via cette route : elle ne doit
-  // jamais devenir une porte d'exécution arbitraire des outils.
-  if (!REQUIRE_CONFIRMATION.has(name)) {
+  // Seuls les outils réellement proposables à la confirmation sont
+  // exécutables via cette route : elle ne doit jamais devenir une porte
+  // d'exécution arbitraire des outils. Le registre ci-dessous reste
+  // l'autorisation finale (action réellement proposée, usage unique).
+  if (!CONFIRMABLE_TOOLS.has(name)) {
     return NextResponse.json({ error: "Action non confirmable" }, { status: 400 });
   }
 

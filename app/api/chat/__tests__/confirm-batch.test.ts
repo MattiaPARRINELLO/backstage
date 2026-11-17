@@ -108,6 +108,31 @@ describe("POST /api/chat/confirm-batch", () => {
     expect(mockLogActivity).toHaveBeenCalledTimes(2);
   });
 
+  it("exécute un lot d'écritures mises en attente pour cause de provenance", async () => {
+    // Issue #124 : ces outils ne demandent pas de confirmation permanente mais
+    // ont été bloqués dans un tour contaminé. La confirmation doit les lancer.
+    const reminder = { title: "Relancer", dueAt: "2026-11-27" };
+    const issue = { title: "Bug", body: "Corps" };
+    registerPendingAction("add_reminder", reminder, "provenance");
+    registerPendingAction("create_github_issue", issue, "provenance");
+    const res = await POST(
+      makeRequest({
+        actions: [
+          { name: "add_reminder", arguments: reminder },
+          { name: "create_github_issue", arguments: issue },
+        ],
+      })
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.results.map((r: { name: string }) => r.name)).toEqual([
+      "add_reminder",
+      "create_github_issue",
+    ]);
+    expect(mockRunTool).toHaveBeenCalledWith("add_reminder", reminder, true);
+    expect(mockRunTool).toHaveBeenCalledWith("create_github_issue", issue, true);
+  });
+
   it("refuse de rejouer un lot déjà exécuté", async () => {
     registerPendingAction("send_email_response", FIRST);
     registerPendingAction("send_email_response", SECOND);

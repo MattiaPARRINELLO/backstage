@@ -104,9 +104,11 @@ serveur à l'initiation et renvoyé dans un cookie `httpOnly` `pb_oauth_state`
 
 - `/api/chat/confirm` — **exécute les outils IA à effet externe après
   confirmation utilisateur** (bouton Confirmer/Annuler dans le chat). Session
-  requise ; seuls les outils listés dans `REQUIRE_CONFIRMATION`
-  (`lib/chat-tools.ts`) sont exécutables ; journalise dans `activity.json`
-  (`ai_action`). Le modèle ne peut jamais s'auto-confirmer.
+  requise ; seuls les outils de `CONFIRMABLE_TOOLS` (`REQUIRE_CONFIRMATION` +
+  `WRITE_TOOLS`, `lib/chat-tools.ts`) sont exécutables, et uniquement s'ils ont
+  été enregistrés par le serveur dans le registre d'actions en attente (usage
+  unique, arguments figés). Journalise dans `activity.json` (`ai_action`). Le
+  modèle ne peut jamais s'auto-confirmer.
 - `/api/chat/stream` — `GET ?sessionId=` se **réattache** à une génération en
   cours : instantané (`snapshot`) puis suite du flux en direct. `204` si aucune
   génération active. Utilisé au retour sur une conversation.
@@ -258,6 +260,10 @@ d'une exécution d'outil : `ok` / `error` / `empty` / `blocked`.
   `[OK]`.
 - `/api/chat/confirm-batch` dérive `ok` du **statut**, plus du texte : un
   résultat « Rappel introuvable. » sans exception est affiché comme un échec.
+  Il accepte tout `CONFIRMABLE_TOOLS` (et non les seuls outils de
+  `REQUIRE_CONFIRMATION`) : sans cela, une écriture bloquée pour cause de
+  provenance répondait « Action non confirmable » et restait impossible à
+  valider (#124).
 - Après une confirmation, le client reporte le résultat sur l'appel d'outil
   concerné (`status: "success"`), puis transmet au tour suivant un bloc
   `actionContext` limité aux **outils à effet de bord** (`SIDE_EFFECT_TOOL_NAMES`

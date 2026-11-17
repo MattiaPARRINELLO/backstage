@@ -53,6 +53,31 @@ describe("POST /api/chat/confirm", () => {
     expect(mockRunTool).not.toHaveBeenCalled();
   });
 
+  it("exécute une écriture mise en attente pour cause de provenance", async () => {
+    // Cas de l'issue #124 : `add_reminder` n'exige pas de confirmation
+    // permanente, mais un tour contaminé le met en attente. Le confirmer doit
+    // l'exécuter, pas répondre « action non confirmable ».
+    registerPendingAction("add_reminder", { title: "Relancer", dueAt: "2026-11-27" }, "provenance");
+    const res = await POST(
+      makeRequest({ name: "add_reminder", arguments: { title: "Relancer", dueAt: "2026-11-27" } })
+    );
+    expect(res.status).toBe(200);
+    expect(mockRunTool).toHaveBeenCalledWith(
+      "add_reminder",
+      { title: "Relancer", dueAt: "2026-11-27" },
+      true
+    );
+  });
+
+  it("refuse une écriture jamais proposée par le serveur", async () => {
+    const res = await POST(
+      makeRequest({ name: "create_github_issue", arguments: { title: "x" } })
+    );
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "Action non confirmee par le serveur" });
+    expect(mockRunTool).not.toHaveBeenCalled();
+  });
+
   it("refuse une action jamais proposée par le serveur", async () => {
     const res = await POST(makeRequest({ name: "send_email_response", arguments: EMAIL_ARGS }));
     expect(res.status).toBe(400);

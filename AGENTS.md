@@ -167,6 +167,13 @@ export async function createReminder(input: {
   `/api/memory/remember`, `/api/gallery`…) pour les clients non-React. Toute
   modification d'un côté doit être répercutée de l'autre.
 
+⚠️ **Module migré (#84)** : la logique vit dans `modules/<id>/actions.ts`, et
+`app/actions/*.ts` ne garde qu'une coquille qui appelle `kernelAction`. Le noyau
+porte la session, la validation Zod, le journal d'activité et la revalidation
+déclarée par l'action (`revalidate: ["/reminders"]`) ; un module ne doit plus
+importer `requireSession` ni `revalidatePath`. `app/actions/reminders.ts` est le
+modèle.
+
 ---
 
 ## Data layer

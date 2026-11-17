@@ -1,13 +1,20 @@
 import { defineModule } from "@backstage/module-kit";
 
+import {
+  createReminderAction,
+  loadRemindersAction,
+  markReminderStatusAction,
+  removeReminderAction,
+  updateReminderAction,
+} from "./actions";
 import { addReminderTool, listRemindersTool, updateReminderTool } from "./tools";
 
 /**
  * Module Rappels.
  *
- * Phase 3 de #84 : strangler. Le module existe, ses outils sont enregistrés,
- * mais l'application continue d'utiliser `app/actions/reminders.ts` et
- * `lib/storage/reminders.ts`. La bascule est la phase 4.
+ * Le module porte ses outils et ses actions. `app/actions/reminders.ts` n'est
+ * plus qu'un transport vers `kernelAction` ; le stockage reste dans le noyau
+ * jusqu'à la phase 6, qui supprimera les fichiers historiques.
  */
 export default defineModule({
   id: "reminders",
@@ -24,6 +31,13 @@ export default defineModule({
     filesystem: "module-data",
   },
   tools: [addReminderTool, listRemindersTool, updateReminderTool],
+  actions: {
+    load: loadRemindersAction,
+    create: createReminderAction,
+    update: updateReminderAction,
+    remove: removeReminderAction,
+    markStatus: markReminderStatusAction,
+  },
   events: {
     emits: ["reminder.created", "reminder.updated"],
     listens: [],

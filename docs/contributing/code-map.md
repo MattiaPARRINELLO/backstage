@@ -52,6 +52,12 @@ Exemples a imiter : `app/today/page.tsx` (agregat serveur),
 
 ## 3. Ajouter une Server Action
 
+> Depuis #84, un domaine migré en module porte sa logique dans
+> `modules/<id>/actions.ts` ; la Server Action de `app/actions/` se réduit à
+> `kernelAction("module.action", input)`. Voir `app/actions/reminders.ts` pour le
+> modèle.
+
+
 Les Server Actions vivent dans `app/actions/<domaine>.ts` avec la directive
 `"use server"` en tete de fichier.
 

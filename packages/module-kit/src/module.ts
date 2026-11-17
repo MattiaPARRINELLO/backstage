@@ -66,6 +66,8 @@ export interface ActionDefinition<
 > {
   readonly name: string;
   readonly input: Schema;
+  /** Chemins à rafraîchir après succès, exécutés par le noyau. */
+  readonly revalidate?: readonly string[];
   readonly run: (input: z.infer<Schema>, ctx: ModuleContext) => Promise<Output>;
 }
 

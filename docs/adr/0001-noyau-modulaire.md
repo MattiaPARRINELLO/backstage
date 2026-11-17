@@ -1,6 +1,6 @@
 # ADR 0001 — Noyau modulaire
 
-- **Statut** : proposé, en attente de validation humaine
+- **Statut** : accepté le 2026-11-17, validation humaine des cinq points de la section 5
 - **Date** : 2026-11-17
 - **Issue** : #84, phases 0 à 9
 
@@ -278,13 +278,12 @@ Ils appartiennent à une phase ultérieure, pas à cet ADR :
 
 ## 5. Validation
 
-Cet ADR est validé quand un humain a répondu à ces cinq points :
+Validé par Mattia le 2026-11-17, sur les cinq points :
 
-- [ ] A. La racine de composition unique (*lib/kernel/registry.ts*) est-elle la bonne exception à la règle « le noyau n'importe pas les modules » ?
-- [ ] D. `external` implique-t-il la confirmation par défaut, sans possibilité de la retirer implicitement ?
-- [ ] E. La coquille d'une ligne par Server Action est-elle acceptée comme coût de l'authentification déclarative ?
-- [ ] F. Le budget de prompt (1 500 caractères au total) est-il réaliste pour l'usage actuel ?
-- [ ] J. La mémoire reste-t-elle au noyau en v1, avec réexamen après deux modules migrés ?
+- [x] A. La racine de composition unique (*lib/kernel/registry.ts*) est la bonne exception à la règle « le noyau n'importe pas les modules ».
+- [x] D. `external` implique la confirmation par défaut ; seul un module peut la retirer explicitement, jamais le noyau.
+- [x] E. La coquille d'une ligne par Server Action est acceptée comme coût de l'authentification déclarative.
+- [x] F. Le budget de prompt (1 500 caractères au total, 400 par bloc) est retenu, à ajuster sur l'usage réel.
+- [x] J. La mémoire reste au noyau en v1, avec réexamen après deux modules migrés.
 
-Tant que ces cases ne sont pas cochées, la phase 2 n'écrit aucune ligne de
-noyau. Les phases 3 et 4 en dépendent directement.
+La phase 2 peut écrire du noyau. Les phases 3 et 4 en dépendent directement.

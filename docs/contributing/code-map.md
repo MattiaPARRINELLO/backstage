@@ -143,7 +143,9 @@ externe : `lib/storage/reminders.ts`.
 1. Declarer l'outil dans `lib/chat-tools.ts`.
 2. Toute ecriture passe par `runTool` et se verifie par relecture.
 3. Un outil a effet externe (mail, calendrier, suppression) s'ajoute a
-   `REQUIRE_CONFIRMATION`.
+   `REQUIRE_CONFIRMATION` ; toute ecriture s'ajoute a `WRITE_TOOLS`. Les deux
+   ensembles composent `CONFIRMABLE_TOOLS`, la seule liste que
+   `/api/chat/confirm[-batch]` accepte de rejouer.
 4. Ajouter le statut `ok` / `error` / `empty` / `blocked` et un test.
 5. Documenter le comportement dans `docs/architecture.md`.
 

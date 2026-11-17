@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import {
   runTool,
-  REQUIRE_CONFIRMATION,
+  CONFIRMABLE_TOOLS,
   consumePendingAction,
   hasPendingAction,
   pendingActionKey,
@@ -14,7 +14,8 @@ import { logActivity } from "@/lib/storage";
 // effet externe : envoi d'email, calendrier, notification, scan d'emails).
 // Une seule carte de confirmation est affichée pour le lot ; ce endpoint
 // exécute chaque action après le clic « Confirmer tout ». Chaque nom doit
-// être dans REQUIRE_CONFIRMATION : jamais de porte d'exécution arbitraire.
+// figurer parmi les outils confirmables : jamais de porte d'exécution
+// arbitraire.
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session) {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Aucune action à confirmer" }, { status: 400 });
   }
 
-  const invalid = actions.find((a) => !a || typeof a.name !== "string" || !REQUIRE_CONFIRMATION.has(a.name));
+  const invalid = actions.find((a) => !a || typeof a.name !== "string" || !CONFIRMABLE_TOOLS.has(a.name));
   if (invalid) {
     return NextResponse.json({ error: "Action non confirmable" }, { status: 400 });
   }

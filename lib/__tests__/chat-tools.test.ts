@@ -87,6 +87,20 @@ describe("chat-tools — confirmation des actions IA", () => {
     expect(REQUIRE_CONFIRMATION.has("list_reminders")).toBe(false);
   });
 
+  it("déclare confirmable exactement ce que le chat peut mettre en attente", async () => {
+    const { CONFIRMABLE_TOOLS } = await import("@/lib/chat-tools");
+    for (const name of REQUIRE_CONFIRMATION) {
+      expect(CONFIRMABLE_TOOLS.has(name)).toBe(true);
+    }
+    for (const name of WRITE_TOOLS) {
+      expect(CONFIRMABLE_TOOLS.has(name)).toBe(true);
+    }
+    // Les lectures ne deviennent jamais confirmables : pas de porte
+    // d'exécution arbitraire via /api/chat/confirm[-batch].
+    expect(CONFIRMABLE_TOOLS.has("web_search")).toBe(false);
+    expect(CONFIRMABLE_TOOLS.has("list_reminders")).toBe(false);
+  });
+
   it("bloque l'envoi d'email sans confirmation et n'exécute pas l'action", async () => {
     mockGoogleActions.sendGmailReply.mockResolvedValue("msg-1");
     const result = await executeTool("send_email_response", {

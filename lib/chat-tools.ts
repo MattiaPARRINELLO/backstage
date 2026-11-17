@@ -95,6 +95,17 @@ export const WRITE_TOOLS: ReadonlySet<string> = new Set([
   "create_github_issue",
 ]);
 
+// Outils qu'une confirmation utilisateur peut réellement débloquer : ceux qui
+// exigent une confirmation permanente (`REQUIRE_CONFIRMATION`) et ceux qu'une
+// écriture en tour contaminé met en attente (`WRITE_TOOLS`). C'est exactement
+// le pendant de ce que `/api/chat` enregistre dans le registre des actions en
+// attente ; toute autre valeur est refusée avant le moindre effet de bord.
+// Le registre reste la vraie autorisation (usage unique, arguments figés).
+export const CONFIRMABLE_TOOLS: ReadonlySet<string> = new Set([
+  ...REQUIRE_CONFIRMATION,
+  ...WRITE_TOOLS,
+]);
+
 // Raison pour laquelle une action est mise en attente de confirmation.
 // `policy` : l'outil exige une confirmation permanente (envoi d'email).
 // `provenance` : le tour a lu du contenu tiers, l'ecriture doit être validée.

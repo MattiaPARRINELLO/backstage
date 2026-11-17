@@ -5,4 +5,11 @@
  * module reste déplaçable et distribuable, son intérieur n'est pas une API.
  */
 export { default } from "./module";
-export { recurReminder, type RecurResult } from "./service";
+export {
+  completeReminder,
+  listPendingReminders,
+  pendingReminders,
+  recurReminder,
+  snoozeReminder,
+  type RecurResult,
+} from "./service";

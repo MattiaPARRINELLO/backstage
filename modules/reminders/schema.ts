@@ -18,7 +18,13 @@ export const reminderSchema = z.looseObject({
   dueAt: z.string().min(1),
   status: reminderStatusSchema,
   createdAt: z.string(),
-  notifiedAt: z.string().nullish(),
+  // Les anciennes donnees peuvent porter `null` : le type de sortie reste
+  // `string | undefined`, celui que l'interface attend.
+  notifiedAt: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined)
+    .optional(),
   recurrence: reminderRecurrenceSchema.optional(),
   microsoftTaskId: z.string().optional(),
   microsoftListId: z.string().optional(),

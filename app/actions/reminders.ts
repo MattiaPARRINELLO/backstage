@@ -1,54 +1,19 @@
 "use server";
 
-import { requireSession } from "@/lib/session";
-
-import { revalidatePath } from "next/cache";
-import { z } from "zod";
-import {
-  addReminder,
-  deleteReminder,
-  getReminders,
-  updateReminder,
-  logActivity,
-} from "@/lib/storage";
+import { kernelAction } from "@/lib/kernel/actions";
 import type { Reminder, RemindersData } from "@/lib/types";
-import { dismissReminderCard } from "@/lib/notification-scheduler";
-import {
-  pushNewReminderToMicrosoft,
-  pushReminderUpdateToMicrosoft,
-  pushReminderDeleteToMicrosoft,
-  reconcileRemindersWithMicrosoft,
-} from "@/lib/reminder-sync";
 
-const recurrenceSchema = z.enum(["daily", "weekly", "monthly"]);
-
-const createReminderSchema = z.object({
-  title: z.string().trim().min(1, "Titre requis"),
-  notes: z.string().trim().optional(),
-  dueAt: z.string().min(1, "Date d'echeance requise").refine(
-    (v) => !Number.isNaN(new Date(v).getTime()),
-    "Date d'echeance invalide"
-  ),
-  recurrence: recurrenceSchema.optional(),
-});
-
-const reminderStatusSchema = z.enum(["pending", "done", "snoozed"]);
-
-const updateReminderSchema = z
-  .object({
-    title: z.string().trim().min(1).optional(),
-    notes: z.string().trim().optional(),
-    dueAt: z.string().min(1).optional(),
-    status: reminderStatusSchema.optional(),
-    recurrence: recurrenceSchema.optional(),
-  })
-  .strict();
+/**
+ * Transport des actions de rappels.
+ *
+ * Chaque export est une Server Action d'une ligne : Next exige des fonctions
+ * `async` exportées statiquement. La session, la validation, la journalisation
+ * et la revalidation sont portées par `kernelAction`, la logique métier par le
+ * module. Ce fichier ne connaît plus ni Zod, ni `requireSession`.
+ */
 
 export async function loadReminders(): Promise<RemindersData> {
-  await requireSession();
-  // Applique les changements faits côté Microsoft To Do (sync bidirectionnelle).
-  await reconcileRemindersWithMicrosoft();
-  return getReminders();
+  return kernelAction<RemindersData>("reminders.load", {});
 }
 
 export async function createReminder(input: {
@@ -57,68 +22,26 @@ export async function createReminder(input: {
   dueAt: string;
   recurrence?: Reminder["recurrence"];
 }): Promise<Reminder> {
-  await requireSession();
-  const parsed = createReminderSchema.safeParse(input);
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Payload invalide");
-  }
-  const reminder = await addReminder(parsed.data);
-  await logActivity("reminder_created", `Rappel créé : ${reminder.title}`, reminder.dueAt);
-  revalidatePath("/reminders");
-  // Crée la tâche équivalente dans Microsoft To Do (→ Samsung Reminder) et la lie.
-  return pushNewReminderToMicrosoft(reminder);
+  return kernelAction<Reminder>("reminders.create", input);
 }
 
 export async function editReminder(
   id: string,
   updates: Partial<Pick<Reminder, "title" | "notes" | "dueAt" | "status" | "recurrence">>
 ): Promise<Reminder | null> {
-  await requireSession();
   if (!id || typeof id !== "string") throw new Error("Identifiant requis");
-  const parsed = updateReminderSchema.safeParse(updates);
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Payload invalide");
-  }
-  const r = await updateReminder(id, parsed.data);
-  if (r) {
-    await logActivity("reminder_updated", `Rappel modifié : ${r.title}`, r.status);
-    // Propage la modification vers Microsoft To Do (titre, date, notes, statut).
-    await pushReminderUpdateToMicrosoft(r);
-  }
-  revalidatePath("/reminders");
-  return r;
+  return kernelAction<Reminder | null>("reminders.update", { id, ...updates });
 }
 
 export async function removeReminder(id: string): Promise<boolean> {
-  await requireSession();
   if (!id || typeof id !== "string") throw new Error("Identifiant requis");
-  // Supprime d'abord côté MS (si lié), puis localement.
-  const data = await getReminders();
-  const target = data.reminders.find((r) => r.id === id);
-  if (target) await pushReminderDeleteToMicrosoft(target);
-  const ok = await deleteReminder(id);
-  if (ok) {
-    await logActivity("reminder_deleted", "Rappel supprimé", id);
-    // La carte de notification n'a plus de raison d'être.
-    await dismissReminderCard(id);
-  }
-  revalidatePath("/reminders");
-  return ok;
+  return kernelAction<boolean>("reminders.remove", { id });
 }
 
 export async function markReminderStatus(
   id: string,
   status: Reminder["status"]
 ): Promise<Reminder | null> {
-  await requireSession();
   if (!id || typeof id !== "string") throw new Error("Identifiant requis");
-  const parsedStatus = reminderStatusSchema.safeParse(status);
-  if (!parsedStatus.success) throw new Error("Statut invalide");
-  const r = await updateReminder(id, { status: parsedStatus.data });
-  if (r) await pushReminderUpdateToMicrosoft(r);
-  // Fait / reporté : la carte disparaît (elle sera repostée si le rappel revient
-  // en attente plus tard).
-  if (r && parsedStatus.data !== "pending") await dismissReminderCard(id);
-  revalidatePath("/reminders");
-  return r;
+  return kernelAction<Reminder | null>("reminders.mark_status", { id, status });
 }

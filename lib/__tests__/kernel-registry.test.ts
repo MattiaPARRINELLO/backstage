@@ -3,10 +3,19 @@ import { z } from "zod";
 
 import { createRegistry, RegistryError } from "@/lib/kernel/registry-core";
 import {
+  defineAction,
   defineModule,
   defineTool,
   type ModuleDefinition,
 } from "@backstage/module-kit";
+
+function action(name: string) {
+  return defineAction({
+    name,
+    input: z.object({}),
+    run: async () => "ok",
+  });
+}
 
 function tool(name: string, sideEffect: "read" | "write" | "external", trust?: "untrusted") {
   return defineTool({
@@ -149,6 +158,36 @@ describe("createRegistry", () => {
   it("requireTool leve en listant les outils disponibles", () => {
     const registry = createRegistry([module("a", { tools: [tool("add", "write")] })]);
     expect(() => registry.requireTool("a.unknown")).toThrow(/a\.add/);
+  });
+
+  it("indexe les actions par nom qualifie", () => {
+    const registry = createRegistry([
+      module("reminders", { actions: { create: action("create"), load: action("load") } }),
+    ]);
+    expect(registry.actions.map((entry) => entry.name)).toEqual([
+      "reminders.create",
+      "reminders.load",
+    ]);
+    expect(registry.requireAction("reminders.create").moduleId).toBe("reminders");
+  });
+
+  it("refuse des actions de meme nom complet", () => {
+    expect(() =>
+      createRegistry([
+        module("reminders", {
+          actions: { a: action("create"), b: action("create") },
+        }),
+      ])
+    ).toThrow(/meme nom complet/);
+  });
+
+  it("n'expose pas les actions d'un module desactive", () => {
+    const registry = createRegistry(
+      [module("reminders", { actions: { load: action("load") } }), module("schedule")],
+      { enabled: ["schedule"] }
+    );
+    expect(registry.actions).toEqual([]);
+    expect(() => registry.requireAction("reminders.load")).toThrow(/inconnue/);
   });
 
   it("expose les jobs et les entrees de navigation des modules actives", () => {

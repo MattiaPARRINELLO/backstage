@@ -6,6 +6,7 @@ import {
   KERNEL_API,
   qualifiedName,
   requiresConfirmation,
+  type ActionDefinition,
   type AnyToolDefinition,
   type ModuleDefinition,
   type ModuleJob,
@@ -43,6 +44,13 @@ export interface RegisteredJob {
   readonly job: ModuleJob;
 }
 
+export interface RegisteredAction {
+  /** `reminders.create` : nom complet dans le registre. */
+  readonly name: string;
+  readonly moduleId: string;
+  readonly definition: ActionDefinition;
+}
+
 export interface RegisteredRailItem {
   readonly moduleId: string;
   readonly label: string;
@@ -56,6 +64,8 @@ export interface KernelRegistry {
   readonly enabled: readonly ModuleDefinition[];
   /** Outils des modules activés, triés par module puis par nom. */
   readonly tools: readonly RegisteredTool[];
+  /** Actions des modules activés, triées par nom complet. */
+  readonly actions: readonly RegisteredAction[];
   readonly prompts: readonly RegisteredPrompt[];
   readonly jobs: readonly RegisteredJob[];
   readonly railItems: readonly RegisteredRailItem[];
@@ -64,6 +74,9 @@ export interface KernelRegistry {
   tool(name: string): RegisteredTool | undefined;
   /** Comme `tool`, mais lève si l'outil n'existe pas ou n'est pas activé. */
   requireTool(name: string): RegisteredTool;
+  action(name: string): RegisteredAction | undefined;
+  /** Comme `action`, mais lève si l'action n'existe pas ou n'est pas activée. */
+  requireAction(name: string): RegisteredAction;
 }
 
 export interface RegistryOptions {
@@ -208,6 +221,22 @@ export function createRegistry(
     (definition.jobs ?? []).map((job) => ({ moduleId: definition.id, job }))
   );
 
+  const actions = enabled
+    .flatMap((definition) =>
+      Object.values(definition.actions ?? {}).map((action) => ({
+        // `action.name` fait foi : la cle de l'objet n'est qu'un rangement.
+        name: qualifiedName(definition.id, action.name),
+        moduleId: definition.id,
+        definition: action,
+      }))
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  if (new Set(actions.map((action) => action.name)).size !== actions.length) {
+    throw new RegistryError("Deux actions de module portent le meme nom complet.");
+  }
+  const actionIndex = new Map(actions.map((action) => [action.name, action]));
+
   const railItems = enabled.flatMap((definition) =>
     definition.ui?.rail
       ? [
@@ -228,6 +257,7 @@ export function createRegistry(
     jobs,
     railItems,
     module: (id) => byName.get(id),
+    actions,
     tool: (name) => toolIndex.get(name),
     requireTool: (name) => {
       const tool = toolIndex.get(name);
@@ -239,6 +269,18 @@ export function createRegistry(
         );
       }
       return tool;
+    },
+    action: (name) => actionIndex.get(name),
+    requireAction: (name) => {
+      const action = actionIndex.get(name);
+      if (!action) {
+        throw new RegistryError(
+          `Action "${name}" inconnue ou module desactive. Actions disponibles : ${
+            [...actionIndex.keys()].join(", ") || "aucune"
+          }.`
+        );
+      }
+      return action;
     },
   };
 }

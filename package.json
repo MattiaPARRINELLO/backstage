@@ -16,7 +16,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "bun scripts/start.ts",
     "lint": "eslint",
     "check:docs": "bun scripts/check-docs.ts",
     "boundaries": "depcruise app components lib packages proxy.ts instrumentation.ts",

@@ -63,6 +63,14 @@ module.exports = {
       from: { path: "^app/" },
       to: { path: "^modules/[^/]+/(?!index\\.ts$)" },
     },
+    {
+      name: "kit-sans-noyau",
+      comment:
+        "Le kit de modules est le contrat, pas une extension du noyau : s'il importe lib/ ou app/, un module installe ailleurs ne peut plus le resoudre et le contrat se met a dependre de l'application entiere (#84).",
+      severity: "error",
+      from: { path: "^packages/module-kit/" },
+      to: { path: "^(lib|app|components)/" },
+    },
   ],
   options: {
     doNotFollow: { path: "node_modules" },

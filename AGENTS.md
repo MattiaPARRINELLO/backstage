@@ -97,6 +97,8 @@ lib/
   config.ts         lecteur unique de process.env (schéma Zod, démarrage)
   chat-runs.ts      registre des générations de chat
   cesar-client.ts   CESAR, fetch HTTP pur
+packages/
+  module-kit/       contrat de module : defineModule, defineTool, defineAction (#84)
 e2e/  scripts/  android/  public/
 docs/               architecture.md, self-hosting, deploy-cpanel, android-apk
 ```

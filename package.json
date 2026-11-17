@@ -10,13 +10,16 @@
     "node": ">=20.9.0"
   },
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "check:docs": "bun scripts/check-docs.ts",
-    "boundaries": "depcruise app components lib proxy.ts instrumentation.ts",
+    "boundaries": "depcruise app components lib packages proxy.ts instrumentation.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

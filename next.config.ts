@@ -4,6 +4,10 @@ import withBundleAnalyzer from "@next/bundle-analyzer";
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: process.cwd(),
+  // Le contrat de module vit dans un workspace local, consommé en source
+  // TypeScript : sans cette liste, Next laisse le paquet tel quel et le JSX ou
+  // les types d'un module ne sont pas compilés (#84, ADR 0001).
+  transpilePackages: ["@backstage/module-kit"],
   // Fichiers lus au runtime par `fs` : sans inclusion explicite, le build
   // standalone les omet (invisible pour l'analyse statique des imports).
   //

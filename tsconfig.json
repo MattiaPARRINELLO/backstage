@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@backstage/module-kit": ["./packages/module-kit/src/index.ts"]
     }
   },
   "include": [

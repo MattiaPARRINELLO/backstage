@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { defineTool, toolError, toolOk, verifyWrite } from "@backstage/module-kit";
+import { defineTool, toolEmpty, toolError, toolOk, verifyWrite } from "@backstage/module-kit";
 import { newId } from "@backstage/module-kit/storage-core";
 
 import { reminderRecurrenceSchema, reminderStatusSchema, type Reminder } from "./schema";
@@ -76,7 +76,7 @@ export const listRemindersTool = defineTool({
       ? data.reminders.filter((reminder) => reminder.status === args.status)
       : data.reminders;
     if (reminders.length === 0) {
-      return toolOk("Aucun rappel pour le moment.");
+      return toolEmpty("Aucun rappel pour le moment.");
     }
     return toolOk(
       reminders

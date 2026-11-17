@@ -16,7 +16,7 @@ import type { RegisteredTool } from "./registry-core";
  * module n'édite donc aucun fichier du noyau.
  */
 export interface ModuleToolRun {
-  readonly status: "ok" | "error";
+  readonly status: "ok" | "error" | "empty";
   readonly text: string;
 }
 

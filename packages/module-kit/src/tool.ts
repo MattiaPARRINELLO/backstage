@@ -26,8 +26,10 @@ export type TrustLevel = "trusted" | "untrusted";
  * à partir de la formulation du texte : un outil qui échoue ne peut plus être
  * présenté au modèle comme un succès.
  */
+export type ToolStatus = "ok" | "error" | "empty";
+
 export interface ToolOutput {
-  readonly status: "ok" | "error";
+  readonly status: ToolStatus;
   readonly text: string;
 }
 
@@ -37,6 +39,15 @@ export function toolOk(text: string): ToolOutput {
 
 export function toolError(text: string): ToolOutput {
   return { status: "error", text };
+}
+
+/**
+ * Résultat nominal mais vide : la source répond, il n'y a simplement rien.
+ * Ce n'est pas un échec, mais ce n'est pas un succès exploitable : la règle
+ * d'honnêteté interdit de le combler par une invention.
+ */
+export function toolEmpty(text: string): ToolOutput {
+  return { status: "empty", text };
 }
 
 export type ToolContext = ModuleContext;

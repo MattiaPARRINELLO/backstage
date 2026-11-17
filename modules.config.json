@@ -1,6 +1,7 @@
 {
   "kernelApi": 1,
   "modules": {
-    "reminders": { "enabled": true }
+    "reminders": { "enabled": true },
+    "schedule": { "enabled": true }
   }
 }

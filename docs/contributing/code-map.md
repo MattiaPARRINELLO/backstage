@@ -177,7 +177,7 @@ livree, la procedure ci-dessus reste la seule qui s'applique.
 4. Verifier avec `bun run test` et `bun run boundaries` (imports inter-modules
    et acces interne depuis `app/` refuses).
 
-Le module pilote `reminders` sert de modele : ses outils declarent leur effet,
+Les modules `reminders` et `schedule` servent de modeles : ses outils declarent leur effet,
 son store pointe encore sur le fichier historique par `legacyPath`.
 
 Un outil de module apparait sous `<id>.<nom>` (`reminders.add`) et n'ajoute

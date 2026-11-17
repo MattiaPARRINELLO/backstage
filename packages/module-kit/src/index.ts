@@ -27,6 +27,7 @@ export {
   isUntrusted,
   qualifiedName,
   requiresConfirmation,
+  toolEmpty,
   toolError,
   toolOk,
   type AnyToolDefinition,

@@ -101,7 +101,8 @@ packages/
   module-kit/       contrat de module : defineModule, defineTool, defineAction (#84)
 modules/
   index.ts          racine de composition : la seule liste de modules du dépôt
-  reminders/        module pilote (#84), outils, store, schéma
+  reminders/        module pilote (#84), outils, actions, store, schéma
+  schedule/         emploi du temps CESAR en lecture
 modules.config.json quels modules sont activés (committé)
 e2e/  scripts/  android/  public/
 docs/               architecture.md, self-hosting, deploy-cpanel, android-apk

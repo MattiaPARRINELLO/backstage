@@ -29,6 +29,7 @@ export const toolMeta: Record<
   triage_emails: { label: "Tri emails", icon: Mail, unit: "mails" },
   add_memory_fact: { label: "Mémoire", icon: Brain, unit: "faits" },
   "reminders.add": { label: "Rappel", icon: Bell },
+  "schedule.get": { label: "Emploi du temps", icon: CalendarPlus },
   "reminders.list": { label: "Rappels", icon: Bell, unit: "rappels" },
   "reminders.update": { label: "Rappel", icon: Bell },
   schedule_followup: { label: "Relance", icon: Bell },

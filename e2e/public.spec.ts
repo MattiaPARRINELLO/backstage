@@ -18,7 +18,7 @@ test.describe("Pages publiques", () => {
 });
 
 test.describe("Deny-by-default : redirections et 401 sans session", () => {
-  for (const path of ["/reminders", "/chat", "/today", "/gmail", "/brain", "/watch-later"]) {
+  for (const path of ["/reminders", "/chat", "/today", "/gmail", "/brain", "/m/watch-later"]) {
     test(`${path} redirige vers /login`, async ({ page }) => {
       await page.goto(path);
       await expect(page).toHaveURL(/\/login/);

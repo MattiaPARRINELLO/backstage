@@ -1,10 +1,13 @@
 "use client";
 
 import { Trash2, GripVertical, ExternalLink } from "lucide-react";
+import { formatRelative } from "@backstage/module-kit";
 import type { WatchLaterItem } from "@/lib/types";
-import { cn } from "@/lib/utils";
-import { formatRelative } from "@/lib/date";
 import { categoryMeta } from "./meta";
+
+function cx(...classes: Array<string | false | null | undefined>): string {
+  return classes.filter(Boolean).join(" ");
+}
 
 function hostOf(url: string): string {
   try {
@@ -43,7 +46,7 @@ export function ItemCard({
       onDragOver={onDragOver}
       onDrop={onDrop}
       onDragEnd={onDragEnd}
-      className={cn(
+      className={cx(
         "group flex cursor-grab items-start gap-3 border-b border-[var(--line)] px-1 py-3 transition-colors active:cursor-grabbing",
         isDragging && "opacity-40",
         isDragOver && "bg-[var(--surface-2)]"

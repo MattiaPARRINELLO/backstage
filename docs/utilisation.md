@@ -50,7 +50,7 @@ Toutes ces pages sont privées (passkey) sauf la landing et la connexion.
 | `/focus` | Un minuteur de séance, avec les rappels mis en pause pendant le travail |
 | `/photos` | Kanban des shootings photo et vue « Livraison » (galerie par état) |
 | `/brain` | La mémoire de l'IA : faits éditables, catégories, filtres et graphe de relations |
-| `/watch-later` | Liens, articles et vidéos à garder, avec aperçu et réorganisation |
+| `/m/watch-later` | Liens, articles et vidéos à garder, avec aperçu et réorganisation (`/watch-later` redirige) |
 | `/calendar` | Agenda Google en grille mensuelle, création et édition d'événements |
 | `/reminders` | Rappels groupés par échéance, récurrence et synchronisation Microsoft To Do |
 | `/gmail` | Boîte de réception résumée, lecture et envoi de mails |

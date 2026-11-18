@@ -29,6 +29,8 @@ export function describeToolAction(name: string, args: Record<string, unknown>):
       return `Supprimer l'événement ${String(args.event_id ?? "?")}`;
     case "schedule_followup":
       return `Programmer une relance « ${String(args.subject ?? "")} » pour le ${String(args.due_at ?? "?")}`;
+    case "followups.schedule":
+      return `Programmer une relance « ${String(args.subject ?? "")} » pour le ${String(args.due_at ?? "?")}`;
     case "scan_accreditations":
       return "Analyser les emails pour créer ou mettre à jour les fiches d'accréditations";
     default:

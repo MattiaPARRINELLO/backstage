@@ -23,6 +23,7 @@ export const LEGACY_TOOL_NAMES: Readonly<Record<string, string>> = {
   list_github_issues: "github.list_issues",
   web_search: "web.search",
   fetch_page_meta: "web.page_meta",
+  schedule_followup: "followups.schedule",
 };
 
 /** Nom courant d'un outil, à partir d'un nom ancien ou déjà qualifié. */

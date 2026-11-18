@@ -575,7 +575,6 @@ describe("chat-tools — classement provenance des outils", () => {
       "create_calendar_event",
       "update_calendar_event",
       "delete_calendar_event",
-      "schedule_followup",
       "add_watch_later",
       "add_photo_shoot",
       "update_photo_shoot",
@@ -590,6 +589,9 @@ describe("chat-tools — classement provenance des outils", () => {
     expect(toolPolicy("github.create_issue").write).toBe(false);
     expect(toolPolicy("github.create_issue").confirmable).toBe(true);
     expect(toolPolicy("github.create_issue").requiresConfirmation).toBe(false);
+    // Une relance est une ecriture de module : confirmable par provenance.
+    expect(toolPolicy("followups.schedule").write).toBe(true);
+    expect(toolPolicy("schedule_followup").write).toBe(true);
     // prepare_concert ne fait que lire (meteo + infos salle).
     expect(toolPolicy("prepare_concert").write).toBe(false);
   });

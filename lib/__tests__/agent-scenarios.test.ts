@@ -213,7 +213,7 @@ describe("registre d'outils", () => {
         "lookup_concerts",
         "prepare_concert",
         "scan_accreditations",
-        "schedule_followup",
+        "followups.schedule",
         "search_calendar_events",
         "send_email_response",
         "triage_emails",

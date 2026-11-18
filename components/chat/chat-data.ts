@@ -33,6 +33,7 @@ export const toolMeta: Record<
   "reminders.list": { label: "Rappels", icon: Bell, unit: "rappels" },
   "reminders.update": { label: "Rappel", icon: Bell },
   schedule_followup: { label: "Relance", icon: Bell },
+  "followups.schedule": { label: "Relance", icon: Bell },
   add_watch_later: { label: "À voir plus tard", icon: Bookmark },
   fetch_page_meta: { label: "Aperçu lien", icon: Globe },
   scan_accreditations: { label: "Accréditations", icon: Mail },

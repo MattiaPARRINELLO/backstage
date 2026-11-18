@@ -39,7 +39,6 @@ export const WRITE_TOOLS: ReadonlySet<string> = new Set([
   "create_calendar_event",
   "update_calendar_event",
   "delete_calendar_event",
-  "schedule_followup",
   "add_photo_shoot",
   "update_photo_shoot",
   "scan_accreditations",

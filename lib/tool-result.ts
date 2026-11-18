@@ -113,6 +113,7 @@ export const SIDE_EFFECT_TOOL_NAMES = new Set<string>([
   "update_reminder",
   "reminders.update",
   "schedule_followup",
+  "followups.schedule",
   "add_watch_later",
   "watch-later.add",
   "scan_accreditations",

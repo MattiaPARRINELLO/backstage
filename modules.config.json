@@ -1,6 +1,7 @@
 {
   "kernelApi": 1,
   "modules": {
+    "followups": { "enabled": true },
     "github": { "enabled": true },
     "reminders": { "enabled": true },
     "schedule": { "enabled": true },

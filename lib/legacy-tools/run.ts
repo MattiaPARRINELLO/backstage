@@ -7,8 +7,6 @@ import {
   getPhotoShoots,
   addPhotoShoot,
   updatePhotoShoot,
-  addIntention,
-  getIntentions,
   getMemory,
   addMemoryFact,
   findSimilarMemoryFacts,
@@ -150,23 +148,6 @@ export async function executeLegacyTool(
       });
       if (problem) return problem;
       return `Fait memorise : ${content}`;
-    }
-    case "schedule_followup": {
-      const subject = String(args.subject ?? "");
-      const dueAt = String(args.due_at ?? "");
-      const message = args.message ? String(args.message) : undefined;
-      if (!subject || !dueAt) return "Erreur : subject et due_at requis.";
-      if (Number.isNaN(new Date(dueAt).getTime())) {
-        return "Erreur : due_at doit etre une date ISO 8601 valide.";
-      }
-      const it = await addIntention({ subject, message, dueAt });
-      // Relecture : la relance est-elle bien enregistrée ?
-      const problem = await verifyWrite(`la relance "${it.subject}"`, async () => {
-        const after = await getIntentions();
-        return after.intentions.some((x) => x.id === it.id);
-      });
-      if (problem) return problem;
-      return `Relance programmee : « ${it.subject} » pour le ${new Date(it.dueAt).toLocaleString("fr-FR")}. Tu recevras une notification a ce moment-la.`;
     }
     case "scan_accreditations": {
       try {

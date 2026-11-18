@@ -286,7 +286,7 @@ d'une exécution d'outil : `ok` / `error` / `empty` / `blocked`.
   « Erreur », « introuvable », « inconnu », « ACTION_BLOCKED »…) et renvoie
   `{ status, text, rendered }`. Le texte envoyé au modèle est préfixé
   `[OK]` / `[ERREUR]` / `[VIDE]` / `[BLOQUE]`.
-- Les écritures locales (rappel, relance, watch-later, mémoire, shooting) sont
+- Les écritures locales (rappel, relance via `followups.schedule`, watch-later, mémoire, shooting) sont
   **vérifiées par relecture** (`verifyWrite`) : si l'élément n'est pas
   retrouvé après enregistrement, l'outil renvoie une erreur. C'est ce qui
   empêche l'agent d'annoncer « rappel créé » alors que rien n'a été écrit.

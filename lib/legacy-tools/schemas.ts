@@ -125,20 +125,6 @@ export const legacyTools: UnifiedTool[] = [
     },
   },
   {
-    name: "schedule_followup",
-    description:
-      "Programme une relance future : l'application t'enverra une notification push a la date indiquee pour revenir sur un sujet. Utilise quand l'utilisateur dit 'relance-moi', 'rappelle-moi de faire X', 'reviens vers moi sur Y'.",
-    parameters: {
-      type: "object",
-      properties: {
-        subject: { type: "string", description: "Sujet court de la relance (ex: 'le dossier UX')" },
-        due_at: { type: "string", description: "Moment de la relance en ISO 8601 (ex: '2026-08-08T18:00:00' pour vendredi 18h)" },
-        message: { type: "string", description: "Message de relance affiche dans la notification (optionnel)" },
-      },
-      required: ["subject", "due_at"],
-    },
-  },
-  {
     name: "scan_accreditations",
     description: "Analyse les emails Gmail pour trouver des demandes d'accreditation (mots-cles: accreditation, photo pass, press). Extrait artiste, lieu, date, statut et cree/met a jour les fiches dans accreditations.json.",
     parameters: {

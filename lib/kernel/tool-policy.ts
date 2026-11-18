@@ -26,9 +26,6 @@ export const UNTRUSTED_TOOLS: ReadonlySet<string> = new Set([
   "fetch_and_search_emails",
   "triage_emails",
   "search_calendar_events",
-  "lookup_concerts",
-  // prepare_concert renvoie le resultat d'un web_search (infos salle).
-  "prepare_concert",
 ]);
 
 // Outils qui modifient des donnees (locales, calendrier, email, GitHub,

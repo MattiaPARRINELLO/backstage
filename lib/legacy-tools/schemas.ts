@@ -84,15 +84,6 @@ export const legacyTools: UnifiedTool[] = [
     },
   },
   {
-    name: "lookup_concerts",
-    description: "Consulte la liste des concerts en cours (shootes, en selection, en montage, livres).",
-    parameters: {
-      type: "object",
-      properties: {},
-      required: [],
-    },
-  },
-  {
     name: "triage_emails",
     description: "Analyse les emails non lus et les classe par priorite (urgent, newsletter, billetterie, personnel).",
     parameters: {
@@ -131,17 +122,6 @@ export const legacyTools: UnifiedTool[] = [
       type: "object",
       properties: {},
       required: [],
-    },
-  },
-  {
-    name: "prepare_concert",
-    description: "Prepare un concert : recupere la meteo, les infos de la salle, et genere une checklist photo personnalisee.",
-    parameters: {
-      type: "object",
-      properties: {
-        concertId: { type: "string", description: "ID du concert" },
-      },
-      required: ["concertId"],
     },
   },
   {

@@ -544,8 +544,6 @@ describe("chat-tools — classement provenance des outils", () => {
       "fetch_and_search_emails",
       "triage_emails",
       "search_calendar_events",
-      "lookup_concerts",
-      "prepare_concert",
     ]) {
       expect(UNTRUSTED_TOOLS.has(name)).toBe(true);
     }
@@ -558,6 +556,8 @@ describe("chat-tools — classement provenance des outils", () => {
     expect(toolPolicy("web.search").untrusted).toBe(true);
     expect(toolPolicy("web.page_meta").untrusted).toBe(true);
     expect(toolPolicy("web_search").untrusted).toBe(true);
+    expect(toolPolicy("concerts.list").untrusted).toBe(true);
+    expect(toolPolicy("concerts.prepare").untrusted).toBe(true);
     // Lecture de donnees locales : fiable.
     expect(UNTRUSTED_TOOLS.has("reminders.list")).toBe(false);
     expect(UNTRUSTED_TOOLS.has("get_schedule")).toBe(false);
@@ -592,7 +592,7 @@ describe("chat-tools — classement provenance des outils", () => {
     // Une relance est une ecriture de module : confirmable par provenance.
     expect(toolPolicy("followups.schedule").write).toBe(true);
     expect(toolPolicy("schedule_followup").write).toBe(true);
-    // prepare_concert ne fait que lire (meteo + infos salle).
-    expect(toolPolicy("prepare_concert").write).toBe(false);
+    // prepare ne fait que lire (meteo + infos salle).
+    expect(toolPolicy("concerts.prepare").write).toBe(false);
   });
 });

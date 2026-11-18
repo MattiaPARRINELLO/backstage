@@ -1,9 +1,7 @@
 import { verifyWrite } from "@backstage/module-kit";
 import {
-  getConcerts,
   getAccreditations,
   addAccreditation,
-  prepareConcert,
   getPhotoShoots,
   addPhotoShoot,
   updatePhotoShoot,
@@ -95,16 +93,6 @@ export async function executeLegacyTool(
         .map(
           (e) =>
             `- ${e.summary} le ${new Date(e.start).toLocaleDateString("fr-FR")}${e.location ? ` (${e.location})` : ""}`
-        )
-        .join("\n");
-    }
-    case "lookup_concerts": {
-      const data = await getConcerts();
-      if (data.events.length === 0) return "Aucun concert enregistre.";
-      return data.events
-        .map(
-          (c) =>
-            `- ${c.artist} @ ${c.venue} le ${new Date(c.date).toLocaleDateString("fr-FR")} [${c.status}]`
         )
         .join("\n");
     }
@@ -216,23 +204,6 @@ export async function executeLegacyTool(
         return `Scan termine : ${created} nouvelle(s) accreditation(s) creee(s), ${updated} mise(s) a jour.`;
       } catch (err) {
         return `Erreur lors du scan des accreditations : ${err instanceof Error ? err.message : String(err)}`;
-      }
-    }
-    case "prepare_concert": {
-      const concertId = String(args.concertId ?? "");
-      if (!concertId) return "Erreur : ID du concert requis.";
-      try {
-        const prep = await prepareConcert(concertId);
-        return [
-          `**Météo :** ${prep.weather}`,
-          `**Infos salle :** ${prep.venueInfo}`,
-          `**Checklist sac photo :**`,
-          ...prep.checklist.map((c) => `- ${c}`),
-          `**Conseils trajet :**`,
-          ...prep.travelTips.map((t) => `- ${t}`),
-        ].join("\n");
-      } catch (err) {
-        return `Erreur : ${err instanceof Error ? err.message : String(err)}`;
       }
     }
     case "add_photo_shoot": {

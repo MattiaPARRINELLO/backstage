@@ -106,7 +106,7 @@ modules/
   index.ts          racine de composition : la seule liste de modules du dépôt
   reminders/        module pilote (#84), outils, actions, store, schéma
   schedule/         emploi du temps CESAR en lecture
-  watch-later/      outil, actions et page du module « À voir plus tard »
+  watch-later/      outil, actions, page et rail du module « À voir plus tard »
 modules.config.json quels modules sont activés (committé)
 e2e/  scripts/  android/  public/
 docs/               architecture.md, self-hosting, deploy-cpanel, android-apk
@@ -185,6 +185,13 @@ module → page → registre). La route `/m/[module]` fournit
 input)` passe par la Server Action generique `app/m/actions.ts`, qui appelle
 `kernelAction("<id>.<action>", input)`. La securite est identique (session,
 registre actif, validation Zod).
+
+⚠️ **Rail d'un module** : le chrome est client, il ne peut pas importer le
+registre. Le module declare son icone avec `railIcon()` du kit (trace SVG
+declaratif, pas un composant client) ; `/api/modules/rail` la sert en SVG
+statique, `LeftNav` et `MobileBottomNav` l'ajoutent apres les destinations
+coeur. Un module desactive n'y figure pas. Ajouter un module n'exige aucune
+edition de `Chrome.tsx`.
 
 ---
 

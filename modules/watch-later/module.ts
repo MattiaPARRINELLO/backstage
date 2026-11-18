@@ -1,4 +1,4 @@
-import { defineModule } from "@backstage/module-kit";
+import { defineModule, railIcon } from "@backstage/module-kit";
 
 import {
   createWatchLaterAction,
@@ -10,6 +10,10 @@ import {
 } from "./actions";
 import { addWatchLaterTool } from "./tools";
 import WatchLaterPage from "./ui/page";
+
+const bookmarkIcon = railIcon(
+  '<path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z" />'
+);
 
 /**
  * Module À voir plus tard.
@@ -37,5 +41,8 @@ export default defineModule({
     remove: removeWatchLaterAction,
     reorder: reorderWatchLaterAction,
   },
-  ui: { page: WatchLaterPage },
+  ui: {
+    page: WatchLaterPage,
+    rail: { label: "À voir", icon: bookmarkIcon },
+  },
 });

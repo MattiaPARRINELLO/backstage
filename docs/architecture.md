@@ -56,6 +56,12 @@ pourquoi elles existent et ce qui casse si on les ignore.
   `kernelAction` : registre → module → page → registre formerait un cycle. Un
   module absent, désactivé ou sans page répond 404. `/watch-later` redirige vers
   `/m/watch-later` pour les favoris existants.
+- `/api/modules/rail` — entrées de navigation déclarées par les modules actifs
+  (slot `rail`). L'icône est un tracé SVG déclaratif (`railIcon()` du kit) : le
+  noyau le sert tel quel, car le chrome est un composant client et Next interdit
+  de rendre un composant React dans une Route Handler. Le rail et la bottom nav
+  ajoutent ces entrées après les destinations cœur ; un module désactivé
+  disparaît sans rebuild.
 
 ---
 

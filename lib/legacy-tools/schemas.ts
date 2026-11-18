@@ -150,21 +150,6 @@ export const legacyTools: UnifiedTool[] = [
     },
   },
   {
-    name: "add_watch_later",
-    description: "Ajoute un lien a la liste 'A voir plus tard'.",
-    parameters: {
-      type: "object",
-      properties: {
-        url: { type: "string", description: "URL complete" },
-        title: { type: "string", description: "Titre" },
-        description: { type: "string", description: "Description courte" },
-        thumbnail: { type: "string", description: "URL miniature" },
-        category: { type: "string", enum: ["video", "article", "photo", "music", "other"], description: "Categorie" },
-      },
-      required: ["url", "title"],
-    },
-  },
-  {
     name: "fetch_page_meta",
     description: "Recupere le titre et la miniature d'une page web ou video YouTube.",
     parameters: {

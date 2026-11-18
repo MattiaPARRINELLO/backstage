@@ -58,12 +58,24 @@ test.describe("Chat", () => {
 
     const tabs = panel.getByRole("tablist", { name: "Vues du panneau" });
     await expect(tabs).toBeVisible();
-    await expect(tabs.getByRole("tab")).toHaveCount(5);
+    // Les vues coeur sont fixes ; les modules actifs ajoutent les leurs.
+    for (const name of ["Flux", "Agenda", "Inbox", "Code", "Photos"]) {
+      await expect(tabs.getByRole("tab", { name })).toBeVisible();
+    }
+    expect(await tabs.getByRole("tab").count()).toBeGreaterThanOrEqual(5);
     // La vue par défaut est le flux chronologique.
     await expect(tabs.getByRole("tab", { name: "Flux" })).toHaveAttribute(
       "aria-selected",
       "true"
     );
+
+    // Le panneau déclaré par le module watch-later est présent et bascule.
+    await tabs.getByRole("tab", { name: "À voir" }).click();
+    await expect(tabs.getByRole("tab", { name: "À voir" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+    await expect(panel.getByText("Derniers liens")).toBeVisible();
 
     // Bascule vers l'agenda : la carte dédiée remplace la ligne de temps.
     await tabs.getByRole("tab", { name: "Agenda" }).click();

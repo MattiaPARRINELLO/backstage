@@ -15,23 +15,18 @@ import { resolveModuleTool } from "./tool-bridge";
 // est reinjecte dans le prompt systeme des tours suivants (empoisonnement
 // durable de la memoire). Cf. #74.
 export const REQUIRE_CONFIRMATION = new Set<string>([
-  "send_email_response",
   "add_memory_fact",
 ]);
 
 // Outils dont le resultat provient d'une source exterieure non fiable (page
 // web, email, issue GitHub, meteo, description d'evenement). Lire l'un d'eux
 // contamine le tour : toute ecriture qui suit doit etre confirmee.
-export const UNTRUSTED_TOOLS: ReadonlySet<string> = new Set([
-  "fetch_and_search_emails",
-  "triage_emails",
-]);
+export const UNTRUSTED_TOOLS: ReadonlySet<string> = new Set<string>();
 
 // Outils qui modifient des donnees (locales, calendrier, email, GitHub,
 // memoire). En tour contamine, ils passent par la meme carte de confirmation
 // que `send_email_response`.
 export const WRITE_TOOLS: ReadonlySet<string> = new Set([
-  "send_email_response",
   "add_photo_shoot",
   "update_photo_shoot",
   "scan_accreditations",

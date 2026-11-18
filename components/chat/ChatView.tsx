@@ -48,6 +48,8 @@ function describeAction(name: string, args: Record<string, unknown>): string {
   switch (name) {
     case "send_email_response":
       return `Répondre à l'email ${String(args.email_id ?? "?")} : « ${String(args.response_text ?? "").slice(0, 140)}${String(args.response_text ?? "").length > 140 ? "…" : ""} »`;
+    case "emails.reply":
+      return `Répondre à l'email ${String(args.email_id ?? "?")} : « ${String(args.response_text ?? "").slice(0, 140)}${String(args.response_text ?? "").length > 140 ? "…" : ""} »`;
     case "create_calendar_event":
       return `Créer l'événement « ${String(args.title ?? "")} » du ${String(args.start_time ?? "?")} au ${String(args.end_time ?? "?")}${args.location ? ` (${String(args.location)})` : ""}`;
     case "calendar.create":

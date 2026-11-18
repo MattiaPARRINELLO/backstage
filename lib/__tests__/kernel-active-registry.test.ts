@@ -12,6 +12,7 @@ describe("registre actif", () => {
     expect(registry.modules.map((definition) => definition.id)).toEqual([
       "calendar",
       "concerts",
+      "emails",
       "followups",
       "github",
       "reminders",
@@ -26,6 +27,7 @@ describe("registre actif", () => {
     expect(registry.enabled.map((definition) => definition.id)).toEqual([
       "calendar",
       "concerts",
+      "emails",
       "followups",
       "github",
       "reminders",
@@ -44,6 +46,9 @@ describe("registre actif", () => {
       "calendar.update",
       "concerts.list",
       "concerts.prepare",
+      "emails.reply",
+      "emails.search",
+      "emails.triage",
       "followups.schedule",
       "github.create_issue",
       "github.list_issues",

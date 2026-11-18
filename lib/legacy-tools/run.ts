@@ -12,11 +12,7 @@ import {
 } from "@/lib/storage";
 import { hasNewInformation } from "@/lib/memory-dedup";
 import type { PhotoShootStatus, Accreditation } from "@/lib/types";
-import { invalidateServerCachePattern } from "@/lib/server-cache";
-import {
-  fetchGmailMessages,
-  sendGmailReply,
-} from "@/lib/google-actions";
+import { fetchGmailMessages } from "@/lib/google-actions";
 
 /**
  * Exécution des outils historiques du noyau, pas encore migrés en modules.
@@ -29,40 +25,6 @@ export async function executeLegacyTool(
   args: Record<string, unknown>
 ): Promise<string> {
   switch (name) {
-    case "fetch_and_search_emails": {
-      const query = args.query ? String(args.query) : undefined;
-      const emails = await fetchGmailMessages(query, 10);
-      if (emails.length === 0) return "Aucun email trouve.";
-      return emails
-        .map(
-          (e) => {
-            const contact = e.to ? `De: ${e.from}\nA: ${e.to}` : `De: ${e.from}`;
-            return `ID: ${e.id}\n${contact}\nSujet: ${e.subject}\nDate: ${e.date}\nExtrait: ${e.snippet}`;
-          }
-        )
-        .join("\n\n---\n\n");
-    }
-    case "send_email_response": {
-      const emailId = String(args.email_id ?? "");
-      const responseText = String(args.response_text ?? "");
-      if (!emailId || !responseText) return "Erreur : email_id et response_text requis.";
-      const sentId = await sendGmailReply(emailId, responseText);
-      invalidateServerCachePattern(/^gmail:list/);
-      return `Reponse envoyee (message id: ${sentId}).`;
-    }
-    case "triage_emails": {
-      const maxResults = typeof args.max_results === "number" ? args.max_results : 10;
-      const emails = await fetchGmailMessages(undefined, maxResults);
-      if (emails.length === 0) return "Aucun email trouve.";
-      const urgent = emails.filter((e) => e.unread && /urgent|rappel|relance|deadline|échéance/i.test(e.subject + " " + e.snippet));
-      const normal = emails.filter((e) => !urgent.includes(e));
-      let result = "";
-      if (urgent.length > 0) {
-        result += "🔴 URGENT :\n" + urgent.map((e) => `  - ${e.from}: ${e.subject}`).join("\n") + "\n\n";
-      }
-      result += "📋 Autres emails :\n" + normal.map((e) => `  - ${e.from}: ${e.subject}${e.unread ? " (non lu)" : ""}`).join("\n");
-      return result;
-    }
     case "add_memory_fact": {
       const content = String(args.content ?? "").trim();
       const category = String(args.category ?? "life") as "dev" | "photo" | "life" | "preference";

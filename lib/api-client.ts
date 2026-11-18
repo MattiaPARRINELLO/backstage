@@ -25,6 +25,14 @@ export type MicrosoftTodoStatus = {
   linked: boolean;
 };
 
+/** Entree de rail declaree par un module (icone deja rendue en SVG). */
+export type ModuleRailEntry = {
+  id: string;
+  label: string;
+  href: string;
+  icon: string;
+};
+
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...init,
@@ -90,6 +98,8 @@ async function readSse(
 
 export const api = {
   googleStatus: () => jsonFetch<GoogleLinkStatus>("/api/auth/google/status"),
+
+  moduleRail: () => jsonFetch<{ items: ModuleRailEntry[] }>("/api/modules/rail"),
 
   googleHealth: () => jsonFetch<GoogleHealth>("/api/auth/google/health"),
 

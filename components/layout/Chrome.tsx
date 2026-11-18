@@ -3,12 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Brain,
   MessageSquareText,
   Bell,
-  Bookmark,
   LogOut,
   Mail,
   CalendarRange,
@@ -27,13 +26,15 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { api, type GoogleLinkStatus } from "@/lib/api-client";
+import { api, type GoogleLinkStatus, type ModuleRailEntry } from "@/lib/api-client";
 import { useCachedFetch } from "@/lib/cache";
 
 type NavItem = {
   href: string;
   label: string;
-  icon: typeof MessageSquareText;
+  icon?: typeof MessageSquareText;
+  /** Icone deja rendue par le noyau (slot `rail` d'un module). */
+  iconHtml?: string;
   exact?: boolean;
 };
 
@@ -43,7 +44,6 @@ const navItems: NavItem[] = [
   { href: "/reminders", label: "Rappels", icon: Bell },
   { href: "/week", label: "Semaine", icon: CalendarDays },
   { href: "/focus", label: "Focus", icon: Timer },
-  { href: "/m/watch-later", label: "À voir", icon: Bookmark },
   { href: "/photos", label: "Photos", icon: Camera },
   { href: "/schedule", label: "Emploi du temps", icon: CalendarClock },
   { href: "/calendar", label: "Calendrier", icon: CalendarRange },
@@ -55,13 +55,13 @@ const navItems: NavItem[] = [
   { href: "/gallery", label: "Galerie", icon: Images },
 ];
 
-// Navigation principale : les 4 destinations cœur du produit. Le reste est
-// accessible via le menu « Plus » (rail desktop et bottom nav mobile).
+// Navigation principale : les destinations cœur du produit, puis les entrees
+// declarees par les modules actifs (slot `rail`). Le reste est accessible via le
+// menu « Plus » (rail desktop et bottom nav mobile).
 const primaryNavItems: NavItem[] = [
   { href: "/chat", label: "Console IA", icon: MessageSquareText, exact: true },
   { href: "/today", label: "Aujourd'hui", icon: CalendarDays, exact: true },
   { href: "/brain", label: "Cerveau", icon: Brain },
-  { href: "/m/watch-later", label: "À voir", icon: Bookmark },
 ];
 
 const secondaryNavItems: NavItem[] = navItems
@@ -73,9 +73,47 @@ const mobileNavItems: NavItem[] = primaryNavItems;
 const mobileMoreItems: NavItem[] = secondaryNavItems;
 
 const GOOGLE_STATUS_KEY = "google:status";
+const MODULE_RAIL_KEY = "modules:rail";
 
 async function fetchGoogleStatus(): Promise<GoogleLinkStatus> {
   return api.googleStatus();
+}
+
+async function fetchModuleRail(): Promise<ModuleRailEntry[]> {
+  const { items } = await api.moduleRail();
+  return items;
+}
+
+/**
+ * Entrees de rail des modules actifs.
+ *
+ * Le chrome est un composant client : il ne peut pas importer le registre. Le
+ * noyau rend les icones en SVG et les sert par `/api/modules/rail`, mis en
+ * cache cote client. Un module desactive disparait donc du rail sans rebuild
+ * de code.
+ */
+function useModuleNavItems(): NavItem[] {
+  const { data } = useCachedFetch<ModuleRailEntry[]>(MODULE_RAIL_KEY, fetchModuleRail, {
+    ttl: 5 * 60 * 1000,
+  });
+  return useMemo(
+    () => (data ?? []).map((item) => ({ href: item.href, label: item.label, iconHtml: item.icon })),
+    [data]
+  );
+}
+
+function NavGlyph({ item, className }: { item: NavItem; className: string }) {
+  if (item.iconHtml) {
+    return (
+      <span
+        aria-hidden
+        className={`${className} inline-flex [&>svg]:h-full [&>svg]:w-full`}
+        dangerouslySetInnerHTML={{ __html: item.iconHtml }}
+      />
+    );
+  }
+  const Icon = item.icon;
+  return Icon ? <Icon className={className} strokeWidth={1.6} /> : null;
 }
 
 async function logout() {
@@ -92,6 +130,8 @@ async function logout() {
 export function LeftNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const moduleItems = useModuleNavItems();
+  const primaryItems = [...primaryNavItems, ...moduleItems];
 
   const handleLogout = async () => {
     try {
@@ -115,11 +155,10 @@ export function LeftNav() {
       </div>
 
       <nav className="flex-1 flex flex-col items-center gap-1.5 py-3 overflow-y-auto min-h-0">
-        {primaryNavItems.map((item) => {
+        {primaryItems.map((item) => {
           const active = item.exact
             ? pathname === item.href
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
-          const Icon = item.icon;
           return (
             <Link
               key={item.href}
@@ -133,7 +172,7 @@ export function LeftNav() {
                   : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)]"
               )}
             >
-              <Icon className="w-[18px] h-[18px]" strokeWidth={1.6} />
+              <NavGlyph item={item} className="w-[18px] h-[18px]" />
               <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1 rounded-[var(--r-sm)] bg-[var(--surface-3)] border border-[var(--line)] text-[length:var(--t-small)] text-[var(--text-1)] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50">
                 {item.label}
               </span>
@@ -146,7 +185,7 @@ export function LeftNav() {
           aria-label="Toutes les pages"
           className={cn(
             "group relative w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-150",
-            !primaryNavItems.some((p) => p.exact ? pathname === p.href : pathname === p.href || pathname.startsWith(`${p.href}/`))
+            !primaryItems.some((p) => p.exact ? pathname === p.href : pathname === p.href || pathname.startsWith(`${p.href}/`))
               ? "bg-[var(--accent)]/12 text-[var(--accent)]"
               : "text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)]"
           )}
@@ -280,6 +319,8 @@ function GoogleMobileStatus() {
 export function MobileBottomNav() {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const moduleItems = useModuleNavItems();
+  const items = [...mobileNavItems, ...moduleItems];
 
   // Le rail desktop et la bottom nav mobile ouvrent le même sheet via cet
   // événement : les pages secondaires restent accessibles partout.
@@ -289,7 +330,7 @@ export function MobileBottomNav() {
     return () => window.removeEventListener("backstage:open-more", openMore);
   }, []);
 
-  const coreActive = mobileNavItems.some(
+  const coreActive = items.some(
     (item) =>
       item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`)
   );
@@ -297,11 +338,10 @@ export function MobileBottomNav() {
   return (
     <>
       <nav className="lg:hidden flex items-stretch h-16 bg-[var(--background)] px-1 pb-[env(safe-area-inset-bottom)] shrink-0">
-        {mobileNavItems.map((item) => {
+        {items.map((item) => {
           const active = item.exact
             ? pathname === item.href
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
-          const Icon = item.icon;
           return (
             <Link
               key={item.href}
@@ -311,7 +351,7 @@ export function MobileBottomNav() {
                 active ? "text-[var(--accent)]" : "text-[var(--text-3)] hover:text-[var(--text-1)]"
               )}
             >
-              <Icon className="w-5 h-5" strokeWidth={1.6} />
+              <NavGlyph item={item} className="w-5 h-5" />
               <span className="text-[length:var(--t-small)] truncate max-w-full px-0.5">{item.label}</span>
             </Link>
           );
@@ -369,7 +409,6 @@ function MobileMoreSheet({ open, onClose }: { open: boolean; onClose: () => void
             const active = item.exact
               ? pathname === item.href
               : pathname === item.href || pathname.startsWith(`${item.href}/`);
-            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
@@ -382,7 +421,9 @@ function MobileMoreSheet({ open, onClose }: { open: boolean; onClose: () => void
                     : "text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)]"
                 )}
               >
-                <Icon className="w-4 h-4 shrink-0 text-[var(--text-3)]" strokeWidth={1.6} />
+                <span className="w-4 h-4 shrink-0 text-[var(--text-3)]">
+                  <NavGlyph item={item} className="w-4 h-4" />
+                </span>
                 <span className="truncate">{item.label}</span>
                 {active && <Check className="w-3.5 h-3.5 ml-auto shrink-0 text-[var(--accent)]" />}
               </Link>

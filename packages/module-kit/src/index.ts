@@ -55,3 +55,9 @@ export {
   type ModuleActionCall,
   type ModuleActionInvoker,
 } from "./module-actions";
+export {
+  railIcon,
+  railIconMarkup,
+  RAIL_FALLBACK_ICON,
+  type RailIcon,
+} from "./rail-icon";

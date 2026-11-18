@@ -97,12 +97,15 @@ lib/
   config.ts         lecteur unique de process.env (schéma Zod, démarrage)
   chat-runs.ts      registre des générations de chat
   cesar-client.ts   CESAR, fetch HTTP pur
+  kernel/           registre, actions, pont d'outils, politique, actions en attente
+  legacy-tools/     schémas et exécution des outils pas encore migrés (transitoire)
 packages/
   module-kit/       contrat de module : defineModule, defineTool, defineAction (#84)
 modules/
   index.ts          racine de composition : la seule liste de modules du dépôt
   reminders/        module pilote (#84), outils, actions, store, schéma
   schedule/         emploi du temps CESAR en lecture
+  watch-later/      outil d'ajout de lien « À voir plus tard »
 modules.config.json quels modules sont activés (committé)
 e2e/  scripts/  android/  public/
 docs/               architecture.md, self-hosting, deploy-cpanel, android-apk

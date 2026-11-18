@@ -87,7 +87,7 @@ const scenarios: AgentScenario[] = [
   },
   {
     intent: "garde cet article pour plus tard",
-    expectedTool: "add_watch_later",
+    expectedTool: "watch-later.add",
     expectArgs: { url: "https://example.com/article", title: "Un article a garder" },
     forbidTools: ["send_email_response"],
     writes: true,
@@ -199,7 +199,7 @@ describe("registre d'outils", () => {
         "add_memory_fact",
         "add_photo_shoot",
         "reminders.add",
-        "add_watch_later",
+        "watch-later.add",
         "create_calendar_event",
         "create_github_issue",
         "delete_calendar_event",

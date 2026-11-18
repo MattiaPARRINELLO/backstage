@@ -1,7 +1,6 @@
 import { verifyWrite } from "@backstage/module-kit";
 import {
   webSearch,
-  addWatchLaterItem,
   fetchPageMeta,
   getConcerts,
   getAccreditations,
@@ -13,12 +12,10 @@ import {
   updatePhotoShoot,
   addIntention,
   getIntentions,
-  getWatchLater,
   getMemory,
   addMemoryFact,
   findSimilarMemoryFacts,
   touchMemoryFact,
-  isSafeFetchUrl,
 } from "@/lib/storage";
 import { hasNewInformation } from "@/lib/memory-dedup";
 import type { PhotoShootStatus, Accreditation } from "@/lib/types";
@@ -182,25 +179,6 @@ export async function executeLegacyTool(
       });
       if (problem) return problem;
       return `Relance programmee : « ${it.subject} » pour le ${new Date(it.dueAt).toLocaleString("fr-FR")}. Tu recevras une notification a ce moment-la.`;
-    }
-    case "add_watch_later": {
-      const url = String(args.url ?? "");
-      const title = String(args.title ?? "");
-      const description = args.description ? String(args.description) : undefined;
-      const thumbnail = args.thumbnail ? String(args.thumbnail) : undefined;
-      const category = args.category as "video" | "article" | "photo" | "music" | "other" | undefined;
-      if (!url || !title) return "Erreur : url et title requis.";
-      if (!(await isSafeFetchUrl(url))) {
-        return "Erreur : URL non autorisee (adresse privee ou invalide).";
-      }
-      const item = await addWatchLaterItem({ url, title, description, thumbnail, category });
-      // Relecture : le lien est-il bien dans la liste ?
-      const problem = await verifyWrite(`le lien "${item.title}"`, async () => {
-        const after = await getWatchLater();
-        return after.items.some((x) => x.id === item.id);
-      });
-      if (problem) return problem;
-      return `Ajoute a 'A voir plus tard' : ${item.title} (${item.source}).`;
     }
     case "fetch_page_meta": {
       const url = String(args.url ?? "");

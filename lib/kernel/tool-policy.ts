@@ -44,7 +44,6 @@ export const WRITE_TOOLS: ReadonlySet<string> = new Set([
   "update_calendar_event",
   "delete_calendar_event",
   "schedule_followup",
-  "add_watch_later",
   "add_photo_shoot",
   "update_photo_shoot",
   "scan_accreditations",

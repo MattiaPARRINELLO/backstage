@@ -49,6 +49,10 @@ export interface ModuleUi {
   readonly page: ComponentType;
   readonly rail?: {
     readonly label: string;
+    /**
+     * Icone du rail. Le noyau la sert en SVG statique : utiliser `railIcon()`
+     * du kit, pas un composant client (lucide retomberait sur le glyphe neutre).
+     */
     readonly icon: ComponentType<{ className?: string }>;
   };
   readonly panel?: ComponentType;

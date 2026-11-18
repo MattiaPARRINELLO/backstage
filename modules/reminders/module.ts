@@ -8,6 +8,7 @@ import {
   updateReminderAction,
 } from "./actions";
 import { addReminderTool, listRemindersTool, updateReminderTool } from "./tools";
+import { upcomingRemindersPrompt } from "./prompt";
 
 /**
  * Module Rappels.
@@ -31,6 +32,7 @@ export default defineModule({
     filesystem: "module-data",
   },
   tools: [addReminderTool, listRemindersTool, updateReminderTool],
+  prompt: [upcomingRemindersPrompt],
   actions: {
     load: loadRemindersAction,
     create: createReminderAction,

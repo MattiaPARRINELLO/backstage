@@ -104,7 +104,7 @@ packages/
   module-kit/       contrat de module : defineModule, defineTool, defineAction (#84)
 modules/
   index.ts          racine de composition : la seule liste de modules du dépôt
-  reminders/        module pilote (#84), outils, actions, store, schéma
+  reminders/        module pilote (#84), outils, actions, prompt, store, schéma
   schedule/         emploi du temps CESAR en lecture
   watch-later/      outil, actions, page, rail et panneau du module « À voir »
 modules.config.json quels modules sont activés (committé)
@@ -198,6 +198,12 @@ edition de `Chrome.tsx`.
 `ModulePanelProvider` / `useModulePanels` (kit). `ContextPanel` ajoute une vue
 par panneau actif ; le libelle vient du rail, sinon du module. Un panneau est
 donc un composant client ordinaire, contrairement a l'icone du rail.
+
+⚠️ **Bloc de prompt** : un module declare `prompt: [{ id, priority, render }]`,
+jamais du texte fige. `lib/kernel/prompt.ts` ordonne par priorite decroissante,
+tronque a 400 caracteres par bloc et 1500 au total ; un `render` qui leve est
+journalise et retire, le tour continue. `lib/chat-prompts.ts` ne code plus le
+bloc des rappels : il appelle `renderModulePrompts(registry)`.
 
 ---
 

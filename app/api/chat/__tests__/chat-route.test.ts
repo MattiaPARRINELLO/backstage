@@ -34,7 +34,7 @@ vi.mock("@/lib/chat-tools", () => {
     "search_calendar_events",
     "list_github_issues",
     "lookup_concerts",
-    "get_weather",
+    "weather.get",
     "prepare_concert",
   ]);
   const writes = new Set([

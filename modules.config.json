@@ -3,6 +3,7 @@
   "modules": {
     "reminders": { "enabled": true },
     "schedule": { "enabled": true },
-    "watch-later": { "enabled": true }
+    "watch-later": { "enabled": true },
+    "weather": { "enabled": true }
   }
 }

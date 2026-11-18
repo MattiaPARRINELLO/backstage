@@ -100,7 +100,7 @@ const scenarios: AgentScenario[] = [
   },
   {
     intent: "il fera quel temps a Paris samedi ?",
-    expectedTool: "get_weather",
+    expectedTool: "weather.get",
     expectArgs: { city: "Paris" },
     forbidTools: ["send_email_response"],
   },
@@ -206,7 +206,7 @@ describe("registre d'outils", () => {
         "fetch_and_search_emails",
         "fetch_page_meta",
         "schedule.get",
-        "get_weather",
+        "weather.get",
         "list_github_issues",
         "list_photo_shoots",
         "reminders.list",

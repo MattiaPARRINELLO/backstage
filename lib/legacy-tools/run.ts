@@ -6,7 +6,6 @@ import {
   getAccreditations,
   addAccreditation,
   prepareConcert,
-  getWeather,
   getPhotoShoots,
   addPhotoShoot,
   updatePhotoShoot,
@@ -273,11 +272,6 @@ export async function executeLegacyTool(
       } catch (err) {
         return `Erreur : ${err instanceof Error ? err.message : String(err)}`;
       }
-    }
-    case "get_weather": {
-      const city = String(args.city ?? "").trim();
-      if (!city) return "Erreur : ville requise.";
-      return await getWeather(city);
     }
     case "add_photo_shoot": {
       const title = String(args.title ?? "").trim();

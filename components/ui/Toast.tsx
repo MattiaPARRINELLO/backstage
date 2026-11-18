@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { Check, X, Undo2, Info, AlertTriangle } from "lucide-react";
+import { ModuleToastProvider, type ModuleToasts } from "@backstage/module-kit";
 import { cn } from "@/lib/utils";
 
 type ToastTone = "default" | "success" | "danger" | "info" | "warning";
@@ -81,9 +82,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [show, dismiss, update]
   );
 
+  // Pont vers le contrat de module : le module ne voit que `show` / `dismiss`.
+  const moduleValue = useMemo<ModuleToasts>(() => ({ show, dismiss }), [show, dismiss]);
+
   return (
     <ToastContext.Provider value={value}>
-      {children}
+      <ModuleToastProvider value={moduleValue}>{children}</ModuleToastProvider>
       <div className="fixed bottom-20 lg:bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 items-center pointer-events-none">
         {toasts.map((t) => (
           <ToastView key={t.id} toast={t} onDismiss={() => dismiss(t.id)} />

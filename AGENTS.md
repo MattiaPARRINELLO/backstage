@@ -84,6 +84,7 @@ enregistrement passkey est refusé (503) en production.
 
 ```
 app/                pages, Server Actions (actions/), Route Handlers (api/)
+app/m/[module]/     route unique du slot `page` des modules (coquille du noyau)
 app/globals.css     tokens, primitives .ui-*, animations
 components/
   ui/               primitives qui délèguent l'apparence aux classes .ui-*
@@ -105,7 +106,7 @@ modules/
   index.ts          racine de composition : la seule liste de modules du dépôt
   reminders/        module pilote (#84), outils, actions, store, schéma
   schedule/         emploi du temps CESAR en lecture
-  watch-later/      outil d'ajout de lien « À voir plus tard »
+  watch-later/      outil, actions et page du module « À voir plus tard »
 modules.config.json quels modules sont activés (committé)
 e2e/  scripts/  android/  public/
 docs/               architecture.md, self-hosting, deploy-cpanel, android-apk
@@ -174,9 +175,16 @@ export async function createReminder(input: {
 ⚠️ **Module migré (#84)** : la logique vit dans `modules/<id>/actions.ts`, et
 `app/actions/*.ts` ne garde qu'une coquille qui appelle `kernelAction`. Le noyau
 porte la session, la validation Zod, le journal d'activité et la revalidation
-déclarée par l'action (`revalidate: ["/reminders"]`) ; un module ne doit plus
+déclarée par l'action (`revalidate: ["/m/watch-later"]`) ; un module ne doit plus
 importer `requireSession` ni `revalidatePath`. `app/actions/reminders.ts` est le
 modèle.
+
+⚠️ **Page d'un module** : elle n'importe pas `kernelAction` (cycle registre →
+module → page → registre). La route `/m/[module]` fournit
+`ModuleActionsProvider` + `useModuleAction()` (kit) : `useModuleAction()("create",
+input)` passe par la Server Action generique `app/m/actions.ts`, qui appelle
+`kernelAction("<id>.<action>", input)`. La securite est identique (session,
+registre actif, validation Zod).
 
 ---
 

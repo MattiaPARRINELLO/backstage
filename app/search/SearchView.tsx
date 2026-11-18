@@ -171,7 +171,7 @@ function getHref(item: SearchItem, type: string): string {
     case "facts": return "/brain";
     case "emails": return "/";
     case "reminders": return "/reminders";
-    case "watchLater": return "/watch-later";
+    case "watchLater": return "/m/watch-later";
     case "accreditations": return "/photos";
     default: return "/";
   }

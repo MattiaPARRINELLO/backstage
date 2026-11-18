@@ -49,6 +49,13 @@ pourquoi elles existent et ce qui casse si on les ignore.
   (`/api/demo`) : question/réponse, IP, user-agent, statut, durée et sources.
 - `/schedule` — emploi du temps CESAR (vue semaine + bouton Sync). Nourrit aussi
   la section « Cours » de `/today`, le daily brief et les notifications −30 min.
+- `/m/<id>` — route unique des pages de module (#84). Elle est écrite une fois
+  dans `app/m/[module]/page.tsx` ; le module déclare son slot `ui.page`, le noyau
+  fournit `AppShell`, les primitives du kit et un invokeur d'actions
+  (`useModuleAction`, adossé à `app/m/actions.ts`). La page n'importe jamais
+  `kernelAction` : registre → module → page → registre formerait un cycle. Un
+  module absent, désactivé ou sans page répond 404. `/watch-later` redirige vers
+  `/m/watch-later` pour les favoris existants.
 
 ---
 

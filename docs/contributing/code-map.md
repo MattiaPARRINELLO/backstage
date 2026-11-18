@@ -48,7 +48,8 @@ Le style ne s'ecrit pas dans les composants : les classes `.ui-*` de
    l'utilisateur.
 
 Exemples a imiter : `app/today/page.tsx` (agregat serveur),
-`app/settings/page.tsx` (formulaires clients), `app/watch-later/` (CRUD complet).
+`app/settings/page.tsx` (formulaires clients), `modules/watch-later/ui/`
+(CRUD complet d'un module, servi par `/m/watch-later`).
 
 ## 3. Ajouter une Server Action
 

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect } from "react";
 import {
   Brain,
   MessageSquareText,
@@ -43,7 +43,7 @@ const navItems: NavItem[] = [
   { href: "/reminders", label: "Rappels", icon: Bell },
   { href: "/week", label: "Semaine", icon: CalendarDays },
   { href: "/focus", label: "Focus", icon: Timer },
-  { href: "/watch-later", label: "À voir", icon: Bookmark },
+  { href: "/m/watch-later", label: "À voir", icon: Bookmark },
   { href: "/photos", label: "Photos", icon: Camera },
   { href: "/schedule", label: "Emploi du temps", icon: CalendarClock },
   { href: "/calendar", label: "Calendrier", icon: CalendarRange },
@@ -61,7 +61,7 @@ const primaryNavItems: NavItem[] = [
   { href: "/chat", label: "Console IA", icon: MessageSquareText, exact: true },
   { href: "/today", label: "Aujourd'hui", icon: CalendarDays, exact: true },
   { href: "/brain", label: "Cerveau", icon: Brain },
-  { href: "/watch-later", label: "À voir", icon: Bookmark },
+  { href: "/m/watch-later", label: "À voir", icon: Bookmark },
 ];
 
 const secondaryNavItems: NavItem[] = navItems
@@ -417,65 +417,7 @@ function MobileMoreSheet({ open, onClose }: { open: boolean; onClose: () => void
   );
 }
 
-export function PageHeader({
-  eyebrow,
-  title,
-  description,
-  actions,
-}: {
-  eyebrow?: string;
-  title: string;
-  description?: string;
-  actions?: ReactNode;
-}) {
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mb-8">
-      <div className="min-w-0">
-        {eyebrow && (
-          <p className="ui-mono text-[var(--text-3)] mb-2">
-            {eyebrow}
-          </p>
-        )}
-        <h1 className="font-display font-semibold tracking-[-0.03em] text-[length:var(--t-head)] leading-[1.02] text-[var(--text-1)] text-balance">
-          {title}
-        </h1>
-        {description && (
-          <p className="text-[length:var(--t-body)] text-[var(--text-2)] mt-3 max-w-[34rem] leading-relaxed">
-            {description}
-          </p>
-        )}
-      </div>
-      {actions && <div className="shrink-0 flex items-center gap-2">{actions}</div>}
-    </div>
-  );
-}
-
-export function EmptyState({
-  icon,
-  title,
-  description,
-  action,
-}: {
-  icon?: ReactNode;
-  title: string;
-  description?: string;
-  action?: ReactNode;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center text-center px-6 py-16">
-      {icon && (
-        <div className="mb-4 text-[var(--text-3)]">
-          {icon}
-        </div>
-      )}
-      <h3 className="font-display font-semibold tracking-[-0.03em] text-[length:var(--t-lead)] text-[var(--text-1)] mb-1.5">{title}</h3>
-      {description && (
-        <p className="text-[length:var(--t-small)] text-[var(--text-3)] max-w-[28rem] leading-relaxed">{description}</p>
-      )}
-      {action && <div className="mt-5">{action}</div>}
-    </div>
-  );
-}
+export { PageHeader, EmptyState } from "@backstage/module-kit";
 
 export function CloseButton({ onClick, label = "Fermer" }: { onClick: () => void; label?: string }) {
   return (

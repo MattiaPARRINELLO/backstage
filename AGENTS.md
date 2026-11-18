@@ -109,6 +109,7 @@ modules/
   emails/           Gmail (lecture non fiable, envoi confirmé)
   followups/        relances datées (écriture vérifiée par relecture)
   github/           issues GitHub (lecture non fiable, création externe)
+  photo/            shootings photo (écritures vérifiées par relecture)
   reminders/        module pilote (#84), outils, actions, prompt, store, schéma
   schedule/         emploi du temps CESAR en lecture
   watch-later/      outil, actions, page, rail, panneau, carte d'accueil

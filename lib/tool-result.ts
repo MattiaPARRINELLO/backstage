@@ -124,7 +124,9 @@ export const SIDE_EFFECT_TOOL_NAMES = new Set<string>([
   "prepare_concert",
   "concerts.prepare",
   "add_photo_shoot",
+  "photo.add",
   "update_photo_shoot",
+  "photo.update",
   "create_github_issue",
   "github.create_issue",
 ]);

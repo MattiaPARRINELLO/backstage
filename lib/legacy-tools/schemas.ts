@@ -38,42 +38,4 @@ export const legacyTools: UnifiedTool[] = [
       required: [],
     },
   },
-  {
-    name: "add_photo_shoot",
-    description: "Ajoute un nouveau shooting photo au suivi. Si l'utilisateur ne precise pas de statut, il est automatique : 'done' si la date est passee/aujourd'hui, 'upcoming' si future. Deduis le statut des paroles de l'utilisateur : ex. 'deja sur mon PC' -> 'on_pc', 'photos deja envoyees' -> 'sent', 'retouche' -> 'edited', 'exporte' -> 'exported', 'trie' -> 'sorted', 'fait/termine' -> 'done'. Statuts: upcoming, done, on_pc, sorted, edited, exported, sent.",
-    parameters: {
-      type: "object",
-      properties: {
-        title: { type: "string", description: "Titre du shooting (ex: 'Concert Mariane')" },
-        date: { type: "string", description: "Date du shooting au format YYYY-MM-DD" },
-        client: { type: "string", description: "Nom du client/artiste" },
-        notes: { type: "string", description: "Notes optionnelles" },
-        status: { type: "string", enum: ["upcoming", "done", "on_pc", "sorted", "edited", "exported", "sent"], description: "Statut si l'utilisateur le precise, sinon laisse vide pour le comportement automatique" },
-      },
-      required: ["title", "date", "client"],
-    },
-  },
-  {
-    name: "update_photo_shoot",
-    description: "Met a jour le statut ou les infos d'un shooting photo. Utilise 'list_photo_shoots' d'abord pour trouver l'ID.",
-    parameters: {
-      type: "object",
-      properties: {
-        id: { type: "string", description: "ID du shooting" },
-        status: { type: "string", enum: ["upcoming", "done", "on_pc", "sorted", "edited", "exported", "sent"], description: "Nouveau statut" },
-        galleryLink: { type: "string", description: "Lien galerie (quand status='sent')" },
-        photosSent: { type: "number", description: "Nombre de photos envoyees (quand status='sent')" },
-      },
-      required: ["id"],
-    },
-  },
-  {
-    name: "list_photo_shoots",
-    description: "Liste tous les shootings photo avec leur statut, date et client.",
-    parameters: {
-      type: "object",
-      properties: {},
-      required: [],
-    },
-  },
 ];

@@ -108,9 +108,13 @@ export function requiresConfirmation(tool: PolicySubject): boolean {
 /**
  * Une confirmation utilisateur peut-elle réellement débloquer cet outil ?
  * C'est le pendant de ce que le registre d'actions en attente accepte.
+ *
+ * `write` et `external` sont confirmables **par provenance** (ADR 0001,
+ * décision D), même quand le module a retiré la confirmation permanente :
+ * un outil externe bloqué par un contenu tiers doit rester déblocable.
  */
 export function isConfirmable(tool: PolicySubject): boolean {
-  return requiresConfirmation(tool) || tool.sideEffect === "write";
+  return tool.sideEffect === "write" || tool.sideEffect === "external";
 }
 
 /** Le résultat de l'outil peut-il contenir du contenu tiers ? */

@@ -1,6 +1,7 @@
 {
   "kernelApi": 1,
   "modules": {
+    "github": { "enabled": true },
     "reminders": { "enabled": true },
     "schedule": { "enabled": true },
     "watch-later": { "enabled": true },

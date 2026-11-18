@@ -218,39 +218,4 @@ export const legacyTools: UnifiedTool[] = [
       required: [],
     },
   },
-  {
-    name: "create_github_issue",
-    description:
-      "Ouvre une issue sur le depot GitHub du projet Backstage. Utilise-la quand l'utilisateur te demande d'ouvrir/creer une issue, de signaler un bug, ou quand il rapporte un dysfonctionnement de Backstage qu'il veut faire tracer. " +
-      "Pour un bug, le corps doit contenir : ce qui se passe, ce qui etait attendu, les etapes de reproduction, et les infos de debug disponibles (message d'erreur exact, page/route concernee, heure, navigateur ou appareil). " +
-      "Pour une fonctionnalite, le corps doit contenir : le besoin, le comportement souhaite et la valeur attendue. " +
-      "Renseigne les libelles : 'bug' pour un dysfonctionnement, 'enhancement' pour une fonctionnalite, 'documentation' pour la doc. " +
-      "L'issue est publiee immediatement, sans confirmation : annonce toujours l'URL renvoyee et ne l'invente jamais.",
-    parameters: {
-      type: "object",
-      properties: {
-        title: { type: "string", description: "Titre court et explicite, en francais (max 80 caracteres)" },
-        body: { type: "string", description: "Corps de l'issue en Markdown : contexte, comportement observe, comportement attendu, reproduction, infos de debug" },
-        labels: {
-          type: "array",
-          items: { type: "string", enum: ["bug", "enhancement", "documentation"] },
-          description: "Libelles a appliquer (optionnel)",
-        },
-      },
-      required: ["title", "body"],
-    },
-  },
-  {
-    name: "list_github_issues",
-    description:
-      "Liste les issues recentes du depot GitHub du projet Backstage (numero, titre, etat, libelles). Utilise-la avant create_github_issue pour eviter un doublon, ou quand l'utilisateur demande ce qui est deja ouvert.",
-    parameters: {
-      type: "object",
-      properties: {
-        state: { type: "string", enum: ["open", "closed", "all"], description: "Etat des issues (defaut: open)" },
-        limit: { type: "number", description: "Nombre max d'issues (defaut: 10, max 30)" },
-      },
-      required: [],
-    },
-  },
 ];

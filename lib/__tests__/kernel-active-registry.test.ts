@@ -10,6 +10,7 @@ const { registry } = await import("@/lib/kernel/registry");
 describe("registre actif", () => {
   it("charge les modules listes dans la racine de composition", () => {
     expect(registry.modules.map((definition) => definition.id)).toEqual([
+      "github",
       "reminders",
       "schedule",
       "watch-later",
@@ -19,6 +20,7 @@ describe("registre actif", () => {
 
   it("n'expose que les modules actives dans modules.config.json", () => {
     expect(registry.enabled.map((definition) => definition.id)).toEqual([
+      "github",
       "reminders",
       "schedule",
       "watch-later",
@@ -28,6 +30,8 @@ describe("registre actif", () => {
 
   it("expose les outils du module sous leur nom qualifie", () => {
     expect(registry.tools.map((tool) => tool.name)).toEqual([
+      "github.create_issue",
+      "github.list_issues",
       "reminders.add",
       "reminders.list",
       "reminders.update",

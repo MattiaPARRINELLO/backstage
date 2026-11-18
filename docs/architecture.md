@@ -543,24 +543,26 @@ La synchro est pilotée par un TTL de 30 min (`SYNC_TTL_MS` dans
 chiffres à vie. L'échec d'un sync est remonté via `syncError` (jamais persisté) :
 ne pas réintroduire de `catch {}` vide, c'est ce qui a masqué la panne.
 
-### Issues GitHub (`lib/github-actions.ts`)
+### Issues GitHub (`lib/github-actions.ts`, module `github`)
 
-Deux outils : `create_github_issue` et `list_github_issues`. L'agent peut donc
+Deux outils : `github.create_issue` et `github.list_issues` (anciens noms
+`create_github_issue` / `list_github_issues`, conservés en alias). L'agent peut
 ouvrir une issue de bug (avec les infos de debug disponibles) ou une demande de
 fonctionnalité.
 
 - **Dépôt figé** par `GITHUB_REPO` (`owner/nom`) : aucun argument d'outil ne
   peut changer la cible, donc un contenu externe injecté (email, page web) ne
   peut pas détourner l'écriture vers un autre dépôt.
-- **Pas de confirmation** : la création s'exécute directement, comme les autres
-  écritures locales, sauf si le tour est contaminé par du contenu externe
-  (cf. § *Provenance des écritures*). Un jeton limité aux issues
+- **Pas de confirmation** : `create_issue` est déclaré `external`, mais le
+  module retire explicitement la confirmation par défaut (ADR 0001, décision D).
+  La création s'exécute donc directement, sauf si le tour est contaminé par du
+  contenu externe (cf. § *Provenance des écritures*). Un jeton limité aux issues
   (`issues: write`) est la seule protection de périmètre — le révoquer désactive
   proprement la fonctionnalité.
 - **Libellés restreints** à `bug`, `enhancement`, `documentation` : un libellé
   absent du dépôt ferait échouer la création.
-- `list_github_issues` écarte les pull requests (l'API les renvoie dans
-  `/issues`).
+- `github.list_issues` écarte les pull requests (l'API les renvoie dans
+  `/issues`) et déclare `trust: "untrusted"`.
 - Le prompt impose de vérifier l'existence d'une issue équivalente avant
   création, et d'annoncer **l'URL renvoyée par l'API**, jamais une URL composée.
 

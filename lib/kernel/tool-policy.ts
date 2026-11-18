@@ -28,7 +28,6 @@ export const UNTRUSTED_TOOLS: ReadonlySet<string> = new Set([
   "fetch_page_meta",
   "triage_emails",
   "search_calendar_events",
-  "list_github_issues",
   "lookup_concerts",
   // prepare_concert renvoie le resultat d'un web_search (infos salle).
   "prepare_concert",
@@ -47,7 +46,6 @@ export const WRITE_TOOLS: ReadonlySet<string> = new Set([
   "update_photo_shoot",
   "scan_accreditations",
   "add_memory_fact",
-  "create_github_issue",
 ]);
 
 // Outils qu'une confirmation utilisateur peut réellement débloquer : ceux qui

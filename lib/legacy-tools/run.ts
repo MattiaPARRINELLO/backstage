@@ -27,12 +27,6 @@ import {
   updateGoogleCalendarEvent,
   deleteGoogleCalendarEvent,
 } from "@/lib/google-actions";
-import {
-  createGithubIssue,
-  listGithubIssues,
-  getGithubRepo,
-  isGithubConfigured,
-} from "@/lib/github-actions";
 
 /**
  * Exécution des outils historiques du noyau, pas encore migrés en modules.
@@ -312,34 +306,6 @@ export async function executeLegacyTool(
       return data.shoots.map((s) =>
         `- ${s.title} (${s.client}) le ${new Date(s.date).toLocaleDateString("fr-FR")} [${s.status}]${s.galleryLink ? ` - ${s.galleryLink}` : ""}${s.photosSent ? ` - ${s.photosSent} photos` : ""}`
       ).join("\n");
-    }
-    case "create_github_issue": {
-      if (!isGithubConfigured()) {
-        return "GitHub non configure : GITHUB_TOKEN et GITHUB_REPO doivent etre definis dans .env.local.";
-      }
-      const title = String(args.title ?? "").trim();
-      const body = String(args.body ?? "").trim();
-      if (!title) return "Erreur : titre de l'issue requis.";
-      if (!body) return "Erreur : corps de l'issue requis.";
-      const issue = await createGithubIssue({ title, body, labels: args.labels });
-      return `Issue #${issue.number} creee sur ${getGithubRepo()} : ${issue.title}\n${issue.url}${
-        issue.labels.length > 0 ? `\nLibelles : ${issue.labels.join(", ")}` : ""
-      }`;
-    }
-    case "list_github_issues": {
-      if (!isGithubConfigured()) {
-        return "GitHub non configure : GITHUB_TOKEN et GITHUB_REPO doivent etre definis dans .env.local.";
-      }
-      const state = (["open", "closed", "all"] as const).find((s) => s === args.state) ?? "open";
-      const limit = typeof args.limit === "number" ? args.limit : 10;
-      const issues = await listGithubIssues({ state, limit });
-      if (issues.length === 0) return `Aucune issue ${state} sur ${getGithubRepo()}.`;
-      return issues
-        .map(
-          (i) =>
-            `- #${i.number} [${i.state}] ${i.title}${i.labels.length > 0 ? ` (${i.labels.join(", ")})` : ""}`
-        )
-        .join("\n");
     }
     default:
       return `Outil inconnu : ${name}`;

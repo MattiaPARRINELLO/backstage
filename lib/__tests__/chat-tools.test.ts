@@ -546,16 +546,17 @@ describe("chat-tools — classement provenance des outils", () => {
       "fetch_page_meta",
       "triage_emails",
       "search_calendar_events",
-      "list_github_issues",
       "lookup_concerts",
       "prepare_concert",
     ]) {
       expect(UNTRUSTED_TOOLS.has(name)).toBe(true);
     }
-    // La meteo a migre : sa provenance vient du manifeste, plus d'une liste.
+    // La meteo et GitHub ont migre : provenance et effet viennent du manifeste.
     const { toolPolicy } = await import("@/lib/chat-tools");
     expect(toolPolicy("weather.get").untrusted).toBe(true);
     expect(toolPolicy("get_weather").untrusted).toBe(true);
+    expect(toolPolicy("github.list_issues").untrusted).toBe(true);
+    expect(toolPolicy("list_github_issues").untrusted).toBe(true);
     // Lecture de donnees locales : fiable.
     expect(UNTRUSTED_TOOLS.has("reminders.list")).toBe(false);
     expect(UNTRUSTED_TOOLS.has("get_schedule")).toBe(false);
@@ -578,12 +579,16 @@ describe("chat-tools — classement provenance des outils", () => {
       "add_photo_shoot",
       "update_photo_shoot",
       "scan_accreditations",
-      "create_github_issue",
       "send_email_response",
     ]) {
       expect(toolPolicy(name).write, name).toBe(true);
       expect(toolPolicy(name).confirmable, name).toBe(true);
     }
+    // La creation d'issue est external, confirmable, mais non confirmee par
+    // defaut : le module a retire la confirmation (comportement historique).
+    expect(toolPolicy("github.create_issue").write).toBe(false);
+    expect(toolPolicy("github.create_issue").confirmable).toBe(true);
+    expect(toolPolicy("github.create_issue").requiresConfirmation).toBe(false);
     // prepare_concert ne fait que lire (meteo + infos salle).
     expect(toolPolicy("prepare_concert").write).toBe(false);
   });

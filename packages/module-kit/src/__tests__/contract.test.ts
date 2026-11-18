@@ -75,6 +75,14 @@ describe("politique derivee de l'effet de bord", () => {
     ).toBe(false);
   });
 
+  it("garde un outil externe confirmable par provenance meme sans confirmation", () => {
+    // Un tour contamine bloque toute ecriture, y compris un outil externe qui
+    // s'execute normalement sans confirmation : il doit rester deblocable.
+    expect(
+      isConfirmable({ sideEffect: "external", requiresConfirmation: false })
+    ).toBe(true);
+  });
+
   it("considere un resultat fiable par defaut", () => {
     expect(isUntrusted({ sideEffect: "read" })).toBe(false);
     expect(isUntrusted({ sideEffect: "read", trust: "trusted" })).toBe(false);

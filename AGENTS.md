@@ -104,6 +104,7 @@ packages/
   module-kit/       contrat de module : defineModule, defineTool, defineAction (#84)
 modules/
   index.ts          racine de composition : la seule liste de modules du dépôt
+  github/           issues GitHub (lecture non fiable, création externe)
   reminders/        module pilote (#84), outils, actions, prompt, store, schéma
   schedule/         emploi du temps CESAR en lecture
   watch-later/      outil, actions, page, rail, panneau, carte d'accueil

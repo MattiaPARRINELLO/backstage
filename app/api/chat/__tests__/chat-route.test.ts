@@ -35,6 +35,7 @@ vi.mock("@/lib/chat-tools", () => {
     "list_github_issues",
     "lookup_concerts",
     "weather.get",
+    "github.list_issues",
     "prepare_concert",
   ]);
   const writes = new Set([
@@ -50,7 +51,7 @@ vi.mock("@/lib/chat-tools", () => {
     "update_photo_shoot",
     "scan_accreditations",
     "add_memory_fact",
-    "create_github_issue",
+    "github.create_issue",
   ]);
   return {
     tools: [],

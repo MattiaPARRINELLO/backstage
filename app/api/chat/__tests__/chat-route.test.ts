@@ -49,7 +49,7 @@ vi.mock("@/lib/chat-tools", () => {
     "add_watch_later",
     "photo.add",
     "photo.update",
-    "scan_accreditations",
+    "accreditations.scan",
     "add_memory_fact",
     "github.create_issue",
   ]);

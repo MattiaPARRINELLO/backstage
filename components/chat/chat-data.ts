@@ -44,6 +44,7 @@ export const toolMeta: Record<
   add_watch_later: { label: "À voir plus tard", icon: Bookmark },
   fetch_page_meta: { label: "Aperçu lien", icon: Globe },
   scan_accreditations: { label: "Accréditations", icon: Mail },
+  "accreditations.scan": { label: "Accréditations", icon: Mail },
   prepare_concert: { label: "Concert", icon: CalendarPlus },
   "concerts.prepare": { label: "Concert", icon: CalendarPlus },
   get_weather: { label: "Météo", icon: CloudSun },

@@ -84,7 +84,7 @@ describe("chat-tools — confirmation des actions IA", () => {
     expect(REQUIRE_CONFIRMATION.has("schedule_followup")).toBe(false);
     // Le scan des accréditations (analyse d'emails) et les lectures seules ne
     // demandent pas de confirmation.
-    expect(REQUIRE_CONFIRMATION.has("scan_accreditations")).toBe(false);
+    expect(REQUIRE_CONFIRMATION.has("accreditations.scan")).toBe(false);
     // Les lectures seules ne demandent pas de confirmation.
     expect(REQUIRE_CONFIRMATION.has("web_search")).toBe(false);
     expect(REQUIRE_CONFIRMATION.has("list_reminders")).toBe(false);
@@ -163,7 +163,7 @@ describe("chat-tools — confirmation des actions IA", () => {
     mockGoogleActions.fetchGmailMessages.mockResolvedValue([
       { id: "m1", from: "a@b.fr", subject: "Re: accreditation", date: "2026-08-20", snippet: "confirme le pass presse" },
     ]);
-    const result = await executeTool("scan_accreditations", {});
+    const result = await executeTool("accreditations.scan", {});
     expect(result.startsWith(ACTION_BLOCKED_PREFIX)).toBe(false);
     expect(result).toContain("Scan termine");
     expect(mockGoogleActions.fetchGmailMessages).toHaveBeenCalled();
@@ -577,7 +577,7 @@ describe("chat-tools — classement provenance des outils", () => {
       "add_watch_later",
       "photo.add",
       "photo.update",
-      "scan_accreditations",
+      "accreditations.scan",
     ]) {
       expect(toolPolicy(name).write, name).toBe(true);
       expect(toolPolicy(name).confirmable, name).toBe(true);

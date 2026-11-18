@@ -104,6 +104,7 @@ packages/
   module-kit/       contrat de module : defineModule, defineTool, defineAction (#84)
 modules/
   index.ts          racine de composition : la seule liste de modules du dépôt
+  accreditations/   scan des emails d'accréditation et fiches associées
   calendar/         Google Calendar (création externe, recherche non fiable)
   concerts/         concerts suivis et préparation terrain (non fiable)
   emails/           Gmail (lecture non fiable, envoi confirmé)

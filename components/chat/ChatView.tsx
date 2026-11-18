@@ -68,6 +68,8 @@ function describeAction(name: string, args: Record<string, unknown>): string {
       return `Programmer une relance « ${String(args.subject ?? "")} » pour le ${String(args.due_at ?? "?")}`;
     case "scan_accreditations":
       return "Analyser les emails pour créer ou mettre à jour les fiches d'accréditations";
+    case "accreditations.scan":
+      return "Analyser les emails pour créer ou mettre à jour les fiches d'accréditations";
     default:
       return "";
   }

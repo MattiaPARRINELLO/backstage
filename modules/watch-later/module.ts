@@ -9,6 +9,7 @@ import {
   summarizeWatchLaterAction,
 } from "./actions";
 import { addWatchLaterTool } from "./tools";
+import { WatchLaterPanel } from "./ui/Panel";
 import WatchLaterPage from "./ui/page";
 
 const bookmarkIcon = railIcon(
@@ -44,5 +45,6 @@ export default defineModule({
   ui: {
     page: WatchLaterPage,
     rail: { label: "À voir", icon: bookmarkIcon },
+    panel: WatchLaterPanel,
   },
 });

@@ -61,3 +61,8 @@ export {
   RAIL_FALLBACK_ICON,
   type RailIcon,
 } from "./rail-icon";
+export {
+  ModulePanelProvider,
+  useModulePanels,
+  type ModulePanel,
+} from "./module-panels";

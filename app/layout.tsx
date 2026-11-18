@@ -1,9 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import { createElement } from "react";
 import { Inter, Instrument_Serif, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { ModuleActionsProvider, ModulePanelProvider, type ModulePanel } from "@backstage/module-kit";
 import "./globals.css";
 import { PwaLoader } from "@/components/ui/PwaLoader";
 import { ThemeApplier } from "@/components/ui/ThemeApplier";
 import { ViewTransitionProvider } from "@/components/ViewTransitionProvider";
+import { callModuleAction } from "@/app/m/actions";
+import { modulePanelItems } from "@/lib/kernel/module-panel";
+import { registry } from "@/lib/kernel/registry";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -57,6 +62,23 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 
+/**
+ * Panneaux des modules actifs, montes dans le plus proche ancetre serveur
+ * commun a toutes les pages. Le chrome client les recoit par contexte ; il
+ * n'importe donc jamais le registre (ADR 0001, decision G).
+ */
+function modulePanels(): ModulePanel[] {
+  return modulePanelItems(registry).map((item) => ({
+    id: item.id,
+    label: item.label,
+    node: (
+      <ModuleActionsProvider moduleId={item.id} call={callModuleAction}>
+        {createElement(item.component)}
+      </ModuleActionsProvider>
+    ),
+  }));
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -91,7 +113,7 @@ export default function RootLayout({
           Aller au contenu
         </a>
         <ViewTransitionProvider>
-          {children}
+          <ModulePanelProvider panels={modulePanels()}>{children}</ModulePanelProvider>
         </ViewTransitionProvider>
       </body>
     </html>

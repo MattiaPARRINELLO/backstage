@@ -70,6 +70,8 @@ WebAuthn cassent sous Capacitor. Voir `docs/android-apk.md`.
 | Setup local       | `bun run setup`                               |
 | Setup sans cle IA | `bun run setup:dev`                           |
 | Reset passkey     | `bun run reset:passkey`                       |
+| Module externe    | `bun run module:add <url>#<ref>`              |
+| Modules installés | `bun run module:list` / `module:doctor`       |
 | APK Android       | `cd android && ./gradlew :app:assembleRelease`|
 
 ⚠️ `bun build` est le bundler Bun et **ne construit pas** l'app Next.
@@ -117,6 +119,7 @@ modules/
   weather/          outil météo (lecture externe non fiable)
   web/              recherche web et métadonnées de page (non fiable)
 modules.config.json quels modules sont activés (committé)
+modules.lock.json   repo, ref, commit et date des modules externes (committé)
 e2e/  scripts/  android/  public/
 docs/               architecture.md, self-hosting, deploy-cpanel, android-apk
 ```

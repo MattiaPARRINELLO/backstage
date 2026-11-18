@@ -539,7 +539,7 @@ describe("chat-tools — statut de fetch_and_search_emails", () => {
 });
 
 describe("chat-tools — classement provenance des outils", () => {
-  it("classe les lectures externes comme non fiables", () => {
+  it("classe les lectures externes comme non fiables", async () => {
     for (const name of [
       "web_search",
       "fetch_and_search_emails",
@@ -548,11 +548,14 @@ describe("chat-tools — classement provenance des outils", () => {
       "search_calendar_events",
       "list_github_issues",
       "lookup_concerts",
-      "get_weather",
       "prepare_concert",
     ]) {
       expect(UNTRUSTED_TOOLS.has(name)).toBe(true);
     }
+    // La meteo a migre : sa provenance vient du manifeste, plus d'une liste.
+    const { toolPolicy } = await import("@/lib/chat-tools");
+    expect(toolPolicy("weather.get").untrusted).toBe(true);
+    expect(toolPolicy("get_weather").untrusted).toBe(true);
     // Lecture de donnees locales : fiable.
     expect(UNTRUSTED_TOOLS.has("reminders.list")).toBe(false);
     expect(UNTRUSTED_TOOLS.has("get_schedule")).toBe(false);

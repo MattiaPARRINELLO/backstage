@@ -13,6 +13,7 @@ describe("registre actif", () => {
       "reminders",
       "schedule",
       "watch-later",
+      "weather",
     ]);
   });
 
@@ -21,6 +22,7 @@ describe("registre actif", () => {
       "reminders",
       "schedule",
       "watch-later",
+      "weather",
     ]);
   });
 
@@ -31,6 +33,7 @@ describe("registre actif", () => {
       "reminders.update",
       "schedule.get",
       "watch-later.add",
+      "weather.get",
     ]);
   });
 

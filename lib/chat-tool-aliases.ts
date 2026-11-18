@@ -18,6 +18,7 @@ export const LEGACY_TOOL_NAMES: Readonly<Record<string, string>> = {
   update_reminder: "reminders.update",
   get_schedule: "schedule.get",
   add_watch_later: "watch-later.add",
+  get_weather: "weather.get",
 };
 
 /** Nom courant d'un outil, à partir d'un nom ancien ou déjà qualifié. */

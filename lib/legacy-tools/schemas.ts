@@ -181,17 +181,6 @@ export const legacyTools: UnifiedTool[] = [
     },
   },
   {
-    name: "get_weather",
-    description: "Recupere la meteo actuelle d'une ville (temperature, ressenti, humidite, vent). Exemple : 'get_weather Paris'.",
-    parameters: {
-      type: "object",
-      properties: {
-        city: { type: "string", description: "Nom de la ville" },
-      },
-      required: ["city"],
-    },
-  },
-  {
     name: "add_photo_shoot",
     description: "Ajoute un nouveau shooting photo au suivi. Si l'utilisateur ne precise pas de statut, il est automatique : 'done' si la date est passee/aujourd'hui, 'upcoming' si future. Deduis le statut des paroles de l'utilisateur : ex. 'deja sur mon PC' -> 'on_pc', 'photos deja envoyees' -> 'sent', 'retouche' -> 'edited', 'exporte' -> 'exported', 'trie' -> 'sorted', 'fait/termine' -> 'done'. Statuts: upcoming, done, on_pc, sorted, edited, exported, sent.",
     parameters: {

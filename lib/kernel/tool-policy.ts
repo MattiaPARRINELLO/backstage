@@ -30,7 +30,6 @@ export const UNTRUSTED_TOOLS: ReadonlySet<string> = new Set([
   "search_calendar_events",
   "list_github_issues",
   "lookup_concerts",
-  "get_weather",
   // prepare_concert renvoie le resultat d'un web_search (infos salle).
   "prepare_concert",
 ]);

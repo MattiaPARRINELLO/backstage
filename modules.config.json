@@ -5,6 +5,7 @@
     "reminders": { "enabled": true },
     "schedule": { "enabled": true },
     "watch-later": { "enabled": true },
-    "weather": { "enabled": true }
+    "weather": { "enabled": true },
+    "web": { "enabled": true }
   }
 }

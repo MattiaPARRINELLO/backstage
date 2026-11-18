@@ -21,6 +21,8 @@ export const LEGACY_TOOL_NAMES: Readonly<Record<string, string>> = {
   get_weather: "weather.get",
   create_github_issue: "github.create_issue",
   list_github_issues: "github.list_issues",
+  web_search: "web.search",
+  fetch_page_meta: "web.page_meta",
 };
 
 /** Nom courant d'un outil, à partir d'un nom ancien ou déjà qualifié. */

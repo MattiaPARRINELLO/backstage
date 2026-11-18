@@ -9,17 +9,6 @@ import type { UnifiedTool } from "@/lib/ai-providers";
  */
 export const legacyTools: UnifiedTool[] = [
   {
-    name: "web_search",
-    description: "Effectue une recherche web pour recuperer des informations d'actualite ou des faits generaux.",
-    parameters: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "La requete de recherche" },
-      },
-      required: ["query"],
-    },
-  },
-  {
     name: "fetch_and_search_emails",
     description: "Recupere les emails Gmail (recus et envoyes) et cherche par mot-cle dans les expediteurs, destinataires, sujets ou contenus. Utilise 'in:sent' pour les mails envoyes, 'is:unread' pour les non-lus. Renvoie au maximum 10 messages, tries par date decroissante (le plus recent d'abord) ; sans mot-cle, ce sont donc les 10 derniers emails.",
     parameters: {
@@ -147,17 +136,6 @@ export const legacyTools: UnifiedTool[] = [
         message: { type: "string", description: "Message de relance affiche dans la notification (optionnel)" },
       },
       required: ["subject", "due_at"],
-    },
-  },
-  {
-    name: "fetch_page_meta",
-    description: "Recupere le titre et la miniature d'une page web ou video YouTube.",
-    parameters: {
-      type: "object",
-      properties: {
-        url: { type: "string", description: "URL complete" },
-      },
-      required: ["url"],
     },
   },
   {

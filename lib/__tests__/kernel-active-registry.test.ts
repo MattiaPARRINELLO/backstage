@@ -15,6 +15,7 @@ describe("registre actif", () => {
       "schedule",
       "watch-later",
       "weather",
+      "web",
     ]);
   });
 
@@ -25,6 +26,7 @@ describe("registre actif", () => {
       "schedule",
       "watch-later",
       "weather",
+      "web",
     ]);
   });
 
@@ -38,6 +40,8 @@ describe("registre actif", () => {
       "schedule.get",
       "watch-later.add",
       "weather.get",
+      "web.page_meta",
+      "web.search",
     ]);
   });
 

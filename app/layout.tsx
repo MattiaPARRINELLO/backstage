@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { createElement } from "react";
 import { Inter, Instrument_Serif, JetBrains_Mono, Space_Grotesk } from "next/font/google";
-import { ModuleActionsProvider, ModulePanelProvider, type ModulePanel } from "@backstage/module-kit";
+import { ModuleActionsProvider, ModuleHomeCardProvider, ModulePanelProvider, type ModulePanel } from "@backstage/module-kit";
 import "./globals.css";
 import { PwaLoader } from "@/components/ui/PwaLoader";
 import { ThemeApplier } from "@/components/ui/ThemeApplier";
 import { ViewTransitionProvider } from "@/components/ViewTransitionProvider";
 import { callModuleAction } from "@/app/m/actions";
+import { moduleHomeCardItems } from "@/lib/kernel/module-home";
 import { modulePanelItems } from "@/lib/kernel/module-panel";
 import { registry } from "@/lib/kernel/registry";
 
@@ -63,14 +64,25 @@ export const viewport: Viewport = {
 };
 
 /**
- * Panneaux des modules actifs, montes dans le plus proche ancetre serveur
- * commun a toutes les pages. Le chrome client les recoit par contexte ; il
- * n'importe donc jamais le registre (ADR 0001, decision G).
+ * Panneaux et cartes d'accueil des modules actifs, montes dans le plus proche
+ * ancetre serveur commun a toutes les pages. Le chrome client les recoit par
+ * contexte ; il n'importe donc jamais le registre (ADR 0001, decision G).
  */
 function modulePanels(): ModulePanel[] {
   return modulePanelItems(registry).map((item) => ({
     id: item.id,
     label: item.label,
+    node: (
+      <ModuleActionsProvider moduleId={item.id} call={callModuleAction}>
+        {createElement(item.component)}
+      </ModuleActionsProvider>
+    ),
+  }));
+}
+
+function moduleHomeCards() {
+  return moduleHomeCardItems(registry).map((item) => ({
+    id: item.id,
     node: (
       <ModuleActionsProvider moduleId={item.id} call={callModuleAction}>
         {createElement(item.component)}
@@ -113,7 +125,9 @@ export default function RootLayout({
           Aller au contenu
         </a>
         <ViewTransitionProvider>
-          <ModulePanelProvider panels={modulePanels()}>{children}</ModulePanelProvider>
+          <ModuleHomeCardProvider cards={moduleHomeCards()}>
+            <ModulePanelProvider panels={modulePanels()}>{children}</ModulePanelProvider>
+          </ModuleHomeCardProvider>
         </ViewTransitionProvider>
       </body>
     </html>

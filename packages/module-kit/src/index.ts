@@ -66,3 +66,8 @@ export {
   useModulePanels,
   type ModulePanel,
 } from "./module-panels";
+export {
+  ModuleHomeCardProvider,
+  useModuleHomeCards,
+  type ModuleHomeCard,
+} from "./module-home-cards";

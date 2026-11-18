@@ -9,6 +9,7 @@ import {
   summarizeWatchLaterAction,
 } from "./actions";
 import { addWatchLaterTool } from "./tools";
+import { WatchLaterHomeCard } from "./ui/HomeCard";
 import { WatchLaterPanel } from "./ui/Panel";
 import WatchLaterPage from "./ui/page";
 
@@ -46,5 +47,6 @@ export default defineModule({
     page: WatchLaterPage,
     rail: { label: "À voir", icon: bookmarkIcon },
     panel: WatchLaterPanel,
+    homeCard: WatchLaterHomeCard,
   },
 });

@@ -131,9 +131,9 @@ const scenarios: AgentScenario[] = [
   },
   {
     intent: "liste mes shootings a venir",
-    expectedTool: "list_photo_shoots",
+    expectedTool: "photo.list",
     expectArgs: {},
-    forbidTools: ["add_photo_shoot", "send_email_response"],
+    forbidTools: ["photo.add", "send_email_response"],
   },
   {
     intent: "bonjour, comment vas-tu ?",
@@ -198,7 +198,7 @@ describe("registre d'outils", () => {
     expect(tools.map((tool) => tool.name).sort()).toEqual(
       [
         "add_memory_fact",
-        "add_photo_shoot",
+        "photo.add",
         "reminders.add",
         "watch-later.add",
         "calendar.create",
@@ -209,7 +209,7 @@ describe("registre d'outils", () => {
         "schedule.get",
         "weather.get",
         "github.list_issues",
-        "list_photo_shoots",
+        "photo.list",
         "reminders.list",
         "concerts.list",
         "concerts.prepare",
@@ -219,7 +219,7 @@ describe("registre d'outils", () => {
         "emails.reply",
         "emails.triage",
         "calendar.update",
-        "update_photo_shoot",
+        "photo.update",
         "reminders.update",
         "web.search",
       ].sort()

@@ -27,8 +27,6 @@ export const UNTRUSTED_TOOLS: ReadonlySet<string> = new Set<string>();
 // memoire). En tour contamine, ils passent par la meme carte de confirmation
 // que `send_email_response`.
 export const WRITE_TOOLS: ReadonlySet<string> = new Set([
-  "add_photo_shoot",
-  "update_photo_shoot",
   "scan_accreditations",
   "add_memory_fact",
 ]);

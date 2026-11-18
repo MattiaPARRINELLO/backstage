@@ -575,8 +575,8 @@ describe("chat-tools — classement provenance des outils", () => {
       "reminders.update",
       "add_memory_fact",
       "add_watch_later",
-      "add_photo_shoot",
-      "update_photo_shoot",
+      "photo.add",
+      "photo.update",
       "scan_accreditations",
     ]) {
       expect(toolPolicy(name).write, name).toBe(true);

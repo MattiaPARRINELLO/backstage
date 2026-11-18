@@ -2,16 +2,13 @@ import { verifyWrite } from "@backstage/module-kit";
 import {
   getAccreditations,
   addAccreditation,
-  getPhotoShoots,
-  addPhotoShoot,
-  updatePhotoShoot,
   getMemory,
   addMemoryFact,
   findSimilarMemoryFacts,
   touchMemoryFact,
 } from "@/lib/storage";
 import { hasNewInformation } from "@/lib/memory-dedup";
-import type { PhotoShootStatus, Accreditation } from "@/lib/types";
+import type { Accreditation } from "@/lib/types";
 import { fetchGmailMessages } from "@/lib/google-actions";
 
 /**
@@ -121,46 +118,6 @@ export async function executeLegacyTool(
       } catch (err) {
         return `Erreur lors du scan des accreditations : ${err instanceof Error ? err.message : String(err)}`;
       }
-    }
-    case "add_photo_shoot": {
-      const title = String(args.title ?? "").trim();
-      const date = String(args.date ?? "").trim();
-      const client = String(args.client ?? "").trim();
-      const notes = String(args.notes ?? "").trim() || undefined;
-      const validStatuses: PhotoShootStatus[] = ["upcoming", "done", "on_pc", "sorted", "edited", "exported", "sent"];
-      let status: PhotoShootStatus | undefined;
-      if (args.status !== undefined) {
-        const s = String(args.status);
-        if (!validStatuses.includes(s as PhotoShootStatus)) return `Erreur : status invalide (${s}). Valeurs acceptees : ${validStatuses.join(", ")}`;
-        status = s as PhotoShootStatus;
-      }
-      if (!title || !date || !client) return "Erreur : titre, date et client requis.";
-      const shoot = await addPhotoShoot({ title, date, client, notes, status });
-      // Relecture : le shooting est-il bien enregistré ?
-      const problem = await verifyWrite(`le shooting "${shoot.title}"`, async () => {
-        const after = await getPhotoShoots();
-        return after.shoots.some((s) => s.id === shoot.id);
-      });
-      if (problem) return problem;
-      return `Shooting ajouté : ${shoot.title} (${shoot.client}) le ${new Date(shoot.date).toLocaleDateString("fr-FR")} [${shoot.status}]`;
-    }
-    case "update_photo_shoot": {
-      const id = String(args.id ?? "").trim();
-      if (!id) return "Erreur : ID requis.";
-      const updates: Record<string, unknown> = {};
-      if (args.status) updates.status = args.status;
-      if (args.galleryLink) updates.galleryLink = String(args.galleryLink);
-      if (args.photosSent !== undefined) updates.photosSent = Number(args.photosSent);
-      const updated = await updatePhotoShoot(id, updates as Parameters<typeof updatePhotoShoot>[1]);
-      if (!updated) return "Shooting introuvable.";
-      return `Shooting mis à jour : ${updated.title} → ${updated.status}${updated.galleryLink ? ` (galerie: ${updated.galleryLink})` : ""}${updated.photosSent ? ` (${updated.photosSent} photos)` : ""}`;
-    }
-    case "list_photo_shoots": {
-      const data = await getPhotoShoots();
-      if (data.shoots.length === 0) return "Aucun shooting photo enregistré.";
-      return data.shoots.map((s) =>
-        `- ${s.title} (${s.client}) le ${new Date(s.date).toLocaleDateString("fr-FR")} [${s.status}]${s.galleryLink ? ` - ${s.galleryLink}` : ""}${s.photosSent ? ` - ${s.photosSent} photos` : ""}`
-      ).join("\n");
     }
     default:
       return `Outil inconnu : ${name}`;

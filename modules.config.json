@@ -6,6 +6,7 @@
     "emails": { "enabled": true },
     "followups": { "enabled": true },
     "github": { "enabled": true },
+    "photo": { "enabled": true },
     "reminders": { "enabled": true },
     "schedule": { "enabled": true },
     "watch-later": { "enabled": true },

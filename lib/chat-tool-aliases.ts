@@ -33,6 +33,9 @@ export const LEGACY_TOOL_NAMES: Readonly<Record<string, string>> = {
   fetch_and_search_emails: "emails.search",
   send_email_response: "emails.reply",
   triage_emails: "emails.triage",
+  add_photo_shoot: "photo.add",
+  update_photo_shoot: "photo.update",
+  list_photo_shoots: "photo.list",
 };
 
 /** Nom courant d'un outil, à partir d'un nom ancien ou déjà qualifié. */

@@ -25,7 +25,6 @@ export const REQUIRE_CONFIRMATION = new Set<string>([
 export const UNTRUSTED_TOOLS: ReadonlySet<string> = new Set([
   "fetch_and_search_emails",
   "triage_emails",
-  "search_calendar_events",
 ]);
 
 // Outils qui modifient des donnees (locales, calendrier, email, GitHub,
@@ -33,9 +32,6 @@ export const UNTRUSTED_TOOLS: ReadonlySet<string> = new Set([
 // que `send_email_response`.
 export const WRITE_TOOLS: ReadonlySet<string> = new Set([
   "send_email_response",
-  "create_calendar_event",
-  "update_calendar_event",
-  "delete_calendar_event",
   "add_photo_shoot",
   "update_photo_shoot",
   "scan_accreditations",

@@ -1,6 +1,7 @@
 {
   "kernelApi": 1,
   "modules": {
+    "calendar": { "enabled": true },
     "concerts": { "enabled": true },
     "followups": { "enabled": true },
     "github": { "enabled": true },

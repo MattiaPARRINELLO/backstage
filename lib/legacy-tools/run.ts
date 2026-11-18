@@ -16,10 +16,6 @@ import { invalidateServerCachePattern } from "@/lib/server-cache";
 import {
   fetchGmailMessages,
   sendGmailReply,
-  createGoogleCalendarEvent,
-  fetchGoogleCalendarEvents,
-  updateGoogleCalendarEvent,
-  deleteGoogleCalendarEvent,
 } from "@/lib/google-actions";
 
 /**
@@ -53,48 +49,6 @@ export async function executeLegacyTool(
       const sentId = await sendGmailReply(emailId, responseText);
       invalidateServerCachePattern(/^gmail:list/);
       return `Reponse envoyee (message id: ${sentId}).`;
-    }
-    case "create_calendar_event": {
-      const title = String(args.title ?? "");
-      const start = String(args.start_time ?? "");
-      const end = String(args.end_time ?? "");
-      const location = args.location ? String(args.location) : undefined;
-      const colorId = args.color_id ? String(args.color_id) : undefined;
-      if (!title || !start || !end) return "Erreur : title, start_time et end_time requis.";
-      const eventId = await createGoogleCalendarEvent(title, start, end, location, undefined, colorId);
-      let msg = `Evenement "${title}" cree dans Google Calendar (id: ${eventId}).`;
-      if (colorId) msg += ` Couleur appliquee.`;
-      return msg;
-    }
-    case "update_calendar_event": {
-      const eventId = String(args.event_id ?? "");
-      if (!eventId) return "Erreur : event_id requis.";
-      const updates: { summary?: string; description?: string; location?: string; colorId?: string } = {};
-      if (args.title) updates.summary = String(args.title);
-      if (args.description) updates.description = String(args.description);
-      if (args.location) updates.location = String(args.location);
-      if (args.color_id) updates.colorId = String(args.color_id);
-      await updateGoogleCalendarEvent(eventId, updates);
-      return `Evenement mis a jour (id: ${eventId}).`;
-    }
-    case "delete_calendar_event": {
-      const eventId = String(args.event_id ?? "");
-      if (!eventId) return "Erreur : event_id requis.";
-      await deleteGoogleCalendarEvent(eventId);
-      return `Evenement supprime du Google Calendar (id: ${eventId}).`;
-    }
-    case "search_calendar_events": {
-      const days = typeof args.days === "number" ? args.days : 30;
-      const timeMin = new Date().toISOString();
-      const timeMax = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
-      const events = await fetchGoogleCalendarEvents(timeMin, timeMax);
-      if (events.length === 0) return "Aucun evenement trouve dans le calendrier.";
-      return events
-        .map(
-          (e) =>
-            `- ${e.summary} le ${new Date(e.start).toLocaleDateString("fr-FR")}${e.location ? ` (${e.location})` : ""}`
-        )
-        .join("\n");
     }
     case "triage_emails": {
       const maxResults = typeof args.max_results === "number" ? args.max_results : 10;

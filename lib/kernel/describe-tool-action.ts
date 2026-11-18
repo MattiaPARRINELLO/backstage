@@ -23,9 +23,15 @@ export function describeToolAction(name: string, args: Record<string, unknown>):
       return `Répondre à l'email ${String(args.email_id ?? "?")}`;
     case "create_calendar_event":
       return `Créer l'événement « ${String(args.title ?? "")} » du ${String(args.start_time ?? "?")} au ${String(args.end_time ?? "?")}`;
+    case "calendar.create":
+      return `Créer l'événement « ${String(args.title ?? "")} » du ${String(args.start_time ?? "?")} au ${String(args.end_time ?? "?")}`;
     case "update_calendar_event":
       return `Modifier l'événement ${String(args.event_id ?? "?")}${args.title ? ` → « ${String(args.title)} »` : ""}`;
+    case "calendar.update":
+      return `Modifier l'événement ${String(args.event_id ?? "?")}${args.title ? ` → « ${String(args.title)} »` : ""}`;
     case "delete_calendar_event":
+      return `Supprimer l'événement ${String(args.event_id ?? "?")}`;
+    case "calendar.delete":
       return `Supprimer l'événement ${String(args.event_id ?? "?")}`;
     case "schedule_followup":
       return `Programmer une relance « ${String(args.subject ?? "")} » pour le ${String(args.due_at ?? "?")}`;

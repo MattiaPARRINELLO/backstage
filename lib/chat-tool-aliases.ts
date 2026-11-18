@@ -24,6 +24,8 @@ export const LEGACY_TOOL_NAMES: Readonly<Record<string, string>> = {
   web_search: "web.search",
   fetch_page_meta: "web.page_meta",
   schedule_followup: "followups.schedule",
+  lookup_concerts: "concerts.list",
+  prepare_concert: "concerts.prepare",
 };
 
 /** Nom courant d'un outil, à partir d'un nom ancien ou déjà qualifié. */

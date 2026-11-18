@@ -1,5 +1,6 @@
 import type { ModuleDefinition } from "@backstage/module-kit";
 
+import concerts from "./concerts/module";
 import followups from "./followups/module";
 import github from "./github/module";
 import reminders from "./reminders/module";
@@ -15,4 +16,4 @@ import web from "./web/module";
  * consiste à écrire son dossier, l'ajouter ici, et l'activer dans
  * `modules.config.json` — aucune modification du noyau.
  */
-export const modules: readonly ModuleDefinition[] = [followups, github, reminders, schedule, watchLater, weather, web];
+export const modules: readonly ModuleDefinition[] = [concerts, followups, github, reminders, schedule, watchLater, weather, web];

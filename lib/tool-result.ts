@@ -118,6 +118,7 @@ export const SIDE_EFFECT_TOOL_NAMES = new Set<string>([
   "watch-later.add",
   "scan_accreditations",
   "prepare_concert",
+  "concerts.prepare",
   "add_photo_shoot",
   "update_photo_shoot",
   "create_github_issue",

@@ -27,6 +27,9 @@
     "analyze": "ANALYZE=true bun run build",
     "cron:reminders": "bun scripts/cron-scheduler.ts reminders",
     "cron:daily-brief": "bun scripts/cron-scheduler.ts daily-brief",
+    "module:add": "bun scripts/module-install.ts add",
+    "module:list": "bun scripts/module-install.ts list",
+    "module:doctor": "bun scripts/module-install.ts doctor",
     "reset:passkey": "bun scripts/reset-passkey.ts",
     "setup": "bun scripts/setup.ts",
     "setup:dev": "bun scripts/setup.ts --dev"

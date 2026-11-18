@@ -103,6 +103,9 @@ bun run test:e2e     # playwright (e2e)
 bun run analyze      # build + bundle-analyzer
 bun run cron:reminders   # déclencheur reminders (scripts/cron-scheduler.ts)
 bun run cron:daily-brief # déclencheur brief du matin
+bun run module:add <url>#<ref>  # installe un module externe (commit figé)
+bun run module:list      # modules externes installés (modules.lock.json)
+bun run module:doctor    # vérifie manifestes, activation et apiVersion
 bun run reset:passkey    # reset des passkeys enregistrées
 ```
 

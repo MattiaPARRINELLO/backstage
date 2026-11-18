@@ -391,6 +391,25 @@ moteur d'écriture (`lib/memory-autosave.ts`) :
 
 ---
 
+## Distribution des modules (dépôt git externe)
+
+`bun run module:add <url-git>#<ref>` clone une **ref épinglée** dans
+`modules/<id>/`, retire le `.git` du clone, vérifie le manifeste
+(`apiVersion <= KERNEL_API`, id kebab-case, champs obligatoires), puis écrit
+`modules.config.json`, `modules.lock.json` et la racine de composition. Le
+commit réel est figé dans le lock : une branche n'est jamais une version.
+
+- `modules.lock.json` contient `repo`, `ref`, `commit`, `installedAt` par module.
+- `bun run module:list` affiche le lock ; `bun run module:doctor` vérifie que
+  chaque module du lock est présent, actif et compatible.
+- L'installation échoue sans laisser de dossier temporaire, et le clone ne
+  conserve pas d'historique git.
+- Un rebuild Next est obligatoire : Next ne crée pas de route à l'exécution.
+- **Modèle de confiance inchangé** : un module externe exécute du code arbitraire
+  dans le processus serveur. Il peut lire `.env.local` et `data/`. Les capacités
+  déclarées sont affichées à l'installation, jamais appliquées. Ce n'est pas une
+  sandbox (ADR 0001, décision K).
+
 ## Emploi du temps CESAR (`lib/cesar-client.ts`)
 
 ⚠️ **Aucun navigateur en prod** (cPanel `npm install --production`, pas de

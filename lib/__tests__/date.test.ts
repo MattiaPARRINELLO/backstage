@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   formatRelative,
   formatDateShort,
@@ -103,7 +103,11 @@ describe("isOverdue", () => {
   });
 
   it("retourne false pour la date courante (strictement inférieur)", () => {
-    const now = new Date().toISOString();
-    expect(isOverdue(now)).toBe(false);
+    // Sans horloge figée, `new Date()` puis `Date.now()` s'exécutent des
+    // millisecondes plus tard : le test devenait instable en CI.
+    const now = Date.now();
+    const spy = vi.spyOn(Date, "now").mockReturnValue(now);
+    expect(isOverdue(new Date(now).toISOString())).toBe(false);
+    spy.mockRestore();
   });
 });

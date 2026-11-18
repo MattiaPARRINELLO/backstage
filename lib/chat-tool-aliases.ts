@@ -36,6 +36,7 @@ export const LEGACY_TOOL_NAMES: Readonly<Record<string, string>> = {
   add_photo_shoot: "photo.add",
   update_photo_shoot: "photo.update",
   list_photo_shoots: "photo.list",
+  scan_accreditations: "accreditations.scan",
 };
 
 /** Nom courant d'un outil, à partir d'un nom ancien ou déjà qualifié. */

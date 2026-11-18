@@ -114,7 +114,7 @@ const scenarios: AgentScenario[] = [
   },
   {
     intent: "scanne mes accreditations photo en attente",
-    expectedTool: "scan_accreditations",
+    expectedTool: "accreditations.scan",
     expectArgs: {},
     forbidTools: ["send_email_response"],
     writes: true,
@@ -213,7 +213,7 @@ describe("registre d'outils", () => {
         "reminders.list",
         "concerts.list",
         "concerts.prepare",
-        "scan_accreditations",
+        "accreditations.scan",
         "followups.schedule",
         "calendar.search",
         "emails.reply",

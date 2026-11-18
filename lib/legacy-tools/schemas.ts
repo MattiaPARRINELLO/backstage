@@ -29,13 +29,4 @@ export const legacyTools: UnifiedTool[] = [
       required: ["content", "category"],
     },
   },
-  {
-    name: "scan_accreditations",
-    description: "Analyse les emails Gmail pour trouver des demandes d'accreditation (mots-cles: accreditation, photo pass, press). Extrait artiste, lieu, date, statut et cree/met a jour les fiches dans accreditations.json.",
-    parameters: {
-      type: "object",
-      properties: {},
-      required: [],
-    },
-  },
 ];

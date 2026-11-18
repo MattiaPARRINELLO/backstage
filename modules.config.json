@@ -1,6 +1,7 @@
 {
   "kernelApi": 1,
   "modules": {
+    "accreditations": { "enabled": true },
     "calendar": { "enabled": true },
     "concerts": { "enabled": true },
     "emails": { "enabled": true },

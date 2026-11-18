@@ -186,6 +186,21 @@ un `cp -r public "$DEPLOY/public"` créerait `public/public/` → tous les asset
 
 ## Chat
 
+### Prompt système composé par modules
+
+`lib/chat-prompts.ts` garde l'identité, la mémoire, l'agenda, les shootings, le
+brief et le ton. Les domaines migrés fournissent leurs blocs par le contrat :
+`prompt: [{ id, priority, render }]` (ADR 0001, décision F).
+
+- `lib/kernel/prompt.ts` trie par priorité décroissante, tronque chaque bloc à
+  400 caractères, plafonne l'ensemble à 1 500, et répartit le budget restant sur
+  le bloc courant.
+- Un `render` qui lève est journalisé puis retiré : un module ne peut pas
+  casser le tour.
+- Un module désactivé ne contribue rien. Le bloc « rappels en attente » vit
+  désormais dans `modules/reminders/prompt.ts` ; il n'est plus écrit dans le
+  noyau.
+
 ### Génération survivant à la navigation (`lib/chat-runs.ts`)
 
 Le tour de chat **n'est plus possédé par la page**. Trois pièces :

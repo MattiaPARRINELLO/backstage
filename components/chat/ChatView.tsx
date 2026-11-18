@@ -29,7 +29,8 @@ import {
   clearLiveRun,
   type LiveRunEvent,
 } from "@/components/chat/live-run";
-import { SIDE_EFFECT_TOOL_NAMES, type PendingActionReason } from "@/lib/tool-result";
+import { type PendingActionReason } from "@/lib/tool-result";
+import { buildActionContext } from "@/lib/chat-action-context";
 import { MessageBlock, ActivityTrail, AssistantAvatar, GroupActionCard } from "@/components/chat/MessageBlocks";
 import { KeyboardSafe } from "@/components/ui/KeyboardSafe";
 
@@ -723,26 +724,9 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       // Résultats des actions à effet de bord (confirmées comprises) : sans ce
       // rappel, le modèle repart d'un contexte où il n'a aucune preuve que
       // l'action a bien été exécutée et peut affirmer qu'elle n'a pas eu lieu.
-      const actionContext = next
-        .flatMap((m) => m.toolCalls ?? [])
-        .filter(
-          (tc) =>
-            SIDE_EFFECT_TOOL_NAMES.has(tc.name) &&
-            tc.result &&
-            tc.status !== "running"
-        )
-        .slice(-20)
-        .map((tc) => {
-          const result = (tc.result ?? "").replace(/\s+/g, " ").trim().slice(0, 220);
-          const label =
-            tc.status === "success"
-              ? "OK"
-              : result.startsWith("ACTION_BLOCKED")
-                ? "BLOQUE"
-                : "ERREUR";
-          return `- ${tc.name} : [${label}] ${result}`;
-        })
-        .join("\n");
+      // Une seule ligne par action, l'état le plus récent faisant foi (issue
+      // #141 : un ancien [BLOQUE] ne doit jamais survivre à la confirmation).
+      const actionContext = buildActionContext(next);
 
       // La génération est portée par `live-run.ts` (hors React) : un changement
       // de page ne l'interrompt plus. Le serveur la poursuit même si l'onglet
@@ -763,8 +747,12 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       if (confirmBusy) return;
       setConfirmBusy(group.id);
       try {
-        const actions = group.tools.map((t) => ({ name: t.name, arguments: t.args }));
-        const res = await api.chat.confirmBatch(actions);
+        const actions = group.tools.map((t) => ({
+          name: t.name,
+          arguments: t.args,
+          toolCallId: t.toolCallId,
+        }));
+        const res = await api.chat.confirmBatch(actions, sessionId ?? undefined);
         setPendingGroups((prev) => prev.filter((g) => g.id !== group.id));
         if (!res.ok && res.error) {
           throw new Error(res.error);
@@ -825,7 +813,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
         setConfirmBusy(null);
       }
     },
-    [confirmBusy, toast]
+    [confirmBusy, toast, sessionId]
   );
 
   const cancelGroup = useCallback(

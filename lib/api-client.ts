@@ -211,14 +211,26 @@ export const api = {
       }),
 
     // Exécute un lot d'actions IA bloquées (une seule carte de confirmation).
-    confirmBatch: (actions: { name: string; arguments: Record<string, unknown> }[]) =>
+    // `sessionId` et `toolCallId` permettent au serveur de reporter le résultat
+    // réel sur l'historique persisté (issue #141).
+    confirmBatch: (
+      actions: { name: string; arguments: Record<string, unknown>; toolCallId?: string }[],
+      sessionId?: string
+    ) =>
       jsonFetch<{
         ok: boolean;
-        results: { name: string; ok: boolean; result?: string; error?: string }[];
+        results: {
+          name: string;
+          toolCallId?: string;
+          ok: boolean;
+          status?: "ok" | "error" | "empty" | "blocked";
+          result?: string;
+          error?: string;
+        }[];
         error?: string;
       }>("/api/chat/confirm-batch", {
         method: "POST",
-        body: JSON.stringify({ actions }),
+        body: JSON.stringify({ actions, sessionId }),
       }),
   },
 };

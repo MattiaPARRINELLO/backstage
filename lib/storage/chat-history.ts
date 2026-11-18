@@ -1,5 +1,6 @@
 import type { ChatHistory, ChatSession } from "../types";
 import type { ChatRunStep, ChatRunTool } from "../chat-run-types";
+import type { ToolStatus } from "../tool-result";
 import { mutateJson, readJsonSafe } from "../storage-core";
 
 type ChatSessionMessage = ChatSession["messages"][number];
@@ -107,6 +108,51 @@ export async function appendAssistantTurn(input: {
     } else {
       data.sessions.push(session);
     }
+  });
+}
+
+/**
+ * Reporte le résultat réel d'une action confirmée sur le tour persisté.
+ *
+ * Sans cette écriture, l'historique garde le `[BLOQUE]` produit avant la
+ * confirmation : au rechargement ou au changement de page, le récapitulatif
+ * `<executed_actions>` rejoue un blocage alors que l'action a abouti (issue
+ * #141). La donnée serveur est la source de vérité ; le client met à jour sa
+ * copie locale, le serveur met à jour l'historique.
+ */
+export async function applyConfirmedToolResults(
+  sessionId: string,
+  updates: { toolCallId: string; status: ToolStatus; result: string }[]
+): Promise<void> {
+  if (!sessionId || updates.length === 0) return;
+  const byId = new Map(updates.map((u) => [u.toolCallId, u]));
+  const status = (s: ToolStatus): "success" | "error" =>
+    s === "error" || s === "blocked" ? "error" : "success";
+
+  await mutateJson<ChatHistory>("chat-history.json", defaultChatHistory, (data) => {
+    const session = data.sessions.find((s) => s.id === sessionId);
+    if (!session) return null;
+    let changed = false;
+    session.messages = session.messages.map((message) => {
+      let messageChanged = false;
+      const toolCalls = message.toolCalls?.map((tc) => {
+        const update = byId.get(tc.id);
+        if (!update) return tc;
+        changed = true;
+        messageChanged = true;
+        return { ...tc, result: update.result, status: status(update.status) };
+      });
+      const steps = message.steps?.map((step) => {
+        if (step.kind !== "tool") return step;
+        const update = byId.get(step.id);
+        if (!update) return step;
+        changed = true;
+        messageChanged = true;
+        return { ...step, result: update.result, status: status(update.status) };
+      });
+      return messageChanged ? { ...message, toolCalls, steps } : message;
+    });
+    return changed ? undefined : null;
   });
 }
 

@@ -14,6 +14,11 @@ vi.mock("@/lib/chat-tools", async (importOriginal) => {
 const mockLogActivity = vi.fn();
 vi.mock("@/lib/storage", () => ({ logActivity: mockLogActivity }));
 
+const mockApplyConfirmedToolResults = vi.fn();
+vi.mock("@/lib/storage/chat-history", () => ({
+  applyConfirmedToolResults: mockApplyConfirmedToolResults,
+}));
+
 const { POST } = await import("@/app/api/chat/confirm-batch/route");
 const { registerPendingAction, clearPendingActions } = await import("@/lib/chat-tools");
 
@@ -131,6 +136,28 @@ describe("POST /api/chat/confirm-batch", () => {
     ]);
     expect(mockRunTool).toHaveBeenCalledWith("add_reminder", reminder, true);
     expect(mockRunTool).toHaveBeenCalledWith("create_github_issue", issue, true);
+  });
+
+  it("reporte le résultat réel sur l'historique quand le client fournit session et appels", async () => {
+    registerPendingAction("add_memory_fact", { content: "Aime le the" });
+    const res = await POST(
+      makeRequest({
+        sessionId: "s-memoire",
+        actions: [
+          {
+            name: "add_memory_fact",
+            arguments: { content: "Aime le the" },
+            toolCallId: "tc-1",
+          },
+        ],
+      })
+    );
+    expect(res.status).toBe(200);
+    // Le texte d'avant confirmation ne doit plus jamais être rejoué : le
+    // résultat serveur remplace le [BLOQUE] de l'historique (issue #141).
+    expect(mockApplyConfirmedToolResults).toHaveBeenCalledWith("s-memoire", [
+      { toolCallId: "tc-1", status: "ok", result: "ok:add_memory_fact" },
+    ]);
   });
 
   it("refuse de rejouer un lot déjà exécuté", async () => {

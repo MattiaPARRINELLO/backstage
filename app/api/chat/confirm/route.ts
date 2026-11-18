@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { runTool, toolPolicy, consumePendingAction } from "@/lib/chat-tools";
 import { isFailedStatus } from "@/lib/tool-result";
 import { logActivity } from "@/lib/storage";
+import { applyConfirmedToolResults } from "@/lib/storage/chat-history";
 
 // Exécute une action IA qui exige une confirmation utilisateur (outils à
 // effet externe : envoi d'email, calendrier, notification, scan d'emails).
@@ -14,14 +15,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  let body: { name?: string; arguments?: Record<string, unknown> };
+  let body: {
+    name?: string;
+    arguments?: Record<string, unknown>;
+    sessionId?: unknown;
+    toolCallId?: unknown;
+  };
   try {
-    body = (await request.json()) as { name?: string; arguments?: Record<string, unknown> };
+    body = (await request.json()) as typeof body;
   } catch {
     return NextResponse.json({ error: "Corps de requête invalide" }, { status: 400 });
   }
 
   const name = typeof body?.name === "string" ? body.name : "";
+  const sessionId = typeof body?.sessionId === "string" ? body.sessionId : "";
+  const toolCallId = typeof body?.toolCallId === "string" ? body.toolCallId : "";
   const args =
     body?.arguments && typeof body.arguments === "object"
       ? (body.arguments as Record<string, unknown>)
@@ -45,6 +53,11 @@ export async function POST(request: Request) {
 
   try {
     const run = await runTool(name, args, true);
+    if (toolCallId) {
+      await applyConfirmedToolResults(sessionId, [
+        { toolCallId, status: run.status, result: run.text },
+      ]);
+    }
     if (isFailedStatus(run.status)) {
       console.error(`[chat/confirm] Échec de ${name}:`, run.text);
       await logActivity("ai_action", `Action IA échouée : ${name}`, run.text).catch(() => {});

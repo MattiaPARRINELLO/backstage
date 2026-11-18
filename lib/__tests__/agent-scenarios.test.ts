@@ -65,13 +65,13 @@ const scenarios: AgentScenario[] = [
     intent: "envoie un mail a la salle pour confirmer l'accreditation",
     expectedTool: "send_email_response",
     expectArgs: { email_id: "18c9f0", response_text: "Bonjour, je confirme ma presence." },
-    forbidTools: ["reminders.add", "web_search"],
+    forbidTools: ["reminders.add", "web.search"],
     writes: true,
     blockedWithoutConfirmation: true,
   },
   {
     intent: "cherche sur le web les prochaines dates de Muse a Paris",
-    expectedTool: "web_search",
+    expectedTool: "web.search",
     expectArgs: { query: "Muse Paris 2027 dates" },
     forbidTools: ["send_email_response"],
   },
@@ -204,7 +204,7 @@ describe("registre d'outils", () => {
         "github.create_issue",
         "delete_calendar_event",
         "fetch_and_search_emails",
-        "fetch_page_meta",
+        "web.page_meta",
         "schedule.get",
         "weather.get",
         "github.list_issues",
@@ -220,7 +220,7 @@ describe("registre d'outils", () => {
         "update_calendar_event",
         "update_photo_shoot",
         "reminders.update",
-        "web_search",
+        "web.search",
       ].sort()
     );
   });

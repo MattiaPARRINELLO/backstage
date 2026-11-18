@@ -23,9 +23,7 @@ export const REQUIRE_CONFIRMATION = new Set<string>([
 // web, email, issue GitHub, meteo, description d'evenement). Lire l'un d'eux
 // contamine le tour : toute ecriture qui suit doit etre confirmee.
 export const UNTRUSTED_TOOLS: ReadonlySet<string> = new Set([
-  "web_search",
   "fetch_and_search_emails",
-  "fetch_page_meta",
   "triage_emails",
   "search_calendar_events",
   "lookup_concerts",

@@ -1,7 +1,5 @@
 import { verifyWrite } from "@backstage/module-kit";
 import {
-  webSearch,
-  fetchPageMeta,
   getConcerts,
   getAccreditations,
   addAccreditation,
@@ -39,9 +37,6 @@ export async function executeLegacyTool(
   args: Record<string, unknown>
 ): Promise<string> {
   switch (name) {
-    case "web_search": {
-      return await webSearch(String(args.query ?? ""));
-    }
     case "fetch_and_search_emails": {
       const query = args.query ? String(args.query) : undefined;
       const emails = await fetchGmailMessages(query, 10);
@@ -172,14 +167,6 @@ export async function executeLegacyTool(
       });
       if (problem) return problem;
       return `Relance programmee : « ${it.subject} » pour le ${new Date(it.dueAt).toLocaleString("fr-FR")}. Tu recevras une notification a ce moment-la.`;
-    }
-    case "fetch_page_meta": {
-      const url = String(args.url ?? "");
-      if (!url) return "Erreur : url requise.";
-      const meta = await fetchPageMeta(url);
-      let result = `Titre : ${meta.title}`;
-      if (meta.thumbnail) result += `\nMiniature : ${meta.thumbnail}`;
-      return result;
     }
     case "scan_accreditations": {
       try {

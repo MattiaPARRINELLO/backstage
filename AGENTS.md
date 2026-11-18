@@ -109,6 +109,7 @@ modules/
   schedule/         emploi du temps CESAR en lecture
   watch-later/      outil, actions, page, rail, panneau, carte d'accueil
   weather/          outil météo (lecture externe non fiable)
+  web/              recherche web et métadonnées de page (non fiable)
 modules.config.json quels modules sont activés (committé)
 e2e/  scripts/  android/  public/
 docs/               architecture.md, self-hosting, deploy-cpanel, android-apk

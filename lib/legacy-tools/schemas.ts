@@ -9,40 +9,6 @@ import type { UnifiedTool } from "@/lib/ai-providers";
  */
 export const legacyTools: UnifiedTool[] = [
   {
-    name: "fetch_and_search_emails",
-    description: "Recupere les emails Gmail (recus et envoyes) et cherche par mot-cle dans les expediteurs, destinataires, sujets ou contenus. Utilise 'in:sent' pour les mails envoyes, 'is:unread' pour les non-lus. Renvoie au maximum 10 messages, tries par date decroissante (le plus recent d'abord) ; sans mot-cle, ce sont donc les 10 derniers emails.",
-    parameters: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Mot-cle de recherche (optionnel)" },
-      },
-      required: [],
-    },
-  },
-  {
-    name: "send_email_response",
-    description: "Envoie une reponse a un email existant via Gmail.",
-    parameters: {
-      type: "object",
-      properties: {
-        email_id: { type: "string", description: "ID de l'email auquel repondre" },
-        response_text: { type: "string", description: "Texte complet de la reponse" },
-      },
-      required: ["email_id", "response_text"],
-    },
-  },
-  {
-    name: "triage_emails",
-    description: "Analyse les emails non lus et les classe par priorite (urgent, newsletter, billetterie, personnel).",
-    parameters: {
-      type: "object",
-      properties: {
-        max_results: { type: "number", description: "Nombre max d'emails a analyser (defaut: 10)" },
-      },
-      required: [],
-    },
-  },
-  {
     name: "add_memory_fact",
     description:
       "Memorise un fait durable et stable sur l'utilisateur (preference, contrainte, materiel, competence, evenement important) pour les futures conversations. " +

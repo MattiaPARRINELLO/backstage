@@ -26,6 +26,7 @@ import {
   REQUIRE_CONFIRMATION,
   WRITE_TOOLS,
   executeTool,
+  toolPolicy,
   tools,
 } from "@/lib/chat-tools";
 import { SIDE_EFFECT_TOOL_NAMES } from "@/lib/tool-result";
@@ -63,7 +64,7 @@ const scenarios: AgentScenario[] = [
   },
   {
     intent: "envoie un mail a la salle pour confirmer l'accreditation",
-    expectedTool: "send_email_response",
+    expectedTool: "emails.reply",
     expectArgs: { email_id: "18c9f0", response_text: "Bonjour, je confirme ma presence." },
     forbidTools: ["reminders.add", "web.search"],
     writes: true,
@@ -137,7 +138,7 @@ const scenarios: AgentScenario[] = [
   {
     intent: "bonjour, comment vas-tu ?",
     expectedTool: null,
-    forbidTools: [...WRITE_TOOLS, "send_email_response"],
+    forbidTools: [...WRITE_TOOLS, "send_email_response", "emails.reply"],
   },
   {
     intent: "supprime l'evenement de demain dans mon agenda",
@@ -203,7 +204,7 @@ describe("registre d'outils", () => {
         "calendar.create",
         "github.create_issue",
         "calendar.delete",
-        "fetch_and_search_emails",
+        "emails.search",
         "web.page_meta",
         "schedule.get",
         "weather.get",
@@ -215,8 +216,8 @@ describe("registre d'outils", () => {
         "scan_accreditations",
         "followups.schedule",
         "calendar.search",
-        "send_email_response",
-        "triage_emails",
+        "emails.reply",
+        "emails.triage",
         "calendar.update",
         "update_photo_shoot",
         "reminders.update",
@@ -239,9 +240,12 @@ describe("scenarios dores", () => {
       if (scenario.expectedTool === null) {
         // Intention conversationnelle : aucune ecriture ne doit etre possible.
         for (const forbidden of scenario.forbidTools ?? []) {
-          expect(WRITE_TOOLS.has(forbidden)).toBe(true);
+          const policy = toolPolicy(forbidden);
+          expect(policy.write || policy.requiresConfirmation, forbidden).toBe(true);
         }
-        expect(scenario.forbidTools).toEqual(expect.arrayContaining([...WRITE_TOOLS]));
+        expect(scenario.forbidTools).toEqual(
+          expect.arrayContaining([...WRITE_TOOLS, "emails.reply"])
+        );
         return;
       }
 
@@ -270,7 +274,7 @@ describe("scenarios dores", () => {
       }
 
       if (scenario.blockedWithoutConfirmation) {
-        expect(REQUIRE_CONFIRMATION.has(scenario.expectedTool)).toBe(true);
+        expect(toolPolicy(scenario.expectedTool).requiresConfirmation).toBe(true);
         const result = await executeTool(scenario.expectedTool, scenario.expectArgs ?? {}, false);
         expect(result.startsWith(ACTION_BLOCKED_PREFIX)).toBe(true);
       }

@@ -20,6 +20,7 @@ export const toolMeta: Record<
 > = {
   web_search: { label: "Recherche web", icon: Globe, unit: "résultats" },
   fetch_and_search_emails: { label: "Consultation Gmail", icon: Mail, unit: "mails" },
+  "emails.search": { label: "Consultation Gmail", icon: Mail, unit: "mails" },
   send_email_response: { label: "Envoi email", icon: SendHorizontal },
   create_calendar_event: { label: "Création calendrier", icon: CalendarPlus },
   "calendar.create": { label: "Création calendrier", icon: CalendarPlus },
@@ -32,6 +33,7 @@ export const toolMeta: Record<
   lookup_concerts: { label: "Concerts", icon: Globe, unit: "concerts" },
   "concerts.list": { label: "Concerts", icon: Globe, unit: "concerts" },
   triage_emails: { label: "Tri emails", icon: Mail, unit: "mails" },
+  "emails.triage": { label: "Tri emails", icon: Mail, unit: "mails" },
   add_memory_fact: { label: "Mémoire", icon: Brain, unit: "faits" },
   "reminders.add": { label: "Rappel", icon: Bell },
   "schedule.get": { label: "Emploi du temps", icon: CalendarPlus },

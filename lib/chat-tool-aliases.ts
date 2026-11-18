@@ -30,6 +30,9 @@ export const LEGACY_TOOL_NAMES: Readonly<Record<string, string>> = {
   update_calendar_event: "calendar.update",
   delete_calendar_event: "calendar.delete",
   search_calendar_events: "calendar.search",
+  fetch_and_search_emails: "emails.search",
+  send_email_response: "emails.reply",
+  triage_emails: "emails.triage",
 };
 
 /** Nom courant d'un outil, à partir d'un nom ancien ou déjà qualifié. */

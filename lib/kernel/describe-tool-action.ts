@@ -21,6 +21,8 @@ export function describeToolAction(name: string, args: Record<string, unknown>):
   switch (name) {
     case "send_email_response":
       return `Répondre à l'email ${String(args.email_id ?? "?")}`;
+    case "emails.reply":
+      return `Répondre à l'email ${String(args.email_id ?? "?")}`;
     case "create_calendar_event":
       return `Créer l'événement « ${String(args.title ?? "")} » du ${String(args.start_time ?? "?")} au ${String(args.end_time ?? "?")}`;
     case "calendar.create":

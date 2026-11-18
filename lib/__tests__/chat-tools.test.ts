@@ -54,6 +54,7 @@ const {
   ACTION_BLOCKED_PREFIX,
   UNTRUSTED_TOOLS,
   WRITE_TOOLS,
+  toolPolicy,
   pendingActionKey,
   registerPendingAction,
   hasPendingAction,
@@ -70,8 +71,9 @@ describe("chat-tools — confirmation des actions IA", () => {
     mockStorage.getPhotoShoots.mockResolvedValue({ shoots: [] });
   });
 
-  it("liste les outils exigeant une confirmation (emails + memoire)", () => {
-    expect(REQUIRE_CONFIRMATION.has("send_email_response")).toBe(true);
+  it("liste les outils exigeant une confirmation (email + memoire)", () => {
+    expect(toolPolicy("emails.reply").requiresConfirmation).toBe(true);
+    expect(toolPolicy("send_email_response").requiresConfirmation).toBe(true);
     // Exception permanente : un fait piege est reinjecte dans le prompt des
     // tours suivants, donc add_memory_fact est gate lui aussi.
     expect(REQUIRE_CONFIRMATION.has("add_memory_fact")).toBe(true);
@@ -540,10 +542,7 @@ describe("chat-tools — statut de fetch_and_search_emails", () => {
 
 describe("chat-tools — classement provenance des outils", () => {
   it("classe les lectures externes comme non fiables", async () => {
-    for (const name of ["fetch_and_search_emails", "triage_emails"]) {
-      expect(UNTRUSTED_TOOLS.has(name)).toBe(true);
-    }
-    // Meteo, GitHub, recherche web, concerts et calendrier ont migre :
+    // Meteo, GitHub, recherche web, concerts, calendrier et emails ont migre :
     // la provenance vient du manifeste.
     const { toolPolicy } = await import("@/lib/chat-tools");
     expect(toolPolicy("weather.get").untrusted).toBe(true);
@@ -557,6 +556,10 @@ describe("chat-tools — classement provenance des outils", () => {
     expect(toolPolicy("concerts.prepare").untrusted).toBe(true);
     expect(toolPolicy("calendar.search").untrusted).toBe(true);
     expect(toolPolicy("search_calendar_events").untrusted).toBe(true);
+    expect(toolPolicy("emails.search").untrusted).toBe(true);
+    expect(toolPolicy("fetch_and_search_emails").untrusted).toBe(true);
+    expect(toolPolicy("emails.triage").untrusted).toBe(true);
+    expect(toolPolicy("triage_emails").untrusted).toBe(true);
     // Lecture de donnees locales : fiable.
     expect(UNTRUSTED_TOOLS.has("reminders.list")).toBe(false);
     expect(UNTRUSTED_TOOLS.has("get_schedule")).toBe(false);
@@ -575,11 +578,14 @@ describe("chat-tools — classement provenance des outils", () => {
       "add_photo_shoot",
       "update_photo_shoot",
       "scan_accreditations",
-      "send_email_response",
     ]) {
       expect(toolPolicy(name).write, name).toBe(true);
       expect(toolPolicy(name).confirmable, name).toBe(true);
     }
+    // L'envoi d'email est external et confirme : confirmable, non ecriture.
+    expect(toolPolicy("emails.reply").write).toBe(false);
+    expect(toolPolicy("emails.reply").confirmable).toBe(true);
+    expect(toolPolicy("emails.reply").requiresConfirmation).toBe(true);
     // La creation d'issue est external, confirmable, mais non confirmee par
     // defaut : le module a retire la confirmation (comportement historique).
     expect(toolPolicy("github.create_issue").write).toBe(false);

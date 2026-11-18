@@ -320,12 +320,11 @@ La politique produit ne généralise pas les confirmations : seul
 description d'événement) ne peut pas être distinguée d'une demande utilisateur
 par le seul texte du modèle. Le serveur la gate donc :
 
-- `UNTRUSTED_TOOLS` = outils historiques dont le résultat vient d'une source
-  externe (`fetch_and_search_emails`, `triage_emails`,
-  `search_calendar_events`). Un outil de module déclare sa provenance dans son
-  manifeste : `weather.get`, `github.list_issues`, `web.search`,
-  `web.page_meta`, `concerts.list`, `concerts.prepare` et `calendar.search`
-  sont `trust: "untrusted"` sans figurer dans aucune liste.
+- `UNTRUSTED_TOOLS` ne contient plus aucun outil : la provenance de chaque
+  lecture externe vient de son manifeste (`weather.get`, `github.list_issues`,
+  `web.search`, `web.page_meta`, `concerts.list`, `concerts.prepare`,
+  `calendar.search`, `emails.search`, `emails.triage` sont
+  `trust: "untrusted"`).
 - `WRITE_TOOLS` = outils qui modifient des données (rappels, calendrier,
   shootings, accréditations, watch-later, mémoire, issue GitHub, email).
 - Le taint est calculé **sans état serveur** : tout `<tool_result

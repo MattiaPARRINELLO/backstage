@@ -104,6 +104,7 @@ export function isFailedStatus(status: ToolStatus): boolean {
  */
 export const SIDE_EFFECT_TOOL_NAMES = new Set<string>([
   "send_email_response",
+  "emails.reply",
   "create_calendar_event",
   "calendar.create",
   "update_calendar_event",

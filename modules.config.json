@@ -3,6 +3,7 @@
   "modules": {
     "calendar": { "enabled": true },
     "concerts": { "enabled": true },
+    "emails": { "enabled": true },
     "followups": { "enabled": true },
     "github": { "enabled": true },
     "reminders": { "enabled": true },

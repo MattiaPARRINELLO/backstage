@@ -67,6 +67,9 @@ pourquoi elles existent et ce qui casse si on les ignore.
   actif ajoute une vue au sélecteur, avec le libellé du rail s'il existe. Le
   panneau est un composant client : il peut lire et écrire via
   `useModuleAction()`. Un module désactivé n'ajoute aucune vue.
+- **Cartes d'accueil** — `ui.homeCard` suit le même chemin et `HomeHero`
+  l'affiche sous les raccourcis. Aucun libellé au contrat : la carte porte son
+  contenu et son lien.
 
 ---
 

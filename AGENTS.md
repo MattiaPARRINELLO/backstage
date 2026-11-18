@@ -106,7 +106,7 @@ modules/
   index.ts          racine de composition : la seule liste de modules du dépôt
   reminders/        module pilote (#84), outils, actions, prompt, store, schéma
   schedule/         emploi du temps CESAR en lecture
-  watch-later/      outil, actions, page, rail et panneau du module « À voir »
+  watch-later/      outil, actions, page, rail, panneau, carte d'accueil
 modules.config.json quels modules sont activés (committé)
 e2e/  scripts/  android/  public/
 docs/               architecture.md, self-hosting, deploy-cpanel, android-apk
@@ -204,6 +204,11 @@ jamais du texte fige. `lib/kernel/prompt.ts` ordonne par priorite decroissante,
 tronque a 400 caracteres par bloc et 1500 au total ; un `render` qui leve est
 journalise et retire, le tour continue. `lib/chat-prompts.ts` ne code plus le
 bloc des rappels : il appelle `renderModulePrompts(registry)`.
+
+⚠️ **Carte d'accueil** : `ui.homeCard` est montee avec les panneaux dans
+`app/layout.tsx` et transmise par `ModuleHomeCardProvider` / `useModuleHomeCards`
+(kit) ; `HomeHero` l'affiche sous les raccourcis. Meme modele de confiance que
+les panneaux (composant client, actions via `useModuleAction`).
 
 ---
 

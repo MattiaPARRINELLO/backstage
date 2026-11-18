@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCachedFetch } from "@/lib/cache";
+import { useModuleHomeCards } from "@backstage/module-kit";
 import { useNow } from "@/lib/clock";
 import { getHomeOverview } from "@/app/actions/home";
 import { DEFAULT_SHORTCUTS } from "@/components/chat/chat-data";
@@ -216,6 +217,7 @@ export function HomeHero({
   // le HTML rendu par le serveur est identique au premier rendu client (aucune
   // erreur d'hydratation) et la salutation apparaît dès la première frame.
   const now = useNow();
+  const homeCards = useModuleHomeCards();
 
   const { data: overview } = useCachedFetch<HomeOverview>("home:overview", getHomeOverview, {
     ttl: 60_000,
@@ -489,6 +491,17 @@ export function HomeHero({
           ))}
         </div>
       </section>
+
+      {homeCards.length > 0 && (
+        <div
+          className="home-rise mt-4 w-full max-w-lg space-y-3"
+          style={{ animationDelay: "390ms" }}
+        >
+          {homeCards.map((card) => (
+            <div key={card.id}>{card.node}</div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

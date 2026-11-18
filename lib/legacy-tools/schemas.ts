@@ -1,0 +1,282 @@
+import type { UnifiedTool } from "@/lib/ai-providers";
+
+/**
+ * Schémas des outils historiques du noyau, pas encore migrés en modules.
+ *
+ * Ce fichier est transitoire : chaque domaine migré retire ses schémas d'ici
+ * (phase 6 de #84). Il ne contient aucune logique, seulement la description
+ * exposée au modèle.
+ */
+export const legacyTools: UnifiedTool[] = [
+  {
+    name: "web_search",
+    description: "Effectue une recherche web pour recuperer des informations d'actualite ou des faits generaux.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "La requete de recherche" },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "fetch_and_search_emails",
+    description: "Recupere les emails Gmail (recus et envoyes) et cherche par mot-cle dans les expediteurs, destinataires, sujets ou contenus. Utilise 'in:sent' pour les mails envoyes, 'is:unread' pour les non-lus. Renvoie au maximum 10 messages, tries par date decroissante (le plus recent d'abord) ; sans mot-cle, ce sont donc les 10 derniers emails.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Mot-cle de recherche (optionnel)" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "send_email_response",
+    description: "Envoie une reponse a un email existant via Gmail.",
+    parameters: {
+      type: "object",
+      properties: {
+        email_id: { type: "string", description: "ID de l'email auquel repondre" },
+        response_text: { type: "string", description: "Texte complet de la reponse" },
+      },
+      required: ["email_id", "response_text"],
+    },
+  },
+  {
+    name: "create_calendar_event",
+    description: "Cree un evenement dans le vrai Google Calendar.",
+    parameters: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Titre de l'evenement" },
+        start_time: { type: "string", description: "Date/heure debut ISO 8601. Pour un evenement toute la journee, utiliser le format date simple YYYY-MM-DD (ex: 2024-01-15)." },
+        end_time: { type: "string", description: "Date/heure fin ISO 8601. Pour un evenement toute la journee, utiliser le format date simple YYYY-MM-DD (ex: 2024-01-16 pour un evenement le 15)." },
+        location: { type: "string", description: "Lieu (optionnel)" },
+        color_id: { type: "string", description: "Couleur Google Calendar (optionnel). Valeurs : 1=Lavande, 2=Sauge, 3=Raisin, 4=Flamant, 5=Banane, 6=Mandarine, 7=Paon, 8=Graphite, 9=Myrtille, 10=Basilic, 11=Tomate." },
+      },
+      required: ["title", "start_time", "end_time"],
+    },
+  },
+  {
+    name: "update_calendar_event",
+    description: "Modifie un evenement existant dans Google Calendar (titre, description, lieu, couleur). Utilise d'abord search_calendar_events pour trouver l'ID de l'evenement.",
+    parameters: {
+      type: "object",
+      properties: {
+        event_id: { type: "string", description: "ID Google Calendar de l'evenement a modifier" },
+        title: { type: "string", description: "Nouveau titre (optionnel)" },
+        description: { type: "string", description: "Nouvelle description (optionnel)" },
+        location: { type: "string", description: "Nouveau lieu (optionnel)" },
+        color_id: { type: "string", description: "Nouvelle couleur Google Calendar (optionnel). Valeurs : 1=Lavande, 2=Sauge, 3=Raisin, 4=Flamant, 5=Banane, 6=Mandarine, 7=Paon, 8=Graphite, 9=Myrtille, 10=Basilic, 11=Tomate." },
+      },
+      required: ["event_id"],
+    },
+  },
+  {
+    name: "delete_calendar_event",
+    description: "Supprime un evenement existant dans Google Calendar. Utilise d'abord search_calendar_events pour trouver l'ID de l'evenement.",
+    parameters: {
+      type: "object",
+      properties: {
+        event_id: { type: "string", description: "ID Google Calendar de l'evenement a supprimer" },
+      },
+      required: ["event_id"],
+    },
+  },
+  {
+    name: "search_calendar_events",
+    description: "Cherche des evenements dans le calendrier Google (concerts, cours, reunions).",
+    parameters: {
+      type: "object",
+      properties: {
+        days: { type: "number", description: "Nombre de jours a chercher (defaut: 30)" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "lookup_concerts",
+    description: "Consulte la liste des concerts en cours (shootes, en selection, en montage, livres).",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "triage_emails",
+    description: "Analyse les emails non lus et les classe par priorite (urgent, newsletter, billetterie, personnel).",
+    parameters: {
+      type: "object",
+      properties: {
+        max_results: { type: "number", description: "Nombre max d'emails a analyser (defaut: 10)" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "add_memory_fact",
+    description:
+      "Memorise un fait durable et stable sur l'utilisateur (preference, contrainte, materiel, competence, evenement important) pour les futures conversations. " +
+      "A utiliser des que l'utilisateur te confie ce type d'information, MEME S'IL NE LE DEMANDE PAS. " +
+      "Ne pas utiliser pour une demande ponctuelle, une salutation ou une tache deja couverte par un rappel ou un evenement agenda.",
+    parameters: {
+      type: "object",
+      properties: {
+        content: { type: "string", description: "Le fait a memoriser, en francais, a la troisieme personne" },
+        category: {
+          type: "string",
+          enum: ["dev", "photo", "life", "preference"],
+          description:
+            "dev = preferences/competences techniques, photo = materiel/style/workflow, " +
+            "life = habitudes/contraintes/contexte, preference = preferences generales",
+        },
+      },
+      required: ["content", "category"],
+    },
+  },
+  {
+    name: "schedule_followup",
+    description:
+      "Programme une relance future : l'application t'enverra une notification push a la date indiquee pour revenir sur un sujet. Utilise quand l'utilisateur dit 'relance-moi', 'rappelle-moi de faire X', 'reviens vers moi sur Y'.",
+    parameters: {
+      type: "object",
+      properties: {
+        subject: { type: "string", description: "Sujet court de la relance (ex: 'le dossier UX')" },
+        due_at: { type: "string", description: "Moment de la relance en ISO 8601 (ex: '2026-08-08T18:00:00' pour vendredi 18h)" },
+        message: { type: "string", description: "Message de relance affiche dans la notification (optionnel)" },
+      },
+      required: ["subject", "due_at"],
+    },
+  },
+  {
+    name: "add_watch_later",
+    description: "Ajoute un lien a la liste 'A voir plus tard'.",
+    parameters: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "URL complete" },
+        title: { type: "string", description: "Titre" },
+        description: { type: "string", description: "Description courte" },
+        thumbnail: { type: "string", description: "URL miniature" },
+        category: { type: "string", enum: ["video", "article", "photo", "music", "other"], description: "Categorie" },
+      },
+      required: ["url", "title"],
+    },
+  },
+  {
+    name: "fetch_page_meta",
+    description: "Recupere le titre et la miniature d'une page web ou video YouTube.",
+    parameters: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "URL complete" },
+      },
+      required: ["url"],
+    },
+  },
+  {
+    name: "scan_accreditations",
+    description: "Analyse les emails Gmail pour trouver des demandes d'accreditation (mots-cles: accreditation, photo pass, press). Extrait artiste, lieu, date, statut et cree/met a jour les fiches dans accreditations.json.",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "prepare_concert",
+    description: "Prepare un concert : recupere la meteo, les infos de la salle, et genere une checklist photo personnalisee.",
+    parameters: {
+      type: "object",
+      properties: {
+        concertId: { type: "string", description: "ID du concert" },
+      },
+      required: ["concertId"],
+    },
+  },
+  {
+    name: "get_weather",
+    description: "Recupere la meteo actuelle d'une ville (temperature, ressenti, humidite, vent). Exemple : 'get_weather Paris'.",
+    parameters: {
+      type: "object",
+      properties: {
+        city: { type: "string", description: "Nom de la ville" },
+      },
+      required: ["city"],
+    },
+  },
+  {
+    name: "add_photo_shoot",
+    description: "Ajoute un nouveau shooting photo au suivi. Si l'utilisateur ne precise pas de statut, il est automatique : 'done' si la date est passee/aujourd'hui, 'upcoming' si future. Deduis le statut des paroles de l'utilisateur : ex. 'deja sur mon PC' -> 'on_pc', 'photos deja envoyees' -> 'sent', 'retouche' -> 'edited', 'exporte' -> 'exported', 'trie' -> 'sorted', 'fait/termine' -> 'done'. Statuts: upcoming, done, on_pc, sorted, edited, exported, sent.",
+    parameters: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Titre du shooting (ex: 'Concert Mariane')" },
+        date: { type: "string", description: "Date du shooting au format YYYY-MM-DD" },
+        client: { type: "string", description: "Nom du client/artiste" },
+        notes: { type: "string", description: "Notes optionnelles" },
+        status: { type: "string", enum: ["upcoming", "done", "on_pc", "sorted", "edited", "exported", "sent"], description: "Statut si l'utilisateur le precise, sinon laisse vide pour le comportement automatique" },
+      },
+      required: ["title", "date", "client"],
+    },
+  },
+  {
+    name: "update_photo_shoot",
+    description: "Met a jour le statut ou les infos d'un shooting photo. Utilise 'list_photo_shoots' d'abord pour trouver l'ID.",
+    parameters: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "ID du shooting" },
+        status: { type: "string", enum: ["upcoming", "done", "on_pc", "sorted", "edited", "exported", "sent"], description: "Nouveau statut" },
+        galleryLink: { type: "string", description: "Lien galerie (quand status='sent')" },
+        photosSent: { type: "number", description: "Nombre de photos envoyees (quand status='sent')" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "list_photo_shoots",
+    description: "Liste tous les shootings photo avec leur statut, date et client.",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "create_github_issue",
+    description:
+      "Ouvre une issue sur le depot GitHub du projet Backstage. Utilise-la quand l'utilisateur te demande d'ouvrir/creer une issue, de signaler un bug, ou quand il rapporte un dysfonctionnement de Backstage qu'il veut faire tracer. " +
+      "Pour un bug, le corps doit contenir : ce qui se passe, ce qui etait attendu, les etapes de reproduction, et les infos de debug disponibles (message d'erreur exact, page/route concernee, heure, navigateur ou appareil). " +
+      "Pour une fonctionnalite, le corps doit contenir : le besoin, le comportement souhaite et la valeur attendue. " +
+      "Renseigne les libelles : 'bug' pour un dysfonctionnement, 'enhancement' pour une fonctionnalite, 'documentation' pour la doc. " +
+      "L'issue est publiee immediatement, sans confirmation : annonce toujours l'URL renvoyee et ne l'invente jamais.",
+    parameters: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Titre court et explicite, en francais (max 80 caracteres)" },
+        body: { type: "string", description: "Corps de l'issue en Markdown : contexte, comportement observe, comportement attendu, reproduction, infos de debug" },
+        labels: {
+          type: "array",
+          items: { type: "string", enum: ["bug", "enhancement", "documentation"] },
+          description: "Libelles a appliquer (optionnel)",
+        },
+      },
+      required: ["title", "body"],
+    },
+  },
+  {
+    name: "list_github_issues",
+    description:
+      "Liste les issues recentes du depot GitHub du projet Backstage (numero, titre, etat, libelles). Utilise-la avant create_github_issue pour eviter un doublon, ou quand l'utilisateur demande ce qui est deja ouvert.",
+    parameters: {
+      type: "object",
+      properties: {
+        state: { type: "string", enum: ["open", "closed", "all"], description: "Etat des issues (defaut: open)" },
+        limit: { type: "number", description: "Nombre max d'issues (defaut: 10, max 30)" },
+      },
+      required: [],
+    },
+  },
+];

@@ -62,6 +62,11 @@ pourquoi elles existent et ce qui casse si on les ignore.
   de rendre un composant React dans une Route Handler. Le rail et la bottom nav
   ajoutent ces entrées après les destinations cœur ; un module désactivé
   disparaît sans rebuild.
+- **Panneaux de module** — `ui.panel` est monté dans `app/layout.tsx` (serveur)
+  puis passé à `ContextPanel` par `ModulePanelProvider` (kit). Chaque panneau
+  actif ajoute une vue au sélecteur, avec le libellé du rail s'il existe. Le
+  panneau est un composant client : il peut lire et écrire via
+  `useModuleAction()`. Un module désactivé n'ajoute aucune vue.
 
 ---
 

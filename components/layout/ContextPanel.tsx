@@ -1,7 +1,8 @@
 "use client";
 
 import { normalizeToolName } from "@/lib/chat-tool-aliases";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useModulePanels } from "@backstage/module-kit";
 import {
   Settings2,
   X,
@@ -30,7 +31,7 @@ import { useNow } from "@/lib/clock";
 import { formatTime } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
-type View = "flux" | "calendar" | "gmail" | "leetcode" | "photos";
+type View = "flux" | "calendar" | "gmail" | "leetcode" | "photos" | `module:${string}`;
 
 const TOOL_CONTEXT_MAP: Record<string, "calendar" | "gmail" | "memory" | "reminder" | "watch" | "search"> = {
   create_calendar_event: "calendar",
@@ -78,6 +79,18 @@ export function ContextPanel() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const chatCtx = useChatContext();
   const now = useNow();
+  const modulePanels = useModulePanels();
+
+  const views = useMemo(
+    () => [
+      ...VIEWS,
+      ...modulePanels.map((panel) => ({
+        id: `module:${panel.id}` as View,
+        label: panel.label,
+      })),
+    ],
+    [modulePanels]
+  );
 
   const contextKey = pickContextKey(chatCtx.activeTools);
   const lastTool = chatCtx.lastFinishedTool;
@@ -147,7 +160,7 @@ export function ContextPanel() {
               {activeContext ? (
                 <ContextBadge contextKey={activeContext} running={busy} />
               ) : (
-                <ViewSwitcher view={view} onChange={setView} />
+                <ViewSwitcher view={view} views={views} onChange={setView} />
               )}
             </div>
           )}
@@ -170,6 +183,10 @@ export function ContextPanel() {
                   <LeetCodeWidget />
                   <AccreditationsWidget />
                 </div>
+              </div>
+            ) : view.startsWith("module:") ? (
+              <div key={view} className="flux-enter space-y-3">
+                {modulePanels.find((panel) => `module:${panel.id}` === view)?.node}
               </div>
             ) : (
               <div key={view} className="flux-enter space-y-3">
@@ -200,14 +217,22 @@ function ContextBadge({ contextKey, running }: { contextKey: string; running: bo
   );
 }
 
-function ViewSwitcher({ view, onChange }: { view: View; onChange: (v: View) => void }) {
+function ViewSwitcher({
+  view,
+  views,
+  onChange,
+}: {
+  view: View;
+  views: { id: View; label: string }[];
+  onChange: (v: View) => void;
+}) {
   return (
     <div
       role="tablist"
       aria-label="Vues du panneau"
       className="flex flex-wrap items-center gap-1.5"
     >
-      {VIEWS.map((t) => {
+      {views.map((t) => {
         const active = view === t.id;
         return (
           <button

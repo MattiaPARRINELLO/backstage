@@ -106,7 +106,7 @@ modules/
   index.ts          racine de composition : la seule liste de modules du dépôt
   reminders/        module pilote (#84), outils, actions, store, schéma
   schedule/         emploi du temps CESAR en lecture
-  watch-later/      outil, actions, page et rail du module « À voir plus tard »
+  watch-later/      outil, actions, page, rail et panneau du module « À voir »
 modules.config.json quels modules sont activés (committé)
 e2e/  scripts/  android/  public/
 docs/               architecture.md, self-hosting, deploy-cpanel, android-apk
@@ -192,6 +192,12 @@ declaratif, pas un composant client) ; `/api/modules/rail` la sert en SVG
 statique, `LeftNav` et `MobileBottomNav` l'ajoutent apres les destinations
 coeur. Un module desactive n'y figure pas. Ajouter un module n'exige aucune
 edition de `Chrome.tsx`.
+
+⚠️ **Panneau d'un module** : `ui.panel` est monte une seule fois dans
+`app/layout.tsx` (serveur, via le registre) et transmis au chrome client par
+`ModulePanelProvider` / `useModulePanels` (kit). `ContextPanel` ajoute une vue
+par panneau actif ; le libelle vient du rail, sinon du module. Un panneau est
+donc un composant client ordinaire, contrairement a l'icone du rail.
 
 ---
 

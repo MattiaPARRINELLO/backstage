@@ -76,9 +76,9 @@ describe("chat-tools — confirmation des actions IA", () => {
     // tours suivants, donc add_memory_fact est gate lui aussi.
     expect(REQUIRE_CONFIRMATION.has("add_memory_fact")).toBe(true);
     // Calendrier, rappels, scan, lectures : exécution directe sans confirmation.
-    expect(REQUIRE_CONFIRMATION.has("create_calendar_event")).toBe(false);
-    expect(REQUIRE_CONFIRMATION.has("update_calendar_event")).toBe(false);
-    expect(REQUIRE_CONFIRMATION.has("delete_calendar_event")).toBe(false);
+    expect(REQUIRE_CONFIRMATION.has("calendar.create")).toBe(false);
+    expect(REQUIRE_CONFIRMATION.has("calendar.update")).toBe(false);
+    expect(REQUIRE_CONFIRMATION.has("calendar.delete")).toBe(false);
     expect(REQUIRE_CONFIRMATION.has("schedule_followup")).toBe(false);
     // Le scan des accréditations (analyse d'emails) et les lectures seules ne
     // demandent pas de confirmation.
@@ -125,7 +125,7 @@ describe("chat-tools — confirmation des actions IA", () => {
 
   it("exécute la création d'événement calendrier sans confirmation", async () => {
     mockGoogleActions.createGoogleCalendarEvent.mockResolvedValue("evt-1");
-    const result = await executeTool("create_calendar_event", {
+    const result = await executeTool("calendar.create", {
       title: "Réunion",
       start_time: "2026-08-10T10:00:00Z",
       end_time: "2026-08-10T11:00:00Z",
@@ -143,7 +143,7 @@ describe("chat-tools — confirmation des actions IA", () => {
 
   it("exécute la suppression d'événement calendrier sans confirmation", async () => {
     mockGoogleActions.deleteGoogleCalendarEvent.mockResolvedValue(undefined);
-    const result = await executeTool("delete_calendar_event", { event_id: "evt-1" });
+    const result = await executeTool("calendar.delete", { event_id: "evt-1" });
     expect(result.startsWith(ACTION_BLOCKED_PREFIX)).toBe(false);
     expect(mockGoogleActions.deleteGoogleCalendarEvent).toHaveBeenCalledWith("evt-1");
   });
@@ -540,14 +540,11 @@ describe("chat-tools — statut de fetch_and_search_emails", () => {
 
 describe("chat-tools — classement provenance des outils", () => {
   it("classe les lectures externes comme non fiables", async () => {
-    for (const name of [
-      "fetch_and_search_emails",
-      "triage_emails",
-      "search_calendar_events",
-    ]) {
+    for (const name of ["fetch_and_search_emails", "triage_emails"]) {
       expect(UNTRUSTED_TOOLS.has(name)).toBe(true);
     }
-    // Meteo, GitHub et recherche web ont migre : la provenance vient du manifeste.
+    // Meteo, GitHub, recherche web, concerts et calendrier ont migre :
+    // la provenance vient du manifeste.
     const { toolPolicy } = await import("@/lib/chat-tools");
     expect(toolPolicy("weather.get").untrusted).toBe(true);
     expect(toolPolicy("get_weather").untrusted).toBe(true);
@@ -558,6 +555,8 @@ describe("chat-tools — classement provenance des outils", () => {
     expect(toolPolicy("web_search").untrusted).toBe(true);
     expect(toolPolicy("concerts.list").untrusted).toBe(true);
     expect(toolPolicy("concerts.prepare").untrusted).toBe(true);
+    expect(toolPolicy("calendar.search").untrusted).toBe(true);
+    expect(toolPolicy("search_calendar_events").untrusted).toBe(true);
     // Lecture de donnees locales : fiable.
     expect(UNTRUSTED_TOOLS.has("reminders.list")).toBe(false);
     expect(UNTRUSTED_TOOLS.has("get_schedule")).toBe(false);
@@ -572,9 +571,6 @@ describe("chat-tools — classement provenance des outils", () => {
       "reminders.add",
       "reminders.update",
       "add_memory_fact",
-      "create_calendar_event",
-      "update_calendar_event",
-      "delete_calendar_event",
       "add_watch_later",
       "add_photo_shoot",
       "update_photo_shoot",
@@ -589,6 +585,13 @@ describe("chat-tools — classement provenance des outils", () => {
     expect(toolPolicy("github.create_issue").write).toBe(false);
     expect(toolPolicy("github.create_issue").confirmable).toBe(true);
     expect(toolPolicy("github.create_issue").requiresConfirmation).toBe(false);
+    // Les ecritures calendrier sont external : confirmables par provenance,
+    // sans confirmation permanente (comportement historique).
+    for (const name of ["calendar.create", "calendar.update", "calendar.delete"]) {
+      expect(toolPolicy(name).write, name).toBe(false);
+      expect(toolPolicy(name).confirmable, name).toBe(true);
+      expect(toolPolicy(name).requiresConfirmation, name).toBe(false);
+    }
     // Une relance est une ecriture de module : confirmable par provenance.
     expect(toolPolicy("followups.schedule").write).toBe(true);
     expect(toolPolicy("schedule_followup").write).toBe(true);

@@ -324,8 +324,8 @@ par le seul texte du modèle. Le serveur la gate donc :
   externe (`fetch_and_search_emails`, `triage_emails`,
   `search_calendar_events`). Un outil de module déclare sa provenance dans son
   manifeste : `weather.get`, `github.list_issues`, `web.search`,
-  `web.page_meta`, `concerts.list` et `concerts.prepare` sont
-  `trust: "untrusted"` sans figurer dans aucune liste.
+  `web.page_meta`, `concerts.list`, `concerts.prepare` et `calendar.search`
+  sont `trust: "untrusted"` sans figurer dans aucune liste.
 - `WRITE_TOOLS` = outils qui modifient des données (rappels, calendrier,
   shootings, accréditations, watch-later, mémoire, issue GitHub, email).
 - Le taint est calculé **sans état serveur** : tout `<tool_result

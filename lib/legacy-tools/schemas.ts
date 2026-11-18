@@ -32,58 +32,6 @@ export const legacyTools: UnifiedTool[] = [
     },
   },
   {
-    name: "create_calendar_event",
-    description: "Cree un evenement dans le vrai Google Calendar.",
-    parameters: {
-      type: "object",
-      properties: {
-        title: { type: "string", description: "Titre de l'evenement" },
-        start_time: { type: "string", description: "Date/heure debut ISO 8601. Pour un evenement toute la journee, utiliser le format date simple YYYY-MM-DD (ex: 2024-01-15)." },
-        end_time: { type: "string", description: "Date/heure fin ISO 8601. Pour un evenement toute la journee, utiliser le format date simple YYYY-MM-DD (ex: 2024-01-16 pour un evenement le 15)." },
-        location: { type: "string", description: "Lieu (optionnel)" },
-        color_id: { type: "string", description: "Couleur Google Calendar (optionnel). Valeurs : 1=Lavande, 2=Sauge, 3=Raisin, 4=Flamant, 5=Banane, 6=Mandarine, 7=Paon, 8=Graphite, 9=Myrtille, 10=Basilic, 11=Tomate." },
-      },
-      required: ["title", "start_time", "end_time"],
-    },
-  },
-  {
-    name: "update_calendar_event",
-    description: "Modifie un evenement existant dans Google Calendar (titre, description, lieu, couleur). Utilise d'abord search_calendar_events pour trouver l'ID de l'evenement.",
-    parameters: {
-      type: "object",
-      properties: {
-        event_id: { type: "string", description: "ID Google Calendar de l'evenement a modifier" },
-        title: { type: "string", description: "Nouveau titre (optionnel)" },
-        description: { type: "string", description: "Nouvelle description (optionnel)" },
-        location: { type: "string", description: "Nouveau lieu (optionnel)" },
-        color_id: { type: "string", description: "Nouvelle couleur Google Calendar (optionnel). Valeurs : 1=Lavande, 2=Sauge, 3=Raisin, 4=Flamant, 5=Banane, 6=Mandarine, 7=Paon, 8=Graphite, 9=Myrtille, 10=Basilic, 11=Tomate." },
-      },
-      required: ["event_id"],
-    },
-  },
-  {
-    name: "delete_calendar_event",
-    description: "Supprime un evenement existant dans Google Calendar. Utilise d'abord search_calendar_events pour trouver l'ID de l'evenement.",
-    parameters: {
-      type: "object",
-      properties: {
-        event_id: { type: "string", description: "ID Google Calendar de l'evenement a supprimer" },
-      },
-      required: ["event_id"],
-    },
-  },
-  {
-    name: "search_calendar_events",
-    description: "Cherche des evenements dans le calendrier Google (concerts, cours, reunions).",
-    parameters: {
-      type: "object",
-      properties: {
-        days: { type: "number", description: "Nombre de jours a chercher (defaut: 30)" },
-      },
-      required: [],
-    },
-  },
-  {
     name: "triage_emails",
     description: "Analyse les emails non lus et les classe par priorite (urgent, newsletter, billetterie, personnel).",
     parameters: {

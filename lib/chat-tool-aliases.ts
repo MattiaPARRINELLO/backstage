@@ -26,6 +26,10 @@ export const LEGACY_TOOL_NAMES: Readonly<Record<string, string>> = {
   schedule_followup: "followups.schedule",
   lookup_concerts: "concerts.list",
   prepare_concert: "concerts.prepare",
+  create_calendar_event: "calendar.create",
+  update_calendar_event: "calendar.update",
+  delete_calendar_event: "calendar.delete",
+  search_calendar_events: "calendar.search",
 };
 
 /** Nom courant d'un outil, à partir d'un nom ancien ou déjà qualifié. */

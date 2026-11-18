@@ -31,7 +31,7 @@ vi.mock("@/lib/chat-tools", () => {
     "fetch_and_search_emails",
     "fetch_page_meta",
     "triage_emails",
-    "search_calendar_events",
+    "calendar.search",
     "list_github_issues",
     "lookup_concerts",
     "weather.get",
@@ -40,9 +40,9 @@ vi.mock("@/lib/chat-tools", () => {
   ]);
   const writes = new Set([
     "send_email_response",
-    "create_calendar_event",
-    "update_calendar_event",
-    "delete_calendar_event",
+    "calendar.create",
+    "calendar.update",
+    "calendar.delete",
     "add_reminder",
     "update_reminder",
     "schedule_followup",

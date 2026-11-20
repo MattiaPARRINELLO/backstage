@@ -1,229 +1,35 @@
 "use client";
 
-import {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useTransition,
-  useMemo,
-} from "react";
-import {
-  Search,
-  Bell,
-  Command,
-  X,
-  Check,
-  Sparkles,
-  ArrowRight,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { COMMANDS } from "@/components/ui/command-palette/commands";
+// ============================================================
+// Palette de commandes (Cmd+K / Ctrl+K).
+// L'etat vit dans `useCommandPalette`, le corps et le pied dans
+// `command-palette/`. Ce fichier ne garde que la coquille.
+// ============================================================
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
-
-interface ResultItem {
-  id: string;
-  label: string;
-  description: string;
-  icon: typeof Bell;
-  badge: string;
-  kind: "command" | "execute";
-}
-
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
+import { Command, Search, X } from "lucide-react";
+import { useCommandPalette } from "@/components/ui/command-palette/use-command-palette";
+import { PaletteResults } from "@/components/ui/command-palette/palette-results";
+import { PaletteFeedback } from "@/components/ui/command-palette/palette-feedback";
+import { PaletteFooter } from "@/components/ui/command-palette/palette-footer";
 
 export function CommandPalette() {
-  const [open, setOpen] = useState(false);
-  const [input, setInput] = useState("");
-  const [selectedIdx, setSelectedIdx] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const [feedback, setFeedback] = useState<{
-    kind: "success" | "error";
-    message: string;
-  } | null>(null);
+  const {
+    open,
+    input,
+    setInput,
+    setSelectedIdx,
+    busy,
+    feedback,
+    inputRef,
+    listRef,
+    results,
+    safeIdx,
+    executeSelected,
+    handleKeyDown,
+    close,
+    pickPrefix,
+  } = useCommandPalette();
 
-  const [, startTransition] = useTransition();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-
-  /* ----- keyboard shortcut : ⌘K / Ctrl+K ----- */
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setOpen((prev) => {
-          if (!prev) {
-            setInput("");
-            setFeedback(null);
-            setSelectedIdx(0);
-          }
-          return !prev;
-        });
-      }
-      if (e.key === "Escape" && open) {
-        e.preventDefault();
-        setOpen(false);
-        setInput("");
-        setFeedback(null);
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open]);
-
-  /* ----- ouverture depuis un bouton (mobile) ----- */
-  useEffect(() => {
-    const openPalette = () => {
-      setInput("");
-      setFeedback(null);
-      setSelectedIdx(0);
-      setOpen(true);
-    };
-    window.addEventListener("backstage:open-palette", openPalette);
-    return () => window.removeEventListener("backstage:open-palette", openPalette);
-  }, []);
-
-  /* ----- auto-focus on open ----- */
-  useEffect(() => {
-    if (open) {
-      // Small delay to let React paint the overlay first
-      const id = setTimeout(() => inputRef.current?.focus(), 30);
-      return () => clearTimeout(id);
-    }
-  }, [open]);
-
-  /* ----- filter suggestions -------------------------------------------------- */
-  const suggestions = useMemo(() => {
-    if (!open) return [];
-    const q = input.toLowerCase();
-    return COMMANDS.filter((cmd) => {
-      const searchable = `${cmd.prefix} ${cmd.label} ${cmd.description}`.toLowerCase();
-      return searchable.includes(q);
-    });
-  }, [input, open]);
-
-  /* ----- active command detection -------------------------------------------- */
-  const activeCommand = useMemo(() => {
-    if (!input.startsWith("/")) return null;
-
-    for (const cmd of COMMANDS) {
-      if (input.startsWith(cmd.prefix)) {
-        const args = cmd.parse(input);
-        return args !== null ? { command: cmd, args } : { command: cmd, args: null };
-      }
-    }
-
-    // Partial prefix match (user typed "/co" for example)
-    const partial = COMMANDS.find((cmd) => cmd.prefix.startsWith(input));
-    if (partial) return { command: partial, args: null };
-
-    return null;
-  }, [input]);
-
-  /* ----- unified results list ------------------------------------------------ */
-  const results = useMemo((): ResultItem[] => {
-    // 1. If a command is fully parsed → show its execute action
-    if (activeCommand && activeCommand.args !== null) {
-      const cmd = activeCommand.command;
-      return [
-        {
-          id: `exec-${cmd.id}`,
-          label: cmd.label,
-          description: cmd.usage,
-          icon: cmd.icon,
-          badge: "⏎ Enter",
-          kind: "execute",
-        },
-      ];
-    }
-
-    // 2. If input matches a command prefix but args are incomplete → show that command
-    if (activeCommand && activeCommand.args === null) {
-      const cmd = activeCommand.command;
-      return [
-        {
-          id: `partial-${cmd.id}`,
-          label: cmd.label,
-          description: cmd.description,
-          icon: cmd.icon,
-          badge: cmd.prefix,
-          kind: "command",
-        },
-      ];
-    }
-
-    // 3. Input doesn't start with "/" → show filtered suggestions
-    const source = input.trim() ? suggestions : COMMANDS;
-    return source.map((cmd) => ({
-      id: cmd.id,
-      label: cmd.label,
-      description: cmd.description,
-      icon: cmd.icon,
-      badge: cmd.prefix,
-      kind: "command" as const,
-    }));
-  }, [activeCommand, suggestions, input]);
-
-  /* ----- guard selected index ------------------------------------------------ */
-  const safeIdx = Math.min(selectedIdx, Math.max(results.length - 1, 0));
-
-  /* ----- execute ------------------------------------------------------------- */
-  const executeSelected = useCallback(() => {
-    // Garde anti double-exécution (double Entrée rapide → doublon côté serveur)
-    if (busy) return;
-
-    // If a command is fully parsed, execute it
-    if (activeCommand && activeCommand.args !== null) {
-      setBusy(true);
-      startTransition(async () => {
-        try {
-          const msg = await activeCommand.command.execute(activeCommand.args);
-          setFeedback({ kind: "success", message: msg });
-          setTimeout(() => {
-            setOpen(false);
-            setInput("");
-            setFeedback(null);
-            setBusy(false);
-          }, 1200);
-        } catch (err) {
-          setFeedback({
-            kind: "error",
-            message: err instanceof Error ? err.message : "Erreur inconnue",
-          });
-          setBusy(false);
-        }
-      });
-      return;
-    }
-
-    // Otherwise, fill the input with the selected command's prefix
-    const item = results[safeIdx];
-    if (item) {
-      setInput(item.badge + " ");
-      inputRef.current?.focus();
-    }
-  }, [busy, activeCommand, results, safeIdx, startTransition]);
-
-  /* ----- keyboard navigation ------------------------------------------------ */
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setSelectedIdx((prev) => Math.min(prev + 1, results.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setSelectedIdx((prev) => Math.max(prev - 1, 0));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      executeSelected();
-    }
-  };
-
-  /* ----- render ------------------------------------------------------------- */
   if (!open) return null;
 
   return (
@@ -236,34 +42,14 @@ export function CommandPalette() {
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={() => {
-          setOpen(false);
-          setInput("");
-          setFeedback(null);
-        }}
+        onClick={close}
       />
 
       {/* Card */}
       <div className="relative w-full max-w-xl mx-4 rounded-[var(--r-card)] border border-[var(--border-2)] bg-[var(--surface-1)] overflow-hidden slide-up">
         {/* Feedback overlay */}
         {feedback && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[var(--r-card)] bg-[var(--surface-1)]/95 backdrop-blur-sm fade-in">
-            <div
-              className={cn(
-                "flex items-center gap-3 px-6 py-4 rounded-[var(--r-tile)]",
-                feedback.kind === "success"
-                  ? "text-[var(--success)]"
-                  : "text-[var(--danger)]"
-              )}
-            >
-              {feedback.kind === "success" ? (
-                <Check className="w-5 h-5" />
-              ) : (
-                <X className="w-5 h-5" />
-              )}
-              <span className="text-[length:var(--t-small)] font-medium">{feedback.message}</span>
-            </div>
-          </div>
+          <PaletteFeedback kind={feedback.kind} message={feedback.message} />
         )}
 
         {/* Input row */}
@@ -292,11 +78,7 @@ export function CommandPalette() {
             K
           </kbd>
           <button
-            onClick={() => {
-              setOpen(false);
-              setInput("");
-              setFeedback(null);
-            }}
+            onClick={close}
             className="w-10 h-10 -mr-2 rounded-[var(--r-sm)] flex items-center justify-center text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-2)] transition-colors"
             aria-label="Fermer"
           >
@@ -304,136 +86,21 @@ export function CommandPalette() {
           </button>
         </div>
 
-        {/* Results list */}
-        {results.length > 0 && (
-          <div
-            ref={listRef}
-            className="max-h-[340px] overflow-y-auto p-2 space-y-0.5"
-            onMouseMove={() => {
-              /* reset keyboard selection on mouse hover */
-            }}
-          >
-            {results.map((item, idx) => {
-              const Icon = item.icon;
-              const selected = idx === safeIdx;
+        <PaletteResults
+          results={results}
+          safeIdx={safeIdx}
+          query={input}
+          hasFeedback={feedback !== null}
+          listRef={listRef}
+          onSelect={(idx) => {
+            setSelectedIdx(idx);
+            executeSelected();
+          }}
+          onHover={setSelectedIdx}
+          onPickPrefix={pickPrefix}
+        />
 
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setSelectedIdx(idx);
-                    executeSelected();
-                  }}
-                  onMouseEnter={() => setSelectedIdx(idx)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-[var(--r-sm)] text-left transition-colors duration-150",
-                    selected
-                      ? "bg-[var(--accent)]/10 text-[var(--accent)] ring-1 ring-[var(--accent)]/20"
-                      : "text-[var(--text-1)] hover:bg-[var(--surface-2)]"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "w-8 h-8 rounded-[var(--r-sm)] flex items-center justify-center border shrink-0 transition-colors",
-                      selected
-                        ? "border-[var(--accent)]/30 bg-[var(--accent)]/10"
-                        : "border-[var(--border-1)] bg-[var(--surface-2)]"
-                    )}
-                  >
-                    <Icon
-                      className={cn(
-                        "w-4 h-4",
-                        selected ? "text-[var(--accent)]" : "text-[var(--text-3)]"
-                      )}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[length:var(--t-small)] font-medium truncate">{item.label}</p>
-                    <p className="text-[length:var(--t-small)] text-[var(--text-3)] truncate">
-                      {item.description}
-                    </p>
-                  </div>
-                  <kbd className="shrink-0 px-1.5 py-0.5 rounded text-[length:var(--t-small)] ui-mono bg-[var(--surface-2)] border border-[var(--border-1)] text-[var(--text-4)]">
-                    {item.badge}
-                  </kbd>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Empty state : no input  */}
-        {!input.trim() && results.length === 0 && (
-          <div className="p-3">
-            <p className="px-3 pb-2 text-[length:var(--t-small)] font-semibold  text-[var(--text-4)] ui-mono">
-              Commandes disponibles
-            </p>
-            {COMMANDS.map((cmd) => {
-              const Icon = cmd.icon;
-              return (
-                <button
-                  key={cmd.id}
-                  onClick={() => {
-                    setInput(cmd.prefix + " ");
-                    inputRef.current?.focus();
-                  }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[var(--r-sm)] text-left transition-colors duration-150 text-[var(--text-1)] hover:bg-[var(--surface-2)] group"
-                >
-                  <div className="w-8 h-8 rounded-[var(--r-sm)] flex items-center justify-center border border-[var(--border-1)] bg-[var(--surface-2)] shrink-0 group-hover:border-[var(--border-2)] transition-colors">
-                    <Icon className="w-4 h-4 text-[var(--text-3)]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[length:var(--t-small)] font-medium truncate">{cmd.label}</p>
-                    <p className="text-[length:var(--t-small)] text-[var(--text-3)] truncate">
-                      {cmd.description}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="shrink-0 px-1.5 py-0.5 rounded text-[length:var(--t-small)] ui-mono bg-[var(--surface-2)] border border-[var(--border-1)] text-[var(--text-4)]">
-                      {cmd.prefix}
-                    </kbd>
-                    <ArrowRight className="w-3 h-3 text-[var(--text-4)] opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* No results for query */}
-        {input.trim() && results.length === 0 && !feedback && (
-          <div className="flex flex-col items-center justify-center py-10 px-4">
-            <Search className="w-6 h-6 text-[var(--text-4)] mb-3" />
-            <p className="text-[length:var(--t-small)] text-[var(--text-3)]">Aucune commande trouvée</p>
-            <p className="text-[length:var(--t-small)] text-[var(--text-4)] mt-1 text-center">
-              Essayez <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)] ui-mono">/todo</kbd>,{" "}
-              <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)] ui-mono">/remember</kbd>,{" "}
-              <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)] ui-mono">/concert</kbd>,{" "}
-              <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)] ui-mono">/search</kbd>
-            </p>
-          </div>
-        )}
-
-        {/* Footer hint */}
-        <div className="flex items-center gap-3 px-4 py-2.5 border-t border-[var(--border-1)] bg-[var(--surface-2)]/30">
-          <span className="text-[length:var(--t-small)] text-[var(--text-4)] ui-mono flex items-center gap-1.5">
-            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)]">↑</kbd>
-            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)]">↓</kbd>
-            Naviguer
-          </span>
-          <span className="text-[length:var(--t-small)] text-[var(--text-4)] ui-mono flex items-center gap-1.5">
-            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)]">⏎</kbd>
-            Exécuter
-          </span>
-          <span className="text-[length:var(--t-small)] text-[var(--text-4)] ui-mono flex items-center gap-1.5">
-            <kbd className="px-1 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border-1)] text-[length:var(--t-small)]">Esc</kbd>
-            Fermer
-          </span>
-          <span className="ml-auto text-[length:var(--t-small)] text-[var(--text-4)] ui-mono flex items-center gap-1">
-            <Sparkles className="w-2.5 h-2.5 text-[var(--accent)]" />
-            BACKSTAGE
-          </span>
-        </div>
+        <PaletteFooter />
       </div>
     </div>
   );

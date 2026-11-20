@@ -2,10 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { api } from "@/lib/api-client";
-import { cn } from "@/lib/utils";
-import { Markdown } from "@/components/ui/Markdown";
 import { ChatComposer } from "@/components/chat/ChatComposer";
-import { HomeHero } from "@/components/chat/HomeHero";
 import { useChatContext } from "@/lib/chat-context";
 import { useToast } from "@/components/ui/Toast";
 import type { ActivityStep, Message, ToolCall } from "@/components/chat/types";
@@ -31,7 +28,8 @@ import {
 } from "@/components/chat/live-run";
 import { type PendingActionReason } from "@/lib/tool-result";
 import { buildActionContext } from "@/lib/chat-action-context";
-import { MessageBlock, ActivityTrail, AssistantAvatar, GroupActionCard } from "@/components/chat/MessageBlocks";
+import { GroupActionCard } from "@/components/chat/MessageBlocks";
+import { ChatTranscript } from "@/components/chat/ChatTranscript";
 import { KeyboardSafe } from "@/components/ui/KeyboardSafe";
 
 // Scroll doux désactivé quand l'utilisateur demande un mouvement réduit.
@@ -805,7 +803,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
         const lines = results
           .map((r, i) => {
             const label = group.tools[i]?.argsLabel || r.name;
-            return r.ok ? `✓ ${label}` : `✗ ${label} — ${r.error ?? "échec"}`;
+            return r.ok ? `✓ ${label}` : `✗ ${label} : ${r.error ?? "échec"}`;
           })
           .join("\n");
         const okCount = results.filter((r) => r.ok).length;
@@ -867,6 +865,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   }, [loading, stop]);
 
   const isWelcome = messages.length <= 1 && messages[0]?.id === "welcome";
+  const pendingLabel = FUNNY_THOUGHTS[thinkingIndex % FUNNY_THOUGHTS.length] ?? "";
 
   return (
     <div className="flex flex-col h-full min-h-0 relative">
@@ -910,58 +909,18 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
           </div>
         </div>
       )}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-        <div
-          className={cn(
-            "max-w-3xl mx-auto px-4 sm:px-6",
-            // L'accueil est ancré en haut : son badge est suspendu au bord
-            // supérieur de la zone de défilement, donc le padding haut est
-            // annulé et la coupe du tour de cou est posée par HomeHero.
-            isWelcome
-              ? "min-h-full flex flex-col pb-6"
-              : "py-8 sm:py-12"
-          )}
-        >
-          {isWelcome ? (
-            <HomeHero onPrompt={(p) => void send(p)} disabled={loading} />
-          ) : (
-            <div className="space-y-6 chat-stagger">
-              {messages.map((m) => {
-                return (
-                  <div key={m.id}>
-                    <MessageBlock message={m} />
-                  </div>
-                );
-              })}
-              {loading && (
-                <div key="live" className="flex gap-3 fade-in-up">
-                  <AssistantAvatar />
-                  <div className="min-w-0 flex-1 pt-0.5">
-                    <ActivityTrail
-                      steps={liveSteps}
-                      running
-                      pendingLabel={FUNNY_THOUGHTS[thinkingIndex % FUNNY_THOUGHTS.length]}
-                    />
-                    {streamingActive && streamingContent && (
-                      <div className="text-[length:var(--t-body)] leading-[1.75] text-[var(--text-1)]">
-                        <Markdown>{streamingContent}</Markdown>
-                        <span className="blink-cursor">█</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {error && (
-            <div className="mt-6 flex items-start gap-2.5 text-[length:var(--t-small)] text-[var(--danger)] px-3 py-2.5 rounded-[var(--r-sm)] bg-[var(--danger)]/5 fade-in">
-              <span className="w-1 h-1 rounded-full bg-[var(--danger)] mt-1.5 shrink-0" />
-              <span className="leading-relaxed">{error}</span>
-            </div>
-          )}
-        </div>
-      </div>
+      <ChatTranscript
+        scrollRef={scrollRef}
+        messages={messages}
+        isWelcome={isWelcome}
+        loading={loading}
+        liveSteps={liveSteps}
+        streamingContent={streamingContent}
+        streamingActive={streamingActive}
+        pendingLabel={pendingLabel}
+        error={error}
+        onPrompt={(p) => void send(p)}
+      />
 
       <div className="shrink-0 px-4 sm:px-6 pt-1 pb-3">
         <div className="max-w-3xl mx-auto">

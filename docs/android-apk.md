@@ -27,7 +27,7 @@ Le projet vit dans `android/` (Gradle, Java, aucun framework).
 | Route d'appairage | `app/api/push/fcm/pair/route.ts` | échange code ↔ secret (publique, code-gated) |
 | Vérification TWA | `app/api/assetlinks/route.ts` + réécriture `/.well-known/assetlinks.json` | prouve domaine ↔ APK |
 
-`sendPushToAll()` (`lib/notification-scheduler.ts`) alimente **les deux canaux**
+`sendPushToAll()` (`lib/push-dispatch.ts`) alimente **les deux canaux**
 avec le même JSON : web push pour la PWA, FCM pour l'APK. Une panne FCM ne bloque
 jamais le web push.
 

@@ -218,6 +218,20 @@ Elle devient donc une capacité noyau déclarée, avec une échéance de réexam
 la migration de la mémoire est le premier chantier de la phase 5 **après** que
 deux modules aient été migrés sans modification du noyau.
 
+**Réexamen du 20 novembre 2026 (issue #167)** : la condition est remplie, douze
+modules ont été extraits sans toucher au noyau. La décision est **confirmée**,
+pas reportée. La mémoire est traversante par nature : elle construit le prompt
+de chaque tour (`lib/chat-prompts.ts`), elle extrait les faits de chaque réponse
+après streaming (`lib/memory-autosave.ts` appelé par `app/api/chat/route.ts`),
+et son outil d'écriture est une exception permanente de la politique de
+confirmation (`lib/kernel/tool-policy.ts`). Un module ne peut pas occuper ce
+point sans devenir un prérequis du chat lui-même, donc sans redevenir du noyau
+sous un autre nom. Le découpage retenu est interne : la persistance est isolée
+dans `lib/storage/memory.ts`, l'extraction dans `lib/memory-autosave.ts`, le
+rendu du bloc de prompt dans le noyau. Si la mémoire doit un jour être
+distribuable, ce sera par le bus d'événements (un abonné qui enrichit le
+contexte), pas par une extraction de module : nouvelle décision à ce moment-là.
+
 ### K. Distribution et modèle de confiance
 
 `modules.config.json` (committé) dit quels modules sont activés.

@@ -4,10 +4,10 @@
  * Chaque regle porte la raison pour laquelle elle existe, pas seulement ce
  * qu'elle interdit. Commande : `bun run boundaries`.
  *
- * La regle 5 de l'issue #85 (`process.env` interdit hors `lib/config.ts`) est
- * encodee par ESLint (`no-restricted-properties`, voir `eslint.config.mjs`) :
- * dependency-cruiser ne voit que les imports, pas les acces aux globales.
- * La regle 6 (`fetch` interdit hors port HTTP) est differee avec #89.
+ * Les regles 5 et 6 de l'issue #85 (`process.env` hors `lib/config.ts`,
+ * `fetch` hors port HTTP) sont encodees par ESLint (`no-restricted-*`, voir
+ * `eslint.config.mjs`) : dependency-cruiser ne voit que les imports, pas les
+ * acces aux globales.
  */
 module.exports = {
   forbidden: [

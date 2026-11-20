@@ -1,18 +1,12 @@
 import { NextResponse } from "next/server";
 import { isMicrosoftLinked } from "@/lib/microsoft-client";
 import { getServerCached, setServerCached } from "@/lib/server-cache";
-import { requireSession } from "@/lib/session";
+import { authedRoute } from "@/lib/route";
 
 const MICROSOFT_STATUS_CACHE_KEY = "microsoft:status";
 const MICROSOFT_STATUS_TTL_MS = 60 * 1000;
 
-export async function GET() {
-  try {
-    await requireSession();
-  } catch {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  }
-
+export const GET = authedRoute(async (_session) => {
   try {
     const cached = getServerCached<{ linked: boolean }>(MICROSOFT_STATUS_CACHE_KEY);
     if (cached) {
@@ -26,4 +20,4 @@ export async function GET() {
     console.error("Microsoft status error:", err);
     return NextResponse.json({ linked: false }, { status: 500 });
   }
-}
+});

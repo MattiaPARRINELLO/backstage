@@ -1,9 +1,9 @@
 "use server";
 
-import { requireSession } from "@/lib/session";
-
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+
+import { actionInput } from "@/lib/action";
 import {
   getPhotoShoots,
   addPhotoShoot,
@@ -12,6 +12,9 @@ import {
   logActivity,
 } from "@/lib/storage";
 import type { PhotoShootStatus } from "@/lib/types";
+
+const emptyInput = z.object({});
+const idInput = z.string().min(1, "Identifiant requis");
 
 const createPhotoShootSchema = z.object({
   title: z.string().trim().min(1, "Titre requis"),
@@ -40,7 +43,7 @@ const updatePhotoShootSchema = z
   .strict();
 
 export async function loadPhotoShoots() {
-  await requireSession();
+  await actionInput(emptyInput, {});
   return getPhotoShoots();
 }
 
@@ -50,12 +53,7 @@ export async function createPhotoShoot(input: {
   client: string;
   notes?: string;
 }) {
-  await requireSession();
-  const parsed = createPhotoShootSchema.safeParse(input);
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Payload invalide");
-  }
-  const data = parsed.data;
+  const { data } = await actionInput(createPhotoShootSchema, input);
   const shoot = await addPhotoShoot(data);
   await logActivity("shoot_created", `Shooting : ${shoot.title} — ${shoot.client}`, shoot.date);
   revalidatePath("/photos");
@@ -74,14 +72,9 @@ export async function editPhotoShoot(
     photosSent: number;
   }>
 ) {
-  await requireSession();
-  if (!id || typeof id !== "string") throw new Error("Identifiant requis");
-  const parsed = updatePhotoShootSchema.safeParse(updates);
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Payload invalide");
-  }
-  const data = parsed.data;
-  const shoot = await updatePhotoShoot(id, {
+  const { data: shootId } = await actionInput(idInput, id);
+  const { data } = await actionInput(updatePhotoShootSchema, updates);
+  const shoot = await updatePhotoShoot(shootId, {
     ...data,
     galleryLink: data.galleryLink || undefined,
   });
@@ -91,10 +84,9 @@ export async function editPhotoShoot(
 }
 
 export async function removePhotoShoot(id: string): Promise<boolean> {
-  await requireSession();
-  if (!id || typeof id !== "string") throw new Error("Identifiant requis");
-  const ok = await deletePhotoShoot(id);
-  if (ok) await logActivity("shoot_deleted", "Shooting supprimé", id);
+  const { data } = await actionInput(idInput, id);
+  const ok = await deletePhotoShoot(data);
+  if (ok) await logActivity("shoot_deleted", "Shooting supprimé", data);
   revalidatePath("/photos");
   return ok;
 }

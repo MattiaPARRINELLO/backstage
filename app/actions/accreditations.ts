@@ -1,7 +1,5 @@
 "use server";
 
-import { requireSession } from "@/lib/session";
-
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
@@ -13,6 +11,11 @@ import {
   logActivity,
 } from "@/lib/storage";
 import type { Accreditation } from "@/lib/types";
+import { actionInput } from "@/lib/action";
+import { AppError } from "@/lib/errors";
+
+const emptyInput = z.object({});
+const idInput = z.string().min(1, "Identifiant requis");
 
 const createAccreditationSchema = z.object({
   artist: z.string().trim().min(1, "Artiste requis"),
@@ -36,7 +39,7 @@ const updateAccreditationSchema = z
   .strict();
 
 export async function loadAccreditations() {
-  await requireSession();
+  await actionInput(emptyInput, {});
   return getAccreditations();
 }
 
@@ -47,12 +50,7 @@ export async function createAccreditation(input: {
   contactEmail?: string;
   notes?: string;
 }): Promise<Accreditation> {
-  await requireSession();
-  const parsed = createAccreditationSchema.safeParse(input);
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Payload invalide");
-  }
-  const data = parsed.data;
+  const { data } = await actionInput(createAccreditationSchema, input);
   const acc = await addAccreditation({
     ...data,
     contactEmail: data.contactEmail ? data.contactEmail : undefined,
@@ -66,14 +64,9 @@ export async function editAccreditation(
   id: string,
   updates: Partial<Pick<Accreditation, "status" | "notes" | "contactEmail">>
 ): Promise<Accreditation | null> {
-  await requireSession();
-  if (!id || typeof id !== "string") throw new Error("Identifiant requis");
-  const parsed = updateAccreditationSchema.safeParse(updates);
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Payload invalide");
-  }
-  const data = parsed.data;
-  const acc = await updateAccreditation(id, {
+  const { data: accreditationId } = await actionInput(idInput, id);
+  const { data } = await actionInput(updateAccreditationSchema, updates);
+  const acc = await updateAccreditation(accreditationId, {
     ...data,
     contactEmail: data.contactEmail ? data.contactEmail : undefined,
   });
@@ -83,23 +76,23 @@ export async function editAccreditation(
 }
 
 export async function removeAccreditation(id: string): Promise<boolean> {
-  await requireSession();
-  if (!id || typeof id !== "string") throw new Error("Identifiant requis");
-  const ok = await deleteAccreditation(id);
-  if (ok) await logActivity("accreditation_deleted", "Accréditation supprimée", id);
+  const { data } = await actionInput(idInput, id);
+  const ok = await deleteAccreditation(data);
+  if (ok) await logActivity("accreditation_deleted", "Accréditation supprimée", data);
   revalidatePath("/photos");
   return ok;
 }
 
 export async function scanAccreditationsAction(): Promise<{ message: string; created: number; updated: number }> {
-  await requireSession();
+  await actionInput(emptyInput, {});
   const { fetchGmailMessages } = await import("@/lib/google-actions");
   let messages;
   try {
     messages = await fetchGmailMessages("accréditation OR photo pass OR press OR accredit", 20);
   } catch (err) {
     console.error("[accreditations] Scan Gmail échoué:", err);
-    throw new Error(
+    throw new AppError(
+      "external_unavailable",
       "Impossible de scanner Gmail : " +
       (err instanceof Error ? err.message : "erreur inconnue") +
       " (réessaie après avoir reconnecté le compte Google)."
@@ -184,10 +177,10 @@ export async function scanAccreditationsAction(): Promise<{ message: string; cre
 }
 
 export async function generateFollowUpDraft(accreditationId: string): Promise<string> {
-  await requireSession();
+  const { data: id } = await actionInput(idInput, accreditationId);
   const existing = await getAccreditations();
-  const acc = existing.accreditations.find((a) => a.id === accreditationId);
-  if (!acc) throw new Error("Accréditation introuvable");
+  const acc = existing.accreditations.find((a) => a.id === id);
+  if (!acc) throw new AppError("not_found", "Accréditation introuvable");
 
   const { chatCompletion } = await import("@/lib/ai-providers");
   const { getModel } = await import("@/lib/app-config");

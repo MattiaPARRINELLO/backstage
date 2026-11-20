@@ -12,21 +12,23 @@ import { requireSession } from "@/lib/session";
  */
 type RouteArgs = unknown[];
 
-export function apiRoute<Args extends RouteArgs>(
-  handler: (...args: Args) => Promise<Response> | Response
-): (...args: Args) => Promise<Response> {
+export function apiRoute<Args extends RouteArgs, Result extends Response>(
+  handler: (...args: Args) => Promise<Result> | Result
+): (...args: Args) => Promise<Result> {
   return async (...args: Args) => {
     try {
       return await handler(...args);
     } catch (error) {
-      return errorResponse(error);
+      // Une reponse d'erreur est un `Response` : le type de retour du handler
+      // est conserve pour les tests et les `NextResponse.cookies`.
+      return errorResponse(error) as Result;
     }
   };
 }
 
-export function authedRoute<Args extends RouteArgs>(
-  handler: (session: { userId: string }, ...args: Args) => Promise<Response> | Response
-): (...args: Args) => Promise<Response> {
+export function authedRoute<Args extends RouteArgs, Result extends Response>(
+  handler: (session: { userId: string }, ...args: Args) => Promise<Result> | Result
+): (...args: Args) => Promise<Result> {
   return apiRoute(async (...args: Args) => {
     const session = await requireSession();
     return handler(session, ...args);

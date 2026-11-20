@@ -1,6 +1,8 @@
 "use server";
 
-import { requireSession } from "@/lib/session";
+import { z } from "zod";
+
+import { runAction } from "@/lib/action";
 import { createPasskeyPairCode } from "@/lib/passkey-pairing";
 
 /**
@@ -12,7 +14,5 @@ import { createPasskeyPairCode } from "@/lib/passkey-pairing";
  * d'enregistrer une passkey — jamais d'ouvrir une session sans biometrie.
  */
 export async function createPasskeyPairing(): Promise<{ code: string; expiresAt: string }> {
-  await requireSession();
-
-  return createPasskeyPairCode();
+  return runAction(z.object({}), {}, async () => createPasskeyPairCode());
 }

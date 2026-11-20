@@ -1,32 +1,43 @@
 "use server";
 
-import { requireSession } from "@/lib/session";
+import { z } from "zod";
 
+import { actionInput } from "@/lib/action";
 import { addCalendarEvent, getCalendar, getEmails, searchEmails, webSearch } from "@/lib/storage";
 import type { CalendarEvent, Email } from "@/lib/types";
 
+const emptyInput = z.object({});
+const queryInput = z.string().min(1, "Requete requise").max(200, "Requete trop longue");
+
+const calendarEventInput = z.object({
+  title: z.string().trim().min(1, "Titre requis"),
+  date: z.string().trim().min(1, "Date requise"),
+  venue: z.string().trim().optional(),
+  type: z.enum(["concert", "meeting", "other"]),
+});
+
 export async function loadCalendar(): Promise<CalendarEvent[]> {
-  await requireSession();
+  await actionInput(emptyInput, {});
   return getCalendar();
 }
 
 export async function createCalendarEvent(event: Omit<CalendarEvent, "id">): Promise<CalendarEvent> {
-  await requireSession();
-  return addCalendarEvent(event);
+  const { data } = await actionInput(calendarEventInput, event);
+  return addCalendarEvent(data);
 }
 
 export async function loadEmails(): Promise<Email[]> {
-  await requireSession();
+  await actionInput(emptyInput, {});
   const data = await getEmails();
   return data.emails;
 }
 
 export async function findEmails(query: string): Promise<Email[]> {
-  await requireSession();
-  return searchEmails(query);
+  const { data } = await actionInput(queryInput, query);
+  return searchEmails(data);
 }
 
 export async function searchWeb(query: string): Promise<string> {
-  await requireSession();
-  return webSearch(query);
+  const { data } = await actionInput(queryInput, query);
+  return webSearch(data);
 }

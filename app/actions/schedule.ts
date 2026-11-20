@@ -4,27 +4,32 @@
  * Emploi du temps CESAR : sync manuelle + lecture pour les pages.
  * Le scheduler (instrumentation) resynchronise automatiquement si périmé (> 6 h).
  */
-import { requireSession } from "@/lib/session";
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
+
+import { actionInput } from "@/lib/action";
+import { AppError } from "@/lib/errors";
 import { getSchedule, syncSchedule, logActivity } from "@/lib/storage";
 import type { ScheduleCourse, ScheduleData } from "@/lib/types";
 
+const emptyInput = z.object({});
+
 export async function getScheduleData(): Promise<ScheduleData> {
-  await requireSession();
+  await actionInput(emptyInput, {});
   return getSchedule();
 }
 
 export async function getScheduleCourses(): Promise<ScheduleCourse[]> {
-  await requireSession();
+  await actionInput(emptyInput, {});
   return (await getSchedule()).courses;
 }
 
 export async function syncScheduleNow(): Promise<ScheduleData> {
-  await requireSession();
+  await actionInput(emptyInput, {});
 
   const data = await syncSchedule();
   if (!data.ok) {
-    throw new Error(data.error || "Synchronisation CESAR en echec");
+    throw new AppError("external_unavailable", data.error || "Synchronisation CESAR en echec");
   }
 
   await logActivity(

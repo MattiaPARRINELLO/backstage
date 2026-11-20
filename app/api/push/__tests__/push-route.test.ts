@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-const mockGetSession = vi.fn();
-vi.mock("@/lib/session", () => ({ getSession: mockGetSession }));
+import { AppError } from "@/lib/errors";
+
+const mockRequireSession = vi.fn();
+vi.mock("@/lib/session", () => ({ requireSession: mockRequireSession }));
 
 const mockAddSubscription = vi.fn();
 const mockRemoveSubscription = vi.fn();
@@ -40,7 +42,7 @@ describe("POST /api/push", () => {
   });
 
   it("refuse une souscription sans session", async () => {
-    mockGetSession.mockResolvedValue(null);
+    mockRequireSession.mockRejectedValue(new AppError("unauthenticated", "Non authentifié"));
 
     const res = await POST(makeRequest(validSub));
 
@@ -49,7 +51,7 @@ describe("POST /api/push", () => {
   });
 
   it("enregistre une souscription valide avec une session", async () => {
-    mockGetSession.mockResolvedValue({ userId: "owner" });
+    mockRequireSession.mockResolvedValue({ userId: "owner" });
 
     const res = await POST(makeRequest(validSub));
 
@@ -59,7 +61,7 @@ describe("POST /api/push", () => {
   });
 
   it("refuse un payload incomplet", async () => {
-    mockGetSession.mockResolvedValue({ userId: "owner" });
+    mockRequireSession.mockResolvedValue({ userId: "owner" });
 
     const res = await POST(makeRequest({ endpoint: "https://push.example.com/1" }));
 

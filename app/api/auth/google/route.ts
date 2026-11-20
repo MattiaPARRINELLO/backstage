@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOAuth2Client, type GoogleAccountType } from "@/lib/google-client";
-import { requireSession } from "@/lib/session";
+import { AppError } from "@/lib/errors";
+import { authedRoute } from "@/lib/route";
 import {
   OAUTH_STATE_COOKIE,
   encodeOAuthState,
@@ -19,17 +20,11 @@ const SCOPES: Record<GoogleAccountType, string[]> = {
   ],
 };
 
-export async function GET(request: NextRequest) {
-  try {
-    await requireSession();
-  } catch {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  }
-
+export const GET = authedRoute(async (_session, request: NextRequest) => {
   const type = (request.nextUrl.searchParams.get("type") ?? "gmail") as GoogleAccountType;
 
   if (!["gmail", "calendar"].includes(type)) {
-    return NextResponse.json({ error: "Type invalide. Utilise 'gmail' ou 'calendar'." }, { status: 400 });
+    throw new AppError("validation", "Type invalide. Utilise 'gmail' ou 'calendar'.");
   }
 
   const oauth2Client = createOAuth2Client();
@@ -54,4 +49,4 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(authUrl);
   response.cookies.set(OAUTH_STATE_COOKIE, nonce, oauthStateCookieOptions());
   return response;
-}
+});

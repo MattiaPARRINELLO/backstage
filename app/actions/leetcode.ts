@@ -1,11 +1,60 @@
 "use server";
 
-import { requireSession } from "@/lib/session";
+import { z } from "zod";
+
+import { actionInput } from "@/lib/action";
+import { AppError } from "@/lib/errors";
 
 import { getLeetcode, saveLeetcode, addLeetcodeExercise, logActivity, getCalendar } from "@/lib/storage";
 import { fetchLeetCodeProfile, type LeetCodeSyncData } from "@/lib/leetcode-api";
 import type { LeetcodeData, LeetcodeExercise } from "@/lib/types";
 import { findFreeSlots } from "@/lib/leetcode-utils";
+
+const emptyInput = z.object({});
+const usernameInput = z.string().trim().min(1, "Username requis").max(50, "Username trop long");
+
+const exerciseInput = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  difficulty: z.enum(["Easy", "Medium", "Hard"]).optional(),
+  duration: z.number().nonnegative().optional(),
+  code: z.string(),
+  response: z.string(),
+  createdAt: z.string(),
+});
+
+const dataInput = z.object({
+  streak: z.number().int().nonnegative(),
+  history: z
+    .array(z.object({ date: z.string(), solved: z.boolean() }))
+    .max(5000),
+  exercises: z.array(exerciseInput).max(5000),
+  leetcodeUsername: z.string().optional(),
+  totalSolved: z.number().nonnegative().optional(),
+  easySolved: z.number().nonnegative().optional(),
+  mediumSolved: z.number().nonnegative().optional(),
+  hardSolved: z.number().nonnegative().optional(),
+  ranking: z.number().nonnegative().optional(),
+  totalSubmissions: z.number().nonnegative().optional(),
+  submissions: z
+    .object({
+      calendar: z.record(z.string(), z.number()),
+      activeYears: z.array(z.number()),
+      totalActiveDays: z.number(),
+    })
+    .optional(),
+  contest: z
+    .object({
+      attended: z.number(),
+      rating: z.number(),
+      globalRanking: z.number(),
+      topPercentage: z.number(),
+      badge: z.string().optional(),
+    })
+    .optional(),
+  syncedAt: z.string().optional(),
+  syncError: z.string().optional(),
+});
 
 /**
  * Durée de validité d'un sync. Remplace l'ancien déclencheur `streak === 0`,
@@ -37,7 +86,7 @@ function isStale(data: LeetcodeData): boolean {
 }
 
 export async function loadLeetcode(): Promise<LeetcodeData> {
-  await requireSession();
+  await actionInput(emptyInput, {});
   const data = await getLeetcode();
 
   // Sans pseudo, rien à synchroniser : on renvoie l'état local tel quel.
@@ -60,21 +109,21 @@ export async function loadLeetcode(): Promise<LeetcodeData> {
 }
 
 export async function saveLeetcodeData(data: LeetcodeData): Promise<void> {
-  await requireSession();
-  await saveLeetcode(data);
+  const { data: valid } = await actionInput(dataInput, data);
+  await saveLeetcode(valid as LeetcodeData);
 }
 
 export async function storeExercise(exercise: LeetcodeExercise): Promise<void> {
-  await requireSession();
-  await addLeetcodeExercise(exercise);
-  await logActivity("leetcode_solved", `Exercice LeetCode : ${exercise.title}`);
+  const { data } = await actionInput(exerciseInput, exercise);
+  await addLeetcodeExercise(data as LeetcodeExercise);
+  await logActivity("leetcode_solved", `Exercice LeetCode : ${data.title}`);
 }
 
 export async function syncLeetcode(): Promise<LeetcodeData> {
-  await requireSession();
+  await actionInput(emptyInput, {});
   const data = await getLeetcode();
   const username = data.leetcodeUsername;
-  if (!username) throw new Error("Aucun username LeetCode configuré");
+  if (!username) throw new AppError("validation", "Aucun username LeetCode configuré");
 
   const synced = await fetchLeetCodeProfile(username);
   const updated = withSync(data, synced);
@@ -83,7 +132,7 @@ export async function syncLeetcode(): Promise<LeetcodeData> {
 }
 
 export async function getSmartSuggestion(): Promise<string> {
-  await requireSession();
+  await actionInput(emptyInput, {});
   const lec = await getLeetcode();
   const calendarEvents = await getCalendar().catch(() => []);
   const now = new Date();
@@ -113,9 +162,7 @@ export async function getSmartSuggestion(): Promise<string> {
 }
 
 export async function setLeetcodeUsername(username: string): Promise<LeetcodeData> {
-  await requireSession();
-  const cleaned = username.trim();
-  if (!cleaned) throw new Error("Username requis");
+  const { data: cleaned } = await actionInput(usernameInput, username);
 
   // Le pseudo est vérifié auprès de l'API **avant** d'être enregistré : un
   // pseudo inexistant ne doit pas laisser la config dans un état inutilisable.

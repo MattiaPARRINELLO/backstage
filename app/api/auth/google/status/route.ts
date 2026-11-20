@@ -1,18 +1,12 @@
 import { NextResponse } from "next/server";
 import { isGoogleLinked } from "@/lib/google-client";
 import { getServerCached, setServerCached } from "@/lib/server-cache";
-import { requireSession } from "@/lib/session";
+import { authedRoute } from "@/lib/route";
 
 const GOOGLE_STATUS_CACHE_KEY = "google:status";
 const GOOGLE_STATUS_TTL_MS = 60 * 1000;
 
-export async function GET() {
-  try {
-    await requireSession();
-  } catch {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  }
-
+export const GET = authedRoute(async (_session) => {
   try {
     const cached = getServerCached<{ gmail: boolean; calendar: boolean }>(
       GOOGLE_STATUS_CACHE_KEY,
@@ -36,4 +30,4 @@ export async function GET() {
       { status: 500 },
     );
   }
-}
+});

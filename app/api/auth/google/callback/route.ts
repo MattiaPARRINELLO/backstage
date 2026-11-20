@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { saveTokens, clearGoogleBroken, exchangeAuthorizationCode, type GoogleAccountType } from "@/lib/google-client";
-import { requireSession } from "@/lib/session";
+import { authedRoute } from "@/lib/route";
 import { getConfig } from "@/lib/config";
 import {
   OAUTH_STATE_COOKIE,
@@ -16,13 +16,7 @@ function invalidState(): NextResponse {
   );
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    await requireSession();
-  } catch {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  }
-
+export const GET = authedRoute(async (_session, request: NextRequest) => {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get("code");
   const error = searchParams.get("error");
@@ -91,4 +85,4 @@ export async function GET(request: NextRequest) {
     const message = err instanceof Error ? err.message : "Erreur inconnue";
     return clearOAuthStateCookie(NextResponse.json({ error: message }, { status: 500 }));
   }
-}
+});

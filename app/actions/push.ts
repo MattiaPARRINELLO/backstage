@@ -1,11 +1,16 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireSession } from "@/lib/session";
+
+import { actionInput } from "@/lib/action";
+import { AppError } from "@/lib/errors";
 import { createPairCode, listDevices, removeDevice } from "@/lib/fcm-devices";
 import { isFcmConfigured } from "@/lib/fcm";
 
 const PAIR_SCHEME = "backstage://pair";
+const emptyInput = z.object({});
+const tokenInput = z.string().min(1, "Jeton requis");
 
 /**
  * Appairage de l'APK Android aux notifications natives.
@@ -20,11 +25,12 @@ export async function createAndroidPairLink(): Promise<{
   androidIntent: string;
   expiresAt: string;
 }> {
-  await requireSession();
+  await actionInput(emptyInput, {});
 
   const configured = await isFcmConfigured();
   if (!configured) {
-    throw new Error(
+    throw new AppError(
+      "external_unavailable",
       "Envoi natif non configure : ajoute data/firebase-service-account.json"
     );
   }
@@ -51,7 +57,7 @@ export async function loadAndroidDevices(): Promise<{
   count: number;
   lastSeenAt: string | null;
 }> {
-  await requireSession();
+  await actionInput(emptyInput, {});
   const devices = await listDevices();
   const lastSeenAt = devices
     .map((d) => d.lastSeenAt)
@@ -61,10 +67,7 @@ export async function loadAndroidDevices(): Promise<{
 }
 
 export async function forgetAndroidDevice(token: string): Promise<void> {
-  await requireSession();
-  if (!token || typeof token !== "string") {
-    throw new Error("Jeton requis");
-  }
-  await removeDevice(token);
+  const { data } = await actionInput(tokenInput, token);
+  await removeDevice(data);
   revalidatePath("/settings");
 }

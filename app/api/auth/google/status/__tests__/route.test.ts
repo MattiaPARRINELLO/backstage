@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
+import { AppError } from "@/lib/errors";
+
 const mockRequireSession = vi.fn();
 vi.mock("@/lib/session", () => ({ requireSession: mockRequireSession }));
 
@@ -20,12 +22,12 @@ describe("GET /api/auth/google/status", () => {
   });
 
   it("répond 401 sans session", async () => {
-    mockRequireSession.mockRejectedValue(new Error("Non authentifié"));
+    mockRequireSession.mockRejectedValue(new AppError("unauthenticated", "Non authentifié"));
 
     const res = await GET();
 
     expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ error: "Non authentifié" });
+    expect(await res.json()).toEqual({ error: "Non authentifié", code: "unauthenticated" });
     expect(mockIsGoogleLinked).not.toHaveBeenCalled();
   });
 

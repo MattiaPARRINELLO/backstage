@@ -1,20 +1,25 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyJwt, SESSION_COOKIE } from "./lib/session-edge";
+import { REQUEST_ID_COOKIE, REQUEST_ID_HEADER } from "./lib/request-ref";
 
 // Identifiant de corrélation court, posé sur chaque requête edge et relu
 // côté node par lib/logger (getRequestId) : permet de relier un log serveur
-// à une requête précise dans les logs cPanel.
+// à une requête précise dans les logs cPanel. Le cookie lisible sert aux
+// écrans d'erreur client, qui ne peuvent pas lire les en-tetes de navigation.
 function withRequestId(request: NextRequest, response: NextResponse): NextResponse {
-  const incoming = request.headers.get("x-request-id");
-  if (incoming) {
-    response.headers.set("x-request-id", incoming);
-    return response;
-  }
-  const generated = Array.from({ length: 8 }, () =>
-    "abcdef0123456789"[Math.floor(Math.random() * 16)]
-  ).join("");
-  response.headers.set("x-request-id", generated);
+  const incoming = request.headers.get(REQUEST_ID_HEADER);
+  const requestId =
+    incoming ??
+    Array.from({ length: 8 }, () => "abcdef0123456789"[Math.floor(Math.random() * 16)]).join("");
+
+  response.headers.set(REQUEST_ID_HEADER, requestId);
+  response.cookies.set(REQUEST_ID_COOKIE, requestId, {
+    path: "/",
+    sameSite: "lax",
+    httpOnly: false,
+    maxAge: 3600,
+  });
   return response;
 }
 

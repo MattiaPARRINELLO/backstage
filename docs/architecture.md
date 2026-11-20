@@ -216,6 +216,11 @@ et si applicables `durationMs`, `external` et `err` (`name`, `message`).
 - `kernelAction` journalise la durée totale de l'action et celle de l'étape
   `run`. Le port HTTP journalise chaque tentative et l'appel final en JSON, avec
   `external: true`, sans `reqId` (il reste importable côté client).
+- `proxy.ts` pose `reqId` dans l'en-tête `x-request-id` **et** dans le cookie
+  lisible `pb_req`. L'écran `app/error.tsx` l'affiche et permet de le copier ;
+  les erreurs de `lib/api-client.ts` ajoutent `(réf. req:<id>)` à leur message.
+  Le cookie est nécessaire parce qu'un écran d'erreur client ne peut pas lire
+  l'en-tête de la navigation qui l'a produit.
 
 ### Port HTTP sortant (`lib/http.ts`)
 

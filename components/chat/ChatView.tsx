@@ -34,6 +34,7 @@ import {
   type PendingGroup,
   type ConfirmResult,
 } from "@/components/chat/use-pending-actions";
+import { useAiConsent } from "@/components/chat/use-ai-consent";
 import { KeyboardSafe } from "@/components/ui/KeyboardSafe";
 
 // Résumé lisible d'une action IA en attente de confirmation, pour la carte
@@ -214,37 +215,13 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     setStreamingActive(false);
   }, []);
 
-  // Consentement IA : rien n'est envoyé au provider tant que l'utilisateur
-  // n'a pas accepté l'écran de consentement (voir /privacy).
-  const [consent, setConsent] = useState<{ loaded: boolean; accepted: boolean }>({
-    loaded: false,
-    accepted: false,
-  });
-
-  useEffect(() => {
-    let cancelled = false;
-    import("@/app/actions/consent")
-      .then(({ loadAiConsent }) => loadAiConsent())
-      .then((state) => {
-        if (!cancelled) setConsent({ loaded: true, accepted: state.aiConsent });
-      })
-      .catch(() => {
-        if (!cancelled) setConsent({ loaded: true, accepted: false });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const acceptConsent = async () => {
-    try {
-      const { acceptAiConsent } = await import("@/app/actions/consent");
-      await acceptAiConsent(true);
-      setConsent({ loaded: true, accepted: true });
-    } catch {
-      setConsent({ loaded: true, accepted: false });
-    }
-  };
+  // Consentement IA : l'état et le cycle vivent dans le hook, la vue garde le
+  // bandeau, la garde d'envoi et leurs textes.
+  const {
+    loaded: consentLoaded,
+    accepted: consentAccepted,
+    accept: acceptConsent,
+  } = useAiConsent();
 
   function restoreMessages(raw: ChatSession["messages"]): Message[] {
     const restored: Message[] = raw.map((m) => ({
@@ -718,7 +695,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       const trimmed = formatQuotedMessage(quotes, text).trim();
       if (!trimmed || loading) return;
 
-      if (consent.loaded && !consent.accepted) {
+      if (consentLoaded && !consentAccepted) {
         setError(
           "Accepte l'utilisation de l'IA pour envoyer des messages (bannière ci-dessus ou page Vie privée)."
         );
@@ -777,7 +754,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       // est fermé, et GET /api/chat/stream permet de s'y réattacher.
       startLiveRun({ sessionId, userMessage: userMsg, messages: apiMessages, actionContext });
     },
-    [loading, messages, sessionId, onSessionChange, chatCtx, consent, quotes, resetQuotes, resetTurnState, clearGroups]
+    [loading, messages, sessionId, onSessionChange, chatCtx, consentLoaded, consentAccepted, quotes, resetQuotes, resetTurnState, clearGroups]
   );
 
   const stop = useCallback(() => {
@@ -823,7 +800,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
           inputRef.current?.focus();
         }}
       />
-      {consent.loaded && !consent.accepted && (
+      {consentLoaded && !consentAccepted && (
         <div className="shrink-0 pl-14 pr-4 py-3 lg:px-4 bg-[var(--surface-2)] fade-in">
           <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex-1 min-w-0">

@@ -17,8 +17,8 @@ type GraphListResponse<T> = { value: T[]; "@odata.nextLink"?: string };
 
 const completeTaskSchema = z
   .object({
-    listId: z.string().trim().min(1, "listId requis"),
-    taskId: z.string().trim().min(1, "taskId requis"),
+    listId: z.string({ error: "listId requis" }).trim().min(1, "listId requis"),
+    taskId: z.string({ error: "taskId requis" }).trim().min(1, "taskId requis"),
     completed: z.boolean().optional(),
   })
   .strict();

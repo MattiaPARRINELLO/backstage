@@ -7,7 +7,7 @@ import { hasNewInformation } from "@/lib/memory-dedup";
 
 const bodySchema = z.object({
   content: z.string().trim().min(1, "Le contenu est requis").max(500),
-  category: z.enum(["dev", "photo", "life", "preference"]),
+  category: z.enum(["dev", "photo", "life", "preference"], { error: "Categorie invalide" }),
   confidence: z.number().min(0).max(1).optional(),
 });
 

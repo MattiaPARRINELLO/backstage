@@ -8,7 +8,7 @@ import { AppError } from "@/lib/errors";
 import { authedRoute } from "@/lib/route";
 
 const confirmSchema = z.object({
-  name: z.string().min(1, "Nom d'outil requis"),
+  name: z.string({ error: "Nom d'outil requis" }).min(1, "Nom d'outil requis"),
   arguments: z.record(z.string(), z.unknown()).optional(),
   sessionId: z.string().optional(),
   toolCallId: z.string().optional(),

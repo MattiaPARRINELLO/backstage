@@ -17,7 +17,7 @@ const batchSchema = z.object({
   actions: z
     .array(
       z.object({
-        name: z.string().min(1),
+        name: z.string({ error: "Nom d'outil requis" }).min(1, "Nom d'outil requis"),
         arguments: z.record(z.string(), z.unknown()).optional(),
         toolCallId: z.string().optional(),
       })

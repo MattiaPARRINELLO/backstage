@@ -9,11 +9,11 @@ import { authedRoute } from "@/lib/route";
 // sans cette garde, n'importe qui pouvait enregistrer son endpoint et recevoir
 // les notifications privées (titres et notes de rappels).
 const subscriptionSchema = z.object({
-  endpoint: z.string().url("Endpoint invalide"),
+  endpoint: z.string({ error: "Endpoint requis" }).url("Endpoint invalide"),
   expirationTime: z.number().nullable().optional(),
   keys: z.object({
-    p256dh: z.string().min(1),
-    auth: z.string().min(1),
+    p256dh: z.string({ error: "Cle p256dh requise" }).min(1),
+    auth: z.string({ error: "Cle auth requise" }).min(1),
   }),
 });
 

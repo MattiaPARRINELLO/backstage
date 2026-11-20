@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mockGetSession = vi.fn();
-vi.mock("@/lib/session", () => ({ getSession: mockGetSession }));
+import { AppError } from "@/lib/errors";
+
+const mockRequireSession = vi.fn();
+vi.mock("@/lib/session", () => ({ requireSession: mockRequireSession }));
 
 // Registre réel : un lot ne s'exécute que si chaque action a bien été proposée
 // par le serveur. Seule l'exécution des outils est simulée.
@@ -37,7 +39,7 @@ describe("POST /api/chat/confirm-batch", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearPendingActions();
-    mockGetSession.mockResolvedValue({ userId: "owner" });
+    mockRequireSession.mockResolvedValue({ userId: "owner" });
     mockLogActivity.mockResolvedValue(undefined);
     mockRunTool.mockImplementation(async (name: string) => ({
       status: "ok",
@@ -47,7 +49,7 @@ describe("POST /api/chat/confirm-batch", () => {
   });
 
   it("refuse sans session", async () => {
-    mockGetSession.mockResolvedValue(null);
+    mockRequireSession.mockRejectedValue(new AppError("unauthenticated", "Non authentifié"));
     const res = await POST(makeRequest({ actions: [{ name: "send_email_response", arguments: {} }] }));
     expect(res.status).toBe(401);
     expect(mockRunTool).not.toHaveBeenCalled();
@@ -73,7 +75,7 @@ describe("POST /api/chat/confirm-batch", () => {
       })
     );
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: "Action non confirmee par le serveur" });
+    expect(await res.json()).toMatchObject({ error: "Action non confirmee par le serveur" });
     expect(mockRunTool).not.toHaveBeenCalled();
   });
 
@@ -88,7 +90,7 @@ describe("POST /api/chat/confirm-batch", () => {
       })
     );
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: "Lot invalide : action en double" });
+    expect(await res.json()).toMatchObject({ error: "Lot invalide : action en double" });
     expect(mockRunTool).not.toHaveBeenCalled();
   });
 

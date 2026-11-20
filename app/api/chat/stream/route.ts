@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { getSession } from "@/lib/session";
+import { authedRoute } from "@/lib/route";
+import { AppError } from "@/lib/errors";
 import { getRun, snapshotOf, subscribe } from "@/lib/chat-runs";
 import type { ChatTransportEvent } from "@/lib/chat-run-types";
 
@@ -8,21 +9,10 @@ import type { ChatTransportEvent } from "@/lib/chat-run-types";
 // instantané de l'état courant, puis la suite du flux en direct.
 //
 // 204 = aucune génération active pour cette conversation.
-export async function GET(request: NextRequest) {
-  const session = await getSession();
-  if (!session) {
-    return new Response(JSON.stringify({ error: "Non authentifie" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
+export const GET = authedRoute(async (_session, request: NextRequest) => {
   const sessionId = request.nextUrl.searchParams.get("sessionId")?.trim();
   if (!sessionId) {
-    return new Response(JSON.stringify({ error: "sessionId requis" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    throw new AppError("validation", "sessionId requis");
   }
 
   const run = getRun(sessionId);
@@ -105,4 +95,4 @@ export async function GET(request: NextRequest) {
       "X-Accel-Buffering": "no",
     },
   });
-}
+});

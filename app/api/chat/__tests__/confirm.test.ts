@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mockGetSession = vi.fn();
-vi.mock("@/lib/session", () => ({ getSession: mockGetSession }));
+import { AppError } from "@/lib/errors";
+
+const mockRequireSession = vi.fn();
+vi.mock("@/lib/session", () => ({ requireSession: mockRequireSession }));
 
 // Registre réel : c'est le lien entre l'action proposée et son exécution qui
 // est testé ici. Seule l'exécution de l'outil est simulée.
@@ -31,7 +33,7 @@ describe("POST /api/chat/confirm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearPendingActions();
-    mockGetSession.mockResolvedValue({ userId: "owner" });
+    mockRequireSession.mockResolvedValue({ userId: "owner" });
     mockLogActivity.mockResolvedValue(undefined);
     mockRunTool.mockResolvedValue({
       status: "ok",
@@ -41,7 +43,7 @@ describe("POST /api/chat/confirm", () => {
   });
 
   it("refuse sans session", async () => {
-    mockGetSession.mockResolvedValue(null);
+    mockRequireSession.mockRejectedValue(new AppError("unauthenticated", "Non authentifié"));
     const res = await POST(makeRequest({ name: "send_email_response", arguments: EMAIL_ARGS }));
     expect(res.status).toBe(401);
     expect(mockRunTool).not.toHaveBeenCalled();
@@ -74,14 +76,14 @@ describe("POST /api/chat/confirm", () => {
       makeRequest({ name: "create_github_issue", arguments: { title: "x" } })
     );
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: "Action non confirmee par le serveur" });
+    expect(await res.json()).toMatchObject({ error: "Action non confirmee par le serveur" });
     expect(mockRunTool).not.toHaveBeenCalled();
   });
 
   it("refuse une action jamais proposée par le serveur", async () => {
     const res = await POST(makeRequest({ name: "send_email_response", arguments: EMAIL_ARGS }));
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: "Action non confirmee par le serveur" });
+    expect(await res.json()).toMatchObject({ error: "Action non confirmee par le serveur" });
     expect(mockRunTool).not.toHaveBeenCalled();
   });
 

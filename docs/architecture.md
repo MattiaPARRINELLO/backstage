@@ -184,6 +184,18 @@ reste dans `cause` et dans le log, jamais dans la réponse.
 `internal` avec le libellé générique ; `toErrorPayload` ne recopie jamais son
 message. Côté client, `errorLabel(code)` donne le texte à afficher.
 
+### Enveloppe des routes (`lib/route.ts`)
+
+Toute route privée passe par `authedRoute` (session + traduction d'erreur) ou
+`apiRoute` (traduction seule) : le corps est validé par Zod, une erreur devient
+`{ error, code }` avec le statut du code.
+
+Trois exceptions assumées, documentées ici : `app/api/chat/route.ts` garde sa
+garde locale (la session sert aussi de clé de rate limit et la réponse est un
+flux SSE), `app/api/auth/session` et `app/api/auth/passkey/register-*` sont
+publiques par conception (état de session, bootstrap de la première passkey).
+
+
 
 ### next.config.ts — headers
 

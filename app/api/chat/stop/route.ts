@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { authedRoute } from "@/lib/route";
+import { AppError } from "@/lib/errors";
 import { abortRun } from "@/lib/chat-runs";
 import { z } from "zod";
 
@@ -10,27 +11,12 @@ const stopBodySchema = z.object({
 // Arrêt explicite d'une génération (bouton Stop / Esc). Distinct de la simple
 // déconnexion du client, qui n'interrompt plus la génération : sans cet
 // endpoint, la fermeture d'un onglet serait indiscernable d'un Stop.
-export async function POST(request: NextRequest) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
-  }
-
-  let raw: unknown;
-  try {
-    raw = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Corps de requete invalide" }, { status: 400 });
-  }
-
-  const parsed = stopBodySchema.safeParse(raw);
+export const POST = authedRoute(async (_session, request: NextRequest) => {
+  const parsed = stopBodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Payload invalide" },
-      { status: 400 }
-    );
+    throw new AppError("validation", parsed.error.issues[0]?.message ?? "Payload invalide");
   }
 
   abortRun(parsed.data.sessionId);
   return NextResponse.json({ ok: true });
-}
+});

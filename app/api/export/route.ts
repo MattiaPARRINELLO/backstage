@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import type { Dirent } from "fs";
 import path from "path";
-import { getSession } from "@/lib/session";
+import { authedRoute } from "@/lib/route";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 
@@ -21,12 +21,7 @@ const EXCLUDED = new Set([
   "notified-reminders.json",
 ]);
 
-export async function GET() {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  }
-
+export const GET = authedRoute(async (_session) => {
   const files: Record<string, unknown> = {};
   let entries: Dirent[];
   try {
@@ -61,4 +56,4 @@ export async function GET() {
       "Cache-Control": "no-store",
     },
   });
-}
+});

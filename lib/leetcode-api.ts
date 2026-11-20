@@ -1,5 +1,6 @@
 import type { LeetcodeContest, LeetcodeSubmissions } from "./types";
 import { computeStreak, parseSubmissionCalendar } from "./leetcode-utils";
+import { request as httpRequest } from "@/lib/http";
 
 // API communautaire qui relaie le GraphQL public de LeetCode. Elle découpe les
 // données en plusieurs routes : les compteurs ne sont PAS sur le profil (ils
@@ -59,7 +60,10 @@ export interface LeetCodeSyncData {
 }
 
 async function fetchJson<T extends ApiErrors>(path: string, missingMessage: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+  const res = await httpRequest(`${API_BASE}${path}`, {
+    label: "leetcode",
+    timeoutMs: TIMEOUT_MS,
+  });
   if (!res.ok) throw new Error(`LeetCode API ${res.status} sur ${path}`);
   const json = (await res.json()) as T;
   if (json.errors?.length) throw new Error(missingMessage);

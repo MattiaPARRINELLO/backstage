@@ -11,6 +11,7 @@
 import type { ScheduleCourse } from "@/lib/types/schedule";
 import { serverLog } from "./logger";
 import { getConfig } from "@/lib/config";
+import { request as httpRequest } from "@/lib/http";
 
 const TIMEOUT_MS = 45_000;
 
@@ -125,17 +126,27 @@ export async function fetchCesarSchedule(): Promise<ScheduleCourse[]> {
     }
   };
   const cookieHeader = () => [...cookies].map(([k, v]) => `${k}=${v}`).join("; ");
+  // Le flux CESAR est une session a usage unique (CSRF, cookies) : aucune
+  // requete n'est rejouee automatiquement.
   const postForm = (path: string, body: URLSearchParams, referer?: string) =>
-    fetch(cesarBase() + path, {
+    httpRequest(cesarBase() + path, {
+      label: "cesar",
       method: "POST",
       redirect: "manual",
+      retries: 0,
+      timeoutMs: TIMEOUT_MS,
       headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: cookieHeader(), ...(referer ? { Referer: cesarBase() + referer } : {}) },
       body,
-      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
 
   const get = (path: string) =>
-    fetch(cesarBase() + path, { headers: { Cookie: cookieHeader() }, redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS) });
+    httpRequest(cesarBase() + path, {
+      label: "cesar",
+      redirect: "manual",
+      retries: 0,
+      timeoutMs: TIMEOUT_MS,
+      headers: { Cookie: cookieHeader() },
+    });
 
   // 1) page de login → token CSRF
   const r1 = await get("/connexion");
@@ -157,12 +168,17 @@ export async function fetchCesarSchedule(): Promise<ScheduleCourse[]> {
   }
 
   // 3) écran CVEC éventuel → bouton "Rappeler plus tard"
-  const home = await fetch(cesarBase() + "/", { headers: { Cookie: cookieHeader() }, redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS) });
+  const home = await get("/");
   track(home);
   const homePath = home.status === 302 ? home.headers.get("location") || "/" : "/";
   let homeHtml = home.status === 302 ? "" : await home.text();
   if (homePath.includes("/televersement/cvec")) {
-    const rc = await fetch(cesarBase() + homePath, { headers: { Cookie: cookieHeader() }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const rc = await httpRequest(cesarBase() + homePath, {
+      label: "cesar",
+      retries: 0,
+      timeoutMs: TIMEOUT_MS,
+      headers: { Cookie: cookieHeader() },
+    });
     track(rc);
     const hc = await rc.text();
     const skipName = /<button[^>]*name="(cvec_file\[[^\]]*\]|[^"]*skip[^"]*)"/.exec(hc)?.[1];

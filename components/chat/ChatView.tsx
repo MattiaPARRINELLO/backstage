@@ -803,7 +803,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
         const lines = results
           .map((r, i) => {
             const label = group.tools[i]?.argsLabel || r.name;
-            return r.ok ? `✓ ${label}` : `✗ ${label} — ${r.error ?? "échec"}`;
+            return r.ok ? `✓ ${label}` : `✗ ${label} : ${r.error ?? "échec"}`;
           })
           .join("\n");
         const okCount = results.filter((r) => r.ok).length;

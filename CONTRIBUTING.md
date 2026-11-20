@@ -132,6 +132,11 @@ chore(deps): met a jour vitest
 
 - Une PR traite **un seul sujet** et reste sous **400 lignes** modifiees.
   Au-dela, decoupe-la.
+- Exception : un **deplacement pur** de code peut monter jusqu'a **600 lignes**
+  de diff, a condition que le corps de la PR prouve que le bloc deplace est
+  identique (comparaison avant/apres) et que le net de lignes reste faible.
+  C'est le cas d'un fichier extrait d'un autre sans reecriture : la revue porte
+  sur un deplacement, pas sur une reecriture.
 - Avant de decouper du code, lis la charte de responsabilite unique
   ([docs/architecture/srp.md](docs/architecture/srp.md)) : elle definit ce
   qu'est une responsabilite aux echelles fonction, fichier et dossier, avec la

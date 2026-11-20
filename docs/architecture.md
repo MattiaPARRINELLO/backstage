@@ -165,6 +165,26 @@ serveur à l'initiation et renvoyé dans un cookie `httpOnly` `pb_oauth_state`
 `SameSite=lax`). Les Server Actions ne sont pas rate-limitées. Si tu ajoutes une
 action coûteuse (IA, scraping), signale-le.
 
+### Codes d'erreur (`lib/errors.ts`)
+
+Toute erreur applicative est une `AppError(code, message)`. Le code décide du
+statut HTTP (Route Handlers) et du libellé affichable ; le message technique
+reste dans `cause` et dans le log, jamais dans la réponse.
+
+| Code | HTTP | Sens |
+| --- | --- | --- |
+| `unauthenticated` | 401 | session absente ou expirée |
+| `forbidden` | 403 | action interdite à cette session |
+| `not_found` | 404 | entité demandée inexistante |
+| `validation` | 400 | entrée refusée par le schéma |
+| `external_unavailable` | 503 | dépendance externe en panne |
+| `internal` | 500 | bug serveur, message jamais exposé |
+
+`requireSession()` lève `unauthenticated`. Une erreur inconnue devient
+`internal` avec le libellé générique ; `toErrorPayload` ne recopie jamais son
+message. Côté client, `errorLabel(code)` donne le texte à afficher.
+
+
 ### next.config.ts — headers
 
 Toujours : `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy`,

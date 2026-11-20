@@ -1,5 +1,6 @@
 import { getConfig } from "@/lib/config";
 import { cookies } from "next/headers";
+import { AppError } from "@/lib/errors";
 import {
   SESSION_COOKIE,
   CHALLENGE_COOKIE,
@@ -54,7 +55,7 @@ export async function clearSession(): Promise<void> {
 
 export async function requireSession(): Promise<{ userId: string }> {
   const session = await getSession();
-  if (!session) throw new Error("Non authentifié");
+  if (!session) throw new AppError("unauthenticated", "Non authentifié");
   return session;
 }
 

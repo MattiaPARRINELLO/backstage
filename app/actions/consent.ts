@@ -1,14 +1,17 @@
 "use server";
 
-import { requireSession } from "@/lib/session";
+import { z } from "zod";
+
+import { runAction } from "@/lib/action";
 import { getAiConsent, setAiConsent, type ConsentState } from "@/lib/consent";
 
+const emptyInput = z.object({});
+const acceptedInput = z.boolean();
+
 export async function loadAiConsent(): Promise<ConsentState> {
-  await requireSession();
-  return getAiConsent();
+  return runAction(emptyInput, {}, async () => getAiConsent());
 }
 
 export async function acceptAiConsent(accepted: boolean): Promise<ConsentState> {
-  await requireSession();
-  return setAiConsent(accepted);
+  return runAction(acceptedInput, accepted, async (value) => setAiConsent(value));
 }

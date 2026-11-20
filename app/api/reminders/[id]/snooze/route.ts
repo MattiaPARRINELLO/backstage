@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireSession } from "@/lib/session";
+import { AppError } from "@/lib/errors";
+import { authedRoute } from "@/lib/route";
 import { snoozeReminder } from "@/modules/reminders";
 
-export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    await requireSession();
-  } catch {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+export const POST = authedRoute(
+  async (_session, _request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params;
+    const ok = await snoozeReminder(id);
+    if (!ok) throw new AppError("not_found", "Rappel introuvable");
+
+    return NextResponse.json({ ok: true });
   }
-
-  const { id } = await params;
-  const ok = await snoozeReminder(id);
-  if (!ok) return NextResponse.json({ error: "Rappel introuvable" }, { status: 404 });
-
-  return NextResponse.json({ ok: true });
-}
+);

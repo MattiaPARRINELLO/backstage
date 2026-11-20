@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
-import { getSession } from "@/lib/session";
+import { AppError } from "@/lib/errors";
+import { authedRoute } from "@/lib/route";
 import { completeReminder } from "@/modules/reminders";
 
 // Marque un rappel « fait ». Appelé par le service worker (notification push)
 // et l'UI. La règle vit dans le module ; cette route ne fait que traduire.
-export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+export const POST = authedRoute(
+  async (_session, _request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params;
+    const ok = await completeReminder(id);
+    if (!ok) throw new AppError("not_found", "Rappel introuvable");
+
+    revalidatePath("/reminders");
+    return NextResponse.json({ ok: true });
   }
-
-  const { id } = await params;
-  const ok = await completeReminder(id);
-  if (!ok) return NextResponse.json({ error: "Rappel introuvable" }, { status: 404 });
-
-  revalidatePath("/reminders");
-  return NextResponse.json({ ok: true });
-}
+);

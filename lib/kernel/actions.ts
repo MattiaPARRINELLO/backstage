@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 
+import { AppError } from "@/lib/errors";
 import { requireSession } from "@/lib/session";
 
 import { createModuleContext } from "./context";
@@ -29,7 +30,10 @@ export async function kernelAction<Output = unknown>(
   // dans les Server Actions du reste du projet.
   const parsed = entry.definition.input.safeParse(rawInput ?? {});
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Payload invalide");
+    throw new AppError(
+      "validation",
+      parsed.error.issues[0]?.message ?? "Payload invalide"
+    );
   }
 
   // 3. Exécution avec un contexte fourni par le noyau.

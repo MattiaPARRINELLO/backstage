@@ -21,38 +21,20 @@ import {
   persistExtractedFacts,
 } from "@/lib/memory-autosave";
 import { checkRateLimit } from "@/lib/rate-limit";
-import {
-  runTool,
-  tools,
-  toolPolicy,
-  confirmationMessage,
-  registerPendingAction,
-} from "@/lib/chat-tools";
+import { tools, toolPolicy, confirmationMessage } from "@/lib/chat-tools";
 import { describeToolAction } from "@/lib/kernel/describe-tool-action";
 import type { PendingActionReason, ToolRunResult } from "@/lib/chat-tools";
 import { parseToolText, isFailedStatus, renderToolText, TOOL_HONESTY_RULE } from "@/lib/tool-result";
 import { buildSystemPrompt } from "@/lib/chat-prompts";
 import { serverLog } from "@/lib/logger";
 import { parseChatBody, type ChatBody } from "./request";
+import { renderToolResultMessage, runToolCall, type PendingToolCall } from "./tool-run";
 
 
 
 // Consigne injectée après un résultat d'outil en échec ou bloqué : force le
 // modèle à rendre compte fidèlement au lieu d'annoncer une action non faite.
 const RESULT_HONESTY_RULE = TOOL_HONESTY_RULE;
-
-function parseToolArguments(argumentsRaw: string): Record<string, unknown> {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(argumentsRaw);
-  } catch {
-    throw new Error("arguments d'outil invalides (JSON)");
-  }
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new Error("arguments d'outil invalides (JSON)");
-  }
-  return parsed as Record<string, unknown>;
-}
 
 // Résultat d'outil délimité, tel que réinjecté dans l'historique.
 const TOOL_RESULT_NAME_PATTERN = /<tool_result\s+name="([^"]+)"/g;
@@ -469,13 +451,7 @@ export async function POST(request: NextRequest) {
         // au lieu d'une carte par outil. Chaque action reste exécutée
         // individuellement via POST /api/chat/confirm-batch quand l'utilisateur
         // valide le lot.
-        const pendingConfirms: {
-          toolCallId: string;
-          name: string;
-          arguments: string;
-          args: Record<string, unknown>;
-          reason: PendingActionReason;
-        }[] = [];
+        const pendingConfirms: PendingToolCall[] = [];
 
         const pushToolResult = (
           tc: { toolCallId: string; name: string },
@@ -486,10 +462,9 @@ export async function POST(request: NextRequest) {
             role: "tool",
             tool_call_id: tc.toolCallId,
             // Résultat d'outil délimité : le contenu (pages, emails, recherche)
-            // est externe et NON FIABLE — le modèle ne doit pas suivre ses
+            // est externe et NON FIABLE : le modèle ne doit pas suivre ses
             // instructions (cf. bloc CONTENU NON FIABLE du system prompt).
-            // Le statut en tête dit sans ambiguïté si l'action a abouti.
-            content: `<tool_result name="${tc.name}" status="${run.status}">\n${run.rendered}\n</tool_result>`,
+            content: renderToolResultMessage(tc.name, run),
           });
         };
 
@@ -501,41 +476,15 @@ export async function POST(request: NextRequest) {
           toolCallsToExecute.some((tc) => toolPolicy(tc.name).untrusted);
 
         for (const tc of toolCallsToExecute) {
-          let run: ToolRunResult;
-          try {
-            // Validation stricte : des arguments invalides ne doivent jamais
-            // devenir un appel silencieux avec `{}` ni une carte de
-            // confirmation cassée.
-            const args = parseToolArguments(tc.arguments);
-            const policy = toolPolicy(tc.name);
-            const requiresConfirmation = policy.requiresConfirmation;
-            // Provenance : une écriture dans un tour contaminé est mise en
-            // attente, même si l'outil s'exécute normalement sans confirmation.
-            const blockedByProvenance =
-              !requiresConfirmation && provenanceTainted && policy.write;
-            if (requiresConfirmation || blockedByProvenance) {
-              // Action à effet externe : bloquée en attente de confirmation.
-              // On l'enregistre côté serveur (nom + arguments parsés) avant de
-              // la proposer : /api/chat/confirm[-batch] refusera toute action
-              // absente du registre, substituée ou rejouée.
-              const reason: PendingActionReason = requiresConfirmation
-                ? "policy"
-                : "provenance";
-              registerPendingAction(tc.name, args, reason);
-              // On la met de côté pour la proposer en lot à l'utilisateur ;
-              // l'exécution réelle passera par POST /api/chat/confirm-batch.
-              pendingConfirms.push({ ...tc, args, reason });
-              continue;
-            }
-            run = await runTool(tc.name, args);
-          } catch (err) {
-            run = {
-              status: "error",
-              text: `Erreur: ${err instanceof Error ? err.message : String(err)}`,
-              rendered: `[ERREUR] Erreur: ${err instanceof Error ? err.message : String(err)}`,
-            };
+          const outcome = await runToolCall(tc, provenanceTainted);
+          if (outcome.kind === "pending") {
+            // Action à effet externe : déjà enregistrée côté serveur, mise de
+            // côté pour être proposée en lot. L'exécution réelle passera par
+            // POST /api/chat/confirm-batch.
+            pendingConfirms.push(outcome);
+            continue;
           }
-          pushToolResult(tc, run);
+          pushToolResult(tc, outcome.result);
         }
 
         if (pendingConfirms.length > 0) {

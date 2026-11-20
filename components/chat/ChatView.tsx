@@ -13,7 +13,6 @@ import {
   generateId,
   generateTitle,
   formatQuotedMessage,
-  parseQuotedMessage,
   type MessageQuote,
 } from "@/components/chat/chat-data";
 import { SelectionCommentLayer } from "@/components/chat/SelectionComment";
@@ -31,6 +30,7 @@ import { buildActionContext } from "@/lib/chat-action-context";
 import { GroupActionCard } from "@/components/chat/MessageBlocks";
 import { ChatTranscript } from "@/components/chat/ChatTranscript";
 import { useChatAutoscroll } from "@/components/chat/use-chat-autoscroll";
+import { useChatShortcuts } from "@/components/chat/use-chat-shortcuts";
 import { KeyboardSafe } from "@/components/ui/KeyboardSafe";
 
 // Résumé lisible d'une action IA en attente de confirmation, pour la carte
@@ -810,35 +810,22 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     [toast]
   );
 
-  const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Sur écran tactile (pas de clavier physique), Entrée envoie directement ;
-    // Shift+Entrée fait une nouvelle ligne. Sur desktop, Ctrl/Cmd+Entrée envoie.
-    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey || (coarsePointer && !e.shiftKey))) {
-      e.preventDefault();
-      void send(input);
-    } else if (e.key === "ArrowUp" && !input && messages.length > 1) {
-      e.preventDefault();
-      const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
-      // On rappelle le texte libre, pas les extraits déjà consommés.
-      if (lastUserMsg) setInput(parseQuotedMessage(lastUserMsg.content).body);
-    }
-  };
+  // Remise à l'accueil déclenchée par Ctrl/Cmd+L, appliquée par le hook de
+  // raccourcis.
+  const resetConversation = useCallback(() => {
+    setMessages([welcomeMessage]);
+    setPendingQuotes([]);
+  }, []);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "l") {
-        e.preventDefault();
-        setMessages([welcomeMessage]);
-        setPendingQuotes([]);
-      }
-      if (e.key === "Escape" && loading) {
-        stop();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [loading, stop]);
+  const handleKey = useChatShortcuts({
+    input,
+    setInput,
+    send,
+    messages,
+    loading,
+    stop,
+    onReset: resetConversation,
+  });
 
   const isWelcome = messages.length <= 1 && messages[0]?.id === "welcome";
   const pendingLabel = FUNNY_THOUGHTS[thinkingIndex % FUNNY_THOUGHTS.length] ?? "";

@@ -267,7 +267,8 @@ sont les mêmes ; toute évolution de palette doit être répercutée dans les d
 fichiers, puis ici.
 
 Landing = `components/landing/*`, un composant par section, contenu éditorial
-centralisé dans `app/landing-content.ts`.
+réparti par section dans `app/landing/content/*` et exposé par le barrel
+`app/landing-content.ts`.
 
 ---
 

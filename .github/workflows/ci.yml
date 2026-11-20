@@ -22,6 +22,9 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      - name: Plafond de warnings lint
+        run: bun run lint:budget
+
       - name: References de la documentation
         run: bun run check:docs
 

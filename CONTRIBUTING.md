@@ -65,6 +65,7 @@ tester la production.
 | `bun run build` | build de production Next.js |
 | `bun run start` | sert le build de production |
 | `bun run lint` | ESLint (flat config) |
+| `bun run lint:budget` | warnings ESLint sous le plafond fige |
 | `bunx tsc --noEmit` | verification TypeScript |
 | `bun run typecheck:strict` | typecheck strict du noyau, des modules et du kit |
 | `bun run test` | suite Vitest complete |
@@ -175,6 +176,12 @@ bun run build
 
 La checklist de la PR reprend ces commandes. Coche uniquement celles que tu as
 reellement lancees.
+
+`bun run lint:budget` (`scripts/lint-budget.ts`) compte les warnings ESLint et
+les compare au plafond de `scripts/eslint-budget.json`. La regle `max-lines`
+etant en avertissement, le plafond est le cliquet : une PR qui decoupe un
+fichier baisse le plafond au nombre de warnings restants, jamais l'inverse.
+Une erreur ESLint fait echouer les deux commandes.
 
 `bun run check:docs` (`scripts/check-docs.ts`) verifie que chaque fichier cite
 dans la documentation existe encore. Regles : un chemin se resout depuis la

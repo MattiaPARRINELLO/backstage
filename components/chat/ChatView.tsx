@@ -1,85 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { useChatContext } from "@/lib/chat-context";
-import { useToast } from "@/components/ui/Toast";
-import type { ActivityStep, Message, ToolCall } from "@/components/chat/types";
-import type { ChatSession } from "@/lib/types";
+import type { Message } from "@/components/chat/types";
 import {
-  FUNNY_THOUGHTS,
   welcomeMessage,
   generateId,
   generateTitle,
   formatQuotedMessage,
 } from "@/components/chat/chat-data";
 import { SelectionCommentLayer } from "@/components/chat/SelectionComment";
-import {
-  getLiveRun,
-  subscribeLiveRun,
-  startLiveRun,
-  abortLiveRun,
-  resumeLiveRun,
-  clearLiveRun,
-  type LiveRunEvent,
-} from "@/components/chat/live-run";
+import { startLiveRun, abortLiveRun } from "@/components/chat/live-run";
 import { buildActionContext } from "@/lib/chat-action-context";
-import { GroupActionCard } from "@/components/chat/MessageBlocks";
 import { ChatTranscript } from "@/components/chat/ChatTranscript";
+import { ChatConsentBanner } from "@/components/chat/ChatConsentBanner";
+import { PendingGroupList } from "@/components/chat/PendingGroupList";
 import { useChatAutoscroll } from "@/components/chat/use-chat-autoscroll";
 import { useChatShortcuts } from "@/components/chat/use-chat-shortcuts";
 import { useSelectionQuotes } from "@/components/chat/use-selection-quotes";
-import {
-  usePendingActions,
-  type PendingGroup,
-  type ConfirmResult,
-} from "@/components/chat/use-pending-actions";
+import { useChatConfirmations } from "@/components/chat/use-chat-confirmations";
 import { useAiConsent } from "@/components/chat/use-ai-consent";
+import { useChatSession } from "@/components/chat/use-chat-session";
+import { useChatTurnState } from "@/components/chat/use-chat-turn-state";
+import { useChatTurn } from "@/components/chat/use-chat-turn";
+import { useChatLiveEvents } from "@/components/chat/use-chat-live-events";
+import { useChatSessionSync } from "@/components/chat/use-chat-session-sync";
 import { KeyboardSafe } from "@/components/ui/KeyboardSafe";
-
-// Résumé lisible d'une action IA en attente de confirmation, pour la carte
-// Confirmer/Annuler. Aucun argument n'est affiché intégralement (confidentialité).
-function describeAction(name: string, args: Record<string, unknown>): string {
-  switch (name) {
-    case "send_email_response":
-      return `Répondre à l'email ${String(args.email_id ?? "?")} : « ${String(args.response_text ?? "").slice(0, 140)}${String(args.response_text ?? "").length > 140 ? "…" : ""} »`;
-    case "emails.reply":
-      return `Répondre à l'email ${String(args.email_id ?? "?")} : « ${String(args.response_text ?? "").slice(0, 140)}${String(args.response_text ?? "").length > 140 ? "…" : ""} »`;
-    case "create_calendar_event":
-      return `Créer l'événement « ${String(args.title ?? "")} » du ${String(args.start_time ?? "?")} au ${String(args.end_time ?? "?")}${args.location ? ` (${String(args.location)})` : ""}`;
-    case "calendar.create":
-      return `Créer l'événement « ${String(args.title ?? "")} » du ${String(args.start_time ?? "?")} au ${String(args.end_time ?? "?")}${args.location ? ` (${String(args.location)})` : ""}`;
-    case "update_calendar_event":
-      return `Modifier l'événement ${String(args.event_id ?? "?")}${args.title ? ` → « ${String(args.title)} »` : ""}`;
-    case "calendar.update":
-      return `Modifier l'événement ${String(args.event_id ?? "?")}${args.title ? ` → « ${String(args.title)} »` : ""}`;
-    case "delete_calendar_event":
-      return `Supprimer l'événement ${String(args.event_id ?? "?")}`;
-    case "calendar.delete":
-      return `Supprimer l'événement ${String(args.event_id ?? "?")}`;
-    case "schedule_followup":
-      return `Programmer une relance « ${String(args.subject ?? "")} » pour le ${String(args.due_at ?? "?")}`;
-    case "followups.schedule":
-      return `Programmer une relance « ${String(args.subject ?? "")} » pour le ${String(args.due_at ?? "?")}`;
-    case "scan_accreditations":
-      return "Analyser les emails pour créer ou mettre à jour les fiches d'accréditations";
-    case "accreditations.scan":
-      return "Analyser les emails pour créer ou mettre à jour les fiches d'accréditations";
-    default:
-      return "";
-  }
-}
-
-// Statut affiché pour un appel d'outil confirmé, tel que reporté par le serveur.
-function confirmedPatch(result: ConfirmResult): {
-  result: string;
-  status: "success" | "error";
-} {
-  return {
-    result: result.ok ? (result.result ?? "OK") : (result.error ?? "Échec"),
-    status: result.ok ? "success" : "error",
-  };
-}
 
 interface ChatViewProps {
   sessionId?: string;
@@ -88,132 +35,52 @@ interface ChatViewProps {
 }
 
 export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSessionChange }: ChatViewProps = {}) {
-  const [messages, setMessages] = useState<Message[]>(() =>
-    typeof window !== "undefined"
-      ? [welcomeMessage]
-      : [welcomeMessage]
-  );
-  const [input, setInput] = useState("");
+  const session = useChatSession();
+  const {
+    messages,
+    setMessages,
+    messagesRef,
+    input,
+    setInput,
+    loading,
+    setLoading,
+    error,
+    setError,
+    sessionId,
+    setSessionTitle,
+    hasTitleRef,
+    loadSeqRef,
+    prevExternalSessionIdRef,
+  } = session;
   // Extraits commentés (sélection dans une réponse de l'IA) en attente d'envoi.
   const { quotes, highlightedId, addQuote, removeQuote, resetQuotes } = useSelectionQuotes();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [thinkingIndex, setThinkingIndex] = useState(() => Math.floor(Math.random() * FUNNY_THOUGHTS.length));
   const chatCtx = useChatContext();
-  const toast = useToast();
-  const activeToolsRef = useRef<Record<string, ToolCall>>({});
-
-  // Fil d'activité du tour en cours : pensées et outils, dans l'ordre.
-  const [liveSteps, setLiveSteps] = useState<ActivityStep[]>([]);
-  const [streamingContent, setStreamingContent] = useState("");
-  const [streamingActive, setStreamingActive] = useState(false);
-  const streamingActiveRef = useRef(false);
-  const [sessionId, setSessionId] = useState<string>(() => generateId());
-  const [sessionTitle, setSessionTitle] = useState<string>("");
+  const turnState = useChatTurnState();
+  const {
+    liveSteps,
+    streamingContent,
+    streamingActive,
+    activeToolsRef,
+    turnStartRef,
+    resetTurnState,
+  } = turnState;
 
   // Reporte le résultat réel d'un lot confirmé sur les appels d'outil bloqués :
   // il est persisté avec la session et rejoué au modèle au tour suivant, sinon
   // l'IA continue de croire que l'action attend une confirmation.
-  const handleConfirmedResults = useCallback(
-    (group: PendingGroup, results: ConfirmResult[]) => {
-      const byToolCallId = new Map(
-        group.tools.map((t, i) => [t.toolCallId, results[i]])
-      );
-      setMessages((prev) =>
-        prev.map((m) => {
-          const hasTool = m.toolCalls?.some((tc) => byToolCallId.has(tc.id));
-          const hasStep = m.steps?.some(
-            (s) => s.kind === "tool" && byToolCallId.has(s.id)
-          );
-          if (!hasTool && !hasStep) return m;
-          return {
-            ...m,
-            toolCalls: m.toolCalls?.map((tc) => {
-              const r = byToolCallId.get(tc.id);
-              return r ? { ...tc, ...confirmedPatch(r) } : tc;
-            }),
-            steps: m.steps?.map((s) => {
-              if (s.kind !== "tool") return s;
-              const r = byToolCallId.get(s.id);
-              return r ? { ...s, ...confirmedPatch(r) } : s;
-            }),
-          };
-        })
-      );
-      // Une seule toast groupée qui liste ce qui a été fait.
-      const lines = results
-        .map((r, i) => {
-          const label = group.tools[i]?.argsLabel || r.name;
-          return r.ok ? `✓ ${label}` : `✗ ${label} : ${r.error ?? "échec"}`;
-        })
-        .join("\n");
-      const okCount = results.filter((r) => r.ok).length;
-      const header = `${okCount}/${results.length} action${results.length > 1 ? "s" : ""} exécutée${results.length > 1 ? "s" : ""}`;
-      toast.show({
-        message: lines ? `${header}\n${lines}` : header,
-        tone: okCount === results.length && results.length > 0 ? "success" : "warning",
-        duration: 4500,
-      });
-    },
-    [toast]
-  );
-
-  const handleConfirmError = useCallback(
-    (_group: PendingGroup, message: string) => {
-      toast.show({ message, tone: "danger", duration: 3500 });
-    },
-    [toast]
-  );
-
   const {
     pendingGroups,
     confirmBusy,
     addGroup,
     replaceGroups,
-    removeGroup,
     clearGroups,
     confirmGroup,
-  } = usePendingActions({
-    sessionId,
-    onResults: handleConfirmedResults,
-    onError: handleConfirmError,
-  });
+    cancelGroup,
+  } = useChatConfirmations({ sessionId, setMessages });
 
-  const loadSeqRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   useChatAutoscroll({ scrollRef, messages, streamingContent });
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hasTitleRef = useRef(false);
-  const prevExternalSessionIdRef = useRef<string>("");
-  const prevSessionIdRef = useRef(sessionId);
-  // État du tour en cours, en refs : il doit survivre aux re-rendus et être
-  // rejouable tel quel quand on se réattache à une génération.
-  const bufferRef = useRef("");
-  const finishedToolsRef = useRef<ToolCall[]>([]);
-  const liveStepsRef = useRef<ActivityStep[]>([]);
-  const toolStartsRef = useRef<Record<string, number>>({});
-  const appliedEventsRef = useRef(0);
-  const turnStartRef = useRef(0);
-  const messagesRef = useRef<Message[]>(messages);
-
-  useEffect(() => {
-    messagesRef.current = messages;
-  }, [messages]);
-
-  // Remet à zéro l'état du tour en cours (texte, outils, fil d'activité).
-  // Appelé à chaque nouveau tour, changement de session et arrêt.
-  const resetTurnState = useCallback(() => {
-    bufferRef.current = "";
-    finishedToolsRef.current = [];
-    liveStepsRef.current = [];
-    toolStartsRef.current = {};
-    activeToolsRef.current = {};
-    setLiveSteps([]);
-    setStreamingContent("");
-    streamingActiveRef.current = false;
-    setStreamingActive(false);
-  }, []);
 
   // Consentement IA : l'état et le cycle vivent dans le hook, la vue garde le
   // bandeau, la garde d'envoi et leurs textes.
@@ -223,469 +90,41 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     accept: acceptConsent,
   } = useAiConsent();
 
-  function restoreMessages(raw: ChatSession["messages"]): Message[] {
-    const restored: Message[] = raw.map((m) => ({
-      ...m,
-      toolCalls: m.toolCalls?.map((tc) => ({
-        ...tc,
-        status: (tc.status as ToolCall["status"]) || "success",
-      })),
-      steps: m.steps?.map((step) =>
-        step.kind === "tool"
-          ? { ...step, status: (step.status as ToolCall["status"]) || "success" }
-          : step
-      ),
-    }));
-    return restored.length > 0 ? restored : [welcomeMessage];
-  }
+  const { finishAssistant, reloadFromHistory, pendingLabel } = useChatTurn({
+    sessionId,
+    loading,
+    messagesRef,
+    hasTitleRef,
+    loadSeqRef,
+    turnState,
+    chatCtx,
+    setMessages,
+    setSessionTitle,
+    setLoading,
+    setError,
+  });
 
-  // Démonter la vue (changement de page) n'annule PLUS la génération : elle est
-  // portée par `live-run.ts`, hors React, et le serveur la poursuit de toute
-  // façon. Seuls Stop / Esc / « nouvelle conversation » l'interrompent.
+  useChatLiveEvents({
+    sessionId,
+    turnState,
+    chatCtx,
+    addGroup,
+    replaceGroups,
+    finishAssistant,
+    reloadFromHistory,
+    setError,
+    setLoading,
+  });
 
-  useEffect(() => {
-    if (externalSessionId && externalSessionId !== prevExternalSessionIdRef.current) {
-      prevExternalSessionIdRef.current = externalSessionId;
-      // Garde anti-race : si l'utilisateur change rapidement de session, seule
-      // la dernière demande de chargement doit appliquer son résultat.
-      const seq = ++loadSeqRef.current;
-      import("@/app/actions/chat-history").then(({ getChatHistory }) => {
-        getChatHistory().then((history) => {
-          if (seq !== loadSeqRef.current) return;
-          const session = history.sessions.find((s) => s.id === externalSessionId);
-          if (session) {
-            const restored = restoreMessages(session.messages);
-            // Le message utilisateur du tour en cours peut ne pas encore être
-            // dans l'historique (sauvegarde client différée de 2 s, ou onglet
-            // fermé juste après l'envoi) : le gestionnaire de génération le
-            // détient, on le réinjecte pour ne pas le perdre à l'écran.
-            const live = getLiveRun(session.id);
-            let display = restored;
-            if (live?.userMessage && !restored.some((m) => m.id === live.userMessage!.id)) {
-              const base = restored.length === 1 && restored[0].id === "welcome" ? [] : restored;
-              display = [...base, live.userMessage];
-            }
-            setSessionId(session.id);
-            setSessionTitle(session.title || "");
-            hasTitleRef.current = true;
-            setMessages(display);
-            setInput("");
-            resetQuotes();
-            resetTurnState();
-            appliedEventsRef.current = 0;
-            setLoading(false);
-            setError(null);
-            clearGroups();
-            activeToolsRef.current = {};
-            chatCtx.clearActiveTools();
-            // Si une génération tourne encore pour cette conversation, on s'y
-            // réattache : le serveur rejoue un instantané puis la suite.
-            void resumeLiveRun(session.id);
-          }
-        });
-      });
-    }
-    // chatCtx est volontairement omis : sa valeur change à chaque outil actif
-    // et rechargerait l'historique en écrasant les messages affichés.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [externalSessionId]);
-
-  useEffect(() => {
-    if (resetSignal === 0) return;
-    const previousSessionId = prevSessionIdRef.current;
-    const newId = generateId();
-    prevSessionIdRef.current = newId;
-    // Reset complet de la conversation déclenché par une prop externe (resetSignal) :
-    // c'est une synchronisation légitime avec un système externe (le parent ChatLayout).
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSessionTitle("");
-    hasTitleRef.current = false;
-    setMessages([welcomeMessage]);
-    setInput("");
-    resetQuotes();
-    resetTurnState();
-    appliedEventsRef.current = 0;
-    setLoading(false);
-    setError(null);
-    activeToolsRef.current = {};
-    chatCtx.clearActiveTools();
-    // « Nouvelle conversation » est une action explicite : on arrête le tour
-    // en cours de l'ancienne.
-    if (previousSessionId) {
-      abortLiveRun(previousSessionId);
-      clearLiveRun(previousSessionId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resetSignal]);
-
-  const saveSession = useCallback(() => {
-    if (!sessionId) return;
-    const filtered = messages.filter((m) => m.id !== "welcome");
-    if (filtered.length === 0) return;
-    const title = sessionTitle || (filtered[0]?.role === "user" ? generateTitle(filtered[0].content) : "Nouvelle conversation");
-    import("@/app/actions/chat-history").then(({ saveChatSession }) => {
-      saveChatSession({
-        id: sessionId,
-        title,
-        messages: filtered.map((m) => ({
-          id: m.id,
-          role: m.role,
-          content: m.content,
-          timestamp: m.timestamp,
-          toolCalls: m.toolCalls?.map((tc) => ({
-            id: tc.id,
-            name: tc.name,
-            arguments: tc.arguments || "",
-            result: tc.result,
-            status: tc.status,
-            duration: tc.duration,
-            resultCount: tc.resultCount,
-          })),
-          steps: m.steps,
-          activityMs: m.activityMs,
-        })),
-        createdAt: filtered[0]?.timestamp || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-    });
-  }, [messages, sessionId, sessionTitle]);
-
-  // Recharge la conversation depuis l'historique serveur. Utilisé quand une
-  // génération interrompue (app en arrière-plan) a fini côté serveur : la
-  // réponse est persistée, il suffit de la relire.
-  const reloadFromHistory = useCallback(async () => {
-    if (!sessionId) return;
-    const seq = ++loadSeqRef.current;
-    try {
-      const { getChatHistory } = await import("@/app/actions/chat-history");
-      const history = await getChatHistory();
-      if (seq !== loadSeqRef.current) return;
-      const session = history.sessions.find((s) => s.id === sessionId);
-      if (!session) return;
-      const restored = restoreMessages(session.messages);
-      setMessages(restored);
-      resetTurnState();
-      appliedEventsRef.current = getLiveRun(sessionId)?.events.length ?? 0;
-      setLoading(false);
-      activeToolsRef.current = {};
-      chatCtx.clearActiveTools();
-      // Dernier message utilisateur sans réponse : le tour a échoué avant
-      // d'être persisté, on le signale au lieu de laisser croire qu'il tourne.
-      const last = restored[restored.length - 1];
-      if (last?.role === "user") {
-        setError("La réponse a été interrompue. Renvoie ton message.");
-      }
-    } catch (err) {
-      console.warn("[chat] rechargement de l'historique impossible", err);
-    }
-  }, [sessionId, chatCtx, resetTurnState]);
-
-  useEffect(() => {
-    if (!sessionId || messages.length <= 1 || messages[0]?.id === "welcome") return;
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(saveSession, 2000);
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    };
-  }, [messages, sessionId, saveSession]);
-
-  useEffect(() => {
-    // Rotation des pensées humoristiques : uniquement tant qu'aucune vraie
-    // pensée ni aucun outil n'alimente le fil.
-    if (loading && liveSteps.length === 0) {
-      const interval = setInterval(() => {
-        setThinkingIndex(Math.floor(Math.random() * FUNNY_THOUGHTS.length));
-      }, 2500);
-      return () => clearInterval(interval);
-    }
-  }, [loading, liveSteps.length]);
-
-  // Enregistre la réponse assistant en fin de tour. Idempotent : si la réponse
-  // est déjà là (historique relu, serveur qui a persisté), on la remplace au
-  // lieu d'en ajouter une seconde.
-  const finishAssistant = useCallback((content: string) => {
-    const toolCalls = finishedToolsRef.current;
-    const steps = liveStepsRef.current;
-    const activityMs =
-      turnStartRef.current > 0 ? Date.now() - turnStartRef.current : undefined;
-    setMessages((prev) => {
-      const last = prev[prev.length - 1];
-      if (last && last.role === "assistant") {
-        return [
-          ...prev.slice(0, -1),
-          {
-            ...last,
-            content,
-            toolCalls: toolCalls.length > 0 ? toolCalls : last.toolCalls,
-            steps: steps.length > 0 ? steps : last.steps,
-            activityMs: activityMs ?? last.activityMs,
-          },
-        ];
-      }
-      return [
-        ...prev,
-        {
-          id: generateId(),
-          role: "assistant",
-          content,
-          timestamp: new Date().toISOString(),
-          toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
-          steps: steps.length > 0 ? steps : undefined,
-          activityMs,
-        },
-      ];
-    });
-    activeToolsRef.current = {};
-    finishedToolsRef.current = [];
-    liveStepsRef.current = [];
-    toolStartsRef.current = {};
-    setLiveSteps([]);
-    bufferRef.current = "";
-    setStreamingContent("");
-    streamingActiveRef.current = false;
-    setStreamingActive(false);
-    setLoading(false);
-
-    if (hasTitleRef.current) {
-      const firstUserMsg = messagesRef.current.find((m) => m.role === "user");
-      if (firstUserMsg && firstUserMsg.content) {
-        import("@/app/actions/chat-history").then(({ generateConversationTitle }) => {
-          const fullText = firstUserMsg.content + "\n" + content;
-          generateConversationTitle(fullText).then((aiTitle) => {
-            if (aiTitle && aiTitle.length > 3) {
-              setSessionTitle(aiTitle);
-            }
-          });
-        });
-      }
-    }
-  }, []);
-
-  // Applique un évènement du flux à l'état affiché. Extrait de `send` pour être
-  // rejoué à l'identique quand on se réattache à une génération en cours.
-  const applyEvent = useCallback(
-    (event: LiveRunEvent) => {
-      if (event.type === "reasoning") {
-        // Pensée du modèle : on l'ajoute au fil, en continu tant que la
-        // dernière étape est une pensée (même règle que côté serveur).
-        const steps = [...liveStepsRef.current];
-        const last = steps[steps.length - 1];
-        if (last?.kind === "thought") {
-          steps[steps.length - 1] = {
-            kind: "thought",
-            text: (last.text + event.content).slice(0, 4000),
-          };
-        } else {
-          steps.push({ kind: "thought", text: event.content.slice(0, 4000) });
-        }
-        liveStepsRef.current = steps;
-        setLiveSteps(steps);
-        return;
-      }
-      if (event.type === "delta") {
-        bufferRef.current += event.content;
-        setStreamingContent(bufferRef.current);
-        if (!streamingActiveRef.current) {
-          streamingActiveRef.current = true;
-          setStreamingActive(true);
-        }
-      } else if (event.type === "tool_start") {
-        activeToolsRef.current = {
-          ...activeToolsRef.current,
-          [event.toolCallId]: {
-            id: event.toolCallId,
-            name: event.name,
-            arguments: event.arguments,
-            status: "running",
-          },
-        };
-        toolStartsRef.current[event.toolCallId] = Date.now();
-        const steps: ActivityStep[] = [
-          ...liveStepsRef.current,
-          {
-            kind: "tool",
-            id: event.toolCallId,
-            name: event.name,
-            arguments: event.arguments,
-            status: "running",
-          },
-        ];
-        liveStepsRef.current = steps;
-        setLiveSteps(steps);
-        chatCtx.registerToolStart({ id: event.toolCallId, name: event.name, arguments: event.arguments });
-      } else if (event.type === "tool_result") {
-        const key = Object.keys(activeToolsRef.current).find(
-          (k) => activeToolsRef.current[k].name === event.name
-        );
-        const existing = key ? activeToolsRef.current[key] : null;
-        // Durée mesurée par outil, et non cumulée depuis le début du tour.
-        const startedAt = existing ? toolStartsRef.current[existing.id] : undefined;
-        const duration = startedAt ? (Date.now() - startedAt) / 1000 : 0;
-        const resultCount = event.result
-          ? event.result.split("\n").filter(Boolean).length
-          : 0;
-        // Statut serveur s'il est fourni ; sinon on retombe sur la
-        // détection textuelle (messages d'historique plus anciens).
-        const isError = event.status
-          ? event.status === "error" || event.status === "blocked"
-          : event.result.includes("Erreur");
-        const status: "success" | "error" = isError ? "error" : "success";
-        if (existing) {
-          const remaining = { ...activeToolsRef.current };
-          delete remaining[key!];
-          activeToolsRef.current = remaining;
-          delete toolStartsRef.current[existing.id];
-          finishedToolsRef.current = [
-            ...finishedToolsRef.current,
-            {
-              ...existing,
-              result: event.result,
-              status,
-              duration,
-              resultCount: resultCount || 1,
-            },
-          ];
-          const steps = liveStepsRef.current.map((step) =>
-            step.kind === "tool" && step.id === existing.id
-              ? { ...step, result: event.result, status, duration, resultCount: resultCount || 1 }
-              : step
-          );
-          liveStepsRef.current = steps;
-          setLiveSteps(steps);
-        }
-        chatCtx.registerToolResult(event.name, event.result, isError, duration);
-      } else if (event.type === "group_confirm") {
-        addGroup({
-          id: event.id,
-          summary: event.summary,
-          reason: event.reason,
-          tools: event.tools.map((t) => {
-            let args: Record<string, unknown> = {};
-            try { args = JSON.parse(t.arguments); } catch { args = {}; }
-            return {
-              toolCallId: t.toolCallId,
-              name: t.name,
-              args,
-              argsLabel: describeAction(t.name, args),
-            };
-          }),
-        });
-      } else if (event.type === "error") {
-        setError(event.message);
-      } else if (event.type === "memory_facts") {
-        const count = event.facts.length;
-        if (count > 0) {
-          toast.show({
-            message: `${count} fait${count > 1 ? "s" : ""} mémorisé${count > 1 ? "s" : ""}`,
-            tone: "info",
-            duration: 3000,
-          });
-        }
-      } else if (event.type === "snapshot") {
-        // Reprise après navigation / réouverture d'onglet : on reconstruit
-        // l'état affiché à partir de l'instantané serveur.
-        bufferRef.current = event.content;
-        finishedToolsRef.current = event.tools.map((t) => ({
-          ...t,
-          status: t.status ?? "success",
-        }));
-        activeToolsRef.current = Object.fromEntries(
-          event.activeTools.map((t) => [t.id, { ...t, status: "running" as const }])
-        );
-        liveStepsRef.current = event.steps.map((step) =>
-          step.kind === "tool"
-            ? { ...step, status: step.status ?? "success" }
-            : step
-        );
-        setLiveSteps(liveStepsRef.current);
-        toolStartsRef.current = Object.fromEntries(
-          event.activeTools.map((t) => [t.id, Date.now()])
-        );
-        chatCtx.clearActiveTools();
-        for (const t of event.activeTools) {
-          chatCtx.registerToolStart({
-            id: t.id,
-            name: t.name,
-            arguments: t.arguments ?? "",
-          });
-        }
-        setStreamingContent(event.content);
-        streamingActiveRef.current = event.content.length > 0;
-        setStreamingActive(event.content.length > 0);
-        replaceGroups(
-          event.groups.map((g) => ({
-            id: g.id,
-            summary: g.summary,
-            // Instantané d'un run antérieur à la raison : politique par défaut.
-            reason: g.reason ?? "policy",
-            tools: g.tools.map((t) => {
-              let args: Record<string, unknown> = {};
-              try { args = JSON.parse(t.arguments); } catch { args = {}; }
-              return {
-                toolCallId: t.toolCallId,
-                name: t.name,
-                args,
-                argsLabel: describeAction(t.name, args),
-              };
-            }),
-          }))
-        );
-        if (event.error) setError(event.error);
-        if (event.finished) {
-          setLoading(false);
-          finishAssistant(event.doneContent ?? event.content);
-        } else {
-          setLoading(true);
-        }
-      } else if (event.type === "done") {
-        finishAssistant(bufferRef.current || event.content || "");
-      } else if (event.type === "reload") {
-        // La génération a abouti côté serveur : on relit l'historique.
-        void reloadFromHistory();
-      } else if (event.type === "failed") {
-        // Plus de réponse possible : on affiche ce qui a été reçu et on lève
-        // l'état « en train d'écrire » au lieu de laisser tourner le spinner.
-        if (bufferRef.current) finishAssistant(bufferRef.current);
-        else {
-          setLoading(false);
-          streamingActiveRef.current = false;
-          setStreamingActive(false);
-          setStreamingContent("");
-        }
-        setError(event.message);
-      }
-    },
-    [chatCtx, toast, finishAssistant, reloadFromHistory, addGroup, replaceGroups]
-  );
-
-  // Abonnement au gestionnaire de génération : les évènements arrivent même
-  // quand la vue vient d'être remontée (rejeu complet depuis le début du tour).
-  // `applyEvent` passe par une ref : sa valeur change à chaque outil actif, et
-  // re-souscrire à ce moment-là rejouerait tout le tampon (texte dupliqué).
-  const applyEventRef = useRef(applyEvent);
-  useEffect(() => {
-    applyEventRef.current = applyEvent;
-  }, [applyEvent]);
-
-  useEffect(() => {
-    if (!sessionId) return;
-    appliedEventsRef.current = 0;
-    const apply = () => {
-      const run = getLiveRun(sessionId);
-      if (!run) return;
-      if (appliedEventsRef.current > run.events.length) appliedEventsRef.current = 0;
-      while (appliedEventsRef.current < run.events.length) {
-        applyEventRef.current(run.events[appliedEventsRef.current]);
-        appliedEventsRef.current += 1;
-      }
-      if (run.status !== "running" && appliedEventsRef.current >= run.events.length) {
-        clearLiveRun(sessionId);
-      }
-    };
-    const unsubscribe = subscribeLiveRun(sessionId, apply);
-    apply();
-    return unsubscribe;
-  }, [sessionId]);
+  useChatSessionSync({
+    externalSessionId,
+    resetSignal,
+    session,
+    turnState,
+    chatCtx,
+    clearGroups,
+    resetQuotes,
+  });
 
   const send = useCallback(
     async (text: string) => {
@@ -754,29 +193,21 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       // est fermé, et GET /api/chat/stream permet de s'y réattacher.
       startLiveRun({ sessionId, userMessage: userMsg, messages: apiMessages, actionContext });
     },
-    [loading, messages, sessionId, onSessionChange, chatCtx, consentLoaded, consentAccepted, quotes, resetQuotes, resetTurnState, clearGroups]
+    [loading, messages, sessionId, onSessionChange, chatCtx, consentLoaded, consentAccepted, quotes, resetQuotes, resetTurnState, clearGroups, setMessages, setInput, setError, setSessionTitle, setLoading, hasTitleRef, prevExternalSessionIdRef, activeToolsRef, turnStartRef]
   );
 
   const stop = useCallback(() => {
     abortLiveRun(sessionId);
     resetTurnState();
     setLoading(false);
-  }, [sessionId, resetTurnState]);
-
-  const cancelGroup = useCallback(
-    (id: string) => {
-      removeGroup(id);
-      toast.show({ message: "Lot d'actions annulé", tone: "info", duration: 2500 });
-    },
-    [removeGroup, toast]
-  );
+  }, [sessionId, resetTurnState, setLoading]);
 
   // Remise à l'accueil déclenchée par Ctrl/Cmd+L, appliquée par le hook de
   // raccourcis.
   const resetConversation = useCallback(() => {
     setMessages([welcomeMessage]);
     resetQuotes();
-  }, [resetQuotes]);
+  }, [setMessages, resetQuotes]);
 
   const handleKey = useChatShortcuts({
     input,
@@ -789,7 +220,6 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   });
 
   const isWelcome = messages.length <= 1 && messages[0]?.id === "welcome";
-  const pendingLabel = FUNNY_THOUGHTS[thinkingIndex % FUNNY_THOUGHTS.length] ?? "";
 
   return (
     <div className="flex flex-col h-full min-h-0 relative">
@@ -801,33 +231,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
         }}
       />
       {consentLoaded && !consentAccepted && (
-        <div className="shrink-0 pl-14 pr-4 py-3 lg:px-4 bg-[var(--surface-2)] fade-in">
-          <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-[length:var(--t-small)] font-medium text-[var(--text-1)]">
-                Tes messages seront envoyés à une IA
-              </p>
-              <p className="text-[length:var(--t-small)] text-[var(--text-3)] mt-1 leading-relaxed">
-                Ils servent uniquement à te répondre, jamais à entraîner un modèle.
-                Tu peux tout exporter ou tout supprimer à tout moment.
-              </p>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <a
-                href="/privacy"
-                className="ui-mono text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors duration-150"
-              >
-                Vie privée
-              </a>
-              <button
-                onClick={() => void acceptConsent()}
-                className="ui-btn ui-btn--primary ui-btn--sm"
-              >
-                J&apos;accepte
-              </button>
-            </div>
-          </div>
-        </div>
+        <ChatConsentBanner onAccept={() => void acceptConsent()} />
       )}
       <ChatTranscript
         scrollRef={scrollRef}
@@ -845,19 +249,12 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       <div className="shrink-0 px-4 sm:px-6 pt-1 pb-3">
         <div className="max-w-3xl mx-auto">
           {pendingGroups.length > 0 && (
-            <div className="mb-3 space-y-2">
-              {pendingGroups.map((g) => (
-                <GroupActionCard
-                  key={g.id}
-                  summary={g.summary}
-                  reason={g.reason}
-                  tools={g.tools}
-                  busy={confirmBusy === g.id}
-                  onConfirm={() => void confirmGroup(g)}
-                  onCancel={() => cancelGroup(g.id)}
-                />
-              ))}
-            </div>
+            <PendingGroupList
+              groups={pendingGroups}
+              confirmBusy={confirmBusy}
+              onConfirm={(g) => void confirmGroup(g)}
+              onCancel={cancelGroup}
+            />
           )}
           <KeyboardSafe>
             <ChatComposer

@@ -17,6 +17,7 @@
 ## Checklist
 
 - [ ] `bun run lint` passe
+- [ ] `bun run lint:budget` passe, plafond baisse si un fichier a ete decoupe
 - [ ] `bunx tsc --noEmit` passe
 - [ ] `bun run test` passe
 - [ ] `bun run build` passe

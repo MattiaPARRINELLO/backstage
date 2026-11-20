@@ -10,38 +10,15 @@ import {
 import { useState, useEffect } from "react";
 import { updateModels } from "@/app/actions/settings";
 import { PasskeyPairing } from "./PasskeyPairing";
+import { SettingsConnections } from "./SettingsConnections";
 import { SettingsLeetcode } from "./SettingsLeetcode";
 import { SettingsNotifications } from "./SettingsNotifications";
 import { Row, Section } from "./SettingsSection";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/Chrome";
 import { AccentPicker } from "@/components/ui/AccentPicker";
-import { api, type GoogleLinkStatus, type MicrosoftTodoStatus } from "@/lib/api-client";
-import { useCachedFetch } from "@/lib/cache";
-
-const GOOGLE_STATUS_KEY = "google:status";
-
-async function fetchGoogleStatus(): Promise<GoogleLinkStatus> {
-  return api.googleStatus();
-}
-
-async function fetchMicrosoftStatus(): Promise<MicrosoftTodoStatus> {
-  return api.microsoftStatus();
-}
 
 export default function SettingsPage() {
-  const { data: status, loading } = useCachedFetch<GoogleLinkStatus>(
-    GOOGLE_STATUS_KEY,
-    fetchGoogleStatus,
-    { ttl: 60 * 1000 }
-  );
-
-  const { data: msStatus, loading: msLoading } = useCachedFetch<MicrosoftTodoStatus>(
-    "microsoft:status",
-    fetchMicrosoftStatus,
-    { ttl: 60 * 1000 }
-  );
-
   const [runtime, setRuntime] = useState<{
     models: { general: string; generalAlt: string; code: string };
     availableModels: string[];
@@ -161,12 +138,6 @@ export default function SettingsPage() {
     }
   };
 
-  const googleLabel = loading && !status
-    ? "Vérification…"
-    : status?.gmail
-      ? "Connecté"
-      : "Non connecté";
-
   return (
     <AppShell>
       <div className="flex-1 min-w-0 overflow-y-auto">
@@ -263,49 +234,7 @@ export default function SettingsPage() {
             )}
           </Section>
 
-          <Section
-            title="Connexions"
-            description="Les comptes qui alimentent le calendrier, les mails et les rappels."
-          >
-            <Row label="Gmail" hint={googleLabel}>
-              <a
-                href="/api/auth/google?type=gmail"
-                className="ui-btn ui-btn--ghost h-9 px-4 text-[var(--t-small)]"
-              >
-                {status?.gmail ? "Reconnecter" : "Connecter"}
-              </a>
-            </Row>
-
-            <Row
-              label="Calendrier"
-              hint={loading && !status ? "Vérification…" : status?.calendar ? "Connecté" : "Non connecté"}
-            >
-              <a
-                href="/api/auth/google?type=calendar"
-                className="ui-btn ui-btn--ghost h-9 px-4 text-[var(--t-small)]"
-              >
-                {status?.calendar ? "Reconnecter" : "Connecter"}
-              </a>
-            </Row>
-
-            <Row
-              label="Microsoft To Do"
-              hint={
-                msLoading && !msStatus
-                  ? "Vérification…"
-                  : msStatus?.linked
-                    ? "Connecté — tes reminders Samsung se synchronisent ici."
-                    : "Non connecté — connecte ton compte pour lire tes reminders dans Rappels."
-              }
-            >
-              <a
-                href="/api/auth/microsoft"
-                className="ui-btn ui-btn--ghost h-9 px-4 text-[var(--t-small)]"
-              >
-                {msStatus?.linked ? "Reconnecter" : "Connecter"}
-              </a>
-            </Row>
-          </Section>
+          <SettingsConnections />
 
           <SettingsNotifications runtime={runtime} />
 

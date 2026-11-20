@@ -30,15 +30,8 @@ import { type PendingActionReason } from "@/lib/tool-result";
 import { buildActionContext } from "@/lib/chat-action-context";
 import { GroupActionCard } from "@/components/chat/MessageBlocks";
 import { ChatTranscript } from "@/components/chat/ChatTranscript";
+import { useChatAutoscroll } from "@/components/chat/use-chat-autoscroll";
 import { KeyboardSafe } from "@/components/ui/KeyboardSafe";
-
-// Scroll doux désactivé quand l'utilisateur demande un mouvement réduit.
-function scrollBehavior(): ScrollBehavior {
-  return typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ? "auto"
-    : "smooth";
-}
 
 // Résumé lisible d'une action IA en attente de confirmation, pour la carte
 // Confirmer/Annuler. Aucun argument n'est affiché intégralement (confidentialité).
@@ -117,6 +110,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
 
   const loadSeqRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  useChatAutoscroll({ scrollRef, messages, streamingContent });
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasTitleRef = useRef(false);
@@ -367,24 +361,6 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       return () => clearInterval(interval);
     }
   }, [loading, liveSteps.length]);
-
-  const prevMessagesLenRef = useRef(messages.length);
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const len = messages.length;
-    const isNewMessage = len > prevMessagesLenRef.current;
-    prevMessagesLenRef.current = len;
-    if (isNewMessage) {
-      el.scrollTo({ top: el.scrollHeight, behavior: scrollBehavior() });
-    } else {
-      const threshold = 60;
-      const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
-      if (isNearBottom) {
-        el.scrollTo({ top: el.scrollHeight, behavior: scrollBehavior() });
-      }
-    }
-  }, [messages, streamingContent]);
 
   // Enregistre la réponse assistant en fin de tour. Idempotent : si la réponse
   // est déjà là (historique relu, serveur qui a persisté), on la remplace au

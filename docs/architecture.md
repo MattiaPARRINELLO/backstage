@@ -199,6 +199,20 @@ liste vide sans session).
 
 
 
+### Journalisation (`lib/logger.ts`)
+
+`serverLog(module, level, message, err?, external?, durationMs?)` écrit une
+ligne JSON : `time`, `level` (`info`, `warn`, `error`), `module`, `reqId`, `msg`,
+et si applicables `durationMs`, `external` et `err` (`name`, `message`).
+
+- `reqId` vient du header `x-request-id` posé par `proxy.ts` ; hors requête
+  (cron, scheduler), il vaut `bg`.
+- Les valeurs de configuration sensibles sont remplacées par `[redacte]` dans le
+  message et l'erreur. Ni stack ni objet d'erreur complet ne sont écrits.
+- `timed(label, fn, { module?, level?, external? })` mesure une opération et
+  journalise sa durée en `info`, ou en `error` avec la durée si elle échoue,
+  puis propage l'erreur d'origine.
+
 ### Port HTTP sortant (`lib/http.ts`)
 
 Tout appel externe passe par ce port : `request` (bas niveau), `text` et

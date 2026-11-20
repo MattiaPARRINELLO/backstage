@@ -1,7 +1,15 @@
-export interface ChatMessage {
+/**
+ * Message entrant tel que valide par le schema de `POST /api/chat` : `content`
+ * peut manquer (message assistant porteur d'appels d'outils, par exemple).
+ */
+export interface ChatRequestMessage {
   role: "system" | "user" | "assistant";
-  content: string;
+  content?: string;
   toolCalls?: { id: string; name: string; arguments: string }[];
+}
+
+export interface ChatMessage extends ChatRequestMessage {
+  content: string;
 }
 
 interface ChatSessionMessage {

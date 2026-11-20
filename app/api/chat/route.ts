@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import {
   streamChatCompletion,
   chatCompletion,
@@ -14,7 +13,7 @@ import {
 import { createRun, publish, subscribe, finishRun } from "@/lib/chat-runs";
 import { getModel, getTitleModel } from "@/lib/app-config";
 import { DEFAULT_SESSION_ID } from "@/lib/ai-providers/config";
-import type { ChatMessage, MemoryCategory } from "@/lib/types";
+import type { ChatRequestMessage, MemoryCategory } from "@/lib/types";
 import { getSession } from "@/lib/session";
 import {
   listFactsForExtractionPrompt,
@@ -34,37 +33,9 @@ import type { PendingActionReason, ToolRunResult } from "@/lib/chat-tools";
 import { parseToolText, isFailedStatus, renderToolText, TOOL_HONESTY_RULE } from "@/lib/tool-result";
 import { buildSystemPrompt } from "@/lib/chat-prompts";
 import { serverLog } from "@/lib/logger";
+import { parseChatBody, type ChatBody } from "./request";
 
 
-
-
-
-
-
-const chatBodySchema = z.object({
-  messages: z
-    .array(
-      z.object({
-        role: z.enum(["system", "user", "assistant"]),
-        content: z.string().optional(),
-        toolCalls: z
-          .array(
-            z.object({
-              id: z.string(),
-              name: z.string(),
-              arguments: z.string(),
-            })
-          )
-          .optional(),
-      })
-    )
-    .min(1, "Au moins un message est requis"),
-  model: z.enum(["general", "code"]).optional(),
-  sessionId: z.string().trim().min(1).max(200).optional(),
-  // Résultats d'actions à effet de bord (confirmations comprises), transmis
-  // par le client : le modèle reprend la conversation avec l'état réel.
-  actionContext: z.string().max(4000).optional(),
-});
 
 // Consigne injectée après un résultat d'outil en échec ou bloqué : force le
 // modèle à rendre compte fidèlement au lieu d'annoncer une action non faite.
@@ -92,7 +63,7 @@ const TOOL_RESULT_NAME_PATTERN = /<tool_result\s+name="([^"]+)"/g;
  * un nom de `UNTRUSTED_TOOLS` suffit, même sur un message utilisateur
  * postérieur (l'historique reste contaminé tant que le contenu y figure).
  */
-function historyHasUntrustedToolResult(messages: ChatMessage[]): boolean {
+function historyHasUntrustedToolResult(messages: ChatRequestMessage[]): boolean {
   for (const message of messages) {
     if (typeof message.content !== "string") continue;
     if (!message.content.includes("<tool_result")) continue;
@@ -205,18 +176,27 @@ Faits a extraire :`;
   }
 }
 
+type TranscriptMessage = { role: "user" | "assistant"; content: string };
+
+function isTranscriptMessage(message: ChatRequestMessage): message is TranscriptMessage {
+  return (
+    (message.role === "user" || message.role === "assistant") &&
+    typeof message.content === "string" &&
+    message.content.length > 0
+  );
+}
+
 async function runMemoryExtraction(
   model: string,
-  originalMessages: ChatMessage[],
+  originalMessages: ChatRequestMessage[],
   sessionId: string,
   send?: (data: StreamEvent) => void,
   newAssistantContent?: string
 ): Promise<void> {
   try {
-    const transcript = originalMessages
-      .filter((m) => m.role === "user" || m.role === "assistant")
-      .filter((m) => typeof m.content === "string" && m.content.length > 0)
-      .map((m) => ({ role: m.role as "user" | "assistant", content: m.content as string }));
+    const transcript: TranscriptMessage[] = originalMessages
+      .filter(isTranscriptMessage)
+      .map((m) => ({ role: m.role, content: m.content }));
     if (newAssistantContent && newAssistantContent.length > 0) {
       transcript.push({ role: "assistant", content: newAssistantContent });
     }
@@ -257,16 +237,13 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  let body: { messages: ChatMessage[]; model?: "general" | "code"; sessionId?: string; actionContext?: string };
+  let body: ChatBody;
   try {
-    const parsed = chatBodySchema.safeParse(await request.json());
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Corps de requête invalide : messages (tableau non vide avec role et content) requis." },
-        { status: 400 }
-      );
+    const result = parseChatBody(await request.json());
+    if (!result.ok) {
+      return NextResponse.json({ error: result.message }, { status: 400 });
     }
-    body = parsed.data as unknown as { messages: ChatMessage[]; model?: "general" | "code"; sessionId?: string; actionContext?: string };
+    body = result.body;
   } catch {
     return NextResponse.json({ error: "Corps de requête invalide" }, { status: 400 });
   }
@@ -357,7 +334,7 @@ export async function POST(request: NextRequest) {
       }));
       return {
         role: m.role,
-        content: (tool_calls && tool_calls.length > 0 && !m.content) ? null : m.content,
+        content: (tool_calls && tool_calls.length > 0 && !m.content) ? null : (m.content ?? null),
         ...(tool_calls && tool_calls.length > 0 ? { tool_calls } : {}),
       };
     }),

@@ -14,5 +14,10 @@ import { createPasskeyPairCode } from "@/lib/passkey-pairing";
  * d'enregistrer une passkey — jamais d'ouvrir une session sans biometrie.
  */
 export async function createPasskeyPairing(): Promise<{ code: string; expiresAt: string }> {
-  return runAction(z.object({}), {}, async () => createPasskeyPairCode());
+  return runAction(
+    z.object({}),
+    {},
+    async () => createPasskeyPairCode(),
+    "createPasskeyPairing"
+  );
 }

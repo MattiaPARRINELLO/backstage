@@ -9,6 +9,7 @@
 import type { z } from "zod";
 
 import { AppError } from "@/lib/errors";
+import { writeLogLine, type LogLevel } from "@/lib/log-line";
 
 /** Timeout par tentative, volontairement court : un tiers lent ne bloque pas un tour. */
 export const HTTP_TIMEOUT_MS = 10_000;
@@ -70,6 +71,24 @@ function isTransientStatus(status: number): boolean {
   return status >= 500 && status <= 599;
 }
 
+function logHttp(
+  level: LogLevel,
+  label: string,
+  message: string,
+  durationMs?: number,
+  errorName?: string
+): void {
+  writeLogLine({
+    time: new Date().toISOString(),
+    level,
+    module: "http",
+    msg: `${label} ${message}`,
+    ...(durationMs !== undefined ? { durationMs } : {}),
+    external: true,
+    ...(errorName ? { err: { name: errorName, message: "echec reseau" } } : {}),
+  });
+}
+
 function externalUnavailable(label: string, cause: unknown): AppError {
   return new AppError("external_unavailable", `Le service ${label} est indisponible.`, { cause });
 }
@@ -103,26 +122,31 @@ export async function request(url: string, options: HttpOptions): Promise<Respon
 
       if (isTransientStatus(response.status) && attempt < attempts) {
         await response.body?.cancel();
-        console.warn(
-          `[http] ${options.label} ${response.status} en ${durationMs}ms, nouvelle tentative`
-        );
+        logHttp("warn", options.label, `${response.status}, nouvelle tentative`, durationMs);
         continue;
       }
 
-      const line = `[http] ${options.label} ${response.status} en ${durationMs}ms`;
-      if (response.ok) {
-        console.info(line);
-      } else {
-        console.warn(line);
-      }
+      logHttp(
+        response.ok ? "info" : "warn",
+        options.label,
+        String(response.status),
+        durationMs
+      );
       return response;
     } catch (error) {
       lastError = error;
       const durationMs = Date.now() - startedAt;
       if (attempt < attempts) {
-        console.warn(`[http] ${options.label} echec en ${durationMs}ms, nouvelle tentative`);
+        logHttp("warn", options.label, "echec, nouvelle tentative", durationMs);
         continue;
       }
+      logHttp(
+        "error",
+        options.label,
+        "echec apres tentatives",
+        durationMs,
+        error instanceof Error ? error.name : "UnknownError"
+      );
     }
   }
 

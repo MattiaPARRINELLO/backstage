@@ -1,20 +1,14 @@
 import { headers } from "next/headers";
 
 import { getConfig } from "@/lib/config";
+import { writeLogLine, type LogLevel, type LogLine } from "@/lib/log-line";
 
 const REQUEST_ID_HEADER = "x-request-id";
 
-export type LogLevel = "info" | "warn" | "error";
+export type { LogLevel } from "@/lib/log-line";
 
-export interface LogEntry {
-  readonly time: string;
-  readonly level: LogLevel;
-  readonly module: string;
+export interface LogEntry extends LogLine {
   readonly reqId: string;
-  readonly msg: string;
-  readonly durationMs?: number;
-  readonly external?: boolean;
-  readonly err?: { readonly name: string; readonly message: string };
 }
 
 // Identifiant de corrélation : posé par le middleware (edge) dans les headers
@@ -90,20 +84,22 @@ export async function serverLog(
     ...(err !== undefined ? { err: serializeError(err) } : {}),
   };
 
-  const line = JSON.stringify(entry);
-  if (level === "error") {
-    console.error(line);
-  } else if (level === "warn") {
-    console.warn(line);
-  } else {
-    console.info(line);
-  }
+  writeLogLine(entry);
 }
 
 export interface TimedOptions {
   readonly module?: string;
   readonly level?: LogLevel;
   readonly external?: boolean;
+}
+
+/** Mesure une operation sans journaliser, pour les etapes intermediaires. */
+export async function measure<T>(
+  fn: () => Promise<T>
+): Promise<{ value: T; durationMs: number }> {
+  const startedAt = Date.now();
+  const value = await fn();
+  return { value, durationMs: Date.now() - startedAt };
 }
 
 /**

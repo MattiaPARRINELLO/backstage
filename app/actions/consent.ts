@@ -9,9 +9,14 @@ const emptyInput = z.object({});
 const acceptedInput = z.boolean();
 
 export async function loadAiConsent(): Promise<ConsentState> {
-  return runAction(emptyInput, {}, async () => getAiConsent());
+  return runAction(emptyInput, {}, async () => getAiConsent(), "loadAiConsent");
 }
 
 export async function acceptAiConsent(accepted: boolean): Promise<ConsentState> {
-  return runAction(acceptedInput, accepted, async (value) => setAiConsent(value));
+  return runAction(
+    acceptedInput,
+    accepted,
+    async (value) => setAiConsent(value),
+    "acceptAiConsent"
+  );
 }

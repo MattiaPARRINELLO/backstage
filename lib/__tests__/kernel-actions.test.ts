@@ -64,6 +64,25 @@ describe("kernelAction", () => {
     expect(cache.revalidatePath).not.toHaveBeenCalled();
   });
 
+  it("journalise la duree totale et celle de l'etape run", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      await kernelAction("reminders.create", { title: "Appeler" });
+
+      const lines = info.mock.calls.map((call) => JSON.parse(String(call[0])) as {
+        msg: string;
+        module: string;
+        durationMs?: number;
+      });
+      expect(lines.some((line) => line.msg === "reminders.create")).toBe(true);
+      expect(lines.some((line) => line.msg === "reminders.create.run")).toBe(true);
+      expect(lines.every((line) => line.module === "action")).toBe(true);
+      expect(lines.every((line) => (line.durationMs ?? -1) >= 0)).toBe(true);
+    } finally {
+      info.mockRestore();
+    }
+  });
+
   it("transmet l'utilisateur et le contexte du noyau", async () => {
     const result = await kernelAction("reminders.create", { title: "  Appeler  " });
     expect(result).toEqual({ title: "Appeler", userId: "user-1" });

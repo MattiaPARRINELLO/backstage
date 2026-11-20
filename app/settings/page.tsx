@@ -9,9 +9,9 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { updateModels } from "@/app/actions/settings";
-import { AndroidPairing } from "./AndroidPairing";
 import { PasskeyPairing } from "./PasskeyPairing";
 import { SettingsLeetcode } from "./SettingsLeetcode";
+import { SettingsNotifications } from "./SettingsNotifications";
 import { Row, Section } from "./SettingsSection";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/Chrome";
@@ -307,32 +307,7 @@ export default function SettingsPage() {
             </Row>
           </Section>
 
-          <Section
-            title="Notifications"
-            description="Ce que l'appareil reçoit, et quand."
-          >
-            <Row
-              label="Push"
-              hint={
-                runtime === null
-                  ? "Vérification…"
-                  : runtime.pushCount > 0
-                    ? `${runtime.pushCount} appareil(s) enregistré(s)`
-                    : "Aucun appareil enregistré"
-              }
-            />
-            <Row
-              label="Brief quotidien"
-              hint={
-                runtime === null
-                  ? "Vérification…"
-                  : runtime.features.dailyBrief
-                    ? "Activé — envoi à 7 h"
-                    : "Désactivé"
-              }
-            />
-            <AndroidPairing />
-          </Section>
+          <SettingsNotifications runtime={runtime} />
 
           <SettingsLeetcode />
 

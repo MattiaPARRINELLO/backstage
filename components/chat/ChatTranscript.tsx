@@ -6,9 +6,9 @@ import { Markdown } from "@/components/ui/Markdown";
 import { HomeHero } from "@/components/chat/HomeHero";
 import {
   MessageBlock,
-  ActivityTrail,
   AssistantAvatar,
 } from "@/components/chat/MessageBlocks";
+import { ActivityTrail } from "@/components/chat/ActivityTrail";
 import type { ActivityStep, Message } from "@/components/chat/types";
 
 interface ChatTranscriptProps {

@@ -401,10 +401,22 @@ commit réel est figé dans le lock : une branche n'est jamais une version.
 
 - `modules.lock.json` contient `repo`, `ref`, `commit`, `installedAt` par module.
 - `bun run module:list` affiche le lock ; `bun run module:doctor` vérifie que
-  chaque module du lock est présent, actif et compatible.
+  chaque module du lock est présent, actif et compatible (un module laissé
+  désactivé dans `modules.config.json` est signalé).
 - L'installation échoue sans laisser de dossier temporaire, et le clone ne
   conserve pas d'historique git.
 - Un rebuild Next est obligatoire : Next ne crée pas de route à l'exécution.
+  ⚠️ `modules.config.json` est **importé statiquement** par
+  `lib/kernel/registry.ts`, donc désactiver un module exige aussi un rebuild :
+  redémarrer le serveur ne suffit pas, et le module reste actif tant que le
+  build n'est pas refait.
+- Module de référence vérifié de bout en bout (issue #168) :
+  [`MattiaPARRINELLO/backstage-module-daily-quote`](https://github.com/MattiaPARRINELLO/backstage-module-daily-quote)
+  (`#v1.0.0`), un outil en lecture et une page, sans stockage ni réseau.
+- Retirer un module installé : `"enabled": false` dans `modules.config.json` puis
+  rebuild, ou suppression complète du dossier `modules/<id>` avec son entrée de
+  `modules.lock.json` et son import dans `modules/index.ts`. Un reste orphelin
+  est signalé par `bun run module:doctor`.
 - **Modèle de confiance inchangé** : un module externe exécute du code arbitraire
   dans le processus serveur. Il peut lire `.env.local` et `data/`. Les capacités
   déclarées sont affichées à l'installation, jamais appliquées. Ce n'est pas une

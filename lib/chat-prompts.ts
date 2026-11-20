@@ -1,5 +1,5 @@
 import { getMemory, getCalendar, getPhotoShoots, getChatHistory } from "./storage";
-import type { ChatMessage } from "./types";
+import type { ChatRequestMessage } from "./types";
 import { tools } from "./chat-tools";
 import { renderModulePrompts } from "./kernel/prompt";
 import { registry } from "./kernel/registry";
@@ -7,7 +7,7 @@ import { registry } from "./kernel/registry";
 // Mémoire de ton (légère) : adapte le ton de l'assistant à l'usage récent et
 // à l'humeur détectée dans les derniers messages. Aucun état persistant :
 // c'est une analyse statique de la conversation en cours + de l'historique.
-export async function buildToneBlock(messages: ChatMessage[]): Promise<string> {
+export async function buildToneBlock(messages: ChatRequestMessage[]): Promise<string> {
   const userMessages = messages
     .filter((m) => m.role === "user")
     .map((m) => (typeof m.content === "string" ? m.content : ""))
@@ -86,7 +86,7 @@ export async function buildToneBlock(messages: ChatMessage[]): Promise<string> {
   return `\nÉtat relationnel : ${parts.join(" ")}`;
 }
 
-export async function buildSystemPrompt(context: "general" | "code", recentMessages: ChatMessage[] = []): Promise<string> {
+export async function buildSystemPrompt(context: "general" | "code", recentMessages: ChatRequestMessage[] = []): Promise<string> {
   const memory = await getMemory();
   const prefs = memory.profile.preferences.join(", ");
 

@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 
 import { AppError } from "@/lib/errors";
+import { measure, serverLog, timed } from "@/lib/logger";
 import { requireSession } from "@/lib/session";
 
 import { createModuleContext } from "./context";
@@ -21,32 +22,39 @@ export async function kernelAction<Output = unknown>(
   name: string,
   rawInput: unknown
 ): Promise<Output> {
-  // 1. Session d'abord : un appelant non authentifie ne doit obtenir ni
-  // l'existence d'une action, ni un message de validation.
-  const session = await requireSession();
-  const entry = registry.requireAction(name);
+  return timed(
+    name,
+    async () => {
+      // 1. Session d'abord : un appelant non authentifie ne doit obtenir ni
+      // l'existence d'une action, ni un message de validation.
+      const session = await requireSession();
+      const entry = registry.requireAction(name);
 
-  // 2. Validation : le premier message Zod est le message utilisateur, comme
-  // dans les Server Actions du reste du projet.
-  const parsed = entry.definition.input.safeParse(rawInput ?? {});
-  if (!parsed.success) {
-    throw new AppError(
-      "validation",
-      parsed.error.issues[0]?.message ?? "Payload invalide"
-    );
-  }
+      // 2. Validation : le premier message Zod est le message utilisateur, comme
+      // dans les Server Actions du reste du projet.
+      const parsed = entry.definition.input.safeParse(rawInput ?? {});
+      if (!parsed.success) {
+        throw new AppError(
+          "validation",
+          parsed.error.issues[0]?.message ?? "Payload invalide"
+        );
+      }
 
-  // 3. Exécution avec un contexte fourni par le noyau.
-  const ctx = createModuleContext(entry.moduleId, { userId: session.userId });
-  const result = (await entry.definition.run(
-    parsed.data,
-    ctx
-  )) as Output;
+      // 3. Exécution avec un contexte fourni par le noyau. La duree de cette
+      // etape est journalisee a part de la duree totale.
+      const ctx = createModuleContext(entry.moduleId, { userId: session.userId });
+      const { value, durationMs } = await measure(() =>
+        entry.definition.run(parsed.data, ctx)
+      );
+      await serverLog("action", "info", `${name}.run`, undefined, false, durationMs);
 
-  // 4. Revalidation déclarée par le module, appliquée par le noyau.
-  for (const path of entry.definition.revalidate ?? []) {
-    revalidatePath(path);
-  }
+      // 4. Revalidation déclarée par le module, appliquée par le noyau.
+      for (const path of entry.definition.revalidate ?? []) {
+        revalidatePath(path);
+      }
 
-  return result;
+      return value as Output;
+    },
+    { module: "action" }
+  );
 }

@@ -156,9 +156,17 @@ describe("port HTTP", () => {
     });
 
     const line = String(info.mock.calls[0]?.[0] ?? "");
-    expect(line).toContain("brave");
-    expect(line).toContain("200");
-    expect(line).toContain("ms");
+    const entry = JSON.parse(line) as {
+      module: string;
+      msg: string;
+      durationMs?: number;
+      external?: boolean;
+    };
+    expect(entry.module).toBe("http");
+    expect(entry.msg).toContain("brave");
+    expect(entry.msg).toContain("200");
+    expect(entry.durationMs).toBeGreaterThanOrEqual(0);
+    expect(entry.external).toBe(true);
     expect(line).not.toContain("secret");
   });
 });

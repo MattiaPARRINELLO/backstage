@@ -1,6 +1,7 @@
 import type { z } from "zod";
 
 import { AppError } from "@/lib/errors";
+import { timed } from "@/lib/logger";
 import { requireSession } from "@/lib/session";
 
 /**
@@ -18,10 +19,17 @@ export interface ActionSession {
 export async function runAction<Schema extends z.ZodType, Result>(
   schema: Schema,
   input: unknown,
-  handler: (data: z.infer<Schema>, session: ActionSession) => Promise<Result>
+  handler: (data: z.infer<Schema>, session: ActionSession) => Promise<Result>,
+  label = "action"
 ): Promise<Result> {
-  const { data, session } = await actionInput(schema, input);
-  return handler(data, session);
+  return timed(
+    label,
+    async () => {
+      const { data, session } = await actionInput(schema, input);
+      return handler(data, session);
+    },
+    { module: "action" }
+  );
 }
 
 /**

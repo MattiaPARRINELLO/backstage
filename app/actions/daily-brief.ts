@@ -9,8 +9,13 @@ export type DailyBriefLaunchResult =
   | { skipped: string };
 
 export async function launchDailyBrief(): Promise<DailyBriefLaunchResult> {
-  return runAction(z.object({}), {}, async () => {
-    const { triggerDailyBrief } = await import("@/lib/notification-scheduler");
-    return triggerDailyBrief("page-test");
-  });
+  return runAction(
+    z.object({}),
+    {},
+    async () => {
+      const { triggerDailyBrief } = await import("@/lib/notification-scheduler");
+      return triggerDailyBrief("page-test");
+    },
+    "launchDailyBrief"
+  );
 }

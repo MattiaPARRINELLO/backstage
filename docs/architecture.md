@@ -211,7 +211,11 @@ et si applicables `durationMs`, `external` et `err` (`name`, `message`).
   message et l'erreur. Ni stack ni objet d'erreur complet ne sont écrits.
 - `timed(label, fn, { module?, level?, external? })` mesure une opération et
   journalise sa durée en `info`, ou en `error` avec la durée si elle échoue,
-  puis propage l'erreur d'origine.
+  puis propage l'erreur d'origine. `measure(fn)` fait la même mesure sans
+  journaliser, pour une étape intermédiaire.
+- `kernelAction` journalise la durée totale de l'action et celle de l'étape
+  `run`. Le port HTTP journalise chaque tentative et l'appel final en JSON, avec
+  `external: true`, sans `reqId` (il reste importable côté client).
 
 ### Port HTTP sortant (`lib/http.ts`)
 

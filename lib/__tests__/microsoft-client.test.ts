@@ -27,6 +27,7 @@ import {
   getDefaultTodoListId,
   createMicrosoftTodoTask,
 } from "../microsoft-client";
+import { jsonResponse, withHttpDouble } from "@/lib/http-double";
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -106,47 +107,39 @@ describe("microsoft-client", () => {
   });
 
   describe("getMicrosoftTokensFromCode", () => {
-    it("should throw when the token response has no refresh_token", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: async () => ({ access_token: "abc" }),
-        }),
-      );
+    const tokenRoute = (response: Response) => [{ match: /\/token$/, response }];
 
-      await expect(getMicrosoftTokensFromCode("code")).rejects.toThrow(
-        "Aucun refresh token recu",
+    it("should throw when the token response has no refresh_token", async () => {
+      await withHttpDouble(
+        tokenRoute(jsonResponse({ access_token: "abc" })),
+        async () => {
+          await expect(getMicrosoftTokensFromCode("code")).rejects.toThrow(
+            "Aucun refresh token recu",
+          );
+        }
       );
     });
 
     it("should throw on HTTP error", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: false,
-          status: 400,
-          text: async () => "invalid_grant",
-        }),
-      );
-
-      await expect(getMicrosoftTokensFromCode("code")).rejects.toThrow(
-        "Microsoft token error 400",
+      await withHttpDouble(
+        tokenRoute(new Response("invalid_grant", { status: 400 })),
+        async () => {
+          await expect(getMicrosoftTokensFromCode("code")).rejects.toThrow(
+            "Microsoft token error 400",
+          );
+        }
       );
     });
 
     it("should return tokens on success", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: async () => ({ access_token: "abc", refresh_token: "def" }),
-        }),
+      await withHttpDouble(
+        tokenRoute(jsonResponse({ access_token: "abc", refresh_token: "def" })),
+        async () => {
+          const tokens = await getMicrosoftTokensFromCode("code");
+          expect(tokens.access_token).toBe("abc");
+          expect(tokens.refresh_token).toBe("def");
+        }
       );
-
-      const tokens = await getMicrosoftTokensFromCode("code");
-      expect(tokens.access_token).toBe("abc");
-      expect(tokens.refresh_token).toBe("def");
     });
   });
 
@@ -181,15 +174,17 @@ describe("microsoft-client", () => {
           expiry_date: Date.now() - 60_000,
         }),
       );
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: async () => ({ access_token: "refreshed", expires_in: 3600 }),
-        }),
+      await withHttpDouble(
+        [
+          {
+            match: /\/token$/,
+            response: jsonResponse({ access_token: "refreshed", expires_in: 3600 }),
+          },
+        ],
+        async () => {
+          expect(await getMicrosoftAccessToken()).toBe("refreshed");
+        }
       );
-
-      expect(await getMicrosoftAccessToken()).toBe("refreshed");
     });
 
     it("should throw after max retries when refresh fails", async () => {
@@ -200,17 +195,14 @@ describe("microsoft-client", () => {
           expiry_date: Date.now() - 60_000,
         }),
       );
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: false,
-          status: 400,
-          text: async () => "invalid_grant",
-        }),
-      );
 
-      await expect(getMicrosoftAccessToken()).rejects.toThrow(
-        "a echoue apres 3 tentatives",
+      await withHttpDouble(
+        [{ match: /\/token$/, response: new Response("invalid_grant", { status: 400 }) }],
+        async () => {
+          await expect(getMicrosoftAccessToken()).rejects.toThrow(
+            "a echoue apres 3 tentatives",
+          );
+        }
       );
     });
   });
@@ -227,48 +219,48 @@ describe("microsoft-client", () => {
     });
 
     it("should prefer the well-known tasks list", async () => {
-      const fetchMock = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          value: [
-            { id: "list-1", displayName: "Perso", wellknownListName: "none" },
-            { id: "list-tasks", displayName: "Tâches", wellknownListName: "tasks" },
-          ],
-        }),
-      });
-      vi.stubGlobal("fetch", fetchMock);
-
-      expect(await getDefaultTodoListId()).toBe("list-tasks");
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/me/todo/lists"),
-        expect.anything(),
+      await withHttpDouble(
+        [
+          {
+            match: /\/me\/todo\/lists/,
+            response: jsonResponse({
+              value: [
+                { id: "list-1", displayName: "Perso", wellknownListName: "none" },
+                { id: "list-tasks", displayName: "Tâches", wellknownListName: "tasks" },
+              ],
+            }),
+          },
+        ],
+        async (double) => {
+          expect(await getDefaultTodoListId()).toBe("list-tasks");
+          expect(double.calls[0]?.url).toContain("/me/todo/lists");
+        }
       );
     });
 
     it("should fall back to the first list when no tasks list exists", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: async () => ({
-            value: [{ id: "list-1", displayName: "Perso", wellknownListName: "none" }],
-          }),
-        }),
+      await withHttpDouble(
+        [
+          {
+            match: /\/me\/todo\/lists/,
+            response: jsonResponse({
+              value: [{ id: "list-1", displayName: "Perso", wellknownListName: "none" }],
+            }),
+          },
+        ],
+        async () => {
+          expect(await getDefaultTodoListId()).toBe("list-1");
+        }
       );
-
-      expect(await getDefaultTodoListId()).toBe("list-1");
     });
 
     it("should throw when there are no lists", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue({
-          ok: true,
-          json: async () => ({ value: [] }),
-        }),
+      await withHttpDouble(
+        [{ match: /\/me\/todo\/lists/, response: jsonResponse({ value: [] }) }],
+        async () => {
+          await expect(getDefaultTodoListId()).rejects.toThrow("Aucune liste");
+        }
       );
-
-      await expect(getDefaultTodoListId()).rejects.toThrow("Aucune liste");
     });
   });
 
@@ -284,45 +276,51 @@ describe("microsoft-client", () => {
     });
 
     it("should POST title, due date (UTC) and notes to the list", async () => {
-      const fetchMock = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: "task-1", title: "Acheter du pain", status: "notStarted" }),
-      });
-      vi.stubGlobal("fetch", fetchMock);
+      await withHttpDouble(
+        [
+          {
+            match: /\/me\/todo\/lists\/list-1\/tasks/,
+            response: jsonResponse({ id: "task-1", title: "Acheter du pain", status: "notStarted" }),
+          },
+        ],
+        async (double) => {
+          const task = await createMicrosoftTodoTask("list-1", {
+            title: "Acheter du pain",
+            dueAt: "2026-08-08T08:00:00.000Z",
+            notes: "Boulangerie",
+          });
 
-      const task = await createMicrosoftTodoTask("list-1", {
-        title: "Acheter du pain",
-        dueAt: "2026-08-08T08:00:00.000Z",
-        notes: "Boulangerie",
-      });
-
-      expect(task.id).toBe("task-1");
-      const [url, init] = fetchMock.mock.calls[0];
-      expect(String(url)).toContain("/me/todo/lists/list-1/tasks");
-      expect(init.method).toBe("POST");
-      const body = JSON.parse(init.body as string);
-      expect(body).toEqual({
-        title: "Acheter du pain",
-        status: "notStarted",
-        dueDateTime: { dateTime: "2026-08-08T08:00:00.000Z", timeZone: "UTC" },
-        body: { contentType: "text", content: "Boulangerie" },
-      });
+          expect(task.id).toBe("task-1");
+          const call = double.calls[0];
+          expect(call?.url).toContain("/me/todo/lists/list-1/tasks");
+          expect(call?.init.method).toBe("POST");
+          expect(JSON.parse(call?.init.body as string)).toEqual({
+            title: "Acheter du pain",
+            status: "notStarted",
+            dueDateTime: { dateTime: "2026-08-08T08:00:00.000Z", timeZone: "UTC" },
+            body: { contentType: "text", content: "Boulangerie" },
+          });
+        }
+      );
     });
 
     it("should omit dueDateTime and body when absent", async () => {
-      const fetchMock = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: "task-2", title: "Sans date", status: "notStarted" }),
-      });
-      vi.stubGlobal("fetch", fetchMock);
+      await withHttpDouble(
+        [
+          {
+            match: /\/me\/todo\/lists\/list-1\/tasks/,
+            response: jsonResponse({ id: "task-2", title: "Sans date", status: "notStarted" }),
+          },
+        ],
+        async (double) => {
+          await createMicrosoftTodoTask("list-1", { title: "Sans date" });
 
-      await createMicrosoftTodoTask("list-1", { title: "Sans date" });
-
-      const [, init] = fetchMock.mock.calls[0];
-      expect(JSON.parse(init.body as string)).toEqual({
-        title: "Sans date",
-        status: "notStarted",
-      });
+          expect(JSON.parse(double.calls[0]?.init.body as string)).toEqual({
+            title: "Sans date",
+            status: "notStarted",
+          });
+        }
+      );
     });
   });
 });

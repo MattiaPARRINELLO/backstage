@@ -9,7 +9,12 @@ export function AddItemForm({
   onSubmit,
 }: {
   onCancel: () => void;
-  onSubmit: (input: { url: string; title: string; description?: string; category?: WatchLaterCategory }) => void;
+  onSubmit: (input: {
+    url: string;
+    title: string;
+    description?: string | undefined;
+    category?: WatchLaterCategory | undefined;
+  }) => void;
 }) {
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");

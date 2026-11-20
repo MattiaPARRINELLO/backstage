@@ -39,7 +39,7 @@ export function WatchLaterHomeCard() {
       ? "Chargement..."
       : items.length === 0
         ? "Aucun lien garde"
-        : `${items.length} lien${items.length > 1 ? "s" : ""} · ${items[0].title}`;
+        : `${items.length} lien${items.length > 1 ? "s" : ""}${items[0] ? ` · ${items[0].title}` : ""}`;
 
   return (
     <Link

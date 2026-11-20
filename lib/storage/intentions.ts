@@ -9,7 +9,7 @@ export async function getIntentions(): Promise<IntentionsData> {
 
 export async function addIntention(input: {
   subject: string;
-  message?: string;
+  message?: string | undefined;
   dueAt: string;
 }): Promise<Intention> {
   const intention: Intention = {

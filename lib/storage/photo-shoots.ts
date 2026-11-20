@@ -16,8 +16,8 @@ export async function addPhotoShoot(input: {
   title: string;
   date: string;
   client: string;
-  notes?: string;
-  status?: PhotoShootStatus;
+  notes?: string | undefined;
+  status?: PhotoShootStatus | undefined;
 }): Promise<PhotoShoot> {
   const now = new Date().toISOString();
   const today = new Date();

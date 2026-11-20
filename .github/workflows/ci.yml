@@ -28,6 +28,9 @@ jobs:
       - name: Typecheck
         run: bunx tsc --noEmit
 
+      - name: Typecheck strict (noyau et modules)
+        run: bun run typecheck:strict
+
       - name: Frontieres de dependance
         run: bun run boundaries
 

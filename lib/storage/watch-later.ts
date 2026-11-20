@@ -11,10 +11,10 @@ export async function getWatchLater(): Promise<WatchLaterData> {
 export async function addWatchLaterItem(input: {
   url: string;
   title: string;
-  description?: string;
-  thumbnail?: string;
-  source?: string;
-  category?: WatchLaterCategory;
+  description?: string | undefined;
+  thumbnail?: string | undefined;
+  source?: string | undefined;
+  category?: WatchLaterCategory | undefined;
 }): Promise<WatchLaterItem> {
   const item: WatchLaterItem = {
     id: newId(),
@@ -33,7 +33,7 @@ export async function addWatchLaterItem(input: {
   return item;
 }
 
-export async function updateWatchLaterItem(id: string, updates: Partial<Pick<WatchLaterItem, "title" | "description" | "category" | "summary" | "aiTags" | "read">>): Promise<WatchLaterItem | null> {
+export async function updateWatchLaterItem(id: string, updates: { [K in "title" | "description" | "category" | "summary" | "aiTags" | "read"]?: WatchLaterItem[K] | undefined }): Promise<WatchLaterItem | null> {
   let updated: WatchLaterItem | null = null;
   await mutateJson<WatchLaterData>("watch-later.json", defaultWatchLater, (data) => {
     const idx = data.items.findIndex((i) => i.id === id);

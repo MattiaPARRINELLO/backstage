@@ -29,7 +29,12 @@ export default function WatchLaterPage() {
     });
   }, [api]);
 
-  const handleCreate = (input: { url: string; title: string; description?: string; category?: WatchLaterCategory }) => {
+  const handleCreate = (input: {
+    url: string;
+    title: string;
+    description?: string | undefined;
+    category?: WatchLaterCategory | undefined;
+  }) => {
     startTransition(async () => {
       const item = await api.create(input);
       setItems((prev) => (prev ? [item, ...prev] : [item]));
@@ -103,6 +108,7 @@ export default function WatchLaterPage() {
     if (fromIdx < 0 || toIdx < 0) return;
     const next = [...snap];
     const [moved] = next.splice(fromIdx, 1);
+    if (!moved) return;
     next.splice(toIdx, 0, moved);
     persistOrder(next);
   };

@@ -17,3 +17,4 @@ export * from "./storage/chat-history";
 export * from "./storage/photo-shoots";
 export * from "./storage/intentions";
 export * from "./web";
+export * from "./weather";

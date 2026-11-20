@@ -596,7 +596,7 @@ Update).
 | LeetCode                 | `lib/leetcode-api.ts`                                            | —                                                |
 | Web search               | `lib/web.ts` — Brave + fallback DuckDuckGo, garde SSRF           | —                                                |
 | Emploi du temps CESAR    | `lib/cesar-client.ts` (fetch pur, aucun navigateur)              | `CESAR_USERNAME` / `CESAR_PASSWORD`              |
-| Météo                    | OpenWeatherMap (`lib/daily-brief.ts`, `lib/storage/concerts.ts`) | —                                                |
+| Météo                    | OpenWeatherMap (`lib/weather.ts`)                                | —                                                |
 | GitHub (issues)          | `lib/github-actions.ts` — REST API, fetch pur                    | `GITHUB_TOKEN` + `GITHUB_REPO`                   |
 | Push                     | `lib/send-push.ts`, `lib/push-subscriptions.ts`                  | VAPID                                            |
 

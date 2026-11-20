@@ -29,7 +29,7 @@ Trois exemples réels du dépôt, un par verdict :
 | --- | --- | --- |
 | `components/chat/ChatView.tsx` | l'API du chat, le design du fil, les raccourcis clavier, la politique d'autoscroll | quatre causes indépendantes, à séparer |
 | `lib/storage-core.ts` | le format de stockage, et seulement lui | une cause, à garder tel quel |
-| `lib/storage/concerts.ts` | le modèle concert **et** l'API météo (il fait un appel réseau) | deux causes, la seconde à sortir |
+| `lib/storage/concerts.ts` | le modèle concert (la météo est sortie vers `lib/weather.ts` en #89) | une cause, corrigé |
 
 ## 2. Échelle fonction
 
@@ -51,10 +51,10 @@ Deux règles de fond valent plus que les seuils :
 - **une fonction nomme son intention.** `reconcileRemindersWithMicrosoft` est
   bon. `handleData` ne l'est pas.
 
-Contre-exemple mesuré : `lib/storage/concerts.ts:32` ouvre une IIFE qui va
-chercher la météo puis formate une phrase. La fonction de persistance décide
-donc aussi de la disponibilité d'OpenWeatherMap. C'est une responsabilité
-réseau dans une couche de stockage.
+Contre-exemple historique, corrigé en #89 : `lib/storage/concerts.ts` ouvrait
+une IIFE qui allait chercher la météo puis formatait une phrase. La fonction de
+persistance décidait donc aussi de la disponibilité d'OpenWeatherMap. La météo
+vit désormais dans `lib/weather.ts`.
 
 Le seuil de 60 lignes est un **signal**, jamais une décision : une fonction de
 40 lignes qui valide, décide et écrit est trop grosse, une fonction de 70 lignes

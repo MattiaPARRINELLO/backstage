@@ -1,14 +1,14 @@
 import { z } from "zod";
 import { defineTool, toolError, toolOk } from "@backstage/module-kit";
 
-import { getWeather } from "@/lib/storage";
+import { getWeather } from "@/lib/weather";
 
 /**
  * Meteo actuelle d'une ville.
  *
  * Le resultat vient d'OpenWeatherMap : il est declare `untrusted`, donc un
- * tour qui le lit contamine les ecritures suivantes. La lecture reste dans le
- * noyau (`lib/storage/concerts.ts`) jusqu'a la migration du domaine concerts.
+ * tour qui le lit contamine les ecritures suivantes. La lecture vit dans le
+ * noyau (`lib/weather.ts`), hors du stockage.
  */
 export const getWeatherTool = defineTool({
   name: "get",

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import type { Dirent } from "fs";
 import path from "path";
-import { getSession, clearSession } from "@/lib/session";
+import { clearSession } from "@/lib/session";
+import { authedRoute } from "@/lib/route";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 
@@ -10,12 +11,7 @@ const DATA_DIR = path.join(process.cwd(), "data");
 // La clé de signature (.auth-secret) permet de se réinscrire sans rotation.
 const KEEP = new Set([".gitkeep", ".auth-secret"]);
 
-export async function POST() {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  }
-
+export const POST = authedRoute(async (_session) => {
   let entries: Dirent[];
   try {
     entries = await fs.readdir(DATA_DIR, { withFileTypes: true });
@@ -50,4 +46,4 @@ export async function POST() {
   await clearSession();
 
   return NextResponse.json({ ok: true, removed });
-}
+});

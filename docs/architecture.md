@@ -213,8 +213,10 @@ Tout appel externe passe par ce port : `request` (bas niveau), `text` et
   réponse de forme inattendue (`lib/errors.ts`).
 
 `lib/http-double.ts` fournit `withHttpDouble(routes, fn)`, qui injecte des
-réponses via un `AsyncLocalStorage` : les tests n'ont plus à remplacer
-`globalThis.fetch`. Migration des clients existants : PR successives de #89.
+réponses dans le port : les tests n'ont plus à remplacer `globalThis.fetch`.
+La surcharge est un état de module, sans `AsyncLocalStorage`, pour que le port
+reste importable côté client (via `lib/app-config.ts`). Migration des clients
+existants : PR successives de #89.
 
 ### next.config.ts — headers
 

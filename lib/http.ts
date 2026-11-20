@@ -6,7 +6,6 @@
  * bas niveau et ne leve pas sur un statut non-2xx (CESAR lit un 302 avec
  * `redirect: "manual"`) ; `json` et `text` sont les formes sures.
  */
-import { AsyncLocalStorage } from "node:async_hooks";
 import type { z } from "zod";
 
 import { AppError } from "@/lib/errors";
@@ -34,19 +33,30 @@ export interface HttpOptions {
   readonly retries?: number;
 }
 
-const fetchOverride = new AsyncLocalStorage<FetchLike>();
+// Surcharge de test, volontairement sans `AsyncLocalStorage` : le port est
+// importable par un composant client (via `lib/app-config.ts`) et un module
+// Node casserait le bundle navigateur. Les tests s'executent en serie.
+let fetchOverride: FetchLike | null = null;
 
 /**
  * Execute `fn` avec un `fetch` de substitution. Reserve aux tests, via
  * `lib/http-double.ts` : aucun test ne doit remplacer `globalThis.fetch`.
  */
-export function withHttpFetch<T>(fetchImpl: FetchLike, fn: () => Promise<T>): Promise<T> {
-  return fetchOverride.run(fetchImpl, fn);
+export async function withHttpFetch<T>(
+  fetchImpl: FetchLike,
+  fn: () => Promise<T>
+): Promise<T> {
+  const previous = fetchOverride;
+  fetchOverride = fetchImpl;
+  try {
+    return await fn();
+  } finally {
+    fetchOverride = previous;
+  }
 }
 
 function resolveFetch(): FetchLike {
-  const override = fetchOverride.getStore();
-  if (override) return override;
+  if (fetchOverride) return fetchOverride;
   return (input, init) => globalThis.fetch(input, init);
 }
 

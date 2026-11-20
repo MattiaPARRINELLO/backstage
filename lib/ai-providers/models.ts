@@ -1,6 +1,7 @@
 import { getClientConfig, AVAILABLE_MODELS, isAnthropicModel, isMockAiEnabled } from "./config";
 import { MOCK_CATALOG } from "./mock";
 import { getServerCached, setServerCached } from "@/lib/server-cache";
+import { request as httpRequest } from "@/lib/http";
 
 const CACHE_KEY = "available-models-v2";
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1h
@@ -43,12 +44,13 @@ export async function fetchModelCatalog(): Promise<ModelInfo[]> {
 
   try {
     const { baseURL, apiKey } = getClientConfig();
-    const res = await fetch(`${baseURL.replace(/\/+$/, "")}/models`, {
+    const res = await httpRequest(`${baseURL.replace(/\/+$/, "")}/models`, {
+      label: "ai-models",
+      timeoutMs: FETCH_TIMEOUT_MS,
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "User-Agent": "personalbrain/1.0",
       },
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!res.ok) throw new Error(`status=${res.status}`);
     const body = (await res.json()) as {

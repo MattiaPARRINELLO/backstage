@@ -3,6 +3,7 @@ import path from "node:path";
 import { GoogleAuth } from "google-auth-library";
 import { listDevices, removeDevice, touchDevice } from "./fcm-devices";
 import { serverLog } from "./logger";
+import { request as httpRequest } from "@/lib/http";
 
 /**
  * Envoi de notifications natives Android via FCM HTTP v1.
@@ -134,7 +135,8 @@ async function sendFcmUnsafe(
   await Promise.all(
     deviceList.map(async (device) => {
       try {
-        const res = await fetch(endpoint, {
+        const res = await httpRequest(endpoint, {
+          label: "fcm",
           method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`,

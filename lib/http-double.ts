@@ -1,6 +1,6 @@
 /**
- * Double de test du port HTTP (issue #89), injecte via `withHttpDouble` et son
- * `AsyncLocalStorage` : aucun test ne remplace `globalThis.fetch`.
+ * Double de test du port HTTP (issue #89), injecte via `withHttpDouble` : aucun
+ * test ne remplace `globalThis.fetch`. Les tests s'executent en serie.
  */
 import { withHttpFetch, type FetchLike } from "@/lib/http";
 

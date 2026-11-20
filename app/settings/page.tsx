@@ -8,10 +8,11 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { setLeetcodeUsername, loadLeetcode } from "@/app/actions/leetcode";
 import { updateModels } from "@/app/actions/settings";
 import { AndroidPairing } from "./AndroidPairing";
 import { PasskeyPairing } from "./PasskeyPairing";
+import { SettingsLeetcode } from "./SettingsLeetcode";
+import { Row, Section } from "./SettingsSection";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/Chrome";
 import { AccentPicker } from "@/components/ui/AccentPicker";
@@ -40,10 +41,6 @@ export default function SettingsPage() {
     fetchMicrosoftStatus,
     { ttl: 60 * 1000 }
   );
-
-  const [leetUsername, setLeetUsername] = useState("");
-  const [leetSaving, setLeetSaving] = useState(false);
-  const [leetMsg, setLeetMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const [runtime, setRuntime] = useState<{
     models: { general: string; generalAlt: string; code: string };
@@ -94,25 +91,6 @@ export default function SettingsPage() {
     const opts = runtime?.availableModels ?? [];
     if (m && !opts.includes(m)) return [...opts, m];
     return opts;
-  };
-
-  useEffect(() => {
-    loadLeetcode().then((d) => {
-      if (d.leetcodeUsername) setLeetUsername(d.leetcodeUsername);
-    }).catch(() => {});
-  }, []);
-
-  const handleLeetSave = async () => {
-    setLeetSaving(true);
-    setLeetMsg(null);
-    try {
-      await setLeetcodeUsername(leetUsername);
-      setLeetMsg({ ok: true, text: "Synchronisé avec LeetCode ✓" });
-    } catch (e) {
-      setLeetMsg({ ok: false, text: e instanceof Error ? e.message : "Erreur" });
-    } finally {
-      setLeetSaving(false);
-    }
   };
 
   const handleLogout = async () => {
@@ -356,44 +334,7 @@ export default function SettingsPage() {
             <AndroidPairing />
           </Section>
 
-          <Section
-            title="LeetCode"
-            description="Le pseudo qui alimente le suivi des exercices."
-          >
-            <Row label="Pseudo" hint="Synchronisé depuis ton profil public.">
-              <div className="flex w-full items-center gap-2 sm:w-auto">
-                <div className="ui-field h-10 w-full sm:w-44">
-                  <input
-                    type="text"
-                    value={leetUsername}
-                    onChange={(e) => setLeetUsername(e.target.value)}
-                    placeholder="ton-pseudo-leetcode"
-                    aria-label="Pseudo LeetCode"
-                    className="w-full min-w-0 bg-transparent text-[var(--t-small)] text-[var(--text-1)] outline-none placeholder:text-[var(--text-3)]"
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="ui-btn ui-btn--ghost h-10 shrink-0 px-4 text-[var(--t-small)]"
-                  onClick={handleLeetSave}
-                  disabled={leetSaving || !leetUsername.trim()}
-                >
-                  {leetSaving ? "…" : "Sauvegarder"}
-                </button>
-              </div>
-            </Row>
-            {leetMsg && (
-              <div className="border-b border-[var(--line)] py-3">
-                <p
-                  role="status"
-                  className="text-[var(--t-small)]"
-                  style={{ color: leetMsg.ok ? "var(--success)" : "var(--danger)" }}
-                >
-                  {leetMsg.text}
-                </p>
-              </div>
-            )}
-          </Section>
+          <SettingsLeetcode />
 
           <Section
             title="Sécurité"
@@ -497,53 +438,5 @@ export default function SettingsPage() {
         </div>
       </div>
     </AppShell>
-  );
-}
-
-function Section({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <section className="mt-12">
-      <h2 className="font-display text-[length:var(--t-lead)] font-semibold tracking-[-0.025em] text-[var(--text-1)]">
-        {title}
-      </h2>
-      {description && (
-        <p className="mt-1.5 max-w-xl text-[var(--t-small)] leading-relaxed text-[var(--text-3)]">
-          {description}
-        </p>
-      )}
-      <div className="mt-4 border-t border-[var(--line)]">{children}</div>
-    </section>
-  );
-}
-
-function Row({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-3 border-b border-[var(--line)] py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
-      <div className="min-w-0">
-        <p className="text-[length:var(--t-body)] text-[var(--text-1)]">{label}</p>
-        {hint && (
-          <p className="mt-1 text-[var(--t-small)] leading-relaxed text-[var(--text-3)]">
-            {hint}
-          </p>
-        )}
-      </div>
-      {children && <div className="shrink-0 sm:text-right">{children}</div>}
-    </div>
   );
 }

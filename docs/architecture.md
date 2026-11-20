@@ -539,11 +539,12 @@ Ne jamais réintroduire Playwright ici : ça casse la prod standalone.
 
 ---
 
-## Notifications push (`lib/notification-scheduler.ts`)
+## Notifications push (`lib/push-dispatch.ts`, piloté par `lib/notification-scheduler.ts`)
 
 Deux canaux, un seul point d'envoi : **web push** (`lib/send-push.ts` +
 `lib/push-subscriptions.ts`, VAPID) pour la PWA, et **FCM** (`lib/fcm.ts` +
-`lib/fcm-devices.ts`) pour l'APK Android. `sendPushToAll(payload)` alimente les
+`lib/fcm-devices.ts`) pour l'APK Android. `sendPushToAll(payload)`
+(`lib/push-dispatch.ts`) alimente les
 deux avec le même JSON ; une panne FCM ne bloque jamais le web push. Le payload
 web est rendu par `public/sw.js` ; côté APK il est **data-only** et c'est
 `Notifications.java` qui construit la notification (canal, persistance, Live

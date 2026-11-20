@@ -8,6 +8,7 @@ import type {
 import type { GoogleAccountHealth } from "./google-health";
 import type { StreamEvent } from "./ai-providers/types";
 import type { ChatRunSnapshotEvent } from "./chat-run-types";
+import { formatRequestRef, requestIdFromResponse } from "./request-ref";
 
 export type { GmailMessage, CalendarEvent, MicrosoftTodoList, MicrosoftTodoTask, ScheduleCourse };
 
@@ -42,6 +43,7 @@ async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     // On vérifie res.ok AVANT de parser : une réponse d'erreur non JSON
     // (page HTML 500) ne doit pas lever un SyntaxError qui masque le message.
+    const ref = formatRequestRef(requestIdFromResponse(res));
     let message = `Erreur ${res.status}`;
     try {
       const data = (await res.json()) as { error?: unknown };
@@ -49,7 +51,7 @@ async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
     } catch {
       // Corps non JSON : on garde le message par défaut.
     }
-    throw new Error(message);
+    throw new Error(`${message}${ref}`);
   }
   const text = await res.text();
   if (!text) return null as T;
@@ -57,6 +59,7 @@ async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 async function readError(res: Response): Promise<string> {
+  const ref = formatRequestRef(requestIdFromResponse(res));
   let message = `Erreur ${res.status}`;
   try {
     const body = await res.json();
@@ -64,7 +67,7 @@ async function readError(res: Response): Promise<string> {
   } catch {
     // Corps non JSON : on garde le message par défaut.
   }
-  return message;
+  return `${message}${ref}`;
 }
 
 // Lecture d'un flux SSE `data: {...}\n\n`.

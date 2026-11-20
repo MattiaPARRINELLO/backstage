@@ -82,6 +82,28 @@ const eslintConfig = defineConfig([
     },
   },
   {
+    // Plafond de taille (#100) : un fichier qui depasse 300 lignes utiles
+    // coute plus qu'il ne rapporte, parce qu'on ne peut plus le lire d'un
+    // bloc. La regle est en avertissement, pas en erreur : le plafond de
+    // warnings est fige dans `scripts/eslint-budget.json` et verifie par
+    // `bun run lint:budget` en CI. Il ne peut que descendre.
+    // Les tests et les configs sont exclus : leur longueur suit le nombre de
+    // cas couverts, pas une responsabilite a decouper.
+    files: ["**/*.{ts,tsx}"],
+    ignores: [
+      "**/__tests__/**",
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/*.config.*",
+    ],
+    rules: {
+      "max-lines": [
+        "warn",
+        { max: 300, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+  {
     rules: {
       "react/no-unescaped-entities": "off",
       "@typescript-eslint/no-unused-vars": [

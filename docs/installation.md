@@ -95,6 +95,7 @@ bun run build        # production build
 bun run start        # production server (standalone + .env.local + assets)
 bun run setup        # génère les secrets locaux (.env.local)
 bun run lint         # eslint (flat config)
+bun run lint:budget  # verifie que les warnings eslint restent sous le plafond fige
 bun run check:docs   # vérifie les références de fichiers de la documentation
 bunx tsc --noEmit    # type-check
 bun run test         # vitest (unit tests)

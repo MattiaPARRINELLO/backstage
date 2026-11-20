@@ -18,6 +18,7 @@
     "build": "next build",
     "start": "bun scripts/start.ts",
     "lint": "eslint",
+    "lint:budget": "bun scripts/lint-budget.ts",
     "check:docs": "bun scripts/check-docs.ts",
     "boundaries": "depcruise app components lib packages proxy.ts instrumentation.ts",
     "typecheck:strict": "bun scripts/typecheck-strict.ts",

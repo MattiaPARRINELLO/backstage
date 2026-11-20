@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { api } from "@/lib/api-client";
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { useChatContext } from "@/lib/chat-context";
 import { useToast } from "@/components/ui/Toast";
@@ -24,13 +23,17 @@ import {
   clearLiveRun,
   type LiveRunEvent,
 } from "@/components/chat/live-run";
-import { type PendingActionReason } from "@/lib/tool-result";
 import { buildActionContext } from "@/lib/chat-action-context";
 import { GroupActionCard } from "@/components/chat/MessageBlocks";
 import { ChatTranscript } from "@/components/chat/ChatTranscript";
 import { useChatAutoscroll } from "@/components/chat/use-chat-autoscroll";
 import { useChatShortcuts } from "@/components/chat/use-chat-shortcuts";
 import { useSelectionQuotes } from "@/components/chat/use-selection-quotes";
+import {
+  usePendingActions,
+  type PendingGroup,
+  type ConfirmResult,
+} from "@/components/chat/use-pending-actions";
 import { KeyboardSafe } from "@/components/ui/KeyboardSafe";
 
 // Résumé lisible d'une action IA en attente de confirmation, pour la carte
@@ -66,6 +69,17 @@ function describeAction(name: string, args: Record<string, unknown>): string {
   }
 }
 
+// Statut affiché pour un appel d'outil confirmé, tel que reporté par le serveur.
+function confirmedPatch(result: ConfirmResult): {
+  result: string;
+  status: "success" | "error";
+} {
+  return {
+    result: result.ok ? (result.result ?? "OK") : (result.error ?? "Échec"),
+    status: result.ok ? "success" : "error",
+  };
+}
+
 interface ChatViewProps {
   sessionId?: string;
   resetSignal?: number;
@@ -83,15 +97,6 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   const { quotes, highlightedId, addQuote, removeQuote, resetQuotes } = useSelectionQuotes();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pendingGroups, setPendingGroups] = useState<
-    {
-      id: string;
-      summary: string;
-      reason: PendingActionReason;
-      tools: { toolCallId: string; name: string; args: Record<string, unknown>; argsLabel: string }[];
-    }[]
-  >([]);
-  const [confirmBusy, setConfirmBusy] = useState<string | null>(null);
   const [thinkingIndex, setThinkingIndex] = useState(() => Math.floor(Math.random() * FUNNY_THOUGHTS.length));
   const chatCtx = useChatContext();
   const toast = useToast();
@@ -104,6 +109,74 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   const streamingActiveRef = useRef(false);
   const [sessionId, setSessionId] = useState<string>(() => generateId());
   const [sessionTitle, setSessionTitle] = useState<string>("");
+
+  // Reporte le résultat réel d'un lot confirmé sur les appels d'outil bloqués :
+  // il est persisté avec la session et rejoué au modèle au tour suivant, sinon
+  // l'IA continue de croire que l'action attend une confirmation.
+  const handleConfirmedResults = useCallback(
+    (group: PendingGroup, results: ConfirmResult[]) => {
+      const byToolCallId = new Map(
+        group.tools.map((t, i) => [t.toolCallId, results[i]])
+      );
+      setMessages((prev) =>
+        prev.map((m) => {
+          const hasTool = m.toolCalls?.some((tc) => byToolCallId.has(tc.id));
+          const hasStep = m.steps?.some(
+            (s) => s.kind === "tool" && byToolCallId.has(s.id)
+          );
+          if (!hasTool && !hasStep) return m;
+          return {
+            ...m,
+            toolCalls: m.toolCalls?.map((tc) => {
+              const r = byToolCallId.get(tc.id);
+              return r ? { ...tc, ...confirmedPatch(r) } : tc;
+            }),
+            steps: m.steps?.map((s) => {
+              if (s.kind !== "tool") return s;
+              const r = byToolCallId.get(s.id);
+              return r ? { ...s, ...confirmedPatch(r) } : s;
+            }),
+          };
+        })
+      );
+      // Une seule toast groupée qui liste ce qui a été fait.
+      const lines = results
+        .map((r, i) => {
+          const label = group.tools[i]?.argsLabel || r.name;
+          return r.ok ? `✓ ${label}` : `✗ ${label} : ${r.error ?? "échec"}`;
+        })
+        .join("\n");
+      const okCount = results.filter((r) => r.ok).length;
+      const header = `${okCount}/${results.length} action${results.length > 1 ? "s" : ""} exécutée${results.length > 1 ? "s" : ""}`;
+      toast.show({
+        message: lines ? `${header}\n${lines}` : header,
+        tone: okCount === results.length && results.length > 0 ? "success" : "warning",
+        duration: 4500,
+      });
+    },
+    [toast]
+  );
+
+  const handleConfirmError = useCallback(
+    (_group: PendingGroup, message: string) => {
+      toast.show({ message, tone: "danger", duration: 3500 });
+    },
+    [toast]
+  );
+
+  const {
+    pendingGroups,
+    confirmBusy,
+    addGroup,
+    replaceGroups,
+    removeGroup,
+    clearGroups,
+    confirmGroup,
+  } = usePendingActions({
+    sessionId,
+    onResults: handleConfirmedResults,
+    onError: handleConfirmError,
+  });
 
   const loadSeqRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -225,7 +298,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
             appliedEventsRef.current = 0;
             setLoading(false);
             setError(null);
-            setPendingGroups([]);
+            clearGroups();
             activeToolsRef.current = {};
             chatCtx.clearActiveTools();
             // Si une génération tourne encore pour cette conversation, on s'y
@@ -505,24 +578,21 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
         }
         chatCtx.registerToolResult(event.name, event.result, isError, duration);
       } else if (event.type === "group_confirm") {
-        setPendingGroups((prev) => [
-          ...prev,
-          {
-            id: event.id,
-            summary: event.summary,
-            reason: event.reason,
-            tools: event.tools.map((t) => {
-              let args: Record<string, unknown> = {};
-              try { args = JSON.parse(t.arguments); } catch { args = {}; }
-              return {
-                toolCallId: t.toolCallId,
-                name: t.name,
-                args,
-                argsLabel: describeAction(t.name, args),
-              };
-            }),
-          },
-        ]);
+        addGroup({
+          id: event.id,
+          summary: event.summary,
+          reason: event.reason,
+          tools: event.tools.map((t) => {
+            let args: Record<string, unknown> = {};
+            try { args = JSON.parse(t.arguments); } catch { args = {}; }
+            return {
+              toolCallId: t.toolCallId,
+              name: t.name,
+              args,
+              argsLabel: describeAction(t.name, args),
+            };
+          }),
+        });
       } else if (event.type === "error") {
         setError(event.message);
       } else if (event.type === "memory_facts") {
@@ -565,7 +635,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
         setStreamingContent(event.content);
         streamingActiveRef.current = event.content.length > 0;
         setStreamingActive(event.content.length > 0);
-        setPendingGroups(
+        replaceGroups(
           event.groups.map((g) => ({
             id: g.id,
             summary: g.summary,
@@ -608,7 +678,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
         setError(event.message);
       }
     },
-    [chatCtx, toast, finishAssistant, reloadFromHistory]
+    [chatCtx, toast, finishAssistant, reloadFromHistory, addGroup, replaceGroups]
   );
 
   // Abonnement au gestionnaire de génération : les évènements arrivent même
@@ -682,7 +752,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       resetTurnState();
       turnStartRef.current = Date.now();
       chatCtx.clearActiveTools();
-      setPendingGroups([]);
+      clearGroups();
       setLoading(true);
 
       const next = [...messages.filter((m) => m.id !== "welcome"), userMsg];
@@ -707,7 +777,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       // est fermé, et GET /api/chat/stream permet de s'y réattacher.
       startLiveRun({ sessionId, userMessage: userMsg, messages: apiMessages, actionContext });
     },
-    [loading, messages, sessionId, onSessionChange, chatCtx, consent, quotes, resetQuotes, resetTurnState]
+    [loading, messages, sessionId, onSessionChange, chatCtx, consent, quotes, resetQuotes, resetTurnState, clearGroups]
   );
 
   const stop = useCallback(() => {
@@ -716,86 +786,12 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     setLoading(false);
   }, [sessionId, resetTurnState]);
 
-  const confirmGroup = useCallback(
-    async (group: { id: string; tools: { toolCallId: string; name: string; args: Record<string, unknown>; argsLabel: string }[] }) => {
-      if (confirmBusy) return;
-      setConfirmBusy(group.id);
-      try {
-        const actions = group.tools.map((t) => ({
-          name: t.name,
-          arguments: t.args,
-          toolCallId: t.toolCallId,
-        }));
-        const res = await api.chat.confirmBatch(actions, sessionId ?? undefined);
-        setPendingGroups((prev) => prev.filter((g) => g.id !== group.id));
-        if (!res.ok && res.error) {
-          throw new Error(res.error);
-        }
-        // Reporte le résultat réel sur l'appel d'outil bloqué : il est
-        // persisté avec la session et rejoué au modèle au tour suivant, sinon
-        // l'IA continue de croire que l'action attend une confirmation.
-        const results = res.results ?? [];
-        const byToolCallId = new Map(
-          group.tools.map((t, i) => [t.toolCallId, results[i]])
-        );
-        const patchResult = (id: string, ok: boolean, result?: string, error?: string) => ({
-          result: ok ? (result ?? "OK") : (error ?? "Échec"),
-          status: ok ? ("success" as const) : ("error" as const),
-        });
-        setMessages((prev) =>
-          prev.map((m) => {
-            const hasTool = m.toolCalls?.some((tc) => byToolCallId.has(tc.id));
-            const hasStep = m.steps?.some(
-              (s) => s.kind === "tool" && byToolCallId.has(s.id)
-            );
-            if (!hasTool && !hasStep) return m;
-            return {
-              ...m,
-              toolCalls: m.toolCalls?.map((tc) => {
-                const r = byToolCallId.get(tc.id);
-                return r ? { ...tc, ...patchResult(tc.id, r.ok, r.result, r.error) } : tc;
-              }),
-              steps: m.steps?.map((s) => {
-                if (s.kind !== "tool") return s;
-                const r = byToolCallId.get(s.id);
-                return r ? { ...s, ...patchResult(s.id, r.ok, r.result, r.error) } : s;
-              }),
-            };
-          })
-        );
-        // Une seule toast groupée qui liste ce qui a été fait.
-        const lines = results
-          .map((r, i) => {
-            const label = group.tools[i]?.argsLabel || r.name;
-            return r.ok ? `✓ ${label}` : `✗ ${label} : ${r.error ?? "échec"}`;
-          })
-          .join("\n");
-        const okCount = results.filter((r) => r.ok).length;
-        const header = `${okCount}/${results.length} action${results.length > 1 ? "s" : ""} exécutée${results.length > 1 ? "s" : ""}`;
-        toast.show({
-          message: lines ? `${header}\n${lines}` : header,
-          tone: okCount === results.length && results.length > 0 ? "success" : "warning",
-          duration: 4500,
-        });
-      } catch (err) {
-        toast.show({
-          message: err instanceof Error ? err.message : "L'action a échoué",
-          tone: "danger",
-          duration: 3500,
-        });
-      } finally {
-        setConfirmBusy(null);
-      }
-    },
-    [confirmBusy, toast, sessionId]
-  );
-
   const cancelGroup = useCallback(
     (id: string) => {
-      setPendingGroups((prev) => prev.filter((g) => g.id !== id));
+      removeGroup(id);
       toast.show({ message: "Lot d'actions annulé", tone: "info", duration: 2500 });
     },
-    [toast]
+    [removeGroup, toast]
   );
 
   // Remise à l'accueil déclenchée par Ctrl/Cmd+L, appliquée par le hook de

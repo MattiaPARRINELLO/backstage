@@ -321,6 +321,12 @@ rassure à tort.
 
 **Phase** : 2 (test), 3 (premier passage réel).
 
+**Statut** : fait. `scripts/__tests__/boundaries.test.ts` copie la vraie
+configuration dans un dossier temporaire, monte un faux import interdit par
+règle (`modules-isoles`, `app-limite-aux-manifestes`, `kit-sans-noyau`),
+vérifie que `depcruise` sort en erreur, et qu'un import autorisé passe. La
+copie est faite à l'exécution : retirer une règle du dépôt casse le test.
+
 ### D-20 — Aucun workspace n'existe
 
 **Constat** : `packages/` et `modules/` sont absents, `package.json` ne déclare

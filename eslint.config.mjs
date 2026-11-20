@@ -43,6 +43,45 @@ const eslintConfig = defineConfig([
     },
   },
   {
+    // Tout appel sortant vers un service externe passe par `lib/http.ts`
+    // (timeout, retry borne, Zod, log). dependency-cruiser ne voit que les
+    // imports, pas les globales : la regle vit donc dans ESLint.
+    // Exceptions, et pourquoi :
+    //   - lib/http.ts            le port lui-meme
+    //   - lib/http-double.ts     double de test du port
+    //   - lib/api-client.ts      client navigateur vers notre propre /api
+    //   - app/**                 composants client, appels same-origin
+    //   - scripts/**             outils hors Next (cron vers notre propre route)
+    //   - tests                  doubles et stubs
+    files: ["lib/**/*.{ts,tsx}", "modules/**/*.{ts,tsx}", "app/api/**/*.{ts,tsx}"],
+    ignores: [
+      "lib/http.ts",
+      "lib/http-double.ts",
+      "lib/api-client.ts",
+      "**/__tests__/**",
+      "**/*.test.ts",
+    ],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        {
+          name: "fetch",
+          message:
+            "Appeler un service externe uniquement via lib/http.ts (timeout, retry, validation, log).",
+        },
+      ],
+      "no-restricted-properties": [
+        "error",
+        {
+          object: "globalThis",
+          property: "fetch",
+          message:
+            "Appeler un service externe uniquement via lib/http.ts (timeout, retry, validation, log).",
+        },
+      ],
+    },
+  },
+  {
     rules: {
       "react/no-unescaped-entities": "off",
       "@typescript-eslint/no-unused-vars": [

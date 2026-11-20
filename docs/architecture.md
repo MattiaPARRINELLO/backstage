@@ -215,8 +215,12 @@ Tout appel externe passe par ce port : `request` (bas niveau), `text` et
 `lib/http-double.ts` fournit `withHttpDouble(routes, fn)`, qui injecte des
 réponses dans le port : les tests n'ont plus à remplacer `globalThis.fetch`.
 La surcharge est un état de module, sans `AsyncLocalStorage`, pour que le port
-reste importable côté client (via `lib/app-config.ts`). Migration des clients
-existants : PR successives de #89.
+reste importable côté client (via `lib/app-config.ts`).
+
+La règle ESLint `no-restricted-globals` interdit `fetch` (et `globalThis.fetch`)
+dans `lib/`, `modules/` et `app/api/`, hors `lib/http.ts`, `lib/http-double.ts`,
+`lib/api-client.ts` et des tests. Le client navigateur vers `/api` reste donc
+autorisé, pas un appel externe.
 
 ### next.config.ts — headers
 

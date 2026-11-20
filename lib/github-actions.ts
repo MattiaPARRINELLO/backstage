@@ -3,6 +3,7 @@
 // externe, sinon un contenu injecté (email, page web) pourrait la détourner.
 const API_BASE = "https://api.github.com";
 import { getConfig } from "@/lib/config";
+import { request as httpRequest } from "@/lib/http";
 const TIMEOUT_MS = 15_000;
 
 // Libellés acceptés. Le modèle devine parfois des libellés inexistants sur le
@@ -69,7 +70,9 @@ async function githubRequest(path: string, init: RequestInit = {}): Promise<unkn
   const { token, repo } = readConfig();
   let response: Response;
   try {
-    response = await fetch(`${API_BASE}/repos/${repo}${path}`, {
+    response = await httpRequest(`${API_BASE}/repos/${repo}${path}`, {
+      label: "github",
+      timeoutMs: TIMEOUT_MS,
       ...init,
       headers: {
         Accept: "application/vnd.github+json",
@@ -78,7 +81,6 @@ async function githubRequest(path: string, init: RequestInit = {}): Promise<unkn
         "User-Agent": "backstage-agent",
         ...(init.body ? { "Content-Type": "application/json" } : {}),
       },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch (err) {
     throw new Error(

@@ -3,6 +3,7 @@ import path from "path";
 import { writeJsonAtomic } from "./storage";
 import { serverLog } from "./logger";
 import { getConfig } from "@/lib/config";
+import { request as httpRequest } from "@/lib/http";
 import type { MicrosoftTodoList, MicrosoftTodoTask } from "./types";
 
 export type { MicrosoftTodoList, MicrosoftTodoTask };
@@ -88,11 +89,14 @@ export async function getMicrosoftTokensFromCode(code: string): Promise<Microsof
     scope: MICROSOFT_SCOPES,
   });
 
-  const res = await fetch(`${AUTH_BASE}/token`, {
+  const res = await httpRequest(`${AUTH_BASE}/token`, {
+    label: "microsoft-oauth",
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params.toString(),
-    signal: AbortSignal.timeout(REFRESH_TIMEOUT_MS),
+    timeoutMs: REFRESH_TIMEOUT_MS,
+    // Le code d'autorisation est a usage unique.
+    retries: 0,
   });
 
   if (!res.ok) {
@@ -129,11 +133,14 @@ async function doRefreshTokens(): Promise<MicrosoftTokens> {
         scope: MICROSOFT_SCOPES,
       });
 
-      const res = await fetch(`${AUTH_BASE}/token`, {
+      const res = await httpRequest(`${AUTH_BASE}/token`, {
+        label: "microsoft-oauth",
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: params.toString(),
-        signal: AbortSignal.timeout(REFRESH_TIMEOUT_MS),
+        timeoutMs: REFRESH_TIMEOUT_MS,
+        // La boucle de refresh ci-dessous porte deja ses propres tentatives.
+        retries: 0,
       });
 
       if (!res.ok) {
@@ -195,13 +202,14 @@ export async function microsoftGraphFetch<T>(
 ): Promise<T> {
   const accessToken = await getMicrosoftAccessToken();
 
-  const res = await fetch(`${GRAPH_BASE}${graphPath}`, {
+  const res = await httpRequest(`${GRAPH_BASE}${graphPath}`, {
+    label: "microsoft-graph",
+    timeoutMs: GRAPH_TIMEOUT_MS,
     ...init,
     headers: {
       Authorization: `Bearer ${accessToken}`,
       ...(init?.headers ?? {}),
     },
-    signal: AbortSignal.timeout(GRAPH_TIMEOUT_MS),
   });
 
   if (res.status === 204) return null as T;

@@ -1,6 +1,8 @@
 "use server";
 
-import { requireSession } from "@/lib/session";
+import { z } from "zod";
+
+import { actionInput } from "@/lib/action";
 
 import {
   getConcerts,
@@ -21,9 +23,11 @@ export interface UnifiedSearchResult {
   accreditations: Accreditation[];
 }
 
+const queryInput = z.string().max(200, "Requete trop longue");
+
 export async function unifiedSearch(query: string): Promise<UnifiedSearchResult> {
-  await requireSession();
-  const q = query.toLowerCase().trim();
+  const { data } = await actionInput(queryInput, query);
+  const q = data.toLowerCase().trim();
   if (!q) return { concerts: [], facts: [], emails: [], reminders: [], watchLater: [], accreditations: [] };
 
   const [concerts, memory, reminders, watchLater, accreditations] = await Promise.all([

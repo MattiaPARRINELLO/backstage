@@ -13,7 +13,7 @@ beforeEach(() => {
 
 describe("apiRoute", () => {
   it("traduit une AppError en statut et code", async () => {
-    const POST = apiRoute(async () => {
+    const POST = apiRoute(async (): Promise<Response> => {
       throw new AppError("not_found", "Rappel introuvable");
     });
 
@@ -25,7 +25,7 @@ describe("apiRoute", () => {
 
   it("masque le message technique d'une erreur inconnue", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    const POST = apiRoute(async () => {
+    const POST = apiRoute(async (): Promise<Response> => {
       throw new Error("ECONNREFUSED 127.0.0.1:5432");
     });
 

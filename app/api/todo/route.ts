@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { microsoftGraphFetch, type MicrosoftTodoList, type MicrosoftTodoTask } from "@/lib/microsoft-client";
 import { getServerCached, setServerCached, invalidateServerCachePattern } from "@/lib/server-cache";
 import { safeErrorMessage } from "@/lib/utils";
-import { requireSession } from "@/lib/session";
+import { AppError } from "@/lib/errors";
+import { authedRoute } from "@/lib/route";
 
 export type { MicrosoftTodoList, MicrosoftTodoTask };
 
@@ -13,13 +15,15 @@ const TODO_TTL_MS = 2 * 60 * 1000;
 // Réponse Graph paginée (max 100 items par page)
 type GraphListResponse<T> = { value: T[]; "@odata.nextLink"?: string };
 
-export async function GET(request: NextRequest) {
-  try {
-    await requireSession();
-  } catch {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  }
+const completeTaskSchema = z
+  .object({
+    listId: z.string().trim().min(1, "listId requis"),
+    taskId: z.string().trim().min(1, "taskId requis"),
+    completed: z.boolean().optional(),
+  })
+  .strict();
 
+export const GET = authedRoute(async (_session, request: NextRequest) => {
   const listId = request.nextUrl.searchParams.get("listId");
   const top = request.nextUrl.searchParams.get("top") ?? "50";
 
@@ -51,39 +55,34 @@ export async function GET(request: NextRequest) {
     setServerCached(TODO_LIST_CACHE_KEY, response, TODO_TTL_MS);
     return NextResponse.json(response);
   } catch (err) {
-    console.error("[api/todo] error:", err);
-    return NextResponse.json({ error: safeErrorMessage(err) }, { status: 500 });
+    throw new AppError("external_unavailable", safeErrorMessage(err));
   }
-}
+});
 
 // Marque une tâche comme terminée (pattern du POST gmail : invalidation du cache).
-export async function PATCH(request: NextRequest) {
-  try {
-    await requireSession();
-  } catch {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+export const PATCH = authedRoute(async (_session, request: NextRequest) => {
+  const raw = await request.json();
+  const parsed = completeTaskSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new AppError("validation", parsed.error.issues[0]?.message ?? "Payload invalide");
   }
 
-  try {
-    const body = (await request.json()) as { listId: string; taskId: string; completed?: boolean };
-    if (!body.listId || !body.taskId) {
-      return NextResponse.json({ error: "listId et taskId requis" }, { status: 400 });
-    }
+  const { listId, taskId, completed } = parsed.data;
+  const status = completed === false ? "notStarted" : "completed";
 
-    const status = body.completed === false ? "notStarted" : "completed";
+  try {
     await microsoftGraphFetch<unknown>(
-      `/me/todo/lists/${encodeURIComponent(body.listId)}/tasks/${encodeURIComponent(body.taskId)}`,
+      `/me/todo/lists/${encodeURIComponent(listId)}/tasks/${encodeURIComponent(taskId)}`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       }
     );
-
-    invalidateServerCachePattern(/^todo:tasks/);
-    return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("[api/todo PATCH] error:", err);
-    return NextResponse.json({ error: safeErrorMessage(err) }, { status: 500 });
+    throw new AppError("external_unavailable", safeErrorMessage(err));
   }
-}
+
+  invalidateServerCachePattern(/^todo:tasks/);
+  return NextResponse.json({ success: true });
+});

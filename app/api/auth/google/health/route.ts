@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireSession } from "@/lib/session";
 import { getGoogleHealth } from "@/lib/google-client";
 import type { GoogleAccountHealth } from "@/lib/google-health";
 import { getServerCached, setServerCached } from "@/lib/server-cache";
+import { authedRoute } from "@/lib/route";
 
 const HEALTH_CACHE_KEY = "google:health";
 const HEALTH_TTL_MS = 5 * 60 * 1000;
@@ -12,13 +12,7 @@ export type GoogleHealthResponse = {
   calendar: GoogleAccountHealth;
 };
 
-export async function GET() {
-  try {
-    await requireSession();
-  } catch {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  }
-
+export const GET = authedRoute(async (_session) => {
   const cached = getServerCached<GoogleHealthResponse>(HEALTH_CACHE_KEY);
   if (cached) {
     return NextResponse.json(cached);
@@ -32,4 +26,4 @@ export async function GET() {
   const response: GoogleHealthResponse = { gmail, calendar };
   setServerCached(HEALTH_CACHE_KEY, response, HEALTH_TTL_MS);
   return NextResponse.json(response);
-}
+});

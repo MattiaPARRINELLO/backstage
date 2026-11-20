@@ -1,6 +1,8 @@
 "use server";
 
-import { requireSession } from "@/lib/session";
+import { z } from "zod";
+
+import { actionInput } from "@/lib/action";
 import {
   getCourses,
   getCoursesInRange,
@@ -10,6 +12,8 @@ import {
   listPendingIntentions,
 } from "@/lib/storage";
 import type { HomeCourse, HomeOverview, ScheduleCourse } from "@/lib/types";
+
+const emptyInput = z.object({});
 
 function toHomeCourse(c: ScheduleCourse): HomeCourse {
   return {
@@ -46,7 +50,7 @@ function localDayIso(now: Date): string {
  * cache partagé des widgets.
  */
 export async function getHomeOverview(): Promise<HomeOverview> {
-  await requireSession();
+  await actionInput(emptyInput, {});
 
   const now = new Date();
   const nowMs = now.getTime();

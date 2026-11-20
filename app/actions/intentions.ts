@@ -1,18 +1,22 @@
 "use server";
 
-import { requireSession } from "@/lib/session";
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
+
+import { actionInput } from "@/lib/action";
 import { resolveIntention, getIntentions } from "@/lib/storage";
 
+const emptyInput = z.object({});
+const idInput = z.string().min(1, "Identifiant requis");
+
 export async function cancelIntention(id: string): Promise<boolean> {
-  await requireSession();
-  if (!id || typeof id !== "string") throw new Error("Identifiant requis");
-  const ok = await resolveIntention(id, "cancelled");
+  const { data } = await actionInput(idInput, id);
+  const ok = await resolveIntention(data, "cancelled");
   revalidatePath("/week");
   return ok;
 }
 
 export async function loadIntentions() {
-  await requireSession();
+  await actionInput(emptyInput, {});
   return getIntentions();
 }

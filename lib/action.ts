@@ -20,6 +20,19 @@ export async function runAction<Schema extends z.ZodType, Result>(
   input: unknown,
   handler: (data: z.infer<Schema>, session: ActionSession) => Promise<Result>
 ): Promise<Result> {
+  const { data, session } = await actionInput(schema, input);
+  return handler(data, session);
+}
+
+/**
+ * Variante en ligne, pour les actions existantes dont le corps reste lisible :
+ * `const { data } = await actionInput(schema, input)` remplace l'appel manuel a
+ * `requireSession` et le `safeParse` recopie.
+ */
+export async function actionInput<Schema extends z.ZodType>(
+  schema: Schema,
+  input: unknown
+): Promise<{ data: z.infer<Schema>; session: ActionSession }> {
   const session = await requireSession();
 
   const parsed = schema.safeParse(input);
@@ -30,5 +43,5 @@ export async function runAction<Schema extends z.ZodType, Result>(
     );
   }
 
-  return handler(parsed.data as z.infer<Schema>, session);
+  return { data: parsed.data as z.infer<Schema>, session };
 }

@@ -1,26 +1,28 @@
 "use server";
 
-import { requireSession } from "@/lib/session";
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
+
+import { actionInput } from "@/lib/action";
 import { getFocusState, startFocus, stopFocus, type FocusState } from "@/lib/focus";
 
+const emptyInput = z.object({});
+const durationInput = z.number().int().min(1).max(240);
+
 export async function loadFocus(): Promise<FocusState> {
-  await requireSession();
+  await actionInput(emptyInput, {});
   return getFocusState();
 }
 
 export async function startFocusSession(durationMin: number): Promise<FocusState> {
-  await requireSession();
-  if (typeof durationMin !== "number" || Number.isNaN(durationMin)) {
-    throw new Error("Durée invalide");
-  }
-  const state = await startFocus(durationMin);
+  const { data } = await actionInput(durationInput, durationMin);
+  const state = await startFocus(data);
   revalidatePath("/focus");
   return state;
 }
 
 export async function stopFocusSession(): Promise<FocusState> {
-  await requireSession();
+  await actionInput(emptyInput, {});
   const state = await stopFocus();
   revalidatePath("/focus");
   return state;

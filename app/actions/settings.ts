@@ -1,10 +1,14 @@
 "use server";
 
-import { requireSession } from "@/lib/session";
+import { z } from "zod";
+
+import { actionInput } from "@/lib/action";
+import { AppError } from "@/lib/errors";
 import { getConfig, updateConfig } from "@/lib/app-config";
 import { getSubscriptions } from "@/lib/push-subscriptions";
 import { fetchAvailableModels } from "@/lib/ai-providers/models";
-import { z } from "zod";
+
+const emptyInput = z.object({});
 
 // État d'exécution pour le tableau de santé des intégrations (Paramètres) :
 // modèles IA configurés, fonctionnalités et nombre d'appareils push.
@@ -14,7 +18,7 @@ export async function loadRuntimeInfo(): Promise<{
   features: { dailyBrief: boolean; webSearch: boolean };
   pushCount: number;
 }> {
-  await requireSession();
+  await actionInput(emptyInput, {});
   const [config, subs, availableModels] = await Promise.all([
     getConfig(),
     getSubscriptions(),
@@ -52,18 +56,13 @@ export async function updateModels(input: {
   generalAlt: string;
   code: string;
 }): Promise<{ general: string; generalAlt: string; code: string }> {
-  await requireSession();
+  const { data } = await actionInput(updateModelsSchema, input);
+  const { general, generalAlt, code } = data;
 
-  const parsed = updateModelsSchema.safeParse(input);
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Payload invalide");
-  }
-
-  const { general, generalAlt, code } = parsed.data;
   const available = await fetchAvailableModels();
   for (const m of [general, generalAlt, code]) {
     if (!available.includes(m)) {
-      throw new Error(`Modele indisponible : ${m}`);
+      throw new AppError("validation", `Modele indisponible : ${m}`);
     }
   }
 

@@ -18,10 +18,10 @@ export function watchLaterApi(call: ModuleActionCall) {
     create: (input: {
       url: string;
       title: string;
-      description?: string;
-      thumbnail?: string;
-      source?: string;
-      category?: WatchLaterCategory;
+      description?: string | undefined;
+      thumbnail?: string | undefined;
+      source?: string | undefined;
+      category?: WatchLaterCategory | undefined;
     }) => call("create", input) as Promise<WatchLaterItem>,
     remove: (id: string) => call("remove", { id }) as Promise<boolean>,
     reorder: (orderedIds: string[]) =>

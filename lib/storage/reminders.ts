@@ -9,9 +9,9 @@ export async function getReminders(): Promise<RemindersData> {
 
 export async function addReminder(input: {
   title: string;
-  notes?: string;
+  notes?: string | undefined;
   dueAt: string;
-  recurrence?: Reminder["recurrence"];
+  recurrence?: Reminder["recurrence"] | undefined;
 }): Promise<Reminder> {
   const reminder: Reminder = {
     id: newId(),
@@ -29,7 +29,7 @@ export async function addReminder(input: {
   return reminder;
 }
 
-export async function updateReminder(id: string, updates: Partial<Pick<Reminder, "title" | "notes" | "dueAt" | "status" | "notifiedAt" | "recurrence" | "microsoftTaskId" | "microsoftListId">>): Promise<Reminder | null> {
+export async function updateReminder(id: string, updates: { [K in "title" | "notes" | "dueAt" | "status" | "notifiedAt" | "recurrence" | "microsoftTaskId" | "microsoftListId"]?: Reminder[K] | undefined }): Promise<Reminder | null> {
   let updated: Reminder | null = null;
   await mutateJson<RemindersData>("reminders.json", defaultReminders, (data) => {
     const idx = data.reminders.findIndex((r) => r.id === id);

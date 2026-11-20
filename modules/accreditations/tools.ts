@@ -54,9 +54,9 @@ export const scanAccreditationsTool = defineTool({
           /(\d{1,2})[\/\s](janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre|\d{1,2})[\/\s](\d{4}|\d{2})/i
         );
 
-        const artist = artistMatch ? artistMatch[1].trim() : "";
-        const venue = venueMatch ? venueMatch[1].trim() : "";
-        const concertDate = dateMatch ? dateMatch[0].trim() : "";
+        const artist = artistMatch?.[1]?.trim() ?? "";
+        const venue = venueMatch?.[1]?.trim() ?? "";
+        const concertDate = dateMatch?.[0]?.trim() ?? "";
         if (!artist) continue;
 
         let status: Accreditation["status"] = "pending";
@@ -73,10 +73,11 @@ export const scanAccreditationsTool = defineTool({
           const index = existing.accreditations.findIndex(
             (entry: Accreditation) => `${entry.artist}|${entry.venue}`.toLowerCase() === key
           );
-          if (index >= 0 && existing.accreditations[index].status !== status) {
+          const current = index >= 0 ? existing.accreditations[index] : undefined;
+          if (current && current.status !== status) {
             // Le code historique modifiait l'objet lu sans jamais le persister :
             // le compteur « mise(s) a jour » mentait. On ecrit reellement.
-            await updateAccreditation(existing.accreditations[index].id, { status });
+            await updateAccreditation(current.id, { status });
             updated++;
           }
         } else {

@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "incremental": false
+  },
+  "include": [
+    "next-env.d.ts",
+    "lib/kernel/**/*.ts",
+    "modules/**/*.ts",
+    "modules/**/*.tsx",
+    "packages/module-kit/**/*.ts",
+    "packages/module-kit/**/*.tsx"
+  ]
+}

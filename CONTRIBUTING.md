@@ -66,6 +66,7 @@ tester la production.
 | `bun run start` | sert le build de production |
 | `bun run lint` | ESLint (flat config) |
 | `bunx tsc --noEmit` | verification TypeScript |
+| `bun run typecheck:strict` | typecheck strict du noyau, des modules et du kit |
 | `bun run test` | suite Vitest complete |
 | `bun run test:watch` | Vitest en mode watch |
 | `bun run test:e2e` | Playwright (installe Chromium avant) |
@@ -90,6 +91,22 @@ Les tests unitaires vivent dans `lib/__tests__/`, `app/actions/__tests__/`,
 `e2e/` et ne doivent provoquer aucune mutation ni appeler un vrai provider IA.
 Installation de Chromium, `AUTH_SECRET`, contenu de `e2e/.auth/` et lancement
 d'un seul test : [`docs/contributing/tests-e2e.md`](./docs/contributing/tests-e2e.md).
+
+### Typecheck strict par perimetre
+
+`tsconfig.strict.json` active `noUncheckedIndexedAccess` et
+`exactOptionalPropertyTypes` sur `lib/kernel/`, `modules/` et
+`packages/module-kit/`. `bun run typecheck:strict` (lance en CI) echoue
+uniquement sur les erreurs de ces fichiers ; celles des dependances importees
+sont affichees en information, pour suivre la dette.
+
+Regle : un acces indexe qui peut rendre `undefined` ne se tait ni avec `!` ni
+avec `as`. Un garde explicite, un `??` avec repli nomme, ou un tableau vide
+declare comme vide.
+
+Etat au 20 novembre 2026 : zero erreur dans le perimetre, 67 erreurs hors
+perimetre (composants, tests, scripts). Cible : zero globalement ; le perimetre
+s'elargit quand un dossier entier est a zero.
 
 ## 4. Branches et commits
 

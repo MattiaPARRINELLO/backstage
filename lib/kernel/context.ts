@@ -17,7 +17,9 @@ export function createModuleContext(
 ): ModuleContext {
   return {
     moduleId,
-    userId: options.userId,
+    // `exactOptionalPropertyTypes` distingue « absent » de « undefined » : on
+    // n'ajoute la cle que lorsqu'un utilisateur existe vraiment.
+    ...(options.userId ? { userId: options.userId } : {}),
     log: (level, message, error) => {
       const line = `[${moduleId}] ${message}`;
       if (level === "error") console.error(line, error);
@@ -25,7 +27,7 @@ export function createModuleContext(
       else console.log(line, error ?? "");
     },
     emit,
-    activity: async (type, message, detail) => {
+    activity: async (type, message, detail?: string) => {
       // Le module nomme son activité librement ; le noyau la range dans le
       // journal d'activité existant, qui a sa propre liste de types.
       await logActivity(

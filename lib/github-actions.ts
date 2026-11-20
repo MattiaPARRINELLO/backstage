@@ -133,7 +133,7 @@ export async function createGithubIssue(input: {
 }
 
 export async function listGithubIssues(
-  options: { state?: "open" | "closed" | "all"; limit?: number } = {}
+  options: { state?: "open" | "closed" | "all" | undefined; limit?: number | undefined } = {}
 ): Promise<GithubIssue[]> {
   readConfig();
   const state = options.state ?? "open";

@@ -323,10 +323,10 @@ export async function createGoogleCalendarEvent(
 export async function updateGoogleCalendarEvent(
   eventId: string,
   updates: {
-    summary?: string;
-    description?: string;
-    location?: string;
-    colorId?: string;
+    summary?: string | undefined;
+    description?: string | undefined;
+    location?: string | undefined;
+    colorId?: string | undefined;
   }
 ): Promise<void> {
   const auth = await getCalendarClient();

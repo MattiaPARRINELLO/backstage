@@ -5,6 +5,7 @@ import { writeJsonAtomic } from "./storage";
 import { invalidateServerCache } from "./server-cache";
 import { serverLog } from "./logger";
 import { getConfig } from "@/lib/config";
+import { request as httpRequest } from "@/lib/http";
 import {
   deriveGoogleHealth,
   type GoogleAccountHealth,
@@ -187,7 +188,8 @@ export async function exchangeAuthorizationCode(
     throw new Error("GOOGLE_REDIRECT_URI doit etre configure");
   }
 
-  const res = await fetch(GOOGLE_TOKEN_URL, {
+  const res = await httpRequest(GOOGLE_TOKEN_URL, {
+    label: "google-oauth",
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -197,9 +199,10 @@ export async function exchangeAuthorizationCode(
       redirect_uri: redirectUri,
       grant_type: "authorization_code",
     }),
-    // Le code OAuth est à usage unique : un timeout ne doit pas gonfler en
-    // retry qui consommerait le code deux fois.
-    signal: AbortSignal.timeout(GOOGLE_CODE_TIMEOUT_MS),
+    timeoutMs: GOOGLE_CODE_TIMEOUT_MS,
+    // Le code OAuth est à usage unique : rejouer la requete consommerait le
+    // code deux fois.
+    retries: 0,
   });
 
   const data = (await res.json().catch(() => null)) as {

@@ -24,9 +24,10 @@ export type HttpMethod = "GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE";
 export interface HttpOptions {
   /** Libelle du service, present dans chaque ligne de log. Obligatoire. */
   readonly label: string;
-  readonly method?: HttpMethod;
+  /** Methode HTTP ; `RequestInit.method` est une chaine libre, on la laisse telle quelle. */
+  readonly method?: string;
   readonly headers?: HeadersInit;
-  readonly body?: BodyInit;
+  readonly body?: BodyInit | null;
   readonly redirect?: RequestRedirect;
   readonly timeoutMs?: number;
   /** Nombre de nouvelles tentatives apres la premiere. */
@@ -49,7 +50,7 @@ function resolveFetch(): FetchLike {
   return (input, init) => globalThis.fetch(input, init);
 }
 
-function defaultRetries(method: HttpMethod): number {
+function defaultRetries(method: string): number {
   // Un GET est idempotent, un POST ne l'est pas : rejouer un envoi ou un echange
   // de code OAuth consommerait l'entree deux fois.
   return method === "GET" || method === "HEAD" ? HTTP_RETRIES : 0;
@@ -63,7 +64,7 @@ function externalUnavailable(label: string, cause: unknown): AppError {
   return new AppError("external_unavailable", `Le service ${label} est indisponible.`, { cause });
 }
 
-function buildInit(options: HttpOptions, method: HttpMethod): RequestInit {
+function buildInit(options: HttpOptions, method: string): RequestInit {
   const init: RequestInit = {
     method,
     redirect: options.redirect ?? "follow",

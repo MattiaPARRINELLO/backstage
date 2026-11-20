@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("../google-client", () => ({
   getCalendarClient: () => Promise.resolve({ credentials: { access_token: "tok" } }),
@@ -6,25 +6,35 @@ vi.mock("../google-client", () => ({
 }));
 
 import { extractBody, createGoogleCalendarEvent, fetchGmailMessages } from "../google-actions";
+import { jsonResponse, withHttpDouble, type HttpDoubleRoute } from "@/lib/http-double";
 
 const b64 = (text: string) => Buffer.from(text, "utf-8").toString("base64");
+const CALENDAR_URL = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
 
 async function captureEventBody(start: string, end: string) {
-  let captured: {
-    start: { dateTime?: string; date?: string; timeZone?: string };
-    end: { dateTime?: string; date?: string; timeZone?: string };
-  } | undefined;
-  const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
-    captured = JSON.parse(String(init?.body));
-    return new Response(JSON.stringify({ id: "evt-1" }), { status: 200 });
-  });
-  vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
-  try {
-    await createGoogleCalendarEvent("Réunion", start, end);
-  } finally {
-    vi.unstubAllGlobals();
-  }
-  if (!captured) throw new Error("fetch n'a pas été appelé");
+  let captured:
+    | {
+        start: { dateTime?: string; date?: string; timeZone?: string };
+        end: { dateTime?: string; date?: string; timeZone?: string };
+      }
+    | undefined;
+
+  await withHttpDouble(
+    [
+      {
+        match: CALENDAR_URL,
+        response: (_url, init) => {
+          captured = JSON.parse(String(init.body));
+          return jsonResponse({ id: "evt-1" });
+        },
+      },
+    ],
+    async () => {
+      await createGoogleCalendarEvent("Réunion", start, end);
+    }
+  );
+
+  if (!captured) throw new Error("le port HTTP n'a pas été appelé");
   return captured;
 }
 
@@ -77,53 +87,48 @@ describe("extractBody", () => {
 describe("fetchGmailMessages — tri deterministe et messages illisibles", () => {
   type Listed = { id: string; date: string };
 
-  function stubGmail(list: Listed[], broken: string[] = []) {
-    const fetchMock = vi.fn(async (input: string | URL | Request) => {
-      const url = String(input);
-      if (url.includes("/messages?")) {
-        return new Response(JSON.stringify({ messages: list.map((m) => ({ id: m.id })) }), {
-          status: 200,
-        });
-      }
-      const id = /\/messages\/([^?]+)\?format=full/.exec(url)?.[1] ?? "";
-      if (broken.includes(id)) {
-        // Reponse MIME inexploitable : le message doit etre isole, pas le lot.
-        return new Response("<html>erreur serveur</html>", { status: 500 });
-      }
-      const entry = list.find((m) => m.id === id);
-      if (!entry) return new Response("not found", { status: 404 });
-      return new Response(
-        JSON.stringify({
-          id,
-          threadId: `t-${id}`,
-          labelIds: ["INBOX"],
-          payload: {
-            mimeType: "text/plain",
-            headers: [
-              { name: "From", value: "expediteur@exemple.fr" },
-              { name: "Subject", value: `Sujet ${id}` },
-              { name: "Date", value: entry.date },
-            ],
-            body: { data: b64(`corps ${id}`) },
-          },
-        }),
-        { status: 200 }
-      );
-    });
-    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
-    return fetchMock;
+  function gmailRoutes(list: Listed[], broken: string[] = []): HttpDoubleRoute[] {
+    return [
+      {
+        match: /gmail\.googleapis\.com\/gmail\/v1\/users\/me\/messages/,
+        response: (input) => {
+          if (input.includes("/messages?")) {
+            return jsonResponse({ messages: list.map((m) => ({ id: m.id })) });
+          }
+          const id = /\/messages\/([^?]+)\?format=full/.exec(input)?.[1] ?? "";
+          if (broken.includes(id)) {
+            // Reponse MIME inexploitable : le message doit etre isole, pas le lot.
+            return new Response("<html>erreur serveur</html>", { status: 500 });
+          }
+          const entry = list.find((m) => m.id === id);
+          if (!entry) return new Response("not found", { status: 404 });
+          return jsonResponse({
+            id,
+            threadId: `t-${id}`,
+            labelIds: ["INBOX"],
+            payload: {
+              mimeType: "text/plain",
+              headers: [
+                { name: "From", value: "expediteur@exemple.fr" },
+                { name: "Subject", value: `Sujet ${id}` },
+                { name: "Date", value: entry.date },
+              ],
+              body: { data: b64(`corps ${id}`) },
+            },
+          });
+        },
+      },
+    ];
   }
 
-  afterEach(() => vi.unstubAllGlobals());
-
   it("trie par date decroissante, quel que soit l'ordre de l'API", async () => {
-    stubGmail([
+    const routes = gmailRoutes([
       { id: "vieux", date: "Mon, 09 Nov 2026 08:00:00 +0000" },
       { id: "recent", date: "Wed, 11 Nov 2026 18:00:00 +0000" },
       { id: "milieu", date: "Tue, 10 Nov 2026 12:00:00 +0000" },
     ]);
 
-    const messages = await fetchGmailMessages(undefined, 10);
+    const messages = await withHttpDouble(routes, () => fetchGmailMessages(undefined, 10));
 
     expect(messages.map((m) => m.id)).toEqual(["recent", "milieu", "vieux"]);
   });
@@ -134,9 +139,9 @@ describe("fetchGmailMessages — tri deterministe et messages illisibles", () =>
       { id: "casse", date: "Tue, 10 Nov 2026 11:00:00 +0000" },
       { id: "m2", date: "Tue, 10 Nov 2026 10:00:00 +0000" },
     ];
-    stubGmail(list, ["casse"]);
+    const routes = gmailRoutes(list, ["casse"]);
 
-    const messages = await fetchGmailMessages(undefined, 10);
+    const messages = await withHttpDouble(routes, () => fetchGmailMessages(undefined, 10));
 
     expect(messages.map((m) => m.id)).toEqual(["m1", "m2"]);
     expect(messages.find((m) => m.id === "casse")).toBeUndefined();
@@ -149,18 +154,23 @@ describe("fetchGmailMessages — tri deterministe et messages illisibles", () =>
       { id: "b", date: "Tue, 10 Nov 2026 12:00:00 +0000" },
       { id: "c", date: "Tue, 10 Nov 2026 09:00:00 +0000" },
     ];
-    stubGmail(list);
+    const routes = gmailRoutes(list);
 
-    const first = await fetchGmailMessages(undefined, 10);
-    const second = await fetchGmailMessages(undefined, 10);
+    const { first, second } = await withHttpDouble(routes, async () => {
+      const first = await fetchGmailMessages(undefined, 10);
+      const second = await fetchGmailMessages(undefined, 10);
+      return { first, second };
+    });
 
     expect(first.map((m) => m.id)).toEqual(second.map((m) => m.id));
   });
 
   it("renvoie une liste vide quand Gmail ne trouve aucun message", async () => {
-    stubGmail([]);
+    const routes = gmailRoutes([]);
 
-    await expect(fetchGmailMessages("inexistant", 10)).resolves.toEqual([]);
+    await expect(
+      withHttpDouble(routes, () => fetchGmailMessages("inexistant", 10))
+    ).resolves.toEqual([]);
   });
 });
 

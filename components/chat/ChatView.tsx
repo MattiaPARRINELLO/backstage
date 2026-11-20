@@ -13,7 +13,6 @@ import {
   generateId,
   generateTitle,
   formatQuotedMessage,
-  type MessageQuote,
 } from "@/components/chat/chat-data";
 import { SelectionCommentLayer } from "@/components/chat/SelectionComment";
 import {
@@ -31,6 +30,7 @@ import { GroupActionCard } from "@/components/chat/MessageBlocks";
 import { ChatTranscript } from "@/components/chat/ChatTranscript";
 import { useChatAutoscroll } from "@/components/chat/use-chat-autoscroll";
 import { useChatShortcuts } from "@/components/chat/use-chat-shortcuts";
+import { useSelectionQuotes } from "@/components/chat/use-selection-quotes";
 import { KeyboardSafe } from "@/components/ui/KeyboardSafe";
 
 // Résumé lisible d'une action IA en attente de confirmation, pour la carte
@@ -80,10 +80,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   );
   const [input, setInput] = useState("");
   // Extraits commentés (sélection dans une réponse de l'IA) en attente d'envoi.
-  const [pendingQuotes, setPendingQuotes] = useState<MessageQuote[]>([]);
-  // Dernier extrait ajouté : il « atterrit » avec une animation dans le champ.
-  const [highlightedQuoteId, setHighlightedQuoteId] = useState<string | null>(null);
-  const quoteAnimRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { quotes, highlightedId, addQuote, removeQuote, resetQuotes } = useSelectionQuotes();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingGroups, setPendingGroups] = useState<
@@ -129,15 +126,6 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
-
-  // Le minuteur d'animation du dernier extrait ne doit pas survivre au
-  // démontage de la vue.
-  useEffect(
-    () => () => {
-      if (quoteAnimRef.current) clearTimeout(quoteAnimRef.current);
-    },
-    []
-  );
 
   // Remet à zéro l'état du tour en cours (texte, outils, fil d'activité).
   // Appelé à chaque nouveau tour, changement de session et arrêt.
@@ -232,7 +220,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
             hasTitleRef.current = true;
             setMessages(display);
             setInput("");
-            setPendingQuotes([]);
+            resetQuotes();
             resetTurnState();
             appliedEventsRef.current = 0;
             setLoading(false);
@@ -264,7 +252,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
     hasTitleRef.current = false;
     setMessages([welcomeMessage]);
     setInput("");
-    setPendingQuotes([]);
+    resetQuotes();
     resetTurnState();
     appliedEventsRef.current = 0;
     setLoading(false);
@@ -657,7 +645,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       // Les extraits commentés sont sérialisés dans le message : le modèle voit
       // la citation et la réaction, l'utilisateur retrouve les modules à
       // l'affichage (voir `parseQuotedMessage`).
-      const trimmed = formatQuotedMessage(pendingQuotes, text).trim();
+      const trimmed = formatQuotedMessage(quotes, text).trim();
       if (!trimmed || loading) return;
 
       if (consent.loaded && !consent.accepted) {
@@ -688,7 +676,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       }
 
       setInput("");
-      setPendingQuotes([]);
+      resetQuotes();
       setError(null);
       activeToolsRef.current = {};
       resetTurnState();
@@ -719,7 +707,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       // est fermé, et GET /api/chat/stream permet de s'y réattacher.
       startLiveRun({ sessionId, userMessage: userMsg, messages: apiMessages, actionContext });
     },
-    [loading, messages, sessionId, onSessionChange, chatCtx, consent, pendingQuotes, resetTurnState]
+    [loading, messages, sessionId, onSessionChange, chatCtx, consent, quotes, resetQuotes, resetTurnState]
   );
 
   const stop = useCallback(() => {
@@ -814,8 +802,8 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
   // raccourcis.
   const resetConversation = useCallback(() => {
     setMessages([welcomeMessage]);
-    setPendingQuotes([]);
-  }, []);
+    resetQuotes();
+  }, [resetQuotes]);
 
   const handleKey = useChatShortcuts({
     input,
@@ -835,11 +823,7 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
       <SelectionCommentLayer
         containerRef={scrollRef}
         onAdd={({ text, comment }) => {
-          const id = generateId();
-          setPendingQuotes((prev) => [...prev, { id, text, comment }]);
-          setHighlightedQuoteId(id);
-          if (quoteAnimRef.current) clearTimeout(quoteAnimRef.current);
-          quoteAnimRef.current = setTimeout(() => setHighlightedQuoteId(null), 720);
+          addQuote({ text, comment });
           inputRef.current?.focus();
         }}
       />
@@ -911,11 +895,9 @@ export function ChatView({ sessionId: externalSessionId, resetSignal = 0, onSess
               loading={loading}
               inputRef={inputRef}
               onKey={handleKey}
-              quotes={pendingQuotes}
-              highlightedId={highlightedQuoteId}
-              onRemoveQuote={(id) =>
-                setPendingQuotes((prev) => prev.filter((q) => q.id !== id))
-              }
+              quotes={quotes}
+              highlightedId={highlightedId}
+              onRemoveQuote={removeQuote}
             />
           </KeyboardSafe>
           <p className="hidden sm:block ui-mono text-[var(--text-4)] mt-2.5 text-center">

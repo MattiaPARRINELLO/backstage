@@ -7,7 +7,9 @@ import { addCalendarEvent, getCalendar, getEmails, searchEmails, webSearch } fro
 import type { CalendarEvent, Email } from "@/lib/types";
 
 const emptyInput = z.object({});
-const queryInput = z.string().min(1, "Requete requise").max(200, "Requete trop longue");
+// Vide reste accepte : la palette de commandes peut envoyer une recherche
+// vide et doit obtenir la meme reponse qu'avant, pas une erreur.
+const queryInput = z.string().max(200, "Requete trop longue");
 
 const calendarEventInput = z.object({
   title: z.string().trim().min(1, "Titre requis"),

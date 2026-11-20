@@ -4,7 +4,7 @@ import { chatCompletion } from "./ai-providers";
 import { getConfig, getModel } from "./app-config";
 import { toISODate, toHHMM } from "./utils";
 import type { DailyBrief } from "./types";
-import { getConfig as getEnvConfig } from "@/lib/config";
+import { getWeatherSummary } from "./weather";
 
 const BRIEF_FILENAME = "daily-briefs.json";
 
@@ -60,20 +60,8 @@ export async function generateDailyBrief(): Promise<string | null> {
       ? leetcodeData.exercises[0]
       : null;
 
-    // Météo du jour (via OpenWeatherMap)
-    let weather = "";
-    const apiKey = getEnvConfig().OPENWEATHERMAP_API_KEY;
-    if (apiKey) {
-      try {
-        const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?q=Paris&appid=${apiKey}&units=metric&lang=fr`
-        );
-        if (res.ok) {
-          const w = await res.json() as { main: { temp: number; feels_like: number }; weather: { description: string }[] };
-          weather = `${w.main.temp}°C (ressenti ${w.main.feels_like}°C), ${w.weather[0].description}`;
-        }
-      } catch {}
-    }
+    // Météo du jour (service OpenWeatherMap, aucun appel direct ici)
+    const weather = await getWeatherSummary("Paris");
 
     // Concert checklist si applicable
     let concertChecklist: string[] | undefined;

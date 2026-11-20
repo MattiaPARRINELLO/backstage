@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const storage = { getWeather: vi.fn() };
+const weather = { getWeather: vi.fn() };
 
-vi.mock("@/lib/storage", () => storage);
+vi.mock("@/lib/weather", () => weather);
 
 const { getWeatherTool } = await import("@/modules/weather/tools");
 
@@ -14,21 +14,21 @@ describe("outil meteo", () => {
   });
 
   it("rend la meteo quand la source repond", async () => {
-    storage.getWeather.mockResolvedValue("**Paris** : 12°C");
+    weather.getWeather.mockResolvedValue("**Paris** : 12°C");
     const result = await getWeatherTool.run({ city: "Paris" }, ctx);
     expect(result.status).toBe("ok");
     expect(result.text).toContain("Paris");
-    expect(storage.getWeather).toHaveBeenCalledWith("Paris");
+    expect(weather.getWeather).toHaveBeenCalledWith("Paris");
   });
 
   it("signale une cle absente comme une erreur", async () => {
-    storage.getWeather.mockResolvedValue("Erreur : clé API météo non configurée.");
+    weather.getWeather.mockResolvedValue("Erreur : clé API météo non configurée.");
     const result = await getWeatherTool.run({ city: "Paris" }, ctx);
     expect(result.status).toBe("error");
   });
 
   it("signale une ville inconnue comme une erreur", async () => {
-    storage.getWeather.mockResolvedValue('Ville "Nowhere" introuvable.');
+    weather.getWeather.mockResolvedValue('Ville "Nowhere" introuvable.');
     const result = await getWeatherTool.run({ city: "Nowhere" }, ctx);
     expect(result.status).toBe("error");
   });

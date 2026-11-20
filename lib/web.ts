@@ -1,17 +1,18 @@
 // Utilitaires web partagés : recherche, récupération de métadonnées de page,
 // extraction de texte et garde-fou anti-SSRF (bloque les URLs privées/réservées).
 import { getConfig } from "@/lib/config";
+import { request as httpRequest } from "@/lib/http";
 
 export async function webSearch(query: string): Promise<string> {
   const braveKey = getConfig().BRAVE_SEARCH_API_KEY;
   if (braveKey) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10_000);
     try {
-      const res = await fetch(
+      const res = await httpRequest(
         `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}`,
         {
-          signal: controller.signal,
+          label: "brave",
+          timeoutMs: 10_000,
+          retries: 0,
           headers: {
             "Accept": "application/json",
             "Accept-Encoding": "gzip",
@@ -19,7 +20,6 @@ export async function webSearch(query: string): Promise<string> {
           },
         }
       );
-      clearTimeout(timeout);
       if (res.ok) {
         const data = await res.json();
         const results = data.web?.results ?? [];
@@ -31,20 +31,16 @@ export async function webSearch(query: string): Promise<string> {
         return `Aucun résultat web pour "${query}".`;
       }
     } catch {
-      clearTimeout(timeout);
       // Fallback à DuckDuckGo
     }
   }
 
   // Fallback : recherche DuckDuckGo (gratuite, sans clé)
-  const fallbackController = new AbortController();
-  const fallbackTimeout = setTimeout(() => fallbackController.abort(), 10_000);
   try {
-    const res = await fetch(
+    const res = await httpRequest(
       `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`,
-      { signal: fallbackController.signal }
+      { label: "duckduckgo", timeoutMs: 10_000, retries: 0 }
     );
-    clearTimeout(fallbackTimeout);
     if (res.ok) {
       const data = await res.json();
       const abstract = data.AbstractText;
@@ -60,7 +56,7 @@ export async function webSearch(query: string): Promise<string> {
       }
     }
   } catch {
-    clearTimeout(fallbackTimeout);
+    // Aucun résultat : message de repli plus bas
   }
 
   return `Recherche web pour "${query}" : aucun résultat trouvé.`;
@@ -282,9 +278,12 @@ export async function safeFetchText(
 
   let currentUrl = url;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    const res = await fetch(currentUrl, {
+    const res = await httpRequest(currentUrl, {
+      label: "page",
       redirect: "manual",
-      signal: AbortSignal.timeout(timeoutMs),
+      timeoutMs,
+      // Chaque saut est deja verifie et compte : pas de rejeu automatique.
+      retries: 0,
       headers: { "User-Agent": "Mozilla/5.0 (compatible; BACKSTAGE/1.0)", ...headers },
     });
 

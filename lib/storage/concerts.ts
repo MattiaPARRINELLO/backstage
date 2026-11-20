@@ -1,7 +1,7 @@
 import type { ConcertPrep, ConcertsData } from "../types";
 import { maybeBackup, readOrCreate, writeJsonAtomic } from "../storage-core";
 import { webSearch } from "../web";
-import { getConfig } from "@/lib/config";
+import { getConcertWeather } from "../weather";
 
 export const defaultConcerts: ConcertsData = {
   events: [
@@ -30,23 +30,7 @@ export async function prepareConcert(concertId: string): Promise<ConcertPrep> {
   const concert = data.events.find((c) => c.id === concertId);
   if (!concert) throw new Error(`Concert ${concertId} introuvable`);
 
-  const weather = await (async () => {
-    const apiKey = getConfig().OPENWEATHERMAP_API_KEY;
-    if (!apiKey) return "Météo non disponible";
-    try {
-      const res = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(concert.venue)}&appid=${apiKey}&units=metric&lang=fr`
-      );
-      if (!res.ok) return "Météo non disponible";
-      const data = await res.json() as { list: { dt_txt: string; main: { temp: number; feels_like: number }; weather: { description: string }[] }[] };
-      const concertDate = concert.date.slice(0, 10);
-      const dayForecast = data.list.find((f: { dt_txt: string }) => f.dt_txt.startsWith(concertDate));
-      if (!dayForecast) return "Météo non disponible pour cette date";
-      return `${dayForecast.main.temp}°C (ressenti ${dayForecast.main.feels_like}°C), ${dayForecast.weather[0].description}`;
-    } catch {
-      return "Météo non disponible";
-    }
-  })();
+  const weather = await getConcertWeather(concert.venue, concert.date);
 
   const venueInfo = await webSearch(
     `caractéristiques salle de concert ${concert.venue} capacité fosse photo`
@@ -80,30 +64,3 @@ export async function prepareConcert(concertId: string): Promise<ConcertPrep> {
   };
 }
 
-export async function getWeather(city: string): Promise<string> {
-  const apiKey = getConfig().OPENWEATHERMAP_API_KEY;
-  if (!apiKey) return "Erreur : clé API météo non configurée.";
-  try {
-    const res = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=fr`
-    );
-    if (!res.ok) {
-      if (res.status === 404) return `Ville "${city}" introuvable.`;
-      return `Erreur API météo (${res.status}).`;
-    }
-    const data = await res.json() as {
-      main: { temp: number; feels_like: number; humidity: number };
-      weather: { description: string }[];
-      wind: { speed: number };
-      name: string;
-    };
-    return [
-      `**${data.name}** : ${data.main.temp}°C (ressenti ${data.main.feels_like}°C)`,
-      `${data.weather[0].description}`,
-      `Humidité : ${data.main.humidity}%`,
-      `Vent : ${data.wind.speed} m/s`,
-    ].join(" — ");
-  } catch (err) {
-    return `Erreur : ${err instanceof Error ? err.message : String(err)}`;
-  }
-}

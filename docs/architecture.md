@@ -192,8 +192,10 @@ Toute route privée passe par `authedRoute` (session + traduction d'erreur) ou
 
 Trois exceptions assumées, documentées ici : `app/api/chat/route.ts` garde sa
 garde locale (la session sert aussi de clé de rate limit et la réponse est un
-flux SSE), `app/api/auth/session` et `app/api/auth/passkey/register-*` sont
-publiques par conception (état de session, bootstrap de la première passkey).
+flux SSE), `app/api/auth/session`, `app/api/auth/passkey/register-*` et
+`app/api/reminders/pending` sont publiques par conception (état de session,
+bootstrap de la première passkey, polling du service worker qui répond une
+liste vide sans session).
 
 
 

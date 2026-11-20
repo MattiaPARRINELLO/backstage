@@ -199,6 +199,23 @@ liste vide sans session).
 
 
 
+### Port HTTP sortant (`lib/http.ts`)
+
+Tout appel externe passe par ce port : `request` (bas niveau), `text` et
+`json` (statut validé, schéma Zod pour `json`). Trois garanties centralisées :
+
+- **timeout** par tentative (`HTTP_TIMEOUT_MS`, 10 s), surchargeable ;
+- **retry borné** : une nouvelle tentative seulement sur erreur réseau, timeout
+  ou 5xx, jamais sur 4xx. Un `POST` ne retente pas par défaut (code OAuth,
+  envoi) ; `retries: 0` le désactive explicitement ;
+- **journalisation** `[http] <label> <statut> en <durée>ms`, sans URL ni secret,
+  et **`AppError("external_unavailable")`** pour toute panne, y compris une
+  réponse de forme inattendue (`lib/errors.ts`).
+
+`lib/http-double.ts` fournit `withHttpDouble(routes, fn)`, qui injecte des
+réponses via un `AsyncLocalStorage` : les tests n'ont plus à remplacer
+`globalThis.fetch`. Migration des clients existants : PR successives de #89.
+
 ### next.config.ts — headers
 
 Toujours : `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy`,

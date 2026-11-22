@@ -20,7 +20,10 @@ export default defineModule({
   jobs: [
     {
       id: "daily-brief",
-      cron: "0 7 * * *",
+      // Fenetre d'une heure plutot que la seule minute 7:00 : un tick en
+      // retard ou un redemarrage a 7:01 ne doit pas perdre le brief du jour.
+      // L'anti-doublon de `triggerDailyBrief` garantit un seul envoi.
+      cron: "* 7 * * *",
       handler: async () => {
         const { triggerDailyBrief } = await import("@/lib/notification-scheduler");
         // Le contexte de module ne porte pas la requete : l'IP d'origine du

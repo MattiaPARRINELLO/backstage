@@ -572,7 +572,8 @@ doit apporter la meme garantie ou accepter un double effet documente.
 - `bun run cron:list` imprime une ligne de crontab par job. `bun run
   cron:reminders` et `bun run cron:daily-brief` restent des raccourcis valides.
 - Jobs actuels : `reminders` (rappels et relances, chaque minute),
-  `daily-brief` (`0 7 * * *`), `schedule-notifications` (notifications de cours
+  `daily-brief` (`* 7 * * *`, fenetre d'une heure pour ne pas perdre le brief
+  sur un tick en retard, l'anti-doublon n'en envoyant qu'un), `schedule-notifications` (notifications de cours
   et synchronisation CESAR, chaque minute). `checkScheduleNotifs` et
   `syncScheduleIfStale` appartiennent au module `schedule`, pas au job
   `reminders` : un module desactive ne publie donc ni page, ni outil, ni job.
@@ -693,8 +694,8 @@ Update).
   d'appareil, stocké **haché** (`data/fcm-devices.json`). Ne jamais remplacer ça
   par un secret d'appairage partagé dans l'APK : il ouvrirait les notifications
   privées à quiconque l'extrait.
-- **Anti-doublon du brief** : le cron cPanel (`0 7 * * *`) et le scheduler
-  interne visent la même minute ; `triggerDailyBrief` n'envoie qu'une fois par
+- **Anti-doublon du brief** : le cron cPanel (`* 7 * * *`) et le scheduler
+  interne visent la même fenêtre ; `triggerDailyBrief` n'envoie qu'une fois par
   jour (`data/notified-briefs.json`, 7 jours d'historique) sauf source
   `page-test`, qui reste un renvoi manuel volontaire. Le marquage n'a lieu que
   si l'envoi a réellement abouti.

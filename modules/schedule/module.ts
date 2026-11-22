@@ -20,4 +20,20 @@ export default defineModule({
   dependencies: [],
   capabilities: { network: ["cesar.univ-paris1.fr"], filesystem: "module-data" },
   tools: [getScheduleTool],
+  // Le module proprietaire porte la cadence : notifications de cours (1 h avant,
+  // rafraichies chaque minute) et synchronisation CESAR quand les donnees sont
+  // perimees. Le noyau n'a plus de cas particulier pour ce domaine.
+  jobs: [
+    {
+      id: "schedule-notifications",
+      cron: "* * * * *",
+      handler: async () => {
+        const { checkScheduleNotifs, syncScheduleIfStale } = await import(
+          "@/lib/notification-schedule"
+        );
+        await checkScheduleNotifs();
+        await syncScheduleIfStale();
+      },
+    },
+  ],
 });

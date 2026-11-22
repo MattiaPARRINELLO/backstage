@@ -29,7 +29,8 @@ export async function register() {
       );
     }
 
+    const { registry } = await import("./lib/kernel/registry");
     const { startScheduler } = await import("./lib/notification-scheduler");
-    startScheduler();
+    startScheduler(registry.jobs);
   }
 }

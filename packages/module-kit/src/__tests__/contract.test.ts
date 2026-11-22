@@ -147,6 +147,60 @@ describe("defineModule", () => {
       defineModule(minimalModule({ dependencies: ["reminders"] }))
     ).toThrow(/lui-meme/);
   });
+
+  it("accepte un job conforme", () => {
+    const definition = defineModule(
+      minimalModule({
+        jobs: [{ id: "sync-microsoft", cron: "*/15 * * * *", handler: async () => {} }],
+      })
+    );
+    expect(definition.jobs?.[0]?.id).toBe("sync-microsoft");
+  });
+
+  it("refuse un identifiant de job hors kebab-case", () => {
+    expect(() =>
+      defineModule(
+        minimalModule({
+          jobs: [{ id: "Sync_Microsoft", cron: "* * * * *", handler: async () => {} }],
+        })
+      )
+    ).toThrow(/identifiant de job invalide/);
+  });
+
+  it("refuse deux jobs du meme identifiant dans le module", () => {
+    expect(() =>
+      defineModule(
+        minimalModule({
+          jobs: [
+            { id: "sync", cron: "* * * * *", handler: async () => {} },
+            { id: "sync", cron: "0 * * * *", handler: async () => {} },
+          ],
+        })
+      )
+    ).toThrow(/job declare deux fois/);
+  });
+
+  it("refuse une expression cron qui n'a pas cinq champs", () => {
+    for (const cron of ["0 7 * *", "0 7 * * * *", "   "]) {
+      expect(() =>
+        defineModule(
+          minimalModule({
+            jobs: [{ id: "brief", cron, handler: async () => {} }],
+          })
+        )
+      ).toThrow(/cron invalide/);
+    }
+  });
+
+  it("refuse un job sans handler fonction", () => {
+    expect(() =>
+      defineModule(
+        minimalModule({
+          jobs: [{ id: "brief", cron: "0 7 * * *", handler: "pas-une-fonction" }],
+        })
+      )
+    ).toThrow(/handler fonction/);
+  });
 });
 
 describe("compatibilite d'apiVersion", () => {

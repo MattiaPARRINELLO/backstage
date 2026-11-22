@@ -121,8 +121,9 @@ function hasFiveCronFields(cron: string): boolean {
  * Déclare un module.
  *
  * Vérifie ce qui relève de l'auteur (identifiant, version, noms d'outils,
- * identifiants de jobs, expression cron) pour échouer au plus tôt. Ne vérifie pas `apiVersion` : la compatibilité dépend du
- * noyau qui charge le module, c'est `assertCompatibleApiVersion` qui en décide.
+ * identifiants de jobs, expression cron) pour échouer au plus tôt. Ne vérifie
+ * pas `apiVersion` : la compatibilité dépend du noyau qui charge le module,
+ * c'est `assertCompatibleApiVersion` qui en décide.
  */
 export function defineModule(definition: ModuleDefinition): ModuleDefinition {
   const { id } = definition;

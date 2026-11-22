@@ -128,7 +128,7 @@ Les Route Handlers vivent dans `app/api/<domaine>/route.ts`.
 
 Routes a imiter : `app/api/reminders/[id]/done/route.ts` (action simple),
 `app/api/chat/route.ts` (SSE, validation, rate limit),
-`app/api/cron/reminders/route.ts` (route protegee par secret).
+`app/api/cron/[job]/route.ts` (route generique protegee par secret).
 
 Attention : une route qui execute un outil IA a effet externe doit exiger une
 session et ne jamais etre publique (`/api/chat/confirm`).

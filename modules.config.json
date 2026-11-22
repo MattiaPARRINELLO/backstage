@@ -4,6 +4,7 @@
     "accreditations": { "enabled": true },
     "calendar": { "enabled": true },
     "concerts": { "enabled": true },
+    "daily-brief": { "enabled": true },
     "emails": { "enabled": true },
     "followups": { "enabled": true },
     "github": { "enabled": true },

@@ -44,4 +44,17 @@ export default defineModule({
     emits: ["reminder.created", "reminder.updated"],
     listens: [],
   },
+  jobs: [
+    {
+      id: "reminders",
+      cron: "* * * * *",
+      handler: async () => {
+        const { checkReminders, checkIntentions } = await import(
+          "@/lib/notification-scheduler"
+        );
+        await checkReminders();
+        await checkIntentions();
+      },
+    },
+  ],
 });

@@ -3,6 +3,7 @@ import type { ModuleDefinition } from "@backstage/module-kit";
 import accreditations from "./accreditations/module";
 import calendar from "./calendar/module";
 import concerts from "./concerts/module";
+import dailyBrief from "./daily-brief/module";
 import emails from "./emails/module";
 import followups from "./followups/module";
 import github from "./github/module";
@@ -20,4 +21,4 @@ import web from "./web/module";
  * consiste à écrire son dossier, l'ajouter ici, et l'activer dans
  * `modules.config.json` — aucune modification du noyau.
  */
-export const modules: readonly ModuleDefinition[] = [accreditations, calendar, concerts, emails, followups, github, photo, reminders, schedule, watchLater, weather, web];
+export const modules: readonly ModuleDefinition[] = [accreditations, calendar, concerts, dailyBrief, emails, followups, github, photo, reminders, schedule, watchLater, weather, web];

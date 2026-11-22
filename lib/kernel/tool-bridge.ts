@@ -42,7 +42,8 @@ export function isModuleTool(name: string): boolean {
   return resolveModuleTool(name) !== undefined;
 }
 
-function toParameters(schema: z.ZodType): Record<string, unknown> {
+/** Schéma Zod d'un outil converti en JSON Schema pour le modèle. */
+export function toParameters(schema: z.ZodType): Record<string, unknown> {
   const json = z.toJSONSchema(schema) as Record<string, unknown>;
   // `$schema` n'est pas une contrainte d'arguments : certains providers le
   // rejettent ou l'exposent au modèle comme un champ attendu.

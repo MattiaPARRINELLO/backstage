@@ -53,6 +53,6 @@ export function crontabLines(
   const base = baseUrl.replace(/\/+$/, "");
   return jobs.map(
     (job) =>
-      `${job.cron} curl -s -H "x-cron-secret: $CRON_SECRET" ${base}/api/cron/${job.id} >/dev/null`
+      `${job.cron} curl -fsS -X POST -H "x-cron-secret: $CRON_SECRET" ${base}/api/cron/${job.id} >/dev/null`
   );
 }

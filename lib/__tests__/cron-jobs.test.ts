@@ -43,8 +43,16 @@ describe("requireCronJob", () => {
 describe("crontabLines", () => {
   it("produit une ligne par job avec son cron et son identifiant", () => {
     expect(crontabLines(jobs, "https://backstage.example/")).toEqual([
-      '* * * * * curl -s -H "x-cron-secret: $CRON_SECRET" https://backstage.example/api/cron/reminders >/dev/null',
-      '0 7 * * * curl -s -H "x-cron-secret: $CRON_SECRET" https://backstage.example/api/cron/daily-brief >/dev/null',
+      '* * * * * curl -fsS -X POST -H "x-cron-secret: $CRON_SECRET" https://backstage.example/api/cron/reminders >/dev/null',
+      '0 7 * * * curl -fsS -X POST -H "x-cron-secret: $CRON_SECRET" https://backstage.example/api/cron/daily-brief >/dev/null',
     ]);
+  });
+
+  it("appelle bien la route en POST et signale les erreurs HTTP", () => {
+    // La route n'accepte que POST : un GET nu repondrait 405 en silence.
+    for (const line of crontabLines(jobs, "https://backstage.example")) {
+      expect(line).toContain("-X POST");
+      expect(line).toContain("-fsS");
+    }
   });
 });

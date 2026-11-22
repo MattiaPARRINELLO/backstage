@@ -517,6 +517,11 @@ Aucune liste de noms ne vit dans le noyau. `defineModule` valide chaque job et
 `createRegistry` refuse qu'un identifiant de job soit declare par deux modules
 actives, puisque la route est globale.
 
+La validation de l'expression cron se limite a cinq champs non vides : le noyau
+ne planifie rien et ne verifie ni les bornes ni la syntaxe de chaque champ. Une
+expression incoherente passe donc le chargement, mais la crontab de l'hebergeur
+la refusera.
+
 - `POST /api/cron/[job]` execute `job.handler(createModuleContext(moduleId))`.
   `isAuthorizedCron` impose `x-cron-secret` ou `Authorization: Bearer` ; sans
   `CRON_SECRET`, l'appel local reste autorise hors production. Job inconnu ou

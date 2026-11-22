@@ -41,6 +41,9 @@ const addMemoryFactSchema = z.object({
     .describe("Le fait a memoriser, en francais, a la troisieme personne"),
   category: z
     .enum(["dev", "photo", "life", "preference"])
+    // Un modele qui omet la categorie passait en `life` avant la declaration :
+    // conserver ce repli evite d'echanger une memorisation contre une erreur Zod.
+    .default("life")
     .describe(
       "dev = preferences/competences techniques, photo = materiel/style/workflow, " +
         "life = habitudes/contraintes/contexte, preference = preferences generales"

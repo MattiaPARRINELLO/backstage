@@ -210,6 +210,16 @@ describe("chat-tools — verification des ecritures", () => {
     expect(out.startsWith("Erreur")).toBe(true);
   });
 
+  it("add_memory_fact retombe sur life si la categorie manque", async () => {
+    // Parite avec l'ancien dispatch : une categorie absente ne doit pas
+    // echanger une memorisation contre une erreur de validation.
+    const { addMemoryFactTool } = await import("@/lib/kernel/core-tools");
+    expect(addMemoryFactTool.params.parse({ content: "un fait" })).toEqual({
+      content: "un fait",
+      category: "life",
+    });
+  });
+
   it("add_memory_fact dedoublonne un fait deja connu au lieu de le recreer", async () => {
     // Sans dedoublonnage, le modele sature la memoire de doublons.
     mockStorage.findSimilarMemoryFacts.mockResolvedValue({

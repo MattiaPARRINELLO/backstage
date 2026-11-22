@@ -11,6 +11,7 @@ export {
   defineAction,
   defineModule,
   ModuleIncompatibleError,
+  JOB_ID_PATTERN,
   MODULE_ID_PATTERN,
   TOOL_NAME_PATTERN,
   type ActionDefinition,

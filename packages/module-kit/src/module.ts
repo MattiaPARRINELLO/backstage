@@ -9,6 +9,8 @@ import { KERNEL_API } from "./version";
 export const MODULE_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
 /** Nom d'outil dans un module : snake_case, namespace par le module. */
 export const TOOL_NAME_PATTERN = /^[a-z][a-z0-9_]*$/;
+/** Identifiant de job : kebab-case, sert de segment URL dans `/api/cron/[job]`. */
+export const JOB_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
 const SEMVER_PATTERN = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
 
 /**
@@ -105,11 +107,23 @@ export interface ModuleDefinition {
 }
 
 /**
+ * Vrai si l'expression a exactement cinq champs non vides. Pas de parseur cron
+ * complet : le noyau ne planifie rien lui-meme, il valide ce qu'un module
+ * declare avant de le publier sur `/api/cron/[job]`.
+ */
+function hasFiveCronFields(cron: string): boolean {
+  if (typeof cron !== "string") return false;
+  const fields = cron.trim().split(/\s+/);
+  return fields.length === 5 && fields.every((field) => field.length > 0);
+}
+
+/**
  * Déclare un module.
  *
- * Vérifie ce qui relève de l'auteur (identifiant, version, noms d'outils) pour
- * échouer au plus tôt. Ne vérifie pas `apiVersion` : la compatibilité dépend du
- * noyau qui charge le module, c'est `assertCompatibleApiVersion` qui en décide.
+ * Vérifie ce qui relève de l'auteur (identifiant, version, noms d'outils,
+ * identifiants de jobs, expression cron) pour échouer au plus tôt. Ne vérifie
+ * pas `apiVersion` : la compatibilité dépend du noyau qui charge le module,
+ * c'est `assertCompatibleApiVersion` qui en décide.
  */
 export function defineModule(definition: ModuleDefinition): ModuleDefinition {
   const { id } = definition;
@@ -130,6 +144,29 @@ export function defineModule(definition: ModuleDefinition): ModuleDefinition {
   }
   if (definition.dependencies?.includes(id)) {
     throw new Error(`Module "${id}" : un module ne peut pas dependre de lui-meme.`);
+  }
+
+  const jobIds = new Set<string>();
+  for (const job of definition.jobs ?? []) {
+    if (!JOB_ID_PATTERN.test(job.id)) {
+      throw new Error(
+        `Module "${id}" : identifiant de job invalide "${job.id}". Attendu : kebab-case commencant par une lettre (ex: daily-brief).`
+      );
+    }
+    if (jobIds.has(job.id)) {
+      throw new Error(`Module "${id}" : job declare deux fois "${job.id}".`);
+    }
+    if (!hasFiveCronFields(job.cron)) {
+      throw new Error(
+        `Module "${id}" : job "${job.id}" a une expression cron invalide "${job.cron}". Attendu : cinq champs separes par des espaces (ex: "0 7 * * *").`
+      );
+    }
+    if (typeof job.handler !== "function") {
+      throw new Error(
+        `Module "${id}" : job "${job.id}" doit declarer un handler fonction.`
+      );
+    }
+    jobIds.add(job.id);
   }
 
   const seen = new Set<string>();

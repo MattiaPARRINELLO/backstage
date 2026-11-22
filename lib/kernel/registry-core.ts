@@ -77,6 +77,10 @@ export interface KernelRegistry {
   action(name: string): RegisteredAction | undefined;
   /** Comme `action`, mais lève si l'action n'existe pas ou n'est pas activée. */
   requireAction(name: string): RegisteredAction;
+  /** Job d'un module activé, par identifiant global. */
+  job(id: string): RegisteredJob | undefined;
+  /** Comme `job`, mais lève si le job n'existe pas ou n'est pas activé. */
+  requireJob(id: string): RegisteredJob;
 }
 
 export interface RegistryOptions {
@@ -138,7 +142,8 @@ function toRegisteredTool(owner: ModuleDefinition): RegisteredTool[] {
  *
  * Refuse au chargement, avec un message actionnable : deux modules du même
  * identifiant, une `apiVersion` que ce noyau ne comprend pas, une dépendance
- * absente ou désactivée, un cycle de dépendances.
+ * absente ou désactivée, un cycle de dépendances, deux modules activés qui
+ * déclarent le même job.
  */
 export function createRegistry(
   definitions: readonly ModuleDefinition[],
@@ -217,9 +222,23 @@ export function createRegistry(
         a.contribution.id.localeCompare(b.contribution.id)
     );
 
-  const jobs = enabled.flatMap((definition) =>
-    (definition.jobs ?? []).map((job) => ({ moduleId: definition.id, job }))
-  );
+  const jobs = enabled
+    .flatMap((definition) =>
+      (definition.jobs ?? []).map((job) => ({ moduleId: definition.id, job }))
+    )
+    .sort((a, b) => a.job.id.localeCompare(b.job.id));
+
+  const jobIndex = new Map<string, RegisteredJob>();
+  for (const entry of jobs) {
+    const existing = jobIndex.get(entry.job.id);
+    if (existing) {
+      throw new RegistryError(
+        `Le job "${entry.job.id}" est declare par les modules "${existing.moduleId}" et "${entry.moduleId}". ` +
+          `La route /api/cron/[job] est globale : renomme l'un des deux jobs.`
+      );
+    }
+    jobIndex.set(entry.job.id, entry);
+  }
 
   const actions = enabled
     .flatMap((definition) =>
@@ -281,6 +300,18 @@ export function createRegistry(
         );
       }
       return action;
+    },
+    job: (id) => jobIndex.get(id),
+    requireJob: (id) => {
+      const job = jobIndex.get(id);
+      if (!job) {
+        throw new RegistryError(
+          `Job "${id}" inconnu ou module desactive. Jobs disponibles : ${
+            [...jobIndex.keys()].join(", ") || "aucun"
+          }.`
+        );
+      }
+      return job;
     },
   };
 }

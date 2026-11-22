@@ -200,8 +200,45 @@ describe("createRegistry", () => {
     ]);
     expect(registry.jobs[0]?.job.id).toBe("sync");
     expect(registry.jobs[0]?.moduleId).toBe("reminders");
+    expect(registry.requireJob("sync").moduleId).toBe("reminders");
     expect(registry.railItems).toEqual([
       { moduleId: "reminders", label: "Rappels", icon },
     ]);
+  });
+
+  it("refuse deux modules actives qui declarent le meme job", () => {
+    expect(() =>
+      createRegistry([
+        module("reminders", {
+          jobs: [{ id: "sync", cron: "* * * * *", handler: async () => {} }],
+        }),
+        module("calendar", {
+          jobs: [{ id: "sync", cron: "0 * * * *", handler: async () => {} }],
+        }),
+      ])
+    ).toThrow(/job "sync".*"calendar".*"reminders"/);
+  });
+
+  it("n'expose pas les jobs d'un module desactive", () => {
+    const registry = createRegistry(
+      [
+        module("reminders", {
+          jobs: [{ id: "sync", cron: "* * * * *", handler: async () => {} }],
+        }),
+        module("calendar"),
+      ],
+      { enabled: ["calendar"] }
+    );
+    expect(registry.jobs).toEqual([]);
+    expect(registry.job("sync")).toBeUndefined();
+  });
+
+  it("requireJob leve en listant les jobs disponibles", () => {
+    const registry = createRegistry([
+      module("reminders", {
+        jobs: [{ id: "sync", cron: "* * * * *", handler: async () => {} }],
+      }),
+    ]);
+    expect(() => registry.requireJob("inconnu")).toThrow(/sync/);
   });
 });

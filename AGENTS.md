@@ -74,6 +74,7 @@ WebAuthn cassent sous Capacitor. Voir `docs/android-apk.md`.
 | Reset passkey     | `bun run reset:passkey`                       |
 | Module externe    | `bun run module:add <url>#<ref>`              |
 | Modules installés | `bun run module:list` / `module:doctor`       |
+| Jobs planifiés    | `bun run cron:list` / `cron:<job>`            |
 | APK Android       | `cd android && ./gradlew :app:assembleRelease`|
 
 ⚠️ `bun build` est le bundler Bun et **ne construit pas** l'app Next.
@@ -111,6 +112,7 @@ modules/
   accreditations/   scan des emails d'accréditation et fiches associées
   calendar/         Google Calendar (création externe, recherche non fiable)
   concerts/         concerts suivis et préparation terrain (non fiable)
+  daily-brief/      job du brief du jour (aucune page, aucun outil)
   emails/           Gmail (lecture non fiable, envoi confirmé)
   followups/        relances datées (écriture vérifiée par relecture)
   github/           issues GitHub (lecture non fiable, création externe)

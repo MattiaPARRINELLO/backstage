@@ -102,6 +102,7 @@ bun run test         # vitest (unit tests)
 bun run test:watch   # vitest (watch)
 bun run test:e2e     # playwright (e2e)
 bun run analyze      # build + bundle-analyzer
+bun run cron:list        # lignes de crontab des jobs des modules actives
 bun run cron:reminders   # déclencheur reminders (scripts/cron-scheduler.ts)
 bun run cron:daily-brief # déclencheur brief du matin
 bun run module:add <url>#<ref>  # installe un module externe (commit figé)

@@ -1,24 +1,58 @@
+import {
+  crontabLines,
+  parseCronJobs,
+  requireCronJob,
+  type CronJobInfo,
+} from "../lib/cron-jobs";
+
 const args = process.argv.slice(2);
 const job = args[0];
-
-if (!job || !["reminders", "daily-brief"].includes(job)) {
-  console.error("Usage: bun scripts/cron-scheduler.ts <reminders|daily-brief>");
-  process.exit(1);
-}
 
 const BASE_URL = process.env.CRON_BASE_URL || "http://localhost:3000";
 const CRON_SECRET = process.env.CRON_SECRET;
 
-async function main() {
-  const url = `${BASE_URL}/api/cron/${job}`;
+function headers(): Record<string, string> {
+  const value: Record<string, string> = { "Content-Type": "application/json" };
+  if (CRON_SECRET) value["x-cron-secret"] = CRON_SECRET;
+  return value;
+}
 
-  console.log(`[cron] Appel ${url}...`);
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (CRON_SECRET) {
-    headers["x-cron-secret"] = CRON_SECRET;
+async function fetchJobs(): Promise<CronJobInfo[]> {
+  const res = await fetch(`${BASE_URL}/api/cron`, { headers: headers() });
+  if (!res.ok) {
+    throw new Error(`GET /api/cron a echoue (HTTP ${res.status}).`);
+  }
+  return parseCronJobs(await res.json());
+}
+
+function printUsage(jobs: readonly CronJobInfo[]): void {
+  console.error("Usage: bun scripts/cron-scheduler.ts <job>");
+  console.error("       bun scripts/cron-scheduler.ts --list");
+  console.error(
+    `Jobs disponibles : ${
+      jobs.map((entry) => `${entry.id} (${entry.cron})`).join(", ") || "aucun"
+    }`
+  );
+}
+
+async function main() {
+  if (!job || job === "--help") {
+    printUsage(await fetchJobs());
+    process.exit(1);
   }
 
-  const res = await fetch(url, { method: "POST", headers });
+  const jobs = await fetchJobs();
+
+  if (job === "--list") {
+    console.log(crontabLines(jobs, BASE_URL).join("\n"));
+    return;
+  }
+
+  const entry = requireCronJob(jobs, job);
+  const url = `${BASE_URL}/api/cron/${entry.id}`;
+
+  console.log(`[cron] Appel ${url}...`);
+  const res = await fetch(url, { method: "POST", headers: headers() });
 
   if (!res.ok) {
     const body = await res.text();
@@ -31,6 +65,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("[cron] Erreur:", err);
+  console.error("[cron] Erreur:", err instanceof Error ? err.message : err);
   process.exit(1);
 });

@@ -85,15 +85,27 @@ refusé (503) en production.
 
 ## 5. Tâches planifiées
 
-```cron
-# Rappels (notifications) — toutes les minutes
-* * * * * curl -s -H "x-cron-secret: VOTRE_CRON_SECRET" https://VOTRE-DOMAINE/api/cron/reminders >/dev/null
+Les jobs sont declares par les modules. `bun run cron:list` imprime les lignes a
+coller dans cPanel, avec l'URL `CRON_BASE_URL` et le secret `$CRON_SECRET` :
 
-# Brief du jour — 7h00
-0 7 * * * curl -s -H "x-cron-secret: VOTRE_CRON_SECRET" https://VOTRE-DOMAINE/api/cron/daily-brief >/dev/null
+```bash
+CRON_BASE_URL=https://VOTRE-DOMAINE bun run cron:list
 ```
 
-Si `CRON_SECRET` est vide, les deux routes répondent `401`.
+Exemple pour les deux jobs livres (les identifiants viennent des manifestes) :
+
+```cron
+# Rappels (notifications) - toutes les minutes
+* * * * * curl -s -H "x-cron-secret: $CRON_SECRET" https://VOTRE-DOMAINE/api/cron/reminders >/dev/null
+
+# Brief du jour - 7h00
+0 7 * * * curl -s -H "x-cron-secret: $CRON_SECRET" https://VOTRE-DOMAINE/api/cron/daily-brief >/dev/null
+```
+
+Le cron cPanel doit definir `CRON_SECRET`, ou remplacer `$CRON_SECRET` par sa
+valeur. Sans secret en production, `POST /api/cron/[job]` et `GET /api/cron`
+repondent `401`. Un job inconnu ou appartenant a un module desactive repond
+`404`.
 
 ## 6. Rollback
 

@@ -50,11 +50,9 @@ vi.mock("@/lib/google-actions", () => mockGoogleActions);
 const {
   executeTool,
   runTool,
-  REQUIRE_CONFIRMATION,
   ACTION_BLOCKED_PREFIX,
-  UNTRUSTED_TOOLS,
-  WRITE_TOOLS,
   toolPolicy,
+  tools,
   pendingActionKey,
   registerPendingAction,
   hasPendingAction,
@@ -76,32 +74,33 @@ describe("chat-tools — confirmation des actions IA", () => {
     expect(toolPolicy("send_email_response").requiresConfirmation).toBe(true);
     // Exception permanente : un fait piege est reinjecte dans le prompt des
     // tours suivants, donc add_memory_fact est gate lui aussi.
-    expect(REQUIRE_CONFIRMATION.has("add_memory_fact")).toBe(true);
+    expect(toolPolicy("add_memory_fact").requiresConfirmation).toBe(true);
     // Calendrier, rappels, scan, lectures : exécution directe sans confirmation.
-    expect(REQUIRE_CONFIRMATION.has("calendar.create")).toBe(false);
-    expect(REQUIRE_CONFIRMATION.has("calendar.update")).toBe(false);
-    expect(REQUIRE_CONFIRMATION.has("calendar.delete")).toBe(false);
-    expect(REQUIRE_CONFIRMATION.has("schedule_followup")).toBe(false);
+    expect(toolPolicy("calendar.create").requiresConfirmation).toBe(false);
+    expect(toolPolicy("calendar.update").requiresConfirmation).toBe(false);
+    expect(toolPolicy("calendar.delete").requiresConfirmation).toBe(false);
+    expect(toolPolicy("schedule_followup").requiresConfirmation).toBe(false);
     // Le scan des accréditations (analyse d'emails) et les lectures seules ne
     // demandent pas de confirmation.
-    expect(REQUIRE_CONFIRMATION.has("accreditations.scan")).toBe(false);
+    expect(toolPolicy("accreditations.scan").requiresConfirmation).toBe(false);
     // Les lectures seules ne demandent pas de confirmation.
-    expect(REQUIRE_CONFIRMATION.has("web_search")).toBe(false);
-    expect(REQUIRE_CONFIRMATION.has("list_reminders")).toBe(false);
+    expect(toolPolicy("web_search").requiresConfirmation).toBe(false);
+    expect(toolPolicy("list_reminders").requiresConfirmation).toBe(false);
   });
 
-  it("déclare confirmable exactement ce que le chat peut mettre en attente", async () => {
-    const { CONFIRMABLE_TOOLS } = await import("@/lib/chat-tools");
-    for (const name of REQUIRE_CONFIRMATION) {
-      expect(CONFIRMABLE_TOOLS.has(name)).toBe(true);
-    }
-    for (const name of WRITE_TOOLS) {
-      expect(CONFIRMABLE_TOOLS.has(name)).toBe(true);
+  it("déclare confirmable exactement ce que le chat peut mettre en attente", () => {
+    // La politique est dérivée de la déclaration : toute écriture et toute
+    // action qui exige une confirmation reste déblocable par l'utilisateur.
+    for (const tool of tools) {
+      const policy = toolPolicy(tool.name);
+      if (policy.write || policy.requiresConfirmation) {
+        expect(policy.confirmable, tool.name).toBe(true);
+      }
     }
     // Les lectures ne deviennent jamais confirmables : pas de porte
     // d'exécution arbitraire via /api/chat/confirm[-batch].
-    expect(CONFIRMABLE_TOOLS.has("web_search")).toBe(false);
-    expect(CONFIRMABLE_TOOLS.has("list_reminders")).toBe(false);
+    expect(toolPolicy("web_search").confirmable).toBe(false);
+    expect(toolPolicy("list_reminders").confirmable).toBe(false);
   });
 
   it("bloque l'envoi d'email sans confirmation et n'exécute pas l'action", async () => {
@@ -561,8 +560,8 @@ describe("chat-tools — classement provenance des outils", () => {
     expect(toolPolicy("emails.triage").untrusted).toBe(true);
     expect(toolPolicy("triage_emails").untrusted).toBe(true);
     // Lecture de donnees locales : fiable.
-    expect(UNTRUSTED_TOOLS.has("reminders.list")).toBe(false);
-    expect(UNTRUSTED_TOOLS.has("get_schedule")).toBe(false);
+    expect(toolPolicy("reminders.list").untrusted).toBe(false);
+    expect(toolPolicy("get_schedule").untrusted).toBe(false);
   });
 
   it("classe toutes les ecritures, d'ou qu'elles viennent", async () => {

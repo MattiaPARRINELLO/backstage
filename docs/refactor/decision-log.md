@@ -216,7 +216,7 @@ le dispatch et une part de deux fichiers partagés.
 | `lib/types/reminders.ts` | 23 |
 | `app/reminders/PermissionPill.tsx` | 38 |
 | 4 routes `app/api/reminders/**` | 91 |
-| 1 route `app/api/cron/reminders/route.ts` | 18 |
+| 1 route `app/api/cron/[job]/route.ts` (generique depuis #206) | 18 |
 | 2 fichiers de tests | 176 |
 
 S'y ajoutent `lib/reminder-sync.ts` (123 lignes, dédié) et une part de

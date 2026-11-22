@@ -13,6 +13,7 @@ describe("registre actif", () => {
       "accreditations",
       "calendar",
       "concerts",
+      "daily-brief",
       "emails",
       "followups",
       "github",
@@ -30,6 +31,7 @@ describe("registre actif", () => {
       "accreditations",
       "calendar",
       "concerts",
+      "daily-brief",
       "emails",
       "followups",
       "github",
@@ -75,5 +77,12 @@ describe("registre actif", () => {
     expect(registry.requireTool("reminders.add").confirmable).toBe(true);
     expect(registry.requireTool("reminders.add").requiresConfirmation).toBe(false);
     expect(registry.requireTool("reminders.list").confirmable).toBe(false);
+  });
+
+  it("expose les jobs declares par les modules actives", () => {
+    expect(registry.jobs.map((entry) => `${entry.moduleId}.${entry.job.id}`)).toEqual([
+      "daily-brief.daily-brief",
+      "reminders.reminders",
+    ]);
   });
 });

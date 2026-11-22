@@ -159,7 +159,7 @@ serveur à l'initiation et renvoyé dans un cookie `httpOnly` `pb_oauth_state`
 | Helper                  | Fichier             | Consommé par                           |
 | ----------------------- | ------------------- | -------------------------------------- |
 | `checkRateLimit(key)`   | `lib/rate-limit.ts` | `app/api/chat/route.ts` **uniquement** |
-| `isAuthorizedCron(req)` | `lib/cron-auth.ts`  | les 2 routes `/api/cron/*`             |
+| `isAuthorizedCron(req)` | `lib/cron-auth.ts`  | `/api/cron` et `/api/cron/[job]`       |
 
 ⚠️ **Dette connue** : pas de protection CSRF active (seule atténuation :
 `SameSite=lax`). Les Server Actions ne sont pas rate-limitées. Si tu ajoutes une
@@ -501,6 +501,49 @@ commit réel est figé dans le lock : une branche n'est jamais une version.
   dans le processus serveur. Il peut lire `.env.local` et `data/`. Les capacités
   déclarées sont affichées à l'installation, jamais appliquées. Ce n'est pas une
   sandbox (ADR 0001, décision K).
+
+## Jobs de module (`/api/cron`)
+
+Un module declare ses taches periodiques dans son manifeste, avec un
+identifiant, une expression cron a cinq champs et un handler :
+
+```ts
+jobs: [
+  { id: "reminders", cron: "* * * * *", handler: async (ctx) => { /* ... */ } },
+]
+```
+
+Aucune liste de noms ne vit dans le noyau. `defineModule` valide chaque job et
+`createRegistry` refuse qu'un identifiant de job soit declare par deux modules
+actives, puisque la route est globale.
+
+La validation de l'expression cron se limite a cinq champs non vides : le noyau
+ne planifie rien et ne verifie ni les bornes ni la syntaxe de chaque champ. Une
+expression incoherente passe donc le chargement, mais la crontab de l'hebergeur
+la refusera.
+
+- `POST /api/cron/[job]` execute `job.handler(createModuleContext(moduleId))`.
+  `isAuthorizedCron` impose `x-cron-secret` ou `Authorization: Bearer` ; sans
+  `CRON_SECRET`, l'appel local reste autorise hors production. Job inconnu ou
+  module desactive : `404`. Handler qui leve : `500` journalise avec
+  `serverLog("cron/<job>", ...)`.
+- `GET /api/cron` renvoie `[{ id, cron, moduleId }]` des seuls modules actives,
+  meme protection. `scripts/cron-scheduler.ts` s'en sert pour valider le nom
+  demande : aucun job n'y est code en dur.
+- `bun run cron:list` imprime une ligne de crontab par job. `bun run
+  cron:reminders` et `bun run cron:daily-brief` restent des raccourcis valides.
+- Le contexte de module ne porte pas la requete HTTP. Le job `daily-brief`
+  appelle donc `triggerDailyBrief("cron")` sans IP : le detail d'activite ne
+  journalise plus l'IP d'origine du cron, perte assumee et sans effet sur
+  l'anti-doublon.
+- `daily-brief` n'appartenait a aucun module avant #206. Il devient un module
+  minimal (`modules/daily-brief/`), sans page ni outil : un module desactive ne
+  publie donc aucun job, et le noyau n'a pas d'exception `coreJobs`.
+- Variables : `CRON_SECRET` (obligatoire en production), `CRON_BASE_URL` pour le
+  script. Le noyau ne planifie rien lui-meme : la crontab de l'hebergeur appelle
+  les routes.
+- Limites v1 (ADR 0001, decision I) : pas de file durable, pas de reprise apres
+  redemarrage, pas de retry applicatif, pas d'observabilite dediee des jobs.
 
 ## Emploi du temps CESAR (`lib/cesar-client.ts`)
 

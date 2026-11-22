@@ -125,8 +125,9 @@ serveur à l'initiation et renvoyé dans un cookie `httpOnly` `pb_oauth_state`
 
 - `/api/chat/confirm` — **exécute les outils IA à effet externe après
   confirmation utilisateur** (bouton Confirmer/Annuler dans le chat). Session
-  requise ; seuls les outils de `CONFIRMABLE_TOOLS` (`REQUIRE_CONFIRMATION` +
-  `WRITE_TOOLS`, `lib/chat-tools.ts`) sont exécutables, et uniquement s'ils ont
+  requise ; seuls les outils dont `toolPolicy(name).confirmable` est vrai
+  (`write` ou `external`, `lib/kernel/tool-policy.ts`) sont exécutables, et
+  uniquement s'ils ont
   été enregistrés par le serveur dans le registre d'actions en attente (usage
   unique, arguments figés). Journalise dans `activity.json` (`ai_action`). Le
   modèle ne peut jamais s'auto-confirmer.
@@ -362,10 +363,15 @@ réponse : une ligne repliée, un rail vertical une fois ouvert.
 d'une exécution d'outil : `ok` / `error` / `empty` / `blocked`.
 
 - `runTool(name, args, confirmed)` (`lib/chat-tools.ts`) est le **point d'entrée
-  unique** : il appelle `executeTool`, classifie le texte (`classifyToolText` :
-  « Erreur », « introuvable », « inconnu », « ACTION_BLOCKED »…) et renvoie
-  `{ status, text, rendered }`. Le texte envoyé au modèle est préfixé
-  `[OK]` / `[ERREUR]` / `[VIDE]` / `[BLOQUE]`.
+  unique** : il résout l'outil (module ou noyau), lit la politique dérivée de sa
+  déclaration, et renvoie `{ status, text, rendered }`. Le statut vient du
+  `ToolOutput` de la déclaration, jamais d'une lecture du texte. Le texte envoyé
+  au modèle est préfixé `[OK]` / `[ERREUR]` / `[VIDE]` / `[BLOQUE]`.
+- Un outil du noyau est une **déclaration** (`lib/kernel/core-tools.ts`), pas un
+  `case` : il porte nom, description, schéma Zod, `sideEffect`, confirmation et
+  `run`, avec le contrat `defineTool` de `@backstage/module-kit`. Un outil de
+  module fait de même dans son manifeste. `lib/chat-tools.ts` ne garde que la
+  liste, la résolution et l'exécution.
 - Les écritures locales (rappel, relance via `followups.schedule`, watch-later, mémoire, shooting) sont
   **vérifiées par relecture** (`verifyWrite`) : si l'élément n'est pas
   retrouvé après enregistrement, l'outil renvoie une erreur. C'est ce qui
@@ -376,10 +382,10 @@ d'une exécution d'outil : `ok` / `error` / `empty` / `blocked`.
   `[OK]`.
 - `/api/chat/confirm-batch` dérive `ok` du **statut**, plus du texte : un
   résultat « Rappel introuvable. » sans exception est affiché comme un échec.
-  Il accepte tout `CONFIRMABLE_TOOLS` (et non les seuls outils de
-  `REQUIRE_CONFIRMATION`) : sans cela, une écriture bloquée pour cause de
-  provenance répondait « Action non confirmable » et restait impossible à
-  valider (#124).
+  Il accepte tout outil dont `toolPolicy(name).confirmable` est vrai (et non les
+  seuls outils à confirmation permanente) : sans cela, une écriture bloquée pour
+  cause de provenance répondait « Action non confirmable » et restait impossible
+  à valider (#124).
 - Après une confirmation, le client reporte le résultat sur l'appel d'outil
   concerné (`status: "success"`), puis transmet au tour suivant un bloc
   `actionContext` limité aux **outils à effet de bord** (`SIDE_EFFECT_TOOL_NAMES`
@@ -392,7 +398,7 @@ d'une exécution d'outil : `ok` / `error` / `empty` / `blocked`.
 relecture. Tout nouvel consommateur doit utiliser le statut, jamais une
 recherche de sous-chaîne dans le texte.
 
-### Provenance des écritures (`UNTRUSTED_TOOLS` / `WRITE_TOOLS`)
+### Provenance des écritures (politique dérivée des déclarations)
 
 La politique produit ne généralise pas les confirmations : seul
 `send_email_response` est sensible par nature. En revanche, une écriture
@@ -400,13 +406,15 @@ La politique produit ne généralise pas les confirmations : seul
 description d'événement) ne peut pas être distinguée d'une demande utilisateur
 par le seul texte du modèle. Le serveur la gate donc :
 
-- `UNTRUSTED_TOOLS` ne contient plus aucun outil : la provenance de chaque
-  lecture externe vient de son manifeste (`weather.get`, `github.list_issues`,
-  `web.search`, `web.page_meta`, `concerts.list`, `concerts.prepare`,
-  `calendar.search`, `emails.search`, `emails.triage` sont
-  `trust: "untrusted"`).
-- `WRITE_TOOLS` = outils qui modifient des données (rappels, calendrier,
-  shootings, accréditations, watch-later, mémoire, issue GitHub, email).
+- `toolPolicy(name)` (`lib/kernel/tool-policy.ts`) est la seule question à
+  poser. Elle lit la déclaration : `sideEffect`, `trust` et
+  `requiresConfirmation` pour un module via son manifeste, pour le noyau via
+  `lib/kernel/core-tools.ts`. Aucun `Set` de noms ne subsiste dans le noyau.
+- La provenance de chaque lecture externe vient de son manifeste
+  (`weather.get`, `github.list_issues`, `web.search`, `web.page_meta`,
+  `concerts.list`, `concerts.prepare`, `calendar.search`, `emails.search`,
+  `emails.triage` sont `trust: "untrusted"`).
+- Une écriture (`sideEffect: "write"`) est sensible à la provenance du tour.
 - Le taint est calculé **sans état serveur** : tout `<tool_result
   name="...">` d'un outil non fiable présent dans les messages reçus, ou tout
   appel non fiable du lot courant, contamine le tour. Il s'accumule sur les
@@ -416,9 +424,11 @@ par le seul texte du modèle. Le serveur la gate donc :
   dans le registre d'actions en attente avec `reason: "provenance"` et proposée
   via une carte de confirmation. Sans contenu externe, `add_reminder` et
   `create_calendar_event` restent directs.
-- Exception permanente : `add_memory_fact` est dans `REQUIRE_CONFIRMATION`
-  (`reason: "policy"`), car un fait piégé est réinjecté dans le prompt système
-  des tours suivants.
+- Exception permanente (ADR 0001, décision J) : `add_memory_fact` déclare
+  `requiresConfirmation: true` (`reason: "policy"`), car un fait piégé est
+  réinjecté dans le prompt système des tours suivants. L'outil reste au noyau
+  en v1 ; le déplacer sans rouvrir la décision n'est pas une refactorisation,
+  c'est un changement de modèle.
 - `lib/chat-prompts.ts` place les faits mémorisés **sous** l'avertissement
   « contenu non fiable », dans `<memory_facts source="donnees">`. Ce n'est pas
   un contrôle d'autorisation : l'autorisation est dans `app/api/chat/route.ts`.
@@ -576,7 +586,7 @@ Ne jamais réintroduire Playwright ici : ça casse la prod standalone.
   registre `data/live-notifs.json`, qui sert d'anti-doublon et de source pour la
   fermeture.
 - Chat : outil **lecture seule** `get_schedule` (`scope: today|week|next`,
-  `subject` optionnel) — jamais dans `REQUIRE_CONFIRMATION`.
+  `subject` optionnel) — jamais confirmable, il déclare `sideEffect: "read"`.
 - Daily brief : bloc « Cours du jour » + instruction de citer la salle du
   prochain cours.
 

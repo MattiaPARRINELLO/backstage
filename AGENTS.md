@@ -103,8 +103,7 @@ lib/
   config.ts         lecteur unique de process.env (schéma Zod, démarrage)
   chat-runs.ts      registre des générations de chat
   cesar-client.ts   CESAR, fetch HTTP pur
-  kernel/           registre, actions, pont d'outils, politique, actions en attente
-  legacy-tools/     schémas et exécution des outils pas encore migrés (transitoire)
+  kernel/           registre, actions, pont d'outils, outils noyau, politique, actions en attente
 packages/
   module-kit/       contrat de module : defineModule, defineTool, defineAction (#84)
 modules/

@@ -150,23 +150,17 @@ externe : `lib/storage/reminders.ts`.
 
 ## 6. Ajouter un outil IA
 
-1. Declarer l'outil dans `lib/chat-tools.ts`.
+1. Declarer l'outil : `defineTool` dans `lib/kernel/core-tools.ts` pour un
+   outil du noyau, ou dans le manifeste d'un module.
 2. Toute ecriture passe par `runTool` et se verifie par relecture.
-3. Un outil a effet externe (mail, calendrier, suppression) s'ajoute a
-   `REQUIRE_CONFIRMATION` ; toute ecriture s'ajoute a `WRITE_TOOLS`. Les deux
-   ensembles composent `CONFIRMABLE_TOOLS`, la seule liste que
-   `/api/chat/confirm[-batch]` accepte de rejouer.
+3. La politique n'a plus de liste : `sideEffect` (`write`, `external`),
+   `trust` et `requiresConfirmation` de la declaration suffisent. `write` et
+   `external` restent confirmables par provenance ; seul `external` exige une
+   confirmation par defaut.
 4. Ajouter le statut `ok` / `error` / `empty` / `blocked` et un test.
 5. Documenter le comportement dans `docs/architecture.md`.
 
 Le detail des invariants est dans `docs/architecture.md` (section Chat).
-
-**Chantier #84 en cours** : un outil declarera son effet (`sideEffect`) et sa
-fiabilite (`trust`) dans sa definition, et les listes `REQUIRE_CONFIRMATION`,
-`WRITE_TOOLS` et `CONFIRMABLE_TOOLS` disparaitront. Le contrat est deja ecrit
-dans [le kit de modules](../../packages/module-kit/src/tool.ts) et tranche dans
-[l'ADR 0001](../adr/0001-noyau-modulaire.md). Tant que la phase 6 n'est pas
-livree, la procedure ci-dessus reste la seule qui s'applique.
 
 ### Ajouter un module (#84)
 

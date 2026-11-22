@@ -22,7 +22,7 @@ const TOOL_RESULT_NAME_PATTERN = /<tool_result\s+name="([^"]+)"/g;
 /**
  * Le tour est-il contamine par du contenu tiers deja present dans les messages
  * recus ? Detection sans etat serveur : tout `<tool_result name="...">` portant
- * un nom de `UNTRUSTED_TOOLS` suffit, meme sur un message utilisateur
+ * le nom d'un outil declare `trust: "untrusted"` suffit, meme sur un message utilisateur
  * posterieur (l'historique reste contamine tant que le contenu y figure).
  */
 function historyHasUntrustedToolResult(messages: ChatRequestMessage[]): boolean {

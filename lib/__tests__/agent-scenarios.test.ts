@@ -23,13 +23,17 @@
 import { describe, expect, it } from "vitest";
 import {
   ACTION_BLOCKED_PREFIX,
-  REQUIRE_CONFIRMATION,
-  WRITE_TOOLS,
   executeTool,
   toolPolicy,
   tools,
 } from "@/lib/chat-tools";
 import { SIDE_EFFECT_TOOL_NAMES } from "@/lib/tool-result";
+
+// Dérivés des déclarations, jamais d'une liste de noms tenue à la main : un
+// outil qui devient une écriture entre dans ces scénarios sans édition.
+const writeToolNames = tools
+  .filter((tool) => toolPolicy(tool.name).write)
+  .map((tool) => tool.name);
 
 interface AgentScenario {
   /** Intention utilisateur, telle qu'elle serait tapee dans le chat. */
@@ -138,7 +142,7 @@ const scenarios: AgentScenario[] = [
   {
     intent: "bonjour, comment vas-tu ?",
     expectedTool: null,
-    forbidTools: [...WRITE_TOOLS, "send_email_response", "emails.reply"],
+    forbidTools: [...writeToolNames, "send_email_response", "emails.reply"],
   },
   {
     intent: "supprime l'evenement de demain dans mon agenda",
@@ -244,7 +248,7 @@ describe("scenarios dores", () => {
           expect(policy.write || policy.requiresConfirmation, forbidden).toBe(true);
         }
         expect(scenario.forbidTools).toEqual(
-          expect.arrayContaining([...WRITE_TOOLS, "emails.reply"])
+          expect.arrayContaining([...writeToolNames, "emails.reply"])
         );
         return;
       }
@@ -266,8 +270,8 @@ describe("scenarios dores", () => {
 
       // Effet de bord : un scenario en lecture seule ne peut pas ecrire.
       if (!scenario.writes) {
-        expect(WRITE_TOOLS.has(scenario.expectedTool)).toBe(false);
-        expect(REQUIRE_CONFIRMATION.has(scenario.expectedTool)).toBe(false);
+        expect(toolPolicy(scenario.expectedTool).write).toBe(false);
+        expect(toolPolicy(scenario.expectedTool).requiresConfirmation).toBe(false);
         if (!scenario.externalRead) {
           expect(SIDE_EFFECT_TOOL_NAMES.has(scenario.expectedTool)).toBe(false);
         }

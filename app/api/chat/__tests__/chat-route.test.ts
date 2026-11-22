@@ -55,9 +55,6 @@ vi.mock("@/lib/chat-tools", () => {
   ]);
   return {
     tools: [],
-    REQUIRE_CONFIRMATION: requireConfirmation,
-    UNTRUSTED_TOOLS: untrusted,
-    WRITE_TOOLS: writes,
     // Le route ne lit plus les ensembles directement : elle interroge la
     // politique, qui reste ici le miroir des ensembles mockes.
     toolPolicy: (name: string) => ({

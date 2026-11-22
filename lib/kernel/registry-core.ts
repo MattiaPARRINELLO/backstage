@@ -13,6 +13,8 @@ import {
   type PromptContribution,
 } from "@backstage/module-kit";
 
+import { parseCron } from "./cron";
+
 /**
  * Registre des modules : la seule structure qui sait quels outils existent.
  *
@@ -230,6 +232,15 @@ export function createRegistry(
 
   const jobIndex = new Map<string, RegisteredJob>();
   for (const entry of jobs) {
+    try {
+      parseCron(entry.job.cron);
+    } catch (error) {
+      throw new RegistryError(
+        `Le job "${entry.job.id}" du module "${entry.moduleId}" a une expression cron invalide : ` +
+          `${error instanceof Error ? error.message : String(error)}.`
+      );
+    }
+
     const existing = jobIndex.get(entry.job.id);
     if (existing) {
       throw new RegistryError(

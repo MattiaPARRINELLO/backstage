@@ -94,14 +94,18 @@ l'URL `CRON_BASE_URL` et le secret `$CRON_SECRET` :
 CRON_BASE_URL=https://VOTRE-DOMAINE bun run cron:list
 ```
 
-Exemple pour les deux jobs livres (les identifiants viennent des manifestes) :
+Exemple pour les jobs livres (les identifiants viennent des manifestes, et
+`cron:list` imprime la liste complete) :
 
 ```cron
-# Rappels (notifications) - toutes les minutes
+# Rappels et relances - toutes les minutes
 * * * * * curl -fsS -X POST -H "x-cron-secret: $CRON_SECRET" https://VOTRE-DOMAINE/api/cron/reminders >/dev/null
 
-# Brief du jour - 7h00
-0 7 * * * curl -fsS -X POST -H "x-cron-secret: $CRON_SECRET" https://VOTRE-DOMAINE/api/cron/daily-brief >/dev/null
+# Emploi du temps : notifications de cours et synchronisation CESAR
+* * * * * curl -fsS -X POST -H "x-cron-secret: $CRON_SECRET" https://VOTRE-DOMAINE/api/cron/schedule-notifications >/dev/null
+
+# Brief du jour - fenetre de 7h a 7h59, l'anti-doublon n'en envoie qu'un
+* 7 * * * curl -fsS -X POST -H "x-cron-secret: $CRON_SECRET" https://VOTRE-DOMAINE/api/cron/daily-brief >/dev/null
 ```
 
 Les routes sont en `POST` uniquement : sans `-X POST`, cPanel recoit un `405`.

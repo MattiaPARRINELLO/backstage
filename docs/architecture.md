@@ -523,14 +523,43 @@ jobs: [
 ]
 ```
 
-Aucune liste de noms ne vit dans le noyau. `defineModule` valide chaque job et
-`createRegistry` refuse qu'un identifiant de job soit declare par deux modules
-actives, puisque la route est globale.
+Aucune liste de noms ne vit dans le noyau. `defineModule` valide la forme du
+job (identifiant, cinq champs cron, handler fonction) et `createRegistry` refuse
+qu'un identifiant de job soit declare par deux modules actives, puisque la route
+est globale. `createRegistry` analyse aussi l'expression cron (`lib/kernel/cron.ts`)
+et rejette au chargement une borne hors plage, une plage inversee ou un pas nul :
+un job incoherent ne peut pas demarrer silencieusement.
 
-La validation de l'expression cron se limite a cinq champs non vides : le noyau
-ne planifie rien et ne verifie ni les bornes ni la syntaxe de chaque champ. Une
-expression incoherente passe donc le chargement, mais la crontab de l'hebergeur
-la refusera.
+### Evaluateur cron et runner en processus
+
+- `lib/kernel/cron.ts` est un evaluateur **pur**, a cinq champs, sans dependance :
+  `*`, valeur, liste `a,b`, plage `a-b`, pas `*/n` ou `a-b/n`, jour de la semaine
+  0-6 avec 7 accepte comme dimanche. Il lit l'heure **locale du serveur** (memes
+  getters que `Date`), comme la crontab de l'hebergeur. Quand jour-du-mois et
+  jour-de-la-semaine sont tous deux restreints, ils se combinent en OU.
+- `lib/kernel/job-runner.ts` recoit `registry.jobs`, selectionne a chaque tick de
+  60 s les jobs dont le cron correspond, et execute
+  `job.handler(createModuleContext(moduleId))`. Garde-fous : un job deja en cours
+  n'est pas relance, une erreur est journalisee (`[jobs] ...`) sans arreter les
+  autres jobs du tick, `stop()` arrete la cadence (un job en vol se termine).
+- `startScheduler(jobs)` (`lib/notification-scheduler.ts`) ne cite **aucun nom de
+  job** : il verifie VAPID (le web push seulement, les notifs natives n'en ont
+  pas besoin), demarre le runner sur les jobs recus et c'est tout.
+  `instrumentation.ts` lui passe `registry.jobs` ; le scheduler n'importe pas le
+  registre, ce qui evite un cycle modules -> scheduler -> registre -> modules.
+
+### Deux declencheurs, handlers idempotents
+
+Le runner en processus et `POST /api/cron/[job]` peuvent tous deux declencher le
+meme job a la meme minute. Les deux chemins sont conserves (decision de #207) :
+le runner est le filet quand l'hebergeur ne fournit pas de crontab, et la route
+reste necessaire pour un declenchement externe (cPanel, `bun run cron:...`).
+Le noyau ne choisit pas a la place des handlers : **tout handler de job doit
+etre idempotent**. C'est deja le cas la ou le double declenchement compte :
+`triggerDailyBrief` n'envoie qu'une fois par jour, les rappels et cours
+s'appuient sur le registre `data/live-notifs.json` et la marque `sent`, et
+`syncScheduleIfStale` ne synchronise que des donnees perimees. Un nouvel handler
+doit apporter la meme garantie ou accepter un double effet documente.
 
 - `POST /api/cron/[job]` execute `job.handler(createModuleContext(moduleId))`.
   `isAuthorizedCron` impose `x-cron-secret` ou `Authorization: Bearer` ; sans
@@ -542,6 +571,12 @@ la refusera.
   demande : aucun job n'y est code en dur.
 - `bun run cron:list` imprime une ligne de crontab par job. `bun run
   cron:reminders` et `bun run cron:daily-brief` restent des raccourcis valides.
+- Jobs actuels : `reminders` (rappels et relances, chaque minute),
+  `daily-brief` (`* 7 * * *`, fenetre d'une heure pour ne pas perdre le brief
+  sur un tick en retard, l'anti-doublon n'en envoyant qu'un), `schedule-notifications` (notifications de cours
+  et synchronisation CESAR, chaque minute). `checkScheduleNotifs` et
+  `syncScheduleIfStale` appartiennent au module `schedule`, pas au job
+  `reminders` : un module desactive ne publie donc ni page, ni outil, ni job.
 - Le contexte de module ne porte pas la requete HTTP. Le job `daily-brief`
   appelle donc `triggerDailyBrief("cron")` sans IP : le detail d'activite ne
   journalise plus l'IP d'origine du cron, perte assumee et sans effet sur
@@ -550,8 +585,7 @@ la refusera.
   minimal (`modules/daily-brief/`), sans page ni outil : un module desactive ne
   publie donc aucun job, et le noyau n'a pas d'exception `coreJobs`.
 - Variables : `CRON_SECRET` (obligatoire en production), `CRON_BASE_URL` pour le
-  script. Le noyau ne planifie rien lui-meme : la crontab de l'hebergeur appelle
-  les routes.
+  script.
 - Limites v1 (ADR 0001, decision I) : pas de file durable, pas de reprise apres
   redemarrage, pas de retry applicatif, pas d'observabilite dediee des jobs.
 
@@ -660,8 +694,8 @@ Update).
   d'appareil, stocké **haché** (`data/fcm-devices.json`). Ne jamais remplacer ça
   par un secret d'appairage partagé dans l'APK : il ouvrirait les notifications
   privées à quiconque l'extrait.
-- **Anti-doublon du brief** : le cron cPanel (`0 7 * * *`) et le scheduler
-  interne visent la même minute ; `triggerDailyBrief` n'envoie qu'une fois par
+- **Anti-doublon du brief** : le cron cPanel (`* 7 * * *`) et le scheduler
+  interne visent la même fenêtre ; `triggerDailyBrief` n'envoie qu'une fois par
   jour (`data/notified-briefs.json`, 7 jours d'historique) sauf source
   `page-test`, qui reste un renvoi manuel volontaire. Le marquage n'a lieu que
   si l'envoi a réellement abouti.

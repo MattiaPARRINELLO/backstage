@@ -83,6 +83,7 @@ describe("registre actif", () => {
     expect(registry.jobs.map((entry) => `${entry.moduleId}.${entry.job.id}`)).toEqual([
       "daily-brief.daily-brief",
       "reminders.reminders",
+      "schedule.schedule-notifications",
     ]);
   });
 });

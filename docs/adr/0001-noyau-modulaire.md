@@ -224,8 +224,7 @@ pas reportée. La mémoire est traversante par nature : elle construit le prompt
 de chaque tour (`lib/chat-prompts.ts`), elle extrait les faits de chaque réponse
 après streaming (`lib/memory-autosave.ts` appelé par `app/api/chat/route.ts`),
 et son outil d'écriture est une exception permanente de la politique de
-confirmation (`lib/kernel/core-tools.ts`). Un module ne peut pas
-occuper ce
+confirmation (`lib/kernel/core-tools.ts`). Un module ne peut pas occuper ce
 point sans devenir un prérequis du chat lui-même, donc sans redevenir du noyau
 sous un autre nom. Le découpage retenu est interne : la persistance est isolée
 dans `lib/storage/memory.ts`, l'extraction dans `lib/memory-autosave.ts`, le

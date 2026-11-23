@@ -33,6 +33,10 @@
     "module:add": "bun scripts/module-install.ts add",
     "module:list": "bun scripts/module-install.ts list",
     "module:doctor": "bun scripts/module-install.ts doctor",
+    "module:update": "bun scripts/module-install.ts update",
+    "module:remove": "bun scripts/module-install.ts remove",
+    "module:enable": "bun scripts/module-install.ts enable",
+    "module:disable": "bun scripts/module-install.ts disable",
     "reset:passkey": "bun scripts/reset-passkey.ts",
     "setup": "bun scripts/setup.ts",
     "setup:dev": "bun scripts/setup.ts --dev"

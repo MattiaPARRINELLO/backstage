@@ -196,38 +196,41 @@ function propertyOrUndefined(
 }
 
 describe("registre d'outils", () => {
-  it("expose exactement les 25 outils attendus", () => {
-    // Liste gelee : un renommage ou une suppression sans mise a jour des
-    // scenarios fait echouer ici, avant la revue.
-    expect(tools.map((tool) => tool.name).sort()).toEqual(
-      [
-        "add_memory_fact",
-        "photo.add",
-        "reminders.add",
-        "watch-later.add",
-        "calendar.create",
-        "github.create_issue",
-        "calendar.delete",
-        "emails.search",
-        "web.page_meta",
-        "schedule.get",
-        "weather.get",
-        "github.list_issues",
-        "photo.list",
-        "reminders.list",
-        "concerts.list",
-        "concerts.prepare",
-        "accreditations.scan",
-        "followups.schedule",
-        "calendar.search",
-        "emails.reply",
-        "emails.triage",
-        "calendar.update",
-        "photo.update",
-        "reminders.update",
-        "web.search",
-      ].sort()
-    );
+  it("expose les outils coeur attendus", () => {
+    // Les noms coeur sont geeles : un renommage ou une suppression sans mise a
+    // jour des scenarios fait echouer ici. Un module installe peut ajouter les
+    // siens : la liste n'est donc pas une egalite stricte (#210).
+    const names = tools.map((tool) => tool.name);
+    for (const name of [
+      "add_memory_fact",
+      "photo.add",
+      "reminders.add",
+      "watch-later.add",
+      "calendar.create",
+      "github.create_issue",
+      "calendar.delete",
+      "emails.search",
+      "web.page_meta",
+      "schedule.get",
+      "weather.get",
+      "github.list_issues",
+      "photo.list",
+      "reminders.list",
+      "concerts.list",
+      "concerts.prepare",
+      "accreditations.scan",
+      "followups.schedule",
+      "calendar.search",
+      "emails.reply",
+      "emails.triage",
+      "calendar.update",
+      "photo.update",
+      "reminders.update",
+      "web.search",
+    ]) {
+      expect(names, `outil "${name}" absent`).toContain(name);
+    }
+    expect(new Set(names).size, "un outil est declare deux fois").toBe(names.length);
   });
 
   it("declare un schema objet pour chaque outil", () => {

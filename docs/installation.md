@@ -107,9 +107,22 @@ bun run cron:reminders   # déclencheur reminders (scripts/cron-scheduler.ts)
 bun run cron:daily-brief # déclencheur brief du matin
 bun run module:add <url>#<ref>  # installe un module externe (commit figé)
 bun run module:list      # modules externes installés (modules.lock.json)
-bun run module:doctor    # vérifie manifestes, activation et apiVersion
+bun run module:doctor    # vérifie manifestes, activation et dossiers temporaires
+bun run module:update <id> [#ref]  # réinstalle la ref du lock, ou change de version
+bun run module:remove <id>         # retire dossier, config, composition et lock
+bun run module:enable <id>         # active dans modules.config.json
+bun run module:disable <id>        # désactive dans modules.config.json
 bun run reset:passkey    # reset des passkeys enregistrées
 ```
+
+Les sept commandes `module:*` écrivent dans cet ordre dossier, config,
+composition, lock, avec rollback complet si une étape échoue. Elles sortent en
+`0` si tout va bien et en `1` sur erreur (dépôt absent, ref inconnue, module
+déjà installé, manifeste invalide, `apiVersion` supérieure au noyau, module
+inconnu, `disable` déjà désactivé). `module:doctor` sort en `1` pour un module
+absent, désactivé ou invalide, et pour un dossier `.install-*` orphelin. Un
+rebuild (`bun run build`) reste nécessaire après toute commande. Détail des cas
+et ordre des écritures : `docs/architecture.md` § *Distribution des modules*.
 
 ## Structure du dépôt
 

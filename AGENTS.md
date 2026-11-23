@@ -295,8 +295,9 @@ Obligatoires : `NEXT_PUBLIC_API_URL`, `IA_API_KEY`, `AUTH_SECRET`,
 Options : Google, Microsoft, `OPENWEATHERMAP_API_KEY`, `BRAVE_SEARCH_API_KEY`,
 `GITHUB_TOKEN` + `GITHUB_REPO` (issues creees par l'agent),
 VAPID, `CRON_SECRET`/`CRON_BASE_URL`, `CESAR_*`, `GOOGLE_TESTING_EXPIRY`,
-`ANDROID_CERT_SHA256`, `GROQ_API_KEY` (extractions JSON, `GROQ_MODEL` et
-`GROQ_BASE_URL` optionnels), `AI_PROVIDER=mock` (fournisseur IA factice),
+`ANDROID_CERT_SHA256`, `GROQ_API_KEY` (extractions JSON, `GROQ_API_KEYS` pour
+un pool de comptes, `GROQ_MODEL` et `GROQ_BASE_URL` optionnels),
+`AI_PROVIDER=mock` (fournisseur IA factice),
 `DEV_AUTH_BYPASS=true` (session locale hors production).
 Déploiement : `.deploy.env.example`.
 

@@ -67,6 +67,7 @@ const configSchema = z.object({
   // Utilise par les modules pour les taches courtes et nombreuses (scan des
   // accreditations), sans passer par le modele de conversation.
   GROQ_API_KEY: optional,
+  GROQ_API_KEYS: optional,
   GROQ_BASE_URL: withDefault("https://api.groq.com/openai/v1"),
   GROQ_MODEL: withDefault("openai/gpt-oss-20b"),
 

@@ -7,15 +7,47 @@ import { getConfig } from "@/lib/config";
  *
  * Groq sert les taches « en direct » nombreuses et bon marche (scan des
  * accreditations) sans mobiliser le modele de conversation. Le fournisseur est
- * choisi ici, dans le noyau : un module ne connait ni Groq ni sa cle, il demande
- * une extraction structuree (`ctx.ai.json`).
+ * choisi ici, dans le noyau : un module ne connait ni Groq ni ses cles, il
+ * demande une extraction structuree (`ctx.ai.json`).
+ *
+ * Plusieurs cles peuvent etre fournies (`GROQ_API_KEYS`, separees par des
+ * virgules) : chaque compte a son propre quota, la rotation passe a la cle
+ * suivante quand l'une renvoie 429 (quota) ou 401/403 (cle refusee).
  */
 const TIMEOUT_MS = 20_000;
 const MAX_ATTEMPTS = 3;
+const RETRYABLE_STATUS = new Set([401, 403, 429]);
 
 type GroqParams = OpenAI.Chat.ChatCompletionCreateParamsNonStreaming & {
   reasoning_effort?: "low" | "medium" | "high";
 };
+
+/** Decoupe une liste de cles, deduit les doublons et ignore les vides. */
+export function parseGroqKeys(raw: string | undefined): string[] {
+  if (!raw) return [];
+  return [
+    ...new Set(
+      raw
+        .split(/[\s,;]+/)
+        .map((key) => key.trim())
+        .filter(Boolean)
+    ),
+  ];
+}
+
+export function configuredGroqKeys(): string[] {
+  const config = getConfig();
+  return [
+    ...new Set([
+      ...parseGroqKeys(config.GROQ_API_KEYS),
+      ...parseGroqKeys(config.GROQ_API_KEY),
+    ]),
+  ];
+}
+
+export function isGroqConfigured(): boolean {
+  return configuredGroqKeys().length > 0;
+}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -29,32 +61,25 @@ function statusOf(error: unknown): number | undefined {
 
 /**
  * Un echec `json_validate_failed` de Groq signifie que le mode JSON strict a
- * rejete une generation vide (souvent une limite de tokens atteinte par le
- * raisonnement). On retente alors sans `response_format` : le module sait lire
- * un JSON entoure de texte, et le second essai passe.
+ * rejete une generation vide. On retente alors sans `response_format` : le
+ * module sait lire un JSON entoure de texte, et le second essai passe.
  */
-function isRetryable(error: unknown): boolean {
-  const status = statusOf(error);
-  if (status === 429) return true;
+function isJsonRetryable(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return /json_validate_failed|Failed to validate JSON|reponse vide/i.test(message);
 }
 
-export function isGroqConfigured(): boolean {
-  return Boolean(getConfig().GROQ_API_KEY);
-}
-
-export async function groqJson(system: string, prompt: string): Promise<string> {
+async function callWithKey(
+  apiKey: string,
+  system: string,
+  prompt: string
+): Promise<string> {
   const config = getConfig();
-  if (!config.GROQ_API_KEY) {
-    throw new Error("GROQ_API_KEY absent : renseigner la cle Groq dans .env.local.");
-  }
-
   const client = new OpenAI({
     baseURL: config.GROQ_BASE_URL,
-    apiKey: config.GROQ_API_KEY,
+    apiKey,
     timeout: TIMEOUT_MS,
-    maxRetries: 1,
+    maxRetries: 0,
   });
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
@@ -82,10 +107,34 @@ export async function groqJson(system: string, prompt: string): Promise<string> 
       throw new Error("reponse vide");
     } catch (error) {
       const last = attempt === MAX_ATTEMPTS - 1;
-      if (last || !isRetryable(error)) throw error;
-      await sleep(statusOf(error) === 429 ? 4000 * (attempt + 1) : 400);
+      if (last || !isJsonRetryable(error)) throw error;
+      await sleep(400);
     }
   }
 
   throw new Error("Groq n'a rendu aucune reponse exploitable.");
+}
+
+export async function groqJson(system: string, prompt: string): Promise<string> {
+  const keys = configuredGroqKeys();
+  if (keys.length === 0) {
+    throw new Error("GROQ_API_KEY absent : renseigner la cle Groq dans .env.local.");
+  }
+
+  let lastError: unknown = null;
+  for (const key of keys) {
+    try {
+      return await callWithKey(key, system, prompt);
+    } catch (error) {
+      lastError = error;
+      // Quota ou cle refusee : le compte suivant a son propre quota.
+      const status = statusOf(error);
+      if (status !== undefined && RETRYABLE_STATUS.has(status)) continue;
+      throw error;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Toutes les cles Groq sont epuisees ou refusees.");
 }

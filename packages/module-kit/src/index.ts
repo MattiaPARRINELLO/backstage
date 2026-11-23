@@ -23,6 +23,10 @@ export {
   type PromptContribution,
 } from "./module";
 export {
+  assertModuleManifest,
+  type ModuleManifestShape,
+} from "./manifest";
+export {
   defineTool,
   isConfirmable,
   isUntrusted,

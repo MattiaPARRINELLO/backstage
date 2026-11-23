@@ -27,6 +27,12 @@ export const accreditationSchema = z.looseObject({
   notes: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  // Relance J+7 : date calculée quand la demande part, marque d'envoi pour ne
+  // jamais relancer deux fois, et texte prêt à envoyer (l'envoi reste manuel
+  // tant que #142 n'existe pas).
+  followUpAt: z.string().optional(),
+  followUpNotifiedAt: z.string().optional(),
+  followUpDraft: z.string().optional(),
 });
 
 export const accreditationsDataSchema = z.looseObject({

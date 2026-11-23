@@ -1,5 +1,6 @@
 import { newId } from "@backstage/module-kit/storage-core";
 
+import { computeFollowUpAt } from "./followup";
 import type {
   Accreditation,
   AccreditationStatus,
@@ -51,6 +52,9 @@ export interface AccreditationUpdate {
   readonly contactEmail?: string | undefined;
   readonly notes?: string | undefined;
   readonly emailThreadId?: string | undefined;
+  readonly followUpAt?: string | undefined;
+  readonly followUpNotifiedAt?: string | undefined;
+  readonly followUpDraft?: string | undefined;
 }
 
 export async function updateAccreditation(
@@ -72,10 +76,34 @@ export async function updateAccreditation(
     if (updates.artist !== undefined) next.artist = updates.artist;
     if (updates.venue !== undefined) next.venue = updates.venue;
     if (updates.concertDate !== undefined) next.concertDate = updates.concertDate;
-    if (updates.status !== undefined) next.status = updates.status;
+    if (updates.status !== undefined) {
+      next.status = updates.status;
+      // Une demande envoyée programme sa relance depuis la date de création.
+      if (updates.status === "sent" && next.followUpAt === undefined) {
+        next.followUpAt = computeFollowUpAt(next.createdAt, next.concertDate);
+      }
+      // Acceptée ou refusée : plus rien à relancer.
+      if (updates.status === "accepted" || updates.status === "refused") {
+        delete next.followUpAt;
+      }
+    }
+    // Corriger la date du concert d'une demande encore en attente de relance
+    // recalcule l'échéance, sans toucher à une relance déjà partie.
+    if (
+      updates.concertDate !== undefined &&
+      next.status === "sent" &&
+      next.followUpNotifiedAt === undefined
+    ) {
+      next.followUpAt = computeFollowUpAt(next.createdAt, next.concertDate);
+    }
     if (updates.contactEmail !== undefined) next.contactEmail = updates.contactEmail;
     if (updates.notes !== undefined) next.notes = updates.notes;
     if (updates.emailThreadId !== undefined) next.emailThreadId = updates.emailThreadId;
+    if (updates.followUpAt !== undefined) next.followUpAt = updates.followUpAt;
+    if (updates.followUpNotifiedAt !== undefined) {
+      next.followUpNotifiedAt = updates.followUpNotifiedAt;
+    }
+    if (updates.followUpDraft !== undefined) next.followUpDraft = updates.followUpDraft;
     data.accreditations[index] = next;
     updated = next;
   });

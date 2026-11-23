@@ -3,12 +3,18 @@ import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { KERNEL_API } from "@backstage/module-kit";
+import { type ModuleManifestShape } from "@backstage/module-kit";
 
 /**
  * Source d'un module externe : parsing de `url#ref`, validation du manifeste et
  * clone a une ref epinglee. Aucune ecriture dans le depot hote ici.
+ *
+ * La validation du manifeste vit dans le kit (`assertModuleManifest`) : c'est
+ * la meme regle que celle qu'un auteur peut executer chez lui avec
+ * `@backstage/module-kit/testing`.
  */
+
+export { assertModuleManifest, type ModuleManifestShape } from "@backstage/module-kit";
 
 export interface ModuleSource {
   readonly repo: string;
@@ -25,17 +31,6 @@ export interface InstalledModule {
   readonly capabilities: unknown;
 }
 
-export interface ModuleManifestShape {
-  readonly id?: unknown;
-  readonly apiVersion?: unknown;
-  readonly label?: unknown;
-  readonly selectionDescription?: unknown;
-  readonly description?: unknown;
-  readonly capabilities?: unknown;
-}
-
-const MODULE_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
-
 /** `url#ref` : la ref est obligatoire, pour ne jamais installer « la branche ». */
 export function parseModuleSource(input: string): ModuleSource {
   const separator = input.lastIndexOf("#");
@@ -50,45 +45,6 @@ export function parseModuleSource(input: string): ModuleSource {
     throw new Error("Source invalide : le depot et la ref sont obligatoires.");
   }
   return { repo, ref };
-}
-
-/** Verifie les champs dont depend le noyau, avec un message actionnable. */
-export function assertModuleManifest(
-  manifest: ModuleManifestShape,
-  kernelApi: number = KERNEL_API
-): asserts manifest is ModuleManifestShape & {
-  id: string;
-  apiVersion: number;
-  label: string;
-  selectionDescription: string;
-  description: string;
-} {
-  if (!manifest || typeof manifest !== "object") {
-    throw new Error("Manifeste invalide : le module doit exporter un objet par defaut.");
-  }
-  if (typeof manifest.id !== "string" || !MODULE_ID_PATTERN.test(manifest.id)) {
-    throw new Error(
-      `Identifiant de module invalide : "${String(manifest.id)}". Attendu : kebab-case (ex: reminders).`
-    );
-  }
-  if (
-    typeof manifest.apiVersion !== "number" ||
-    !Number.isInteger(manifest.apiVersion) ||
-    manifest.apiVersion < 1
-  ) {
-    throw new Error(`Module "${manifest.id}" : apiVersion entiere positive requise.`);
-  }
-  if (manifest.apiVersion > kernelApi) {
-    throw new Error(
-      `Module "${manifest.id}" exige l'API de module ${manifest.apiVersion}, ce noyau en est a la version ${kernelApi}. ` +
-        `Mets a jour le noyau, ou installe une version anterieure de ce module.`
-    );
-  }
-  for (const field of ["label", "selectionDescription", "description"] as const) {
-    if (typeof manifest[field] !== "string" || !manifest[field].trim()) {
-      throw new Error(`Module "${manifest.id}" : ${field} est obligatoire.`);
-    }
-  }
 }
 
 /** Clone a une ref epinglee : tag ou commit. Le commit reel est fige plus tard. */

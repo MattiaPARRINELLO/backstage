@@ -53,7 +53,15 @@ export async function updateWatchLaterItem(
     if (index < 0) return null;
     const current = data.items[index];
     if (!current) return null;
-    const next = { ...current, ...updates };
+    const next: WatchLaterItem = { ...current };
+    // Affectation champ par champ : avec `exactOptionalPropertyTypes`, étaler
+    // `updates` écraserait un champ obligatoire par `undefined`.
+    if (updates.title !== undefined) next.title = updates.title;
+    if (updates.description !== undefined) next.description = updates.description;
+    if (updates.category !== undefined) next.category = updates.category;
+    if (updates.summary !== undefined) next.summary = updates.summary;
+    if (updates.aiTags !== undefined) next.aiTags = updates.aiTags;
+    if (updates.read !== undefined) next.read = updates.read;
     data.items[index] = next;
     updated = next;
   });

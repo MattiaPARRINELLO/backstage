@@ -519,8 +519,8 @@ présent dans `modules/` doit pouvoir vivre dans son propre dépôt, se réinsta
 avec `module:add` et se comporter à l'identique. `watch-later` sert de cas réel :
 
 - dépôt : [`MattiaPARRINELLO/backstage-module-watch-later`](https://github.com/MattiaPARRINELLO/backstage-module-watch-later)
-  (`#v1.0.0`) ;
-- commit figé dans le lock : `751b9392` ;
+  (`#v1.0.1`) ;
+- commit figé dans le lock : `88e77d4e` ;
 - données inchangées : `data/watch-later.json`, via `legacyPath`.
 
 **Layout du dépôt extrait** (le dossier du dépôt devient `modules/<id>/`) :
@@ -549,7 +549,7 @@ Un module extrait n'importe que `@backstage/module-kit` (et ses sous-chemins
 1. worktree neuf depuis `main` ;
 2. supprimer `modules/<id>/`, son entrée dans `modules.config.json` et son import
    dans `modules/index.ts` : commit séparé, le noyau doit compiler sans le module ;
-3. `bun run module:add <url>#v1.0.0` (voir les quatre écritures ci-dessus) ;
+3. `bun run module:add <url>#v1.0.1` (voir les quatre écritures ci-dessus) ;
 4. `bun run build`, `bun run test`, `bun run boundaries` ;
 5. comparer six surfaces : outil (nom qualifié, description, effet, confirmation),
    actions (noms, entrées, revalidations), page `/m/<id>`, rail, panneau, carte

@@ -86,7 +86,8 @@ tests, installation, mise à jour, retrait, modèle de confiance.
 | [`code-map.md`](contributing/code-map.md) | carte du code |
 | [`premiere-pr.md`](contributing/premiere-pr.md) | première PR |
 | [`tests-e2e.md`](contributing/tests-e2e.md) | lancer et écrire les tests Playwright |
-| [Guide d'écriture d'un module](modules/ecrire-un-module.md) | écrire, tester, installer, mettre à jour et retirer un module || [`self-hosting.md`](self-hosting.md) | Docker, variables, HTTPS, backups |
+| [Guide d'écriture d'un module](modules/ecrire-un-module.md) | écrire, tester, installer, mettre à jour et retirer un module |
+| [`self-hosting.md`](self-hosting.md) | Docker, variables, HTTPS, backups |
 | [`deploy-cpanel.md`](deploy-cpanel.md) | déploiement mutualisé et crontab |
 | [`android-apk.md`](android-apk.md) | TWA + FCM, build et appairage |
 | [`roadmap-multi-utilisateurs.md`](roadmap-multi-utilisateurs.md) | prospectif, hors périmètre actuel |

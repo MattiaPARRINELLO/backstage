@@ -1,19 +1,20 @@
 import { z } from "zod";
-import { defineTool, toolEmpty, toolError, toolOk } from "@backstage/module-kit";
+import { defineTool, toolEmpty, toolError, toolOk, verifyWrite } from "@backstage/module-kit";
 
 import { fetchGmailMessages } from "@/lib/google-actions";
+import type { AccreditationStatus } from "./schema";
 import {
   addAccreditation,
   getAccreditations,
   updateAccreditation,
-} from "@/lib/storage";
-import type { Accreditation } from "@/lib/types";
+} from "./service";
 
 /**
  * Scan des accréditations dans Gmail.
  *
  * Analyse les emails pour créer ou mettre à jour les fiches : artiste, lieu,
- * date et statut. Écriture locale, jamais confiée au texte du modèle.
+ * date et statut. Écriture locale, jamais confiée au texte du modèle, et relue
+ * après coup : le modèle ne doit jamais annoncer une fiche qui n'existe pas.
  */
 export const scanAccreditationsTool = defineTool({
   name: "scan",
@@ -35,9 +36,7 @@ export const scanAccreditationsTool = defineTool({
       let updated = 0;
       const existing = await getAccreditations();
       const existingKeys = new Set(
-        existing.accreditations.map((entry: Accreditation) =>
-          `${entry.artist}|${entry.venue}`.toLowerCase()
-        )
+        existing.accreditations.map((entry) => `${entry.artist}|${entry.venue}`.toLowerCase())
       );
 
       for (const message of messages) {
@@ -59,7 +58,7 @@ export const scanAccreditationsTool = defineTool({
         const concertDate = dateMatch?.[0]?.trim() ?? "";
         if (!artist) continue;
 
-        let status: Accreditation["status"] = "pending";
+        let status: AccreditationStatus = "pending";
         if (text.includes("accepté") || text.includes("confirme") || text.includes("approved")) {
           status = "accepted";
         } else if (text.includes("refusé") || text.includes("decliné") || text.includes("denied")) {
@@ -70,14 +69,21 @@ export const scanAccreditationsTool = defineTool({
 
         const key = `${artist}|${venue || "inconnu"}`.toLowerCase();
         if (existingKeys.has(key)) {
-          const index = existing.accreditations.findIndex(
-            (entry: Accreditation) => `${entry.artist}|${entry.venue}`.toLowerCase() === key
+          const current = existing.accreditations.find(
+            (entry) => `${entry.artist}|${entry.venue}`.toLowerCase() === key
           );
-          const current = index >= 0 ? existing.accreditations[index] : undefined;
           if (current && current.status !== status) {
-            // Le code historique modifiait l'objet lu sans jamais le persister :
-            // le compteur « mise(s) a jour » mentait. On ecrit reellement.
             await updateAccreditation(current.id, { status });
+            const problem = await verifyWrite(
+              `le statut de "${current.artist}"`,
+              async () => {
+                const after = await getAccreditations();
+                return after.accreditations.some(
+                  (entry) => entry.id === current.id && entry.status === status
+                );
+              }
+            );
+            if (problem) return toolError(problem);
             updated++;
           }
         } else {
@@ -87,6 +93,16 @@ export const scanAccreditationsTool = defineTool({
             concertDate: concertDate || "Date inconnue",
             contactEmail: from,
           });
+          const problem = await verifyWrite(
+            `l'accreditation "${createdAccreditation.artist}"`,
+            async () => {
+              const after = await getAccreditations();
+              return after.accreditations.some(
+                (entry) => entry.id === createdAccreditation.id
+              );
+            }
+          );
+          if (problem) return toolError(problem);
           if (status !== "pending") {
             await updateAccreditation(createdAccreditation.id, {
               status,

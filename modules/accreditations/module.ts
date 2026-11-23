@@ -1,5 +1,12 @@
 import { defineModule } from "@backstage/module-kit";
 
+import {
+  createAccreditationAction,
+  editAccreditationAction,
+  loadAccreditationsAction,
+  removeAccreditationAction,
+  updateAccreditationStatusAction,
+} from "./actions";
 import { scanAccreditationsTool } from "./tools";
 
 /**
@@ -20,4 +27,11 @@ export default defineModule({
   dependencies: [],
   capabilities: { network: ["gmail.googleapis.com"], filesystem: "module-data" },
   tools: [scanAccreditationsTool],
+  actions: {
+    load: loadAccreditationsAction,
+    create: createAccreditationAction,
+    edit: editAccreditationAction,
+    updateStatus: updateAccreditationStatusAction,
+    remove: removeAccreditationAction,
+  },
 });

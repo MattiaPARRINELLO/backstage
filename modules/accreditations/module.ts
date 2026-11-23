@@ -9,6 +9,7 @@ import {
   updateAccreditationStatusAction,
 } from "./actions";
 import { scanAccreditationsTool } from "./tools";
+import { accreditationsFollowUpPrompt } from "./prompt";
 import AccreditationsPage from "./ui/page";
 
 const ticketIcon = railIcon(
@@ -33,6 +34,7 @@ export default defineModule({
   dependencies: [],
   capabilities: { network: ["gmail.googleapis.com"], filesystem: "module-data" },
   tools: [scanAccreditationsTool],
+  prompt: [accreditationsFollowUpPrompt],
   actions: {
     load: loadAccreditationsAction,
     create: createAccreditationAction,

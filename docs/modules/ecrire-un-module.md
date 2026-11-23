@@ -304,11 +304,36 @@ sous-chemin `/testing` serait remplace par `index.ts/testing`.
 ```
 
 Le depot du module et `backstage/` sont voisins par defaut. Sinon, definir
-`BACKSTAGE_KIT` pour vitest et ajuster `paths` pour TypeScript. `react` et
-`@types/react` sont necessaires en `devDependencies` parce que l'entree du kit
-re-exporte les primitives d'interface.
+`BACKSTAGE_KIT` pour vitest et ajuster `paths` pour TypeScript : les deux
+doivent pointer vers le **meme** checkout, et ce checkout doit contenir le
+sous-chemin `testing` (kit de cette version, pas une version anterieure).
+`tsconfig.json` ne lit pas les variables d'environnement : il faut y ecrire le
+chemin en clair.
 
-Lancement :
+`package.json` du module :
+
+```json
+{
+  "peerDependencies": { "@backstage/module-kit": "*", "zod": "^4.0.0" },
+  "peerDependenciesMeta": { "@backstage/module-kit": { "optional": true } },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "react": "^19.2.4",
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.0",
+    "zod": "^4.6.0"
+  }
+}
+```
+
+Le `peerDependenciesMeta.optional` n'est pas cosmetique : sans lui, `bun
+install` essaie de resoudre `@backstage/module-kit` sur npm et echoue en 404,
+puisque le paquet n'est pas publie. `@types/node` est necessaire a `tsc` pour
+les modules `node:fs`, `node:path` et la globale `process`.
+
+Lancement (le script `test` appelle vitest ; `bun test` lancerait le lanceur
+integre de Bun, qui ne comprend pas les imports vitest) :
 
 ```bash
 bun install

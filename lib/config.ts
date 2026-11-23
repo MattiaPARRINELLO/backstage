@@ -63,6 +63,13 @@ const configSchema = z.object({
   NEXT_PUBLIC_API_URL: optional,
   IA_API_KEY: optional,
 
+  // ---- Groq : extractions structurees en direct -------------------------
+  // Utilise par les modules pour les taches courtes et nombreuses (scan des
+  // accreditations), sans passer par le modele de conversation.
+  GROQ_API_KEY: optional,
+  GROQ_BASE_URL: withDefault("https://api.groq.com/openai/v1"),
+  GROQ_MODEL: withDefault("openai/gpt-oss-20b"),
+
   // ---- Site ------------------------------------------------------------
   NEXT_PUBLIC_SITE_URL: withDefault("https://backstage.mprnl.fr"),
 

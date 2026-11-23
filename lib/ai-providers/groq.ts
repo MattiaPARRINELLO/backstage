@@ -122,16 +122,22 @@ export async function groqJson(system: string, prompt: string): Promise<string> 
   }
 
   let lastError: unknown = null;
-  for (const key of keys) {
-    try {
-      return await callWithKey(key, system, prompt);
-    } catch (error) {
-      lastError = error;
-      // Quota ou cle refusee : le compte suivant a son propre quota.
-      const status = statusOf(error);
-      if (status !== undefined && RETRYABLE_STATUS.has(status)) continue;
-      throw error;
+  // Deux tours : un 429 sur une cle unique est souvent passager (reset en
+  // quelques secondes). Avec plusieurs cles, le premier tour suffit.
+  for (let round = 0; round < 2; round++) {
+    for (const key of keys) {
+      try {
+        return await callWithKey(key, system, prompt);
+      } catch (error) {
+        lastError = error;
+        // Quota ou cle refusee : le compte suivant a son propre quota.
+        const status = statusOf(error);
+        if (status !== undefined && RETRYABLE_STATUS.has(status)) continue;
+        throw error;
+      }
     }
+    if (statusOf(lastError) !== 429 || round === 1) break;
+    await sleep(4000);
   }
 
   throw lastError instanceof Error

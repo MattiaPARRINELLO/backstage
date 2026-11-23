@@ -45,12 +45,16 @@ Reponds uniquement un objet JSON avec exactement ces cles :
 {"artist":"","venue":"","concertDate":"","status":"pending","contactEmail":""}
 
 Regles :
-- artist : nom de l'artiste ou du groupe, tel qu'ecrit. Retire les mots parasites ("pour", "concert de", "demande d'accréditation", "photo pass").
+- Rapstar est le media de l'utilisateur (le demandeur), jamais un artiste. Ne mets jamais "Rapstar" dans artist.
+- artist : nom de l'artiste ou du groupe, tel qu'ecrit. Retire les mots parasites ("pour", "concert de", "demande d'accréditation", "photo pass", "Rapstar").
 - venue : salle ou lieu du concert, sans "au", "a", "chez".
 - concertDate : date du concert au format YYYY-MM-DD, ou "" si absente.
 - status : "accepted" si l'email accepte ou confirme, "refused" s'il refuse ou decline, "sent" s'il confirme l'envoi de la demande, sinon "pending".
 - contactEmail : adresse email de l'expediteur, ou "".
 Si l'email n'est pas une demande d'accreditation, mets artist a "".`;
+
+/** Noms qui designent le media de l'utilisateur, jamais un artiste. */
+const OWN_MEDIA = new Set(["rapstar"]);
 
 const STATUS_RANK: Record<AccreditationStatus, number> = {
   pending: 0,
@@ -124,7 +128,7 @@ function buildPrompt(message: EmailMessage): string {
     `De: ${message.from ?? ""}`,
     `Sujet: ${message.subject ?? ""}`,
     "Corps:",
-    (message.snippet ?? "").slice(0, 700),
+    (message.snippet ?? "").slice(0, 500),
   ].join("\n");
 }
 
@@ -208,6 +212,12 @@ export const scanAccreditationsTool = defineTool({
           continue;
         }
         if (!extraction || !extraction.artist) {
+          ignored++;
+          continue;
+        }
+        // Le media de l'utilisateur n'est pas un artiste : une demande qui ne
+        // nomme que Rapstar n'a pas d'artiste exploitable.
+        if (OWN_MEDIA.has(normalize(extraction.artist))) {
           ignored++;
           continue;
         }

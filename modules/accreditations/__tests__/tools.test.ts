@@ -200,6 +200,21 @@ describe("outil scan des accreditations", () => {
     assertToolError(result, /ecriture non confirmee/);
   });
 
+  it("refuse de faire de Rapstar, le media, un artiste", async () => {
+    google.fetchGmailMessages.mockResolvedValue([
+      email("m6", "Demande d'accreditation", "Rapstar souhaite couvrir le concert"),
+    ]);
+    ai.json.mockResolvedValue(
+      extraction({ artist: "Rapstar", venue: "Musée Imaginaire d'Oli" })
+    );
+
+    const result = await scanAccreditationsTool.run({}, ctx);
+
+    assertToolOk(result);
+    expect(result.text).toContain("1 ignoree(s)");
+    expect(service.addAccreditation).not.toHaveBeenCalled();
+  });
+
   it("signale une erreur de lecture Gmail", async () => {
     google.fetchGmailMessages.mockRejectedValue(new Error("Gmail indisponible"));
     const result = await scanAccreditationsTool.run({}, ctx);

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CalendarDays, Check, Mail, MapPin, Pencil, Trash2, X } from "lucide-react";
+import { useModuleToasts } from "@backstage/module-kit";
 
 import type { Accreditation, AccreditationStatus } from "../schema";
 import type { AccreditationEditInput } from "./api";
@@ -19,7 +20,8 @@ function formatFollowUp(value: string): string {
 interface Props {
   accreditation: Accreditation;
   onStatus: (status: AccreditationStatus) => Promise<void>;
-  onSave: (input: AccreditationEditInput) => Promise<void>;
+  /** Rend `false` quand l'enregistrement a echoue : l'edition reste ouverte. */
+  onSave: (input: AccreditationEditInput) => Promise<boolean>;
   onDelete: () => Promise<void>;
 }
 
@@ -29,6 +31,7 @@ export function AccreditationRow({ accreditation, onStatus, onSave, onDelete }: 
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const toast = useModuleToasts();
   const meta = STATUS_META[accreditation.status];
 
   async function run(action: () => Promise<void>) {
@@ -40,6 +43,19 @@ export function AccreditationRow({ accreditation, onStatus, onSave, onDelete }: 
     }
   }
 
+  async function copyFollowUpDraft() {
+    try {
+      await navigator.clipboard.writeText(accreditation.followUpDraft ?? "");
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch (cause) {
+      // Hors contexte securise le presse-papiers est indisponible. Le texte
+      // reste affiche dans la fiche pour une selection manuelle.
+      console.warn("[accreditations] copie du texte de relance impossible:", cause);
+      toast?.show({ message: "Copier impossible", tone: "danger" });
+    }
+  }
+
   if (editing) {
     return (
       <AccreditationForm
@@ -48,8 +64,8 @@ export function AccreditationRow({ accreditation, onStatus, onSave, onDelete }: 
         onCancel={() => setEditing(false)}
         onSubmit={(input) =>
           run(async () => {
-            await onSave(input);
-            setEditing(false);
+            const saved = await onSave(input);
+            if (saved) setEditing(false);
           })
         }
       />
@@ -98,14 +114,7 @@ export function AccreditationRow({ accreditation, onStatus, onSave, onDelete }: 
             <button
               type="button"
               className="ui-btn ui-btn--ghost ui-btn--xs mt-2"
-              onClick={() => {
-                void navigator.clipboard
-                  .writeText(accreditation.followUpDraft ?? "")
-                  .then(() => {
-                    setCopied(true);
-                    window.setTimeout(() => setCopied(false), 2000);
-                  });
-              }}
+              onClick={() => void copyFollowUpDraft()}
             >
               {copied ? "Copié" : "Copier le texte"}
             </button>

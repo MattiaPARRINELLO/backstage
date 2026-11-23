@@ -30,6 +30,11 @@ Ce fichier ne garde que les règles qui font casser le build ou la prod.
    le committer ni le logger.
 6. **Committer chaque unité de travail vérifiée**, message en français.
    Working tree propre en fin de tâche.
+7. **Tout constat trouvé ouvre une issue**, immédiatement, avec sa preuve
+   (fichier, ligne, commande). Défaut, dette, écart de comportement, observation
+   utile : jamais seulement dans la réponse ou dans un commentaire de PR. Un
+   constat corrigé dans la même session est cité dans le corps de la PR à la
+   place.
 
 ---
 

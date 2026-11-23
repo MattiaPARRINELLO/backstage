@@ -464,7 +464,7 @@ epingle un commit ou un tag que tu as verifie.
       store sont couverts.
 - [ ] `bun run typecheck` passe avec `strict` et `noUncheckedIndexedAccess`.
 - [ ] Aucun import hors kit, `zod`, `react`, `lucide-react`, `next` ;
-      `grep -rn "@/lib" .` et `grep -rn "lib/kernel" .` sont vides.
+      `grep -rn "@/lib" .` est vide, et aucun fichier du noyau n'est importe.
 - [ ] Chaque ecriture d'outil est relue (`verifyWrite`) et rend un `ToolOutput`
       honnete.
 - [ ] `sideEffect` et `trust` decrivent le comportement reel ; aucun outil

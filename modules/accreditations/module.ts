@@ -45,4 +45,14 @@ export default defineModule({
     page: AccreditationsPage,
     rail: { label: "Accréditations", icon: ticketIcon },
   },
+  jobs: [
+    {
+      id: "accreditations-follow-up",
+      cron: "0 * * * *",
+      handler: async () => {
+        const { runAccreditationFollowUpCheck } = await import("./followup-job");
+        await runAccreditationFollowUpCheck();
+      },
+    },
+  ],
 });

@@ -244,7 +244,7 @@ it("ecrit et relit une note", async () => {
 | Helper | Role |
 | --- | --- |
 | `createTestContext({ moduleId })` | `ModuleContext` factice ; `logs`, `events` et `activityEntries` capturent |
-| `runTool(outil, args, ctx)` | valide le schema puis execute l'outil, comme le noyau |
+| `runTool(outil, args, ctx)` | valide le schema puis execute l'outil ; arguments invalides et exception deviennent un resultat `error`, comme le noyau |
 | `assertToolOk` / `assertToolError` / `assertToolEmpty` | assertion lisible sur `ok`, `error`, `empty` |
 | `expectValidModule(module, { kernelApi })` | memes regles que le noyau a l'installation |
 | `withTempDataDir(async (dir) => {})` | redirige le store vers un dossier temporaire, puis le retire |

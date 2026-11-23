@@ -25,6 +25,16 @@ const echoTool = defineTool({
   run: async (args) => toolOk(`echo: ${args.text}`),
 });
 
+const throwingTool = defineTool({
+  name: "throwing",
+  description: "Leve une erreur, pour verifier le pont.",
+  params: z.object({ text: z.string() }),
+  sideEffect: "none",
+  run: async () => {
+    throw new Error("panne volontaire");
+  },
+});
+
 function minimalModule(overrides: Record<string, unknown> = {}) {
   return {
     id: "demo",
@@ -71,11 +81,16 @@ describe("runTool", () => {
     expect(result).toEqual({ status: "ok", text: "echo: bonjour" });
   });
 
-  it("refuse des arguments hors schema avant d'executer", async () => {
+  it("rend une erreur, sans lever, sur des arguments hors schema", async () => {
     const ctx = createTestContext({ moduleId: "demo" });
-    await expect(runTool(echoTool, { text: "" }, ctx)).rejects.toThrow(
-      /Arguments invalides pour "echo"/
-    );
+    const result = await runTool(echoTool, { text: "" }, ctx);
+    assertToolError(result, /Erreur :/);
+  });
+
+  it("rend une erreur quand l'outil leve", async () => {
+    const ctx = createTestContext({ moduleId: "demo" });
+    const result = await runTool(throwingTool, { text: "x" }, ctx);
+    assertToolError(result, /Erreur : panne volontaire/);
   });
 });
 

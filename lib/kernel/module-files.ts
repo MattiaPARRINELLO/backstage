@@ -46,8 +46,21 @@ export function readConfig(root: string): ModulesConfigFile {
   return JSON.parse(readFileSync(path, "utf8")) as ModulesConfigFile;
 }
 
+/**
+ * Serialise `modules.config.json` dans la forme committée : une entrée par
+ * ligne. `JSON.stringify(..., null, 2)` produisait un fichier different a
+ * chaque passage, donc `git status` restait sale apres un `module:remove`.
+ */
 export function serializeConfig(config: ModulesConfigFile): string {
-  return `${JSON.stringify(config, null, 2)}\n`;
+  const kernelApi = config.kernelApi ?? KERNEL_API;
+  const entries = Object.entries(config.modules ?? {});
+  if (entries.length === 0) {
+    return `{\n  "kernelApi": ${kernelApi},\n  "modules": {}\n}\n`;
+  }
+  const modules = entries
+    .map(([id, value]) => `    ${JSON.stringify(id)}: { "enabled": ${value.enabled ?? false} }`)
+    .join(",\n");
+  return `{\n  "kernelApi": ${kernelApi},\n  "modules": {\n${modules}\n  }\n}\n`;
 }
 
 export function configPath(root: string): string {

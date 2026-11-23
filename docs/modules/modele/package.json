@@ -13,7 +13,13 @@
     "@backstage/module-kit": "*",
     "zod": "^4.0.0"
   },
+  "peerDependenciesMeta": {
+    "@backstage/module-kit": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "react": "^19.2.4",
     "typescript": "^5.0.0",

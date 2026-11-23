@@ -68,3 +68,6 @@ unslop-story/.story-frames/
 # Artefacts de la revue design (tasteskill)
 .taste-skill/
 dist/
+
+# Artefacts locaux de l'agent MiMoCode
+/.mimocode/

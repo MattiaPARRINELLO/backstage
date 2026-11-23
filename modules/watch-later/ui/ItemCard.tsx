@@ -2,7 +2,7 @@
 
 import { Trash2, GripVertical, ExternalLink } from "lucide-react";
 import { formatRelative } from "@backstage/module-kit";
-import type { WatchLaterItem } from "@/lib/types";
+import type { WatchLaterItem } from "../schema";
 import { categoryMeta } from "./meta";
 
 function cx(...classes: Array<string | false | null | undefined>): string {

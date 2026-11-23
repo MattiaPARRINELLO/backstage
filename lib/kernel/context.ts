@@ -1,6 +1,9 @@
 import type { ModuleContext } from "@backstage/module-kit";
 
+import { chatCompletion } from "@/lib/ai-providers";
+import { getConfig } from "@/lib/app-config";
 import { logActivity } from "@/lib/storage";
+import { isSafeFetchUrl, safeFetchText } from "@/lib/web";
 
 import { emit } from "./events";
 
@@ -35,6 +38,33 @@ export function createModuleContext(
         message,
         detail
       );
+    },
+    ai: {
+      // Le modèle vient des reglages applicatifs, jamais du module : un module
+      // ne choisit ni le fournisseur ni le cout d'un appel.
+      complete: async ({ system, prompt, maxChars = 2000 }) => {
+        const config = await getConfig();
+        const messages = system
+          ? [
+              { role: "system" as const, content: system },
+              { role: "user" as const, content: prompt },
+            ]
+          : [{ role: "user" as const, content: prompt }];
+        const result = await chatCompletion(config.models.general, messages, []);
+        return result.content.slice(0, maxChars).trim();
+      },
+    },
+    net: {
+      isSafeUrl: (url) => isSafeFetchUrl(url),
+      // `safeFetchText` leve sur URL refusee, echec HTTP ou corps trop gros :
+      // le contrat du kit rend `null` plutot que de laisser fuir une exception.
+      fetchText: async (url, timeoutMs = 8000) => {
+        try {
+          return await safeFetchText(url, timeoutMs);
+        } catch {
+          return null;
+        }
+      },
     },
   };
 }

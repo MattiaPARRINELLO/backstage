@@ -1,5 +1,5 @@
 import { Play, FileText, Image as ImageIcon, Music2, Globe, Filter } from "lucide-react";
-import type { WatchLaterCategory } from "@/lib/types";
+import type { WatchLaterCategory } from "../schema";
 
 export const categoryMeta: Record<WatchLaterCategory, { label: string; icon: typeof Play; tone: "accent" | "warm" | "success" | "muted" | "danger" }> = {
   video: { label: "Vidéos", icon: Play, tone: "accent" },

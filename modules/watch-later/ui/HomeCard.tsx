@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, Bookmark } from "lucide-react";
 import { useModuleAction } from "@backstage/module-kit";
 
-import type { WatchLaterItem } from "@/lib/types";
+import type { WatchLaterItem } from "../schema";
 import { watchLaterApi } from "./api";
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { WatchLaterCategory } from "@/lib/types";
+import type { WatchLaterCategory } from "../schema";
 import { categoryMeta } from "./meta";
 
 export function AddItemForm({

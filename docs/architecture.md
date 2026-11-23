@@ -512,6 +512,82 @@ commit réel est figé dans le lock : une branche n'est jamais une version.
   déclarées sont affichées à l'installation, jamais appliquées. Ce n'est pas une
   sandbox (ADR 0001, décision K).
 
+### Extraire un module du dépôt (aller-retour vérifié)
+
+La phase 7 de #84 a vérifié le sens inverse de l'installation : un module déjà
+présent dans `modules/` doit pouvoir vivre dans son propre dépôt, se réinstaller
+avec `module:add` et se comporter à l'identique. `watch-later` sert de cas réel :
+
+- dépôt : [`MattiaPARRINELLO/backstage-module-watch-later`](https://github.com/MattiaPARRINELLO/backstage-module-watch-later)
+  (`#v1.0.0`) ;
+- commit figé dans le lock : `751b9392` ;
+- données inchangées : `data/watch-later.json`, via `legacyPath`.
+
+**Layout du dépôt extrait** (le dossier du dépôt devient `modules/<id>/`) :
+
+```
+index.ts        surface publique : export { default } from "./module"
+module.ts       defineModule (obligatoire : module:add importe ce fichier)
+actions.ts      defineAction, logique métier
+tools.ts        defineTool
+schema.ts       schéma Zod du module
+store.ts        jsonStore, avec legacyPath quand les données existent déjà
+service.ts      opérations métier sur le store
+summary.ts      capacité IA optionnelle, via ctx.ai et ctx.net
+ui/             page, panneau, carte d'accueil, rail
+__tests__/      tests de l'outil et des actions, sans import du noyau
+package.json    private, type module, peerDependencies kit + zod
+README.md       contrat, schéma de données, installation, désinstallation
+```
+
+Un module extrait n'importe que `@backstage/module-kit` (et ses sous-chemins
+`/json-store`, `/storage-core`), `zod`, et les pairs fournis par l'hôte
+(`react`, `next`, `lucide-react`). `grep -rn "@/lib" .` doit être vide.
+
+**Procédure de contrôle** :
+
+1. worktree neuf depuis `main` ;
+2. supprimer `modules/<id>/`, son entrée dans `modules.config.json` et son import
+   dans `modules/index.ts` : commit séparé, le noyau doit compiler sans le module ;
+3. `bun run module:add <url>#v1.0.0` (voir les quatre écritures ci-dessus) ;
+4. `bun run build`, `bun run test`, `bun run boundaries` ;
+5. comparer six surfaces : outil (nom qualifié, description, effet, confirmation),
+   actions (noms, entrées, revalidations), page `/m/<id>`, rail, panneau, carte
+   d'accueil, et le prompt s'il en existe un ;
+6. vérifier la persistance : ajouter un élément, relire dans un second processus.
+
+**Écarts constatés sur `watch-later`** : aucun sur les six surfaces. L'ordre de
+l'entrée dans `modules/index.ts` change (ajoutée en fin de tableau, sans effet :
+le registre trie par identifiant) et `installedAt` est horodaté à l'installation.
+Le noyau garde sa propre lecture de `data/watch-later.json` pour la recherche
+globale (`app/actions/search.ts`) et ses propres types : un réexport depuis le
+module rendrait le noyau dépendant d'un module distribuable.
+
+**Pièges** :
+
+- le tag doit être poussé (`git push --tags`), sinon `module:add` échoue au clone ;
+- un dépôt privé se clone avec la session `gh`. Si `.env.local` définit
+  `GITHUB_TOKEN` avec un jeton restreint à un autre dépôt, `bun run module:add`
+  l'utilise et reçoit un 403 : lancer avec `GITHUB_TOKEN= bun run module:add ...` ;
+- `modules.lock.json` impose une ref épinglée, jamais une branche ;
+- il n'existe **pas** de commande `module:remove` : le retrait reste manuel
+  (dossier, `modules.config.json`, `modules.lock.json`, import de composition).
+  Cette absence est assumée et suivie par #209.
+
+### Capacités fournies aux modules
+
+Le contexte d'un module porte les moyens d'agir du noyau, jamais ses fichiers :
+
+| Capacité | Usage | Absente |
+| --- | --- | --- |
+| `ctx.activity(type, message, détail)` | journal d'activité de l'application | le module saute la journalisation |
+| `ctx.net.isSafeUrl(url)` | contrôle anti-SSRF du noyau | le module refuse l'URL |
+| `ctx.net.fetchText(url, timeoutMs)` | corps texte d'une URL publique, `null` si refus ou échec | le module traite comme page vide |
+| `ctx.ai.complete({ system?, prompt, maxChars? })` | complétion avec le modèle général des réglages | le module n'écrit pas de résumé |
+
+`net` et `ai` sont optionnelles dans le type : un contexte de test peut rester
+minimal, mais un module doit alors dégrader proprement, jamais lever.
+
 ## Jobs de module (`/api/cron`)
 
 Un module declare ses taches periodiques dans son manifeste, avec un

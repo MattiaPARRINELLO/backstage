@@ -124,7 +124,7 @@ function buildPrompt(message: EmailMessage): string {
     `De: ${message.from ?? ""}`,
     `Sujet: ${message.subject ?? ""}`,
     "Corps:",
-    (message.snippet ?? "").slice(0, 2000),
+    (message.snippet ?? "").slice(0, 700),
   ].join("\n");
 }
 

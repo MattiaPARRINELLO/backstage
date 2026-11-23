@@ -4,7 +4,7 @@ import type {
   WatchLaterCategory,
   WatchLaterData,
   WatchLaterItem,
-} from "@/lib/types";
+} from "../schema";
 
 /**
  * Adaptateur typé au-dessus de l'invocation d'actions fournie par le noyau.

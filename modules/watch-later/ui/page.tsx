@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition, useMemo, useRef, useCallback } from "react";
 import { Plus, Search } from "lucide-react";
 import { PageHeader, EmptyState, Skeleton, useModuleAction, useModuleToasts } from "@backstage/module-kit";
-import type { WatchLaterCategory, WatchLaterItem } from "@/lib/types";
+import type { WatchLaterCategory, WatchLaterItem } from "../schema";
 import { watchLaterApi } from "./api";
 import { FILTER_ORDER, type FilterId } from "./meta";
 import { ItemCard } from "./ItemCard";

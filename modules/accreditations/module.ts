@@ -5,6 +5,7 @@ import {
   editAccreditationAction,
   loadAccreditationsAction,
   removeAccreditationAction,
+  scanAccreditationsAction,
   updateAccreditationStatusAction,
 } from "./actions";
 import { scanAccreditationsTool } from "./tools";
@@ -33,5 +34,6 @@ export default defineModule({
     edit: editAccreditationAction,
     updateStatus: updateAccreditationStatusAction,
     remove: removeAccreditationAction,
+    scan: scanAccreditationsAction,
   },
 });

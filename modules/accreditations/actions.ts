@@ -8,6 +8,7 @@ import {
   updateAccreditation,
 } from "./service";
 import { accreditationStatusSchema } from "./schema";
+import { scanAccreditationsTool } from "./tools";
 
 const idSchema = z.string().min(1, "Identifiant requis");
 
@@ -120,6 +121,20 @@ export const updateAccreditationStatusAction = defineAction({
     }
     return accreditation;
   },
+});
+
+/**
+ * Scan lancé depuis la page.
+ *
+ * L'action ne réimplémente pas l'extraction : elle exécute l'outil du module et
+ * rend son compte-rendu tel quel, pour que le chat et la page voient le même
+ * résultat.
+ */
+export const scanAccreditationsAction = defineAction({
+  name: "scan",
+  input: z.object({}),
+  revalidate: ["/m/accreditations"],
+  run: async (_input, ctx) => scanAccreditationsTool.run({}, ctx),
 });
 
 export const removeAccreditationAction = defineAction({

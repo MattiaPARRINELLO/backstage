@@ -1,8 +1,35 @@
 import { promises as fs } from "fs";
 import path from "path";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const BACKUP_DIR = path.join(DATA_DIR, "backups");
+/**
+ * Repertoire de donnees. Un test peut le rediriger vers un dossier temporaire
+ * sans changer le repertoire courant (voir `setDataDir`).
+ */
+let dataDirOverride: string | null = null;
+
+/**
+ * Redirige le repertoire de donnees, ou revient a `process.cwd()/data` avec
+ * `null`. Utilise par le contrat de test (`withTempDataDir`) pour isoler les
+ * ecritures d'un module.
+ */
+export function setDataDir(dir: string | null): void {
+  dataDirOverride = dir;
+}
+
+/** Redirection courante, ou `null` si le repertoire par defaut est utilise. */
+export function getDataDirOverride(): string | null {
+  return dataDirOverride;
+}
+
+function dataDir(): string {
+  return dataDirOverride
+    ? path.resolve(dataDirOverride)
+    : path.join(process.cwd(), "data");
+}
+
+function backupDir(): string {
+  return path.join(dataDir(), "backups");
+}
 
 export function newId(): string {
   return crypto.randomUUID?.() ?? String(Date.now());
@@ -64,8 +91,10 @@ function isTransientError(err: unknown): boolean {
 // Corps d'écriture sans lock : ne doit être appelé que sous withFileLock
 // (mutateJson) pour éviter un deadlock sur le lock par fichier.
 async function writeJsonAtomicUnlocked<T>(filename: string, data: T, retries = 3): Promise<void> {
-  await ensureDir(DATA_DIR);
-  const filePath = path.join(DATA_DIR, filename);
+  const filePath = path.join(dataDir(), filename);
+  // Un module ecrit dans `data/<module>/<fichier>.json` : creer le dossier du
+  // fichier, pas seulement `data/`.
+  await ensureDir(path.dirname(filePath));
   const tmpPath = filePath + ".tmp";
 
   let lastError: unknown;
@@ -120,8 +149,8 @@ export async function mutateJson<T>(
 }
 
 async function readJson<T>(filename: string): Promise<T> {
-  await ensureDir(DATA_DIR);
-  const filePath = path.join(DATA_DIR, filename);
+  const filePath = path.join(dataDir(), filename);
+  await ensureDir(path.dirname(filePath));
   const raw = await fs.readFile(filePath, "utf-8");
   return JSON.parse(raw) as T;
 }
@@ -137,14 +166,14 @@ function isValidJson(raw: string): boolean {
 
 async function readBackupJson<T>(filename: string): Promise<T | null> {
   try {
-    await ensureDir(BACKUP_DIR);
+    await ensureDir(backupDir());
   } catch {
     return null;
   }
   const prefix = `${filename}.`;
   let entries: string[];
   try {
-    entries = await fs.readdir(BACKUP_DIR);
+    entries = await fs.readdir(backupDir());
   } catch {
     return null;
   }
@@ -153,7 +182,7 @@ async function readBackupJson<T>(filename: string): Promise<T | null> {
     .sort()
     .reverse();
   for (const name of candidates) {
-    const backupPath = path.join(BACKUP_DIR, name);
+    const backupPath = path.join(backupDir(), name);
     try {
       const raw = await fs.readFile(backupPath, "utf-8");
       if (isValidJson(raw)) {
@@ -167,7 +196,7 @@ async function readBackupJson<T>(filename: string): Promise<T | null> {
 }
 
 export async function readJsonSafe<T>(filename: string, fallback: T): Promise<T> {
-  const filePath = path.join(DATA_DIR, filename);
+  const filePath = path.join(dataDir(), filename);
   const tmpPath = filePath + ".tmp";
 
   try {
@@ -191,10 +220,10 @@ export async function readJsonSafe<T>(filename: string, fallback: T): Promise<T>
 }
 
 async function backupFile(filename: string): Promise<void> {
-  await ensureDir(BACKUP_DIR);
-  const src = path.join(DATA_DIR, filename);
+  await ensureDir(backupDir());
+  const src = path.join(dataDir(), filename);
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
-  const dst = path.join(BACKUP_DIR, `${filename}.${ts}.bak`);
+  const dst = path.join(backupDir(), `${filename}.${ts}.bak`);
   try {
     await fs.copyFile(src, dst);
   } catch (err) {
@@ -210,7 +239,7 @@ async function rotateBackups(filename: string): Promise<void> {
   const prefix = `${filename}.`;
   let entries: string[];
   try {
-    entries = await fs.readdir(BACKUP_DIR);
+    entries = await fs.readdir(backupDir());
   } catch {
     return;
   }
@@ -225,7 +254,7 @@ async function rotateBackups(filename: string): Promise<void> {
   let kept = 0;
 
   for (const name of backups) {
-    const backupPath = path.join(BACKUP_DIR, name);
+    const backupPath = path.join(backupDir(), name);
     kept++;
 
     if (kept > 5) {

@@ -702,9 +702,16 @@ doit apporter la meme garantie ou accepter un double effet documente.
 - Jobs actuels : `reminders` (rappels et relances, chaque minute),
   `daily-brief` (`* 7 * * *`, fenetre d'une heure pour ne pas perdre le brief
   sur un tick en retard, l'anti-doublon n'en envoyant qu'un), `schedule-notifications` (notifications de cours
-  et synchronisation CESAR, chaque minute). `checkScheduleNotifs` et
+  et synchronisation CESAR, chaque minute), `accreditations-follow-up`
+  (`0 * * * *`, relance des demandes envoyees depuis 7 jours). `checkScheduleNotifs` et
   `syncScheduleIfStale` appartiennent au module `schedule`, pas au job
   `reminders` : un module desactive ne publie donc ni page, ni outil, ni job.
+- `accreditations-follow-up` n'envoie aucun email. Le module `emails` ne
+  sait que repondre a un fil existant ; l'envoi neuf est #142, encore ouverte.
+  La relance produit donc une notification push, passe la fiche en `follow-up`,
+  pose `followUpNotifiedAt` et stocke un texte pret a envoyer dans
+  `followUpDraft` : l'envoi reste manuel. La marque n'est posee qu'apres un push
+  accepte, et une fiche deja notifiee n'est jamais relancee deux fois.
 - Le contexte de module ne porte pas la requete HTTP. Le job `daily-brief`
   appelle donc `triggerDailyBrief("cron")` sans IP : le detail d'activite ne
   journalise plus l'IP d'origine du cron, perte assumee et sans effet sur

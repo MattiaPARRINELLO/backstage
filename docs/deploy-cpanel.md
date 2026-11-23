@@ -106,6 +106,9 @@ Exemple pour les jobs livres (les identifiants viennent des manifestes, et
 
 # Brief du jour - fenetre de 7h a 7h59, l'anti-doublon n'en envoie qu'un
 * 7 * * * curl -fsS -X POST -H "x-cron-secret: $CRON_SECRET" https://VOTRE-DOMAINE/api/cron/daily-brief >/dev/null
+
+# Relance des accreditations envoyees depuis 7 jours - toutes les heures
+0 * * * * curl -fsS -X POST -H "x-cron-secret: $CRON_SECRET" https://VOTRE-DOMAINE/api/cron/accreditations-follow-up >/dev/null
 ```
 
 Les routes sont en `POST` uniquement : sans `-X POST`, cPanel recoit un `405`.

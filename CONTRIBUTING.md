@@ -170,12 +170,18 @@ une surface de CVE a suivre pour rien : c'est exactement ce qui a fait retirer
 bun run lint
 bun run check:docs
 bunx tsc --noEmit
+bun run typecheck:strict
 bun run test
 bun run build
 ```
 
 La checklist de la PR reprend ces commandes. Coche uniquement celles que tu as
 reellement lancees.
+
+`bun run typecheck:strict` ne couvre que `lib/kernel/`, `modules/` et
+`packages/module-kit/`, donc `bunx tsc --noEmit` ne le remplace pas : une
+propriete optionnelle etalee ou un acces indexe non garde passe le typecheck
+global et casse la CI. Lance-le avant de pousser, pas apres avoir vu le rouge.
 
 `bun run lint:budget` (`scripts/lint-budget.ts`) compte les warnings ESLint et
 les compare au plafond de `scripts/eslint-budget.json`. La regle `max-lines`

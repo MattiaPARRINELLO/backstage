@@ -118,6 +118,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "coverage/**",
+    // Squelette copiable, jamais compile par le depot hote : ses alias
+    // pointent vers un checkout du kit, pas vers ce projet.
+    "docs/modules/modele/**",
   ]),
 ]);
 

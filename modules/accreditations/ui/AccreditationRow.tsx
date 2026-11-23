@@ -7,6 +7,15 @@ import type { Accreditation, AccreditationStatus } from "../schema";
 import type { AccreditationEditInput } from "./api";
 import { STATUS_META, STATUS_ORDER, formatConcertDate } from "./meta";
 
+function formatFollowUp(value: string): string {
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return value;
+  return new Date(time).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+  });
+}
+
 interface Props {
   accreditation: Accreditation;
   onStatus: (status: AccreditationStatus) => Promise<void>;
@@ -19,6 +28,7 @@ export function AccreditationRow({ accreditation, onStatus, onSave, onDelete }: 
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
   const meta = STATUS_META[accreditation.status];
 
   async function run(action: () => Promise<void>) {
@@ -77,6 +87,34 @@ export function AccreditationRow({ accreditation, onStatus, onSave, onDelete }: 
             {accreditation.notes}
           </p>
         )}
+        {accreditation.followUpDraft ? (
+          <details className="mt-2">
+            <summary className="ui-mono cursor-pointer text-[var(--warning)]">
+              Relance prête, envoi manuel
+            </summary>
+            <p className="mt-2 whitespace-pre-line text-[length:var(--t-small)] leading-relaxed text-[var(--text-2)]">
+              {accreditation.followUpDraft}
+            </p>
+            <button
+              type="button"
+              className="ui-btn ui-btn--ghost ui-btn--xs mt-2"
+              onClick={() => {
+                void navigator.clipboard
+                  .writeText(accreditation.followUpDraft ?? "")
+                  .then(() => {
+                    setCopied(true);
+                    window.setTimeout(() => setCopied(false), 2000);
+                  });
+              }}
+            >
+              {copied ? "Copié" : "Copier le texte"}
+            </button>
+          </details>
+        ) : accreditation.followUpAt ? (
+          <p className="ui-mono mt-1 text-[var(--text-4)]">
+            Relance prévue le {formatFollowUp(accreditation.followUpAt)}
+          </p>
+        ) : null}
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-2">

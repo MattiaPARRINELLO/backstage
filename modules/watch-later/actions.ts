@@ -3,13 +3,12 @@ import { z } from "zod";
 
 import {
   addWatchLaterItem,
-  autoSummarize,
   deleteWatchLaterItem,
   getWatchLater,
-  logActivity,
   reorderWatchLaterItems,
   updateWatchLaterItem,
-} from "@/lib/storage";
+} from "./service";
+import { summarizePage } from "./summary";
 
 const categorySchema = z.enum(["video", "article", "photo", "music", "other"]);
 
@@ -42,9 +41,9 @@ const reorderInput = z.object({
 /**
  * Actions du module A voir plus tard.
  *
- * La logique metier vit ici ; `server-actions.ts` ne garde que les coquilles
- * de transport vers `kernelAction`. La session, la validation et la
- * revalidation sont portees par le noyau.
+ * La logique metier et le stockage vivent dans le module ; le noyau porte la
+ * session, la validation et la revalidation. Le journal d'activite passe par
+ * `ctx.activity`, jamais par un import de `lib/storage`.
  */
 export const loadWatchLaterAction = defineAction({
   name: "load",
@@ -56,19 +55,19 @@ export const createWatchLaterAction = defineAction({
   name: "create",
   input: createInput,
   revalidate: ["/m/watch-later"],
-  run: async (input) => {
+  run: async (input, ctx) => {
     const item = await addWatchLaterItem({
       ...input,
       thumbnail: input.thumbnail ? input.thumbnail : undefined,
     });
-    await logActivity("watch_later_added", `À voir : ${item.title}`, item.url);
+    await ctx.activity?.("watch_later_added", `À voir : ${item.title}`, item.url);
 
     // Resume IA : jamais plus de 15 s, et l'echec ne bloque pas la creation.
     try {
       const summarize = (async () => {
-        const { summary, tags } = await autoSummarize(item.url, item.title);
+        const { summary, tags } = await summarizePage(ctx, item.url, item.title);
         if (summary || tags.length > 0) {
-          await updateWatchLaterItem(item.id, { summary, aiTags: tags });
+          await updateWatchLaterItem(item.id, { summary, aiTags: [...tags] });
         }
       })();
       const timeout = new Promise<"timeout">((resolve) =>
@@ -76,7 +75,7 @@ export const createWatchLaterAction = defineAction({
       );
       await Promise.race([summarize, timeout]);
     } catch (err) {
-      console.error("[watch-later] Resume automatique echoue:", err);
+      ctx.log("error", "resume automatique echoue", err);
     }
 
     return item;
@@ -87,16 +86,19 @@ export const summarizeWatchLaterAction = defineAction({
   name: "summarize",
   input: idInput,
   revalidate: ["/m/watch-later"],
-  run: async ({ id }) => {
+  run: async ({ id }, ctx) => {
     const data = await getWatchLater();
     const item = data.items.find((entry) => entry.id === id);
     if (!item) return null;
 
-    const result = await autoSummarize(item.url, item.title);
+    const result = await summarizePage(ctx, item.url, item.title);
     if (result.summary || result.tags.length > 0) {
-      await updateWatchLaterItem(id, { summary: result.summary, aiTags: result.tags });
+      await updateWatchLaterItem(id, {
+        summary: result.summary,
+        aiTags: [...result.tags],
+      });
     }
-    return result;
+    return { summary: result.summary, tags: [...result.tags] };
   },
 });
 
@@ -111,9 +113,15 @@ export const removeWatchLaterAction = defineAction({
   name: "remove",
   input: idInput,
   revalidate: ["/m/watch-later"],
-  run: async ({ id }) => {
+  run: async ({ id }, ctx) => {
     const ok = await deleteWatchLaterItem(id);
-    if (ok) await logActivity("watch_later_deleted", "Element retire de A voir plus tard", id);
+    if (ok) {
+      await ctx.activity?.(
+        "watch_later_deleted",
+        "Element retire de A voir plus tard",
+        id
+      );
+    }
     return ok;
   },
 });

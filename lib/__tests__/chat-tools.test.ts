@@ -4,8 +4,6 @@ const mockStorage = {
   webSearch: vi.fn(),
   addReminder: vi.fn(),
   updateReminder: vi.fn(),
-  addWatchLaterItem: vi.fn(),
-  getWatchLater: vi.fn(),
   fetchPageMeta: vi.fn(),
   getConcerts: vi.fn(),
   getAccreditations: vi.fn(),
@@ -43,9 +41,26 @@ const mockSchedule = {
   getUpcomingCourses: vi.fn(),
 };
 
+// Le module watch-later est autonome depuis #208 : son store ne passe plus par
+// `@/lib/storage`, et son contexte fournit un acces reseau controle.
+const mockWatchLater = {
+  addWatchLaterItem: vi.fn(),
+  getWatchLater: vi.fn(),
+};
+
 vi.mock("@/lib/storage", () => mockStorage);
 vi.mock("@/lib/storage/schedule", () => mockSchedule);
 vi.mock("@/lib/google-actions", () => mockGoogleActions);
+vi.mock("@/modules/watch-later/service", () => mockWatchLater);
+vi.mock("@/lib/kernel/context", () => ({
+  createModuleContext: (moduleId: string) => ({
+    moduleId,
+    log: () => {},
+    emit: () => {},
+    activity: vi.fn(),
+    net: { isSafeUrl: async () => true, fetchText: async () => null },
+  }),
+}));
 
 const {
   executeTool,
@@ -176,12 +191,12 @@ describe("chat-tools — verification des ecritures", () => {
   });
 
   it("add_watch_later confirme l'ecriture par relecture", async () => {
-    mockStorage.addWatchLaterItem.mockResolvedValue({
+    mockWatchLater.addWatchLaterItem.mockResolvedValue({
       id: "w1",
       title: "Un article",
       source: "example.com",
     });
-    mockStorage.getWatchLater.mockResolvedValue({ items: [{ id: "w1" }] });
+    mockWatchLater.getWatchLater.mockResolvedValue({ items: [{ id: "w1" }] });
 
     const out = await executeTool("add_watch_later", {
       url: "https://example.com/article",
@@ -194,12 +209,12 @@ describe("chat-tools — verification des ecritures", () => {
   it("add_watch_later signale un echec si la relecture ne retrouve pas le lien", async () => {
     // Ecriture silencieusement perdue : sans verification, l'agent annoncerait
     // « ajoute » alors que rien n'existe.
-    mockStorage.addWatchLaterItem.mockResolvedValue({
+    mockWatchLater.addWatchLaterItem.mockResolvedValue({
       id: "w1",
       title: "Un article",
       source: "example.com",
     });
-    mockStorage.getWatchLater.mockResolvedValue({ items: [] });
+    mockWatchLater.getWatchLater.mockResolvedValue({ items: [] });
 
     const out = await executeTool("add_watch_later", {
       url: "https://example.com/article",
@@ -311,12 +326,12 @@ describe("chat-tools — verification des ecritures", () => {
   });
 
   it("runTool renvoie le statut machine du resultat", async () => {
-    mockStorage.addWatchLaterItem.mockResolvedValue({
+    mockWatchLater.addWatchLaterItem.mockResolvedValue({
       id: "w1",
       title: "Un article",
       source: "example.com",
     });
-    mockStorage.getWatchLater.mockResolvedValue({ items: [{ id: "w1" }] });
+    mockWatchLater.getWatchLater.mockResolvedValue({ items: [{ id: "w1" }] });
 
     const run = await runTool("add_watch_later", {
       url: "https://example.com/article",
@@ -328,7 +343,7 @@ describe("chat-tools — verification des ecritures", () => {
   });
 
   it("runTool propage une exception en statut error", async () => {
-    mockStorage.addWatchLaterItem.mockRejectedValue(new Error("disque plein"));
+    mockWatchLater.addWatchLaterItem.mockRejectedValue(new Error("disque plein"));
 
     const run = await runTool("add_watch_later", {
       url: "https://example.com/article",

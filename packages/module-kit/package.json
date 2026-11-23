@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./storage-core": "./src/storage-core.ts",
-    "./json-store": "./src/json-store.ts"
+    "./json-store": "./src/json-store.ts",
+    "./testing": "./src/testing.ts"
   },
   "peerDependencies": {
     "react": "^19.2.4",

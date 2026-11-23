@@ -27,7 +27,7 @@ function formatDate(dateStr: string): string {
   }
 }
 
-export function AccreditationsWidget() {
+export function PhotoShootsWidget() {
   const [data, setData] = useState<PhotoShoot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

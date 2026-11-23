@@ -6,7 +6,7 @@ import { Sparkles } from "lucide-react";
 import { CalendarWidget } from "@/components/widgets/CalendarWidget";
 import { GmailWidget } from "@/components/widgets/GmailWidget";
 import { LeetCodeWidget } from "@/components/widgets/LeetCodeWidget";
-import { AccreditationsWidget } from "@/components/widgets/AccreditationsWidget";
+import { PhotoShootsWidget } from "@/components/widgets/PhotoShootsWidget";
 import { FluxTimeline } from "@/components/layout/FluxTimeline";
 import { useChatContext } from "@/lib/chat-context";
 import { cn } from "@/lib/utils";
@@ -103,7 +103,7 @@ export function ContextPanel() {
                 <div className="pt-1 space-y-3">
                   <GmailWidget />
                   <LeetCodeWidget />
-                  <AccreditationsWidget />
+                  <PhotoShootsWidget />
                 </div>
               </div>
             ) : view.startsWith("module:") ? (
@@ -115,7 +115,7 @@ export function ContextPanel() {
                 {view === "calendar" && <CalendarWidget />}
                 {view === "gmail" && <GmailWidget />}
                 {view === "leetcode" && <LeetCodeWidget />}
-                {view === "photos" && <AccreditationsWidget />}
+                {view === "photos" && <PhotoShootsWidget />}
               </div>
             )}
           </div>

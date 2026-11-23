@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  type ReactNode,
+} from "react";
 
 /**
  * Invocation des actions d'un module depuis sa page (ADR 0001, decision G).
@@ -30,7 +38,24 @@ export function ModuleActionsProvider({
   call,
   children,
 }: ModuleActionsValue & { children: ReactNode }) {
-  const value = useMemo(() => ({ moduleId, call }), [moduleId, call]);
+  // Une Server Action passee d'un composant serveur a un composant client n'a
+  // pas d'identite stable entre deux rendus RSC : elle est recreee a chaque
+  // payload. La garder dans une ref empeche ce changement de se propager au
+  // contexte, sinon chaque consommateur re-rend et relance ses effets de
+  // chargement en boucle (#251).
+  const callRef = useRef(call);
+  useEffect(() => {
+    callRef.current = call;
+  }, [call]);
+
+  const value = useMemo<ModuleActionsValue>(
+    () => ({
+      moduleId,
+      call: (id, name, input) => callRef.current(id, name, input),
+    }),
+    [moduleId]
+  );
+
   return <ModuleActionsContext.Provider value={value}>{children}</ModuleActionsContext.Provider>;
 }
 
@@ -41,8 +66,18 @@ export function useModuleAction(): ModuleActionCall {
     throw new Error("useModuleAction doit etre utilise dans une page de module.");
   }
   const { moduleId, call } = context;
+
+  // Meme raison qu'au-dessus, en defense : l'identite rendue ne doit dependre
+  // que du module, jamais de l'identite de l'invocation. Sans cette phrase,
+  // quelqu'un « simplifiera » en remettant `call` dans les dependances, et la
+  // boucle de chargement reviendra dans toutes les pages de module.
+  const callRef = useRef(call);
+  useEffect(() => {
+    callRef.current = call;
+  }, [call]);
+
   return useCallback(
-    (name: string, input?: unknown) => call(moduleId, name, input),
-    [moduleId, call]
+    (name: string, input?: unknown) => callRef.current(moduleId, name, input),
+    [moduleId]
   );
 }

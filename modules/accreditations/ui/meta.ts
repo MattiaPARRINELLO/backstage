@@ -92,3 +92,16 @@ export function formatConcertDate(value: string): string {
     year: "numeric",
   });
 }
+
+/**
+ * Message lisible pour un echec d'action.
+ *
+ * Une Server Action peut lever une `Error`, un `string` ou un objet inconnu
+ * selon la couche qui echoue (validation Zod, session, stockage). Le repli
+ * evite d'afficher « [object Object] » ou une chaine vide dans un toast.
+ */
+export function describeActionError(cause: unknown, fallback: string): string {
+  if (cause instanceof Error && cause.message.trim()) return cause.message;
+  if (typeof cause === "string" && cause.trim()) return cause;
+  return fallback;
+}

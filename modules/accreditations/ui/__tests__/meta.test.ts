@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Accreditation } from "../../schema";
 import {
   countByStatus,
+  describeActionError,
   filterAccreditations,
   formatConcertDate,
   sortAccreditations,
@@ -69,5 +70,27 @@ describe("tri et filtres des accréditations", () => {
 
   it("garde une date inconnue lisible", () => {
     expect(formatConcertDate("Date inconnue")).toBe("Date inconnue");
+  });
+});
+
+describe("describeActionError", () => {
+  it("rend le message d'une Error", () => {
+    expect(describeActionError(new Error("Session expirée"), "Echec")).toBe("Session expirée");
+  });
+
+  it("rend une chaine non vide telle quelle", () => {
+    expect(describeActionError("Validation refusee", "Echec")).toBe("Validation refusee");
+  });
+
+  it("retombe sur le repli pour un objet inconnu", () => {
+    expect(describeActionError({ code: 500 }, "Echec")).toBe("Echec");
+    expect(describeActionError(null, "Echec")).toBe("Echec");
+    expect(describeActionError(undefined, "Echec")).toBe("Echec");
+    expect(describeActionError(42, "Echec")).toBe("Echec");
+  });
+
+  it("retombe sur le repli quand le message est vide", () => {
+    expect(describeActionError(new Error("   "), "Echec")).toBe("Echec");
+    expect(describeActionError("", "Echec")).toBe("Echec");
   });
 });

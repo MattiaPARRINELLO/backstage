@@ -486,13 +486,69 @@ moteur d'écriture (`lib/memory-autosave.ts`) :
 `bun run module:add <url-git>#<ref>` clone une **ref épinglée** dans
 `modules/<id>/`, retire le `.git` du clone, vérifie le manifeste
 (`apiVersion <= KERNEL_API`, id kebab-case, champs obligatoires), puis écrit
-`modules.config.json`, `modules.lock.json` et la racine de composition. Le
+`modules.config.json`, `modules/index.ts` et enfin `modules.lock.json`. Le
 commit réel est figé dans le lock : une branche n'est jamais une version.
 
-- `modules.lock.json` contient `repo`, `ref`, `commit`, `installedAt` par module.
-- `bun run module:list` affiche le lock ; `bun run module:doctor` vérifie que
-  chaque module du lock est présent, actif et compatible (un module laissé
-  désactivé dans `modules.config.json` est signalé).
+### Les sept commandes
+
+| Commande                        | Effet                                                                                  |
+| ------------------------------- | -------------------------------------------------------------------------------------- |
+| `bun run module:add <url>#<ref>` | installe un module : clone, validation, activation, composition, lock                  |
+| `bun run module:list`           | affiche le lock (`id`, commit, `repo#ref`, `installedAt`)                               |
+| `bun run module:doctor`         | vérifie présence, activation, manifeste et dossiers `.install-*` orphelins             |
+| `bun run module:update <id> [#ref]` | réinstalle la ref du lock, ou change de version ; identifiant et activation conservés |
+| `bun run module:remove <id>`    | retire dossier, config, composition et lock                                            |
+| `bun run module:enable <id>`    | passe `enabled: true` dans `modules.config.json`, rien d'autre                          |
+| `bun run module:disable <id>`   | passe `enabled: false` dans `modules.config.json`, rien d'autre                         |
+
+Codes de sortie : `0` succès, `1` erreur (message sur `stderr`, aucune trace de
+pile). Une commande réussie ne laisse aucun dossier `.install-*` et ne touche
+que les fichiers attendus, donc `git status --short` reste lisible.
+
+`enable` et `disable` ne modifient que `modules.config.json`. Un module
+désactivé **reste** dans `modules/index.ts` et dans le lock : il disparaît du
+rail, des panneaux, de la carte d'accueil, des outils et du prompt, mais un
+rebuild reste obligatoire parce que la config est importée statiquement.
+
+`update` refuse d'installer une version dont l'identifiant de manifeste change
+ou dont `apiVersion` dépasse `KERNEL_API`. Sans argument `ref`, la ref du lock
+est réinstallée et `installedAt` est réhorodaté ; avec une ref, `ref` et `commit`
+sont remplacés. L'état activé ou désactivé est conservé : la config n'est pas
+réeécrite.
+
+### Ordre des écritures et rollback
+
+Une opération écrit dans cet ordre : dossier du module, `modules.config.json`,
+`modules/index.ts`, puis `modules.lock.json`. Le lock est la **dernière**
+écriture : tant qu'il n'existe pas, le noyau ne connaît pas le module.
+
+Un instantané des trois fichiers est pris avant la première écriture. Si une
+étape échoue, ils sont restaurés à l'octet près, le dossier installé est
+supprimé, et l'erreur remonte. Aucun état intermédiaire ne peut donc rester : ni
+dossier sans lock, ni lock sans dossier. `remove` déplace d'abord le dossier en
+`.install-remove-*`, écrit config, composition puis lock, et ne le supprime
+qu'après ; une erreur le remet en place. Un dossier `.install-*` résiduel signale
+une interruption brutale et `doctor` le liste.
+
+Cas d'erreur couverts par les tests (dépôt git local, sans réseau) et par
+`doctor` :
+
+| Cas                                   | Réaction                                                     |
+| ------------------------------------- | ------------------------------------------------------------ |
+| dépôt absent ou ref inconnue          | clone refusé, aucun fichier écrit, aucun dossier temporaire   |
+| tag présent en local mais non poussé  | clone refusé (le tag n'existe pas dans la ref distante)       |
+| module déjà installé                  | refus, `module:update` ou `module:remove` indiqué             |
+| conflit d'identifiant entre dépôts    | refus, dépôt d'origine rappelé                                |
+| manifeste invalide ou `apiVersion` > noyau | refus avant toute écriture (validation avant clone copié) |
+| `remove` ou `update` d'un module inconnu | sortie 1, lock inchangé                                    |
+| `disable` d'un module déjà désactivé  | sortie 1                                                      |
+| `doctor` sur module absent            | sortie 1, `module absent de modules/<id>`                     |
+| `doctor` sur dossier `.install-*`     | sortie 1, dossier à supprimer                                 |
+
+- `modules.lock.json` contient `repo`, `ref`, `commit`, `installedAt` par module ;
+  ce format est un contrat et ne change pas.
+- `bun run module:doctor` vérifie que chaque module du lock est présent, actif et
+  compatible (un module laissé désactivé dans `modules.config.json` est signalé).
 - L'installation échoue sans laisser de dossier temporaire, et le clone ne
   conserve pas d'historique git.
 - Un rebuild Next est obligatoire : Next ne crée pas de route à l'exécution.
@@ -503,10 +559,6 @@ commit réel est figé dans le lock : une branche n'est jamais une version.
 - Module de référence vérifié de bout en bout (issue #168) :
   [`MattiaPARRINELLO/backstage-module-daily-quote`](https://github.com/MattiaPARRINELLO/backstage-module-daily-quote)
   (`#v1.0.0`), un outil en lecture et une page, sans stockage ni réseau.
-- Retirer un module installé : `"enabled": false` dans `modules.config.json` puis
-  rebuild, ou suppression complète du dossier `modules/<id>` avec son entrée de
-  `modules.lock.json` et son import dans `modules/index.ts`. Un reste orphelin
-  est signalé par `bun run module:doctor`.
 - **Modèle de confiance inchangé** : un module externe exécute du code arbitraire
   dans le processus serveur. Il peut lire `.env.local` et `data/`. Les capacités
   déclarées sont affichées à l'installation, jamais appliquées. Ce n'est pas une
@@ -570,9 +622,9 @@ module rendrait le noyau dépendant d'un module distribuable.
   `GITHUB_TOKEN` avec un jeton restreint à un autre dépôt, `bun run module:add`
   l'utilise et reçoit un 403 : lancer avec `GITHUB_TOKEN= bun run module:add ...` ;
 - `modules.lock.json` impose une ref épinglée, jamais une branche ;
-- il n'existe **pas** de commande `module:remove` : le retrait reste manuel
-  (dossier, `modules.config.json`, `modules.lock.json`, import de composition).
-  Cette absence est assumée et suivie par #209.
+- le retrait n'est plus manuel : `bun run module:remove <id>` nettoie dossier,
+  `modules.config.json`, `modules/index.ts` et le lock, avec rollback si une
+  écriture échoue.
 
 ### Capacités fournies aux modules
 

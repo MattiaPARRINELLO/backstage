@@ -65,6 +65,7 @@ OpenAI), `AUTH_SECRET`, `WEBAUTHN_RP_ID` / `WEBAUTHN_ORIGIN`, `SETUP_TOKEN`.
 | --------------------------- | ---------------------------------------------------------- |
 | `NEXT_PUBLIC_API_URL`       | Base URL de l'API IA (endpoint compatible OpenAI)           |
 | `IA_API_KEY`                | Clé API du provider IA                                     |
+| `GROQ_API_KEY`              | Extraits JSON des modules (scan des accréditations), optionnel |
 | `AUTH_SECRET`               | Signe les JWT de session (passkey + Google + Microsoft)    |
 | `WEBAUTHN_RP_ID`            | Domaine de la passkey (`localhost` en dev)                 |
 | `WEBAUTHN_ORIGIN`           | Origine WebAuthn (`http://localhost:3000` en dev)          |

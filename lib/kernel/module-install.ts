@@ -1,7 +1,6 @@
 import {
   existsSync,
   mkdirSync,
-  readFileSync,
   readdirSync,
   renameSync,
   rmSync,
@@ -145,12 +144,7 @@ export async function doctorModules(
   kernelApi: number = KERNEL_API
 ): Promise<ModuleDoctorIssue[]> {
   const lock = readLock(root);
-  const configPath = join(root, "modules.config.json");
-  const config = existsSync(configPath)
-    ? (JSON.parse(readFileSync(configPath, "utf8")) as {
-        modules?: Record<string, { enabled?: boolean }>;
-      })
-    : {};
+  const config = readConfig(root);
   const issues: ModuleDoctorIssue[] = [];
 
   for (const [id, entry] of Object.entries(lock.modules)) {

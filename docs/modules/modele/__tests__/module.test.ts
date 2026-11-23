@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  assertToolError,
   assertToolOk,
   createTestContext,
   expectValidModule,
@@ -39,9 +40,7 @@ describe("outil add", () => {
     await withTempDataDir(async () => {
       const ctx = createTestContext({ moduleId: "demo-notes" });
 
-      await expect(runTool(addNoteTool, { text: "   " }, ctx)).rejects.toThrow(
-        /Arguments invalides pour "add"/
-      );
+      assertToolError(await runTool(addNoteTool, { text: "   " }, ctx), /Erreur :/);
 
       const { notes } = await notesStore.read();
       expect(notes).toEqual([]);

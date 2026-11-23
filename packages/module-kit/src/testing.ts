@@ -86,15 +86,13 @@ export function createTestContext(
   };
 }
 
-function describeIssues(error: z.ZodError): string {
-  return error.issues
-    .map((issue) => `${issue.path.join(".") || "(racine)"} : ${issue.message}`)
-    .join("; ");
-}
-
 /**
  * Execute un outil comme le fait le noyau : validation du schema d'abord, puis
  * `run`. Rend le `ToolOutput` brut, sans passer par le pont ni la politique.
+ *
+ * Comportement identique a `runModuleTool` du noyau : des arguments hors schema
+ * et une exception levee par l'outil deviennent un resultat `error`, jamais un
+ * `throw`. Un test ecrit donc ce que la production renvoie au modele.
  */
 export async function runTool<Schema extends z.ZodType>(
   tool: ToolDefinition<Schema>,
@@ -103,11 +101,19 @@ export async function runTool<Schema extends z.ZodType>(
 ): Promise<ToolOutput> {
   const parsed = tool.params.safeParse(args);
   if (!parsed.success) {
-    throw new Error(
-      `Arguments invalides pour "${tool.name}" : ${describeIssues(parsed.error)}`
-    );
+    return {
+      status: "error",
+      text: `Erreur : ${parsed.error.issues[0]?.message ?? "arguments invalides"}`,
+    };
   }
-  return tool.run(parsed.data, ctx);
+  try {
+    return await tool.run(parsed.data, ctx);
+  } catch (error) {
+    return {
+      status: "error",
+      text: `Erreur : ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
 }
 
 function fail(message: string): never {

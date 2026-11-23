@@ -1,27 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, Ticket } from "lucide-react";
 import { useModuleAction } from "@backstage/module-kit";
 
-import { countAwaitingFollowUp } from "../followup";import { accreditationsApi } from "./api";
+import { countAwaitingFollowUp } from "../followup";
+import { accreditationsApi } from "./api";
 
 /**
  * Carte d'accueil du module : combien de demandes de relance attendent.
  *
- * Elle ne charge que la liste locale et renvoie vers la page. La garde par
- * `useRef` évite la boucle de chargement décrite dans #251.
+ * Elle ne charge que la liste locale et renvoie vers la page.
  */
 export function AccreditationsHomeCard() {
   const call = useModuleAction();
   const api = useMemo(() => accreditationsApi(call), [call]);
   const [count, setCount] = useState<number | null>(null);
-  const loadedRef = useRef(false);
 
   useEffect(() => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
     let active = true;
     api
       .load()

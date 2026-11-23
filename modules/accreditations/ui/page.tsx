@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { RefreshCw, Search, Ticket } from "lucide-react";
 import {
   EmptyState,
@@ -31,9 +31,6 @@ export default function AccreditationsPage() {
   const call = useModuleAction();
   const api = useMemo(() => accreditationsApi(call), [call]);
   const toast = useModuleToasts();
-  // L'invocation fournie par le noyau n'est pas referentiellement stable : sans
-  // ce garde, l'effet relancerait un chargement a chaque rendu.
-  const loadedRef = useRef(false);
 
   const reload = useCallback(async () => {
     try {
@@ -48,8 +45,6 @@ export default function AccreditationsPage() {
   }, [api]);
 
   useEffect(() => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
     startTransition(() => {
       void reload();
     });

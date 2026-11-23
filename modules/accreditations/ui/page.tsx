@@ -16,6 +16,7 @@ import { accreditationsApi, type AccreditationEditInput } from "./api";
 import {
   FILTER_ORDER,
   countByStatus,
+  describeActionError,
   filterAccreditations,
   sortAccreditations,
   type FilterId,
@@ -78,29 +79,58 @@ export default function AccreditationsPage() {
   }
 
   async function handleStatus(id: string, status: AccreditationStatus) {
-    const updated = await api.updateStatus(id, status);
-    if (updated) {
+    try {
+      const updated = await api.updateStatus(id, status);
+      if (!updated) {
+        toast?.show({ message: "Fiche introuvable, statut non modifié", tone: "danger" });
+        return;
+      }
       setItems((prev) =>
         prev ? prev.map((entry) => (entry.id === id ? updated : entry)) : prev
       );
+    } catch (cause) {
+      toast?.show({
+        message: describeActionError(cause, "Statut non modifié"),
+        tone: "danger",
+      });
     }
   }
 
-  async function handleSave(input: AccreditationEditInput) {
-    const updated = await api.edit(input);
-    if (updated) {
+  async function handleSave(input: AccreditationEditInput): Promise<boolean> {
+    try {
+      const updated = await api.edit(input);
+      if (!updated) {
+        toast?.show({ message: "Fiche introuvable, modification non enregistrée", tone: "danger" });
+        return false;
+      }
       setItems((prev) =>
         prev ? prev.map((entry) => (entry.id === input.id ? updated : entry)) : prev
       );
       toast?.show({ message: "Fiche mise à jour", tone: "success", duration: 2000 });
+      return true;
+    } catch (cause) {
+      toast?.show({
+        message: describeActionError(cause, "Enregistrement impossible"),
+        tone: "danger",
+      });
+      return false;
     }
   }
 
   async function handleDelete(id: string) {
-    const deleted = await api.remove(id);
-    if (deleted) {
+    try {
+      const deleted = await api.remove(id);
+      if (!deleted) {
+        toast?.show({ message: "Fiche introuvable, suppression non effectuée", tone: "danger" });
+        return;
+      }
       setItems((prev) => (prev ? prev.filter((entry) => entry.id !== id) : prev));
       toast?.show({ message: "Fiche supprimée", tone: "default", duration: 2500 });
+    } catch (cause) {
+      toast?.show({
+        message: describeActionError(cause, "Suppression impossible"),
+        tone: "danger",
+      });
     }
   }
 

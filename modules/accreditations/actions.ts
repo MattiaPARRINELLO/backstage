@@ -93,6 +93,7 @@ export const editAccreditationAction = defineAction({
   run: async ({ id, ...updates }, ctx) => {
     const accreditation = await updateAccreditation(id, {
       ...updates,
+      needsReview: false,
       contactEmail: updates.contactEmail ? updates.contactEmail : undefined,
     });
     if (accreditation) {
@@ -111,7 +112,7 @@ export const updateAccreditationStatusAction = defineAction({
   input: updateStatusInput,
   revalidate: ["/m/accreditations"],
   run: async ({ id, status }, ctx) => {
-    const accreditation = await updateAccreditation(id, { status });
+    const accreditation = await updateAccreditation(id, { status, needsReview: false });
     if (accreditation) {
       await ctx.activity?.(
         "accreditation_updated",

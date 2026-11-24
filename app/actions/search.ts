@@ -4,12 +4,13 @@ import { z } from "zod";
 
 import { actionInput } from "@/lib/action";
 
+import { getAccreditations } from "@/modules/accreditations";
+
 import {
   getConcerts,
   getMemory,
   getReminders,
   getWatchLater,
-  getAccreditations,
   searchEmails,
 } from "@/lib/storage";
 import type { ConcertEvent, MemoryFact, Email, Reminder, WatchLaterItem, Accreditation } from "@/lib/types";

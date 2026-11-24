@@ -6,11 +6,15 @@ const mockStorage = {
   getEmails: vi.fn(),
   getReminders: vi.fn(),
   getWatchLater: vi.fn(),
-  getAccreditations: vi.fn(),
   searchEmails: vi.fn(),
 };
 
+const mockAccreditations = {
+  getAccreditations: vi.fn(),
+};
+
 vi.mock("@/lib/storage", () => mockStorage);
+vi.mock("@/modules/accreditations", () => mockAccreditations);
 vi.mock("@/lib/session", () => ({ requireSession: vi.fn().mockResolvedValue({ userId: "test-user" }) }));
 
 const { unifiedSearch } = await import("@/app/actions/search");
@@ -23,7 +27,7 @@ describe("unifiedSearch", () => {
     mockStorage.getEmails.mockResolvedValue({ emails: [] });
     mockStorage.getReminders.mockResolvedValue({ reminders: [] });
     mockStorage.getWatchLater.mockResolvedValue({ items: [] });
-    mockStorage.getAccreditations.mockResolvedValue({ accreditations: [] });
+    mockAccreditations.getAccreditations.mockResolvedValue({ accreditations: [] });
     mockStorage.searchEmails.mockResolvedValue([]);
   });
 
@@ -69,7 +73,7 @@ describe("unifiedSearch", () => {
   });
 
   it("filtre les accreditations par artiste, venue, notes", async () => {
-    mockStorage.getAccreditations.mockResolvedValue({
+    mockAccreditations.getAccreditations.mockResolvedValue({
       accreditations: [
         { id: "1", artist: "Muse", venue: "Stade", concertDate: "2026-08-01", status: "pending", contactEmail: "", notes: "Dernière minute", createdAt: "", updatedAt: "" },
       ],

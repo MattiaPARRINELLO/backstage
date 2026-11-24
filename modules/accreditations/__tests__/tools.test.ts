@@ -50,6 +50,7 @@ function fiche(input: {
     venue: input.venue,
     concertDate: "2026-11-20",
     status: input.status,
+    needsReview: false,
     contactEmail: "presse@salle.fr",
     createdAt: "2026-11-12T09:00:00.000Z",
     updatedAt: "2026-11-12T09:00:00.000Z",
@@ -113,7 +114,12 @@ describe("outil scan des accreditations", () => {
 
     assertToolOk(result);
     expect(service.addAccreditation).toHaveBeenCalledWith(
-      expect.objectContaining({ artist: "Muse", venue: "Zénith", concertDate: "2026-11-20" })
+      expect.objectContaining({
+        artist: "Muse",
+        venue: "Zénith",
+        concertDate: "2026-11-20",
+        needsReview: false,
+      })
     );
     expect(rows[0]).toMatchObject({ artist: "Muse", status: "accepted" });
     expect(rows[0]?.notes).toBe("Email: m1");
@@ -124,7 +130,14 @@ describe("outil scan des accreditations", () => {
     google.fetchGmailMessages.mockResolvedValue([
       email("m2", "Accreditation pour Muse", "Votre demande est en cours"),
     ]);
-    ai.json.mockResolvedValue(extraction({ artist: "Muse", venue: "Zénith", status: "sent" }));
+    ai.json.mockResolvedValue(
+      extraction({
+        artist: "Muse",
+        venue: "Zénith",
+        concertDate: "2026-11-20",
+        status: "sent",
+      })
+    );
 
     const result = await scanAccreditationsTool.run({}, ctx);
 

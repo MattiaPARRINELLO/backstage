@@ -26,6 +26,7 @@ function fiche(partial: Partial<Accreditation> & { id: string }): Accreditation 
     venue: "Défense Arena",
     concertDate: "2026-12-05",
     status: "sent",
+    needsReview: false,
     createdAt: CREATED,
     updatedAt: CREATED,
     ...partial,
@@ -91,6 +92,21 @@ describe("sélection des relances dues", () => {
     expect(countAwaitingFollowUp(entries, now)).toBe(2);
   });
 
+  it("ignore les fiches a verifier dans le prompt et le compteur", () => {
+    const entries = [
+      fiche({ id: "review-ready", artist: "Incertain", status: "follow-up", needsReview: true }),
+      fiche({ id: "review-due", artist: "Douteux", followUpAt: "2026-11-19T10:00:00.000Z", needsReview: true }),
+      fiche({ id: "confirmed", artist: "Confirme", followUpAt: "2026-11-19T10:00:00.000Z" }),
+    ];
+
+    expect(dueAccreditations(entries, now).map((entry) => entry.id)).toEqual(["confirmed"]);
+    expect(countAwaitingFollowUp(entries, now)).toBe(1);
+    const prompt = followUpPromptLines(entries, now);
+    expect(prompt).toContain("Confirme");
+    expect(prompt).not.toContain("Incertain");
+    expect(prompt).not.toContain("Douteux");
+  });
+
   it("borne le bloc de prompt à trois lignes", () => {
     const entries = Array.from({ length: 5 }, (_, index) =>
       fiche({ id: `a${index}`, status: "follow-up", followUpAt: "2026-11-19T10:00:00.000Z" })
@@ -121,6 +137,28 @@ describe("job de relance", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("ne notifie pas une fiche encore a verifier", async () => {
+    await withTempDataDir(async () => {
+      await accreditationsStore.mutate((data) => {
+        data.accreditations.push(
+          fiche({
+            id: "review",
+            followUpAt: "2026-11-19T10:00:00.000Z",
+            needsReview: true,
+          })
+        );
+      });
+
+      const notified = await runAccreditationFollowUpCheck();
+
+      expect(notified).toBe(0);
+      expect(push.sendPushToAll).not.toHaveBeenCalled();
+      const after = await accreditationsStore.read();
+      expect(after.accreditations[0]).toMatchObject({ status: "sent", needsReview: true });
+      expect(after.accreditations[0]?.followUpNotifiedAt).toBeUndefined();
+    });
   });
 
   it("notifie une fois, passe la fiche en follow-up et pose le texte", async () => {

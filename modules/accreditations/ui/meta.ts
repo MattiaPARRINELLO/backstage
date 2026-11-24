@@ -25,10 +25,11 @@ export const STATUS_ORDER: readonly AccreditationStatus[] = [
   "refused",
 ];
 
-export type FilterId = "all" | AccreditationStatus;
+export type FilterId = "all" | "review" | AccreditationStatus;
 
 export const FILTER_ORDER: readonly { id: FilterId; label: string }[] = [
   { id: "all", label: "Tout" },
+  { id: "review", label: "À vérifier" },
   ...STATUS_ORDER.map((status) => ({ id: status, label: STATUS_META[status].label })),
 ];
 
@@ -50,22 +51,27 @@ export function sortAccreditations(
   });
 }
 
+/** Compte les statuts metier et, separement, les fiches a verifier. */
 export function countByStatus(
   accreditations: readonly Accreditation[]
 ): Record<FilterId, number> {
   const counts: Record<FilterId, number> = {
     all: accreditations.length,
+    review: 0,
     pending: 0,
     sent: 0,
     accepted: 0,
     refused: 0,
     "follow-up": 0,
   };
-  for (const entry of accreditations) counts[entry.status] += 1;
+  for (const entry of accreditations) {
+    counts[entry.status] += 1;
+    if (entry.needsReview) counts.review += 1;
+  }
   return counts;
 }
 
-/** Filtre par statut et recherche sur l'artiste, le lieu ou le contact. */
+/** Filtre par statut ou revue, puis recherche sur l'artiste, le lieu ou le contact. */
 export function filterAccreditations(
   accreditations: readonly Accreditation[],
   filter: FilterId,
@@ -73,7 +79,8 @@ export function filterAccreditations(
 ): Accreditation[] {
   const needle = query.trim().toLowerCase();
   return accreditations.filter((entry) => {
-    if (filter !== "all" && entry.status !== filter) return false;
+    if (filter === "review" && !entry.needsReview) return false;
+    if (filter !== "all" && filter !== "review" && entry.status !== filter) return false;
     if (!needle) return true;
     return (
       entry.artist.toLowerCase().includes(needle) ||

@@ -44,6 +44,7 @@ describe("store des accréditations", () => {
         artist: "Damso",
         venue: "Paris La Défense Arena",
         status: "accepted",
+        needsReview: false,
         createdAt: "2026-11-12T09:00:00.000Z",
       });
     });

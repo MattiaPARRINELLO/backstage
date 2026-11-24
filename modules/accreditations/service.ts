@@ -23,6 +23,7 @@ export async function addAccreditation(input: {
   artist: string;
   venue: string;
   concertDate: string;
+  needsReview?: boolean | undefined;
   contactEmail?: string | undefined;
   notes?: string | undefined;
 }): Promise<Accreditation> {
@@ -33,6 +34,7 @@ export async function addAccreditation(input: {
     venue: input.venue,
     concertDate: input.concertDate,
     status: "pending",
+    needsReview: input.needsReview ?? false,
     contactEmail: input.contactEmail,
     notes: input.notes,
     createdAt: now,
@@ -49,6 +51,7 @@ export interface AccreditationUpdate {
   readonly venue?: string | undefined;
   readonly concertDate?: string | undefined;
   readonly status?: AccreditationStatus | undefined;
+  readonly needsReview?: boolean | undefined;
   readonly contactEmail?: string | undefined;
   readonly notes?: string | undefined;
   readonly emailThreadId?: string | undefined;
@@ -96,6 +99,7 @@ export async function updateAccreditation(
     ) {
       next.followUpAt = computeFollowUpAt(next.createdAt, next.concertDate);
     }
+    if (updates.needsReview !== undefined) next.needsReview = updates.needsReview;
     if (updates.contactEmail !== undefined) next.contactEmail = updates.contactEmail;
     if (updates.notes !== undefined) next.notes = updates.notes;
     if (updates.emailThreadId !== undefined) next.emailThreadId = updates.emailThreadId;

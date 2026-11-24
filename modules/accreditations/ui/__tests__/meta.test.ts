@@ -15,6 +15,7 @@ function fiche(partial: Partial<Accreditation> & { id: string }): Accreditation 
     venue: "Zénith",
     concertDate: "2026-12-05",
     status: "pending",
+    needsReview: false,
     createdAt: "2026-11-12T09:00:00.000Z",
     updatedAt: "2026-11-12T09:00:00.000Z",
     ...partial,
@@ -61,6 +62,23 @@ describe("tri et filtres des accréditations", () => {
     expect(filterAccreditations(items, "sent", "").map((entry) => entry.id)).toEqual(["b"]);
     expect(filterAccreditations(items, "all", "dam").map((entry) => entry.id)).toEqual(["a"]);
     expect(filterAccreditations(items, "accepted", "muse")).toEqual([]);
+  });
+
+  it("compte et filtre la revue independamment du statut", () => {
+    const items = [
+      fiche({ id: "a", artist: "Muse", status: "pending", needsReview: true }),
+      fiche({ id: "b", artist: "Muse Live", status: "sent", needsReview: true }),
+      fiche({ id: "c", artist: "Damso", status: "sent" }),
+    ];
+
+    expect(countByStatus(items)).toMatchObject({ all: 3, review: 2, pending: 1, sent: 2 });
+    expect(filterAccreditations(items, "review", "").map((entry) => entry.id)).toEqual([
+      "a",
+      "b",
+    ]);
+    expect(filterAccreditations(items, "review", "live").map((entry) => entry.id)).toEqual([
+      "b",
+    ]);
   });
 
   it("cherche aussi dans le contact", () => {

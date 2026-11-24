@@ -16,6 +16,7 @@ const entry: Accreditation = {
   venue: "La Salle",
   concertDate: "2026-12-05",
   status: "sent",
+  needsReview: false,
   createdAt: "2026-10-01T10:00:00.000Z",
   updatedAt: "2026-10-01T10:00:00.000Z",
   followUpDraft: "Bonjour, je me permets de revenir vers vous.",
@@ -35,6 +36,26 @@ describe("AccreditationRow", () => {
   afterEach(() => {
     document.body.innerHTML = "";
     vi.unstubAllGlobals();
+  });
+
+  it("affiche le badge d'une fiche a verifier", async () => {
+    const toasts: ModuleToasts = { show: vi.fn(() => "toast-1"), dismiss: vi.fn() };
+    const { root, container } = await mount(
+      <ModuleToastProvider value={toasts}>
+        <AccreditationRow
+          accreditation={{ ...entry, needsReview: true }}
+          onStatus={vi.fn(async () => undefined)}
+          onSave={vi.fn(async () => true)}
+          onDelete={vi.fn(async () => undefined)}
+        />
+      </ModuleToastProvider>
+    );
+
+    expect(container.textContent).toContain("À vérifier");
+
+    await act(async () => {
+      root.unmount();
+    });
   });
 
   it("explique un presse-papiers indisponible et laisse le texte visible", async () => {

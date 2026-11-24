@@ -21,6 +21,7 @@ const entry: Accreditation = {
   venue: "La Salle",
   concertDate: "2026-12-05",
   status: "pending",
+  needsReview: false,
   createdAt: "2026-10-01T10:00:00.000Z",
   updatedAt: "2026-10-01T10:00:00.000Z",
 };
@@ -53,6 +54,41 @@ function pageFor(call: ModuleActionInvoker, toasts: ModuleToasts) {
 describe("page des accreditations", () => {
   afterEach(() => {
     document.body.innerHTML = "";
+  });
+
+  it("filtre les fiches a verifier depuis la page", async () => {
+    const { toasts } = makeToasts();
+    const call: ModuleActionInvoker = (_moduleId, name) => {
+      if (name === "load") {
+        return Promise.resolve({
+          accreditations: [
+            entry,
+            { ...entry, id: "acc-review", artist: "Incertain", needsReview: true },
+          ],
+        });
+      }
+      return Promise.resolve(null);
+    };
+
+    const { root, container } = await mount(pageFor(call, toasts));
+    const reviewFilter = Array.from(container.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("À vérifier")
+    );
+    expect(reviewFilter).toBeDefined();
+
+    await act(async () => {
+      reviewFilter!.click();
+    });
+
+    const rows = Array.from(container.querySelectorAll("article"));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.textContent).toContain("Incertain");
+    expect(rows[0]?.textContent).not.toContain("Le Groupe");
+    expect(reviewFilter?.getAttribute("aria-pressed")).toBe("true");
+
+    await act(async () => {
+      root.unmount();
+    });
   });
 
   it("affiche un toast danger quand un changement de statut echoue", async () => {

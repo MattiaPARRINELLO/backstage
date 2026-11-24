@@ -41,6 +41,7 @@ export function computeFollowUpAt(
 
 /** Vraie si la fiche attend une relance et que l'échéance est atteinte. */
 export function isFollowUpDue(entry: Accreditation, now: number): boolean {
+  if (entry.needsReview) return false;
   if (entry.status !== "sent") return false;
   if (entry.followUpNotifiedAt !== undefined) return false;
   if (entry.followUpAt === undefined) return false;
@@ -62,8 +63,8 @@ export function countAwaitingFollowUp(
 ): number {
   return entries.filter(
     (entry) =>
-      entry.status === "follow-up" ||
-      isFollowUpDue(entry, now)
+      !entry.needsReview &&
+      (entry.status === "follow-up" || isFollowUpDue(entry, now))
   ).length;
 }
 
@@ -79,7 +80,9 @@ export function followUpPromptLines(
   entries: readonly Accreditation[],
   now: number
 ): string {
-  const ready = entries.filter((entry) => entry.status === "follow-up");
+  const ready = entries.filter(
+    (entry) => !entry.needsReview && entry.status === "follow-up"
+  );
   const late = dueAccreditations(entries, now).filter(
     (entry) => entry.status !== "follow-up"
   );

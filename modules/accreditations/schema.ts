@@ -22,6 +22,9 @@ export const accreditationSchema = z.looseObject({
   venue: z.string(),
   concertDate: z.string(),
   status: accreditationStatusSchema,
+  // Revue humaine orthogonale au statut metier. Le defaut garde les fiches
+  // historiques lisibles sans reecrire le fichier a la premiere lecture.
+  needsReview: z.boolean().default(false),
   emailThreadId: z.string().optional(),
   contactEmail: z.string().optional(),
   notes: z.string().optional(),

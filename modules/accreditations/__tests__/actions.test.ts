@@ -2,6 +2,7 @@ import { createTestContext, withTempDataDir } from "@backstage/module-kit/testin
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as actions from "../actions";
+import { accreditationsStore } from "../store";
 
 const ctx = createTestContext({ moduleId: "accreditations" });
 
@@ -11,6 +12,13 @@ async function runAction(name: keyof typeof actions, input: unknown): Promise<un
   const parsed = action.input.parse(input);
   const run = action.run as unknown as (value: unknown, context: unknown) => Promise<unknown>;
   return run(parsed, ctx);
+}
+
+async function markNeedsReview(id: string): Promise<void> {
+  await accreditationsStore.mutate((data) => {
+    const entry = data.accreditations.find((item) => item.id === id);
+    if (entry) entry.needsReview = true;
+  });
 }
 
 describe("actions des accréditations", () => {
@@ -95,6 +103,46 @@ describe("actions des accréditations", () => {
         concertDate: "2026-12-06",
         notes: "Contact presse à relancer",
       });
+    });
+  });
+
+  it("leve la revue apres une edition manuelle", async () => {
+    await withTempDataDir(async () => {
+      const created = (await runAction("createAccreditationAction", {
+        artist: "Muse",
+        venue: "Zénith",
+        concertDate: "2026-12-05",
+      })) as { id: string };
+      await markNeedsReview(created.id);
+
+      const edited = (await runAction("editAccreditationAction", {
+        id: created.id,
+        artist: "Muse (UK)",
+      })) as { artist: string; needsReview: boolean };
+
+      expect(edited).toMatchObject({ artist: "Muse (UK)", needsReview: false });
+      const loaded = (await runAction("loadAccreditationsAction", {})) as {
+        accreditations: { needsReview: boolean }[];
+      };
+      expect(loaded.accreditations[0]?.needsReview).toBe(false);
+    });
+  });
+
+  it("leve la revue apres un changement manuel de statut", async () => {
+    await withTempDataDir(async () => {
+      const created = (await runAction("createAccreditationAction", {
+        artist: "Muse",
+        venue: "Zénith",
+        concertDate: "2026-12-05",
+      })) as { id: string };
+      await markNeedsReview(created.id);
+
+      const updated = (await runAction("updateAccreditationStatusAction", {
+        id: created.id,
+        status: "accepted",
+      })) as { status: string; needsReview: boolean };
+
+      expect(updated).toMatchObject({ status: "accepted", needsReview: false });
     });
   });
 

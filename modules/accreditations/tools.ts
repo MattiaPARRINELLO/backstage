@@ -29,6 +29,7 @@ const extractionSchema = z.object({
   concertDate: z.string().trim().default(""),
   status: accreditationStatusSchema.default("pending"),
   contactEmail: z.string().trim().default(""),
+  uncertainFields: z.array(z.enum(["artist", "venue", "concertDate"])).default([]),
 });
 
 type Extraction = z.infer<typeof extractionSchema>;
@@ -42,7 +43,7 @@ interface EmailMessage {
 
 const SYSTEM = `Tu extrais une demande d'accreditation photo depuis un email.
 Reponds uniquement un objet JSON avec exactement ces cles :
-{"artist":"","venue":"","concertDate":"","status":"pending","contactEmail":""}
+{"artist":"","venue":"","concertDate":"","status":"pending","contactEmail":"","uncertainFields":[]}
 
 Regles :
 - Rapstar est le media de l'utilisateur (le demandeur), jamais un artiste. Ne mets jamais "Rapstar" dans artist.
@@ -51,6 +52,7 @@ Regles :
 - concertDate : date du concert au format YYYY-MM-DD, ou "" si absente.
 - status : "accepted" si l'email accepte ou confirme, "refused" s'il refuse ou decline, "sent" s'il confirme l'envoi de la demande, sinon "pending".
 - contactEmail : adresse email de l'expediteur, ou "".
+- uncertainFields : liste des champs douteux parmi "artist", "venue" et "concertDate". Ajoute "venue" si la salle est absente ou inconnue, "concertDate" si la date est absente ou peu fiable, et "artist" si le libelle peut designer un evenement plutot qu'un artiste. Utilise [] seulement si les trois champs sont surs.
 Si l'email n'est pas une demande d'accreditation, mets artist a "".`;
 
 /** Noms qui designent le media de l'utilisateur, jamais un artiste. */
@@ -198,6 +200,7 @@ export const scanAccreditationsTool = defineTool({
       let updated = 0;
       let unchanged = 0;
       let ignored = 0;
+      let skippedReview = 0;
       let failed = 0;
       let lastError = "";
 
@@ -225,18 +228,30 @@ export const scanAccreditationsTool = defineTool({
         const artist = extraction.artist;
         const venue = extraction.venue;
         const concertDate = isoDate(extraction.concertDate);
+        const needsReview =
+          extraction.uncertainFields.length > 0 ||
+          isUnknown(artist) ||
+          isUnknown(venue) ||
+          !concertDate;
         const contact = z.string().email().safeParse(extraction.contactEmail).success
           ? extraction.contactEmail
           : emailOf(message.from);
         const current = findMatch(entries, artist, venue);
 
         if (current) {
+          // Une seconde extraction incertaine ne remplace pas silencieusement
+          // une fiche que l'utilisateur doit deja verifier.
+          if (current.needsReview && needsReview) {
+            skippedReview++;
+            continue;
+          }
           const nextStatus = mergeStatus(current.status, extraction.status);
           const updates: AccreditationUpdate = {
             ...(isUnknown(current.venue) && !isUnknown(venue) ? { venue } : {}),
             ...(isUnknown(current.concertDate) && concertDate ? { concertDate } : {}),
             ...(!current.contactEmail && contact ? { contactEmail: contact } : {}),
             ...(nextStatus !== current.status ? { status: nextStatus } : {}),
+            ...(needsReview !== current.needsReview ? { needsReview } : {}),
           };
           if (Object.keys(updates).length === 0) {
             unchanged++;
@@ -264,6 +279,7 @@ export const scanAccreditationsTool = defineTool({
           artist,
           venue: venue || "Inconnu",
           concertDate: concertDate || "Date inconnue",
+          needsReview,
           contactEmail: contact || undefined,
         });
         const problem = await verifyWrite(
@@ -300,6 +316,9 @@ export const scanAccreditationsTool = defineTool({
         `${unchanged} inchangee(s)`,
         `${ignored} ignoree(s)`,
       ];
+      if (skippedReview > 0) {
+        parts.push(`${skippedReview} non remplacee(s) car a verifier`);
+      }
       if (failed > 0) parts.push(`${failed} illisible(s)`);
       return toolOk(`Scan termine : ${parts.join(", ")}.`);
     } catch (error) {

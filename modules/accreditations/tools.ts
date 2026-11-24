@@ -39,6 +39,7 @@ interface EmailMessage {
   from?: string | undefined;
   subject?: string | undefined;
   snippet?: string | undefined;
+  date?: string | undefined;
 }
 
 const SYSTEM = `Tu extrais une demande d'accreditation photo depuis un email.
@@ -187,10 +188,24 @@ export const scanAccreditationsTool = defineTool({
     }
 
     try {
-      const messages = await fetchGmailMessages(
-        "accréditation OR photo pass OR press OR accredit",
-        20
-      );
+      const query =
+        'accréditation OR accreditation OR accredit OR "photo pass" OR "press pass"';
+      const [sent, inbox] = await Promise.all([
+        fetchGmailMessages(`in:sent (${query})`, 500),
+        fetchGmailMessages(`in:inbox (${query}) newer_than:365d`, 500),
+      ]);
+      const byId = new Map<string, EmailMessage>();
+      for (const message of [...sent, ...inbox]) {
+        if (!byId.has(message.id)) byId.set(message.id, message);
+      }
+      const messages = [...byId.values()].sort((a, b) => {
+        const ta = Date.parse(a.date ?? "");
+        const tb = Date.parse(b.date ?? "");
+        const va = Number.isFinite(ta) ? ta : 0;
+        const vb = Number.isFinite(tb) ? tb : 0;
+        if (vb !== va) return vb - va;
+        return a.id.localeCompare(b.id);
+      });
       if (messages.length === 0) return toolEmpty("Aucun email d'accreditation trouve.");
 
       const existing = await getAccreditations();
@@ -204,7 +219,16 @@ export const scanAccreditationsTool = defineTool({
       let failed = 0;
       let lastError = "";
 
+      const rawDelay = process.env.VITEST
+        ? "0"
+        : (process.env.GROQ_SCAN_DELAY_MS ?? "2000");
+      const delayMs = Math.max(0, Number(rawDelay) || 0);
+      let isFirst = true;
       for (const message of messages) {
+        if (!isFirst && delayMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+        isFirst = false;
         let extraction: Extraction | null;
         try {
           extraction = await extractOne(ai, message);

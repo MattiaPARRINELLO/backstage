@@ -19,24 +19,24 @@ PR mergée le 24/11/2026 (`--merge --delete-branch`). Checks verts (lint, typech
 
 ## Bloc 1 — FAIT : #250 refactor(search)
 
-PR #264 mergée. La recherche lit les accréditations via `getAccreditations` du module, `lib/storage/accreditations.ts` supprimé, barrel mis à jour. CI verte (lint, typecheck, tests, build). Aucun bug trouvé à la relecture.
+PR #264 mergée. La recherche lit les accréditations via `getAccreditations` du module, `modules/accreditations/service.ts` supprimé, barrel mis à jour. CI verte (lint, typecheck, tests, build). Aucun bug trouvé à la relecture.
 
 ## Bloc 1 — FAIT : #250 refactor search via store module
 
-PR #264 mergée. `lib/storage/accreditations.ts` supprimé, recherche lit via le store du module. Tests verts.
+PR #264 mergée. `modules/accreditations/service.ts` supprimé, recherche lit via le store du module. Tests verts.
 
-Objectif initial : la recherche lit les accréditations via le store/service du module, suppression de `lib/storage/accreditations.ts`.
+Objectif initial : la recherche lit les accréditations via le store/service du module, suppression de `modules/accreditations/service.ts`.
 
 Étapes :
 1. Lire `modules/accreditations/store.ts` et `modules/accreditations/schema.ts` pour identifier le service de lecture exposé.
-2. Lire `app/actions/search.ts` et `lib/storage/accreditations.ts`.
+2. Lire `app/actions/search.ts` et `modules/accreditations/service.ts`.
 3. Remplacer l'import `getAccreditations` de `@/lib/storage` par l'accès au module (store/service).
-4. Supprimer `lib/storage/accreditations.ts` et son entrée dans le barrel `lib/storage.ts`.
-5. Mettre à jour les tests qui référencent `lib/storage/accreditations.ts`.
+4. Supprimer `modules/accreditations/service.ts` et son entrée dans le barrel `lib/storage.ts`.
+5. Mettre à jour les tests qui référencent `modules/accreditations/service.ts`.
 6. Vérifier : `bunx tsc --noEmit`, `bun run test`, `bun run boundaries`, `bun run check:docs`.
 7. Commit : `refactor(search): lire les accreditations via le store du module`.
 
-Critère de fin : aucun appelant de `lib/storage/accreditations.ts` ; fichier supprimé ; tests verts.
+Critère de fin : aucun appelant de `modules/accreditations/service.ts` ; fichier supprimé ; tests verts.
 
 ## Bloc 2 — FAIT : #261 marquer les fiches incertaines
 

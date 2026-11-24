@@ -191,8 +191,8 @@ export const scanAccreditationsTool = defineTool({
       const query =
         'accréditation OR accreditation OR accredit OR "photo pass" OR "press pass"';
       const [sent, inbox] = await Promise.all([
-        fetchGmailMessages(`in:sent (${query})`, 100),
-        fetchGmailMessages(`in:inbox (${query}) newer_than:180d`, 100),
+        fetchGmailMessages(`in:sent (${query})`, 500),
+        fetchGmailMessages(`in:inbox (${query}) newer_than:365d`, 500),
       ]);
       const byId = new Map<string, EmailMessage>();
       for (const message of [...sent, ...inbox]) {
@@ -219,7 +219,16 @@ export const scanAccreditationsTool = defineTool({
       let failed = 0;
       let lastError = "";
 
+      const rawDelay = process.env.VITEST
+        ? "0"
+        : (process.env.GROQ_SCAN_DELAY_MS ?? "2000");
+      const delayMs = Math.max(0, Number(rawDelay) || 0);
+      let isFirst = true;
       for (const message of messages) {
+        if (!isFirst && delayMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+        isFirst = false;
         let extraction: Extraction | null;
         try {
           extraction = await extractOne(ai, message);

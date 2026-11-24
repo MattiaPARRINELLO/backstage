@@ -171,10 +171,30 @@ export async function doctorModules(
   if (existsSync(modulesDir)) {
     for (const name of readdirSync(modulesDir)) {
       if (!name.startsWith(".install-")) continue;
-      issues.push({
-        id: name,
-        problem: `dossier temporaire d'une operation interrompue : supprime modules/${name}.`,
-      });
+      // Le nom suit `.install-<kind>-<pid>-<timestamp>-<suffix>` : le pid
+      // permet de distinguer une operation en cours d'une interruption reelle.
+      const parts = name.split("-");
+      const pid = Number(parts[2]);
+      let alive = false;
+      if (Number.isInteger(pid) && pid > 0) {
+        try {
+          process.kill(pid, 0);
+          alive = true;
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException)?.code === "EPERM") alive = true;
+        }
+      }
+      if (alive) {
+        issues.push({
+          id: name,
+          problem: `installation en cours (pid ${pid}) : ne pas supprimer modules/${name}.`,
+        });
+      } else {
+        issues.push({
+          id: name,
+          problem: `dossier temporaire d'une operation interrompue : supprime modules/${name}.`,
+        });
+      }
     }
   }
 

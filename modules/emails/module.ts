@@ -1,6 +1,6 @@
 import { defineModule } from "@backstage/module-kit";
 
-import { replyEmailTool, searchEmailsTool, triageEmailsTool } from "./tools";
+import { replyEmailTool, searchEmailsTool, sendEmailTool, triageEmailsTool } from "./tools";
 
 /**
  * Module Emails.
@@ -13,10 +13,10 @@ export default defineModule({
   apiVersion: 1,
   version: "1.0.0",
   label: "Emails",
-  selectionDescription: "Lire, trier et répondre aux emails Gmail.",
+  selectionDescription: "Lire, trier, répondre et composer des emails Gmail.",
   description:
-    "Gmail : recherche dans les messages reçus et envoyés, tri par priorité, réponse envoyée après confirmation explicite.",
+    "Gmail : recherche dans les messages reçus et envoyés, tri par priorité, réponse et composition envoyées après confirmation explicite.",
   dependencies: [],
   capabilities: { network: ["gmail.googleapis.com"], filesystem: "module-data" },
-  tools: [searchEmailsTool, triageEmailsTool, replyEmailTool],
+  tools: [searchEmailsTool, triageEmailsTool, replyEmailTool, sendEmailTool],
 });

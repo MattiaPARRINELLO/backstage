@@ -64,6 +64,16 @@ export function removeFromComposition(source: string, id: string): string {
     throw new Error("Racine de composition invalide : tableau `modules` introuvable.");
   }
   return next.replace(ARRAY_PATTERN, (_match, start: string, entries: string, end: string) => {
+    const isMultiline = entries.includes("\n");
+    if (isMultiline) {
+      const kept = entries
+        .split("\n")
+        .filter((line) => {
+          const trimmed = line.trim().replace(/,$/, "").trim();
+          return trimmed.length === 0 || trimmed !== ident;
+        });
+      return `${start}${kept.join("\n")}${end}`;
+    }
     const kept = entries
       .split(",")
       .map((entry) => entry.trim())

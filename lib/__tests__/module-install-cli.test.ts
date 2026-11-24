@@ -466,6 +466,17 @@ describe("module:doctor en erreur", () => {
     expect(doctor.stderr).toContain(".install-install-999-1-abcd");
     expect(doctor.stderr).toContain("temporaire");
   });
+
+  it("distingue une installation en cours d'une interruption", () => {
+    const root = createRoot();
+    mkdirSync(join(root, `modules/.install-install-${process.pid}-1-abcd`), { recursive: true });
+
+    const doctor = run(root, "doctor");
+    expect(doctor.status).toBe(1);
+    expect(doctor.stderr).toContain(".install-install-");
+    expect(doctor.stderr).toContain("installation en cours");
+    expect(doctor.stderr).not.toContain("temporaire");
+  });
 });
 
 describe("rollback d'une installation", () => {

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { defineTool, toolEmpty, toolOk } from "@backstage/module-kit";
 
-import { fetchGmailMessages, sendGmailReply } from "@/lib/google-actions";
+import { fetchGmailMessages, sendGmailMessage, sendGmailReply } from "@/lib/google-actions";
 import { invalidateServerCachePattern } from "@/lib/server-cache";
 
 /**
@@ -52,6 +52,26 @@ export const replyEmailTool = defineTool({
     const sentId = await sendGmailReply(args.email_id, args.response_text);
     invalidateServerCachePattern(/^gmail:list/);
     return toolOk(`Reponse envoyee (message id: ${sentId}).`);
+  },
+});
+
+export const sendEmailTool = defineTool({
+  name: "send",
+  description: "Compose et envoie un email neuf via Gmail, independant de tout fil existant.",
+  params: z.object({
+    to: z.string().min(1, "Destinataire requis"),
+    subject: z.string().min(1, "Objet requis"),
+    body: z.string().min(1, "Corps du message requis"),
+  }),
+  sideEffect: "external",
+  describeAction: (args) =>
+    `Envoyer un email a ${String(args.to ?? "?")} : « ${String(args.subject ?? "")} » — ${String(
+      args.body ?? ""
+    ).slice(0, 140)}${String(args.body ?? "").length > 140 ? "…" : ""}`,
+  run: async (args) => {
+    const sentId = await sendGmailMessage(args.to, args.subject, args.body);
+    invalidateServerCachePattern(/^gmail:list/);
+    return toolOk(`Email envoye (message id: ${sentId}).`);
   },
 });
 

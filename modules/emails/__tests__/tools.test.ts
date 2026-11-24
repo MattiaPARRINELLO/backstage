@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const google = {
   fetchGmailMessages: vi.fn(),
+  sendGmailMessage: vi.fn(),
   sendGmailReply: vi.fn(),
 };
 const cache = { invalidateServerCachePattern: vi.fn() };
@@ -9,7 +10,7 @@ const cache = { invalidateServerCachePattern: vi.fn() };
 vi.mock("@/lib/google-actions", () => google);
 vi.mock("@/lib/server-cache", () => cache);
 
-const { replyEmailTool, searchEmailsTool, triageEmailsTool } = await import("@/modules/emails/tools");
+const { replyEmailTool, searchEmailsTool, sendEmailTool, triageEmailsTool } = await import("@/modules/emails/tools");
 
 const ctx = { moduleId: "emails", log: () => {}, emit: () => {} };
 
@@ -51,6 +52,24 @@ describe("outils emails", () => {
     expect(result.status).toBe("ok");
     expect(result.text).toContain("sent-1");
     expect(cache.invalidateServerCachePattern).toHaveBeenCalled();
+  });
+
+  it("envoie un email neuf et invalide le cache", async () => {
+    google.sendGmailMessage.mockResolvedValue("sent-2");
+    const result = await sendEmailTool.run(
+      { to: "x@y.fr", subject: "Objet", body: "Bonjour" },
+      ctx
+    );
+    expect(result.status).toBe("ok");
+    expect(result.text).toContain("sent-2");
+    expect(google.sendGmailMessage).toHaveBeenCalledWith("x@y.fr", "Objet", "Bonjour");
+    expect(cache.invalidateServerCachePattern).toHaveBeenCalled();
+  });
+
+  it("exige destinataire, objet et corps pour envoyer", () => {
+    expect(sendEmailTool.params.safeParse({ to: "", subject: "x", body: "y" }).success).toBe(false);
+    expect(sendEmailTool.params.safeParse({ to: "x@y.fr", subject: "", body: "y" }).success).toBe(false);
+    expect(sendEmailTool.params.safeParse({ to: "x@y.fr", subject: "x", body: "" }).success).toBe(false);
   });
 
   it("trie les emails urgents", async () => {

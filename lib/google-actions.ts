@@ -279,6 +279,29 @@ export async function sendGmailReply(emailId: string, responseText: string): Pro
   return sent.id ?? "";
 }
 
+export async function sendGmailMessage(
+  to: string,
+  subject: string,
+  body: string
+): Promise<string> {
+  const auth = await getGmailClient();
+
+  const raw = `To: ${to}\nSubject: ${encodeRfc2047(subject)}\nContent-Type: text/plain; charset="UTF-8"\n\n${body}`;
+
+  const sent = await googleFetch<{ id?: string }>(
+    auth,
+    "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        raw: encodeEmail(raw),
+      }),
+    }
+  );
+
+  return sent.id ?? "";
+}
+
 // Date/heure ISO que Google peut interpréter. Une dateHeure naïve (sans
 // décalage ni Z) est rejetée par l'API Calendar (« Missing time zone
 // definition ») : on lui attache alors le fuseau local du serveur. Une valeur

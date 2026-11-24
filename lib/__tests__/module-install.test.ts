@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   addToComposition,
+  removeFromComposition,
   assertModuleManifest,
   parseModuleSource,
 } from "@/lib/kernel/module-install";
@@ -88,6 +89,29 @@ describe("racine de composition", () => {
       "demo"
     );
     expect(next).toContain("[demo];");
+  });
+
+  it("preserve le format multi-lignes a la suppression", () => {
+    const source = [
+      'import type { ModuleDefinition } from "@backstage/module-kit";',
+      'import a from "./a/module";',
+      'import demo from "./demo/module";',
+      'import b from "./b/module";',
+      "",
+      "export const modules: readonly ModuleDefinition[] = [",
+      "  a,",
+      "  demo,",
+      "  b,",
+      "];",
+      "",
+    ].join("\n");
+
+    const next = removeFromComposition(source, "demo");
+    expect(next).toContain("  a,");
+    expect(next).toContain("  b,");
+    expect(next).not.toContain("demo");
+    // Le format reste multi-lignes (pas d'aplatissage).
+    expect(next).toContain("[\n  a,\n  b,\n];");
   });
 });
 

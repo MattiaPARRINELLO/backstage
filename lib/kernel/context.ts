@@ -1,6 +1,7 @@
 import type { ModuleContext } from "@backstage/module-kit";
 
 import { chatCompletion } from "@/lib/ai-providers";
+import { groqJson, isGroqConfigured } from "@/lib/ai-providers/groq";
 import { getConfig } from "@/lib/app-config";
 import { logActivity } from "@/lib/storage";
 import { isSafeFetchUrl, safeFetchText } from "@/lib/web";
@@ -51,6 +52,24 @@ export function createModuleContext(
             ]
           : [{ role: "user" as const, content: prompt }];
         const result = await chatCompletion(config.models.general, messages, []);
+        return result.content.slice(0, maxChars).trim();
+      },
+      // Tache courte et structuree : Groq quand il est configure, sinon le
+      // modele de conversation. Le module ne voit que le resultat.
+      json: async ({ system, prompt, maxChars = 2000 }) => {
+        if (isGroqConfigured()) {
+          const raw = await groqJson(system, prompt);
+          return raw.slice(0, maxChars).trim();
+        }
+        const config = await getConfig();
+        const result = await chatCompletion(
+          config.models.general,
+          [
+            { role: "system" as const, content: system },
+            { role: "user" as const, content: prompt },
+          ],
+          []
+        );
         return result.content.slice(0, maxChars).trim();
       },
     },

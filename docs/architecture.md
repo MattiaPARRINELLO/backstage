@@ -966,3 +966,19 @@ réécrire une liste à la main comme source de vérité :
 - Les constantes `OPENAI_MODELS` / `ANTHROPIC_MODELS` de
   `lib/ai-providers/config.ts` ne sont qu'un **repli hors ligne** : elles ne
   doivent contenir que des modèles vérifiés vivants.
+
+### Groq pour les extractions en direct
+
+Les tâches courtes et nombreuses (scan des accréditations) n'appellent pas le
+modèle de conversation : un module demande `ctx.ai.json`, le noyau sert Groq si
+`GROQ_API_KEY` est présente, sinon il retombe sur le modèle général.
+
+- `GROQ_BASE_URL` : `https://api.groq.com/openai/v1` par défaut.
+- `GROQ_MODEL` : `openai/gpt-oss-20b` par défaut, le moins cher chez Groq.
+- `GROQ_API_KEYS` accepte plusieurs clés séparées par des virgules : la
+  rotation passe au compte suivant sur `429` (quota) ou `401`/`403` (clé
+  refusée). `GROQ_API_KEY` reste la clé unique.
+- Le module ne connaît ni Groq ni la clé : il reçoit une réponse JSON brute et la
+  valide avec Zod avant toute écriture.
+- Sans clé Groq, le scan des accréditations refuse de tourner plutôt que de
+  deviner : l'extraction par regex a été retirée, elle se trompait d'artiste.

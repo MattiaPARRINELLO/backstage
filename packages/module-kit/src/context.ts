@@ -23,6 +23,17 @@ export interface ModuleAi {
     readonly prompt: string;
     readonly maxChars?: number;
   }) => Promise<string>;
+  /**
+   * Rend une reponse JSON brute pour une tache courte (extraction, classement).
+   * Le noyau choisit le fournisseur adapte, sans mobiliser le modele de
+   * conversation. Absent chez un hote qui ne l'implemente pas : le module doit
+   * alors retomber sur `complete` ou degrader proprement.
+   */
+  readonly json?: (input: {
+    readonly system: string;
+    readonly prompt: string;
+    readonly maxChars?: number;
+  }) => Promise<string>;
 }
 
 /**

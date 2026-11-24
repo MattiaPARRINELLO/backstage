@@ -33,6 +33,7 @@ Variables minimales :
 | `SSH_TARGET_DIR` | *Application root* noté à l'étape 1 |
 | `DEPLOY_NODEENV` | chemin du `nodevenv` (facultatif, utile pour un `npm install` manuel) |
 | `NEXT_PUBLIC_API_URL`, `IA_API_KEY` | provider IA |
+| `GROQ_API_KEY` | scan des accréditations par IA (`GROQ_MODEL`, `GROQ_BASE_URL`, `GROQ_API_KEYS` optionnels) |
 | `NEXT_PUBLIC_SITE_URL` | URL publique canonique (métadonnées, commande d'installation) |
 | `AUTH_SECRET` | `openssl rand -hex 32` |
 | `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN` | le domaine public (`https://…`) |

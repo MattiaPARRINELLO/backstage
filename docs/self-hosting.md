@@ -86,8 +86,8 @@ Full template with comments: [`.env.example`](../.env.example).
 | `SETUP_TOKEN` | one-time protection of the first passkey registration |
 
 **Optional** — Google (Gmail/Calendar), Microsoft To Do, OpenWeatherMap,
-Brave search, CESAR timetable, VAPID push, `CRON_SECRET` +
-`CRON_BASE_URL` for `/api/cron/*`.
+Brave search, CESAR timetable, VAPID push, Groq for module JSON extraction
+(`GROQ_API_KEY`), `CRON_SECRET` + `CRON_BASE_URL` for `/api/cron/*`.
 
 ### Startup configuration check
 

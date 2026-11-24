@@ -58,6 +58,17 @@ vi.mock("@/lib/kernel/context", () => ({
     log: () => {},
     emit: () => {},
     activity: vi.fn(),
+    ai: {
+      complete: async () => "",
+      json: async () =>
+        JSON.stringify({
+          artist: "",
+          venue: "",
+          concertDate: "",
+          status: "pending",
+          contactEmail: "",
+        }),
+    },
     net: { isSafeUrl: async () => true, fetchText: async () => null },
   }),
 }));

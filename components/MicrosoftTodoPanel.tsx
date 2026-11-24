@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ListTodo, Loader2, Square } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -10,6 +11,7 @@ import { cn } from "@/lib/utils";
 // Panneau des reminders Samsung, synchronisés dans Microsoft To Do puis lus
 // via le Microsoft Graph todo API.
 export function MicrosoftTodoPanel() {
+  const router = useRouter();
   const [status, setStatus] = useState<"loading" | "linked" | "unlinked">("loading");
   const [lists, setLists] = useState<MicrosoftTodoList[]>([]);
   const [activeListId, setActiveListId] = useState<string | null>(null);
@@ -110,7 +112,7 @@ export function MicrosoftTodoPanel() {
             size="sm"
             className="mt-3"
             onClick={() => {
-              window.location.href = "/api/auth/microsoft";
+              router.push("/api/auth/microsoft");
             }}
           >
             Connecter Microsoft To Do

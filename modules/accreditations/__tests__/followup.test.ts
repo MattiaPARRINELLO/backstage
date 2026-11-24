@@ -26,6 +26,7 @@ function fiche(partial: Partial<Accreditation> & { id: string }): Accreditation 
     venue: "Défense Arena",
     concertDate: "2026-12-05",
     status: "sent",
+    needsReview: false,
     createdAt: CREATED,
     updatedAt: CREATED,
     ...partial,

@@ -50,6 +50,7 @@ function fiche(input: {
     venue: input.venue,
     concertDate: "2026-11-20",
     status: input.status,
+    needsReview: false,
     contactEmail: "presse@salle.fr",
     createdAt: "2026-11-12T09:00:00.000Z",
     updatedAt: "2026-11-12T09:00:00.000Z",

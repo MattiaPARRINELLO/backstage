@@ -15,6 +15,7 @@ function fiche(partial: Partial<Accreditation> & { id: string }): Accreditation 
     venue: "Zénith",
     concertDate: "2026-12-05",
     status: "pending",
+    needsReview: false,
     createdAt: "2026-11-12T09:00:00.000Z",
     updatedAt: "2026-11-12T09:00:00.000Z",
     ...partial,

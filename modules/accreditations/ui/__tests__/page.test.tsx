@@ -21,6 +21,7 @@ const entry: Accreditation = {
   venue: "La Salle",
   concertDate: "2026-12-05",
   status: "pending",
+  needsReview: false,
   createdAt: "2026-10-01T10:00:00.000Z",
   updatedAt: "2026-10-01T10:00:00.000Z",
 };

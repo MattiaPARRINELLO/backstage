@@ -39,7 +39,8 @@
     "module:disable": "bun scripts/module-install.ts disable",
     "reset:passkey": "bun scripts/reset-passkey.ts",
     "setup": "bun scripts/setup.ts",
-    "setup:dev": "bun scripts/setup.ts --dev"
+    "setup:dev": "bun scripts/setup.ts --dev",
+    "test:modele": "bun scripts/test-modele.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.109.1",

@@ -17,7 +17,9 @@ Fermer la vague 1 : #250 puis #261, avec preuves (tests, typecheck, lint, bounda
 
 PR mergée le 24/11/2026 (`--merge --delete-branch`). Checks verts (lint, typecheck, tests, build, E2E, dependency-review, gitleaks, GitGuardian). Relecture du diff : client Groq avec rotation sur plusieurs clés, pont `ctx.ai.json` dans le noyau et repli sur le modèle de conversation, réécriture du scan en extraction JSON validée par Zod, garde-fou Rapstar, tests couvrant extraction, refus sans IA, réponse illisible, statut jamais rétrograde, fiche incomplète complétée, écriture vérifiée. Aucune erreur bloquante trouvée. Commentaire ajouté sur #82.
 
-## Bloc 1 — Matin (~3 h) : #250 refactor(search)
+## Bloc 1 — FAIT : #250 refactor(search)
+
+PR #264 mergée. La recherche lit les accréditations via `getAccreditations` du module, `lib/storage/accreditations.ts` supprimé, barrel mis à jour. CI verte (lint, typecheck, tests, build). Aucun bug trouvé à la relecture.
 
 Objectif : la recherche lit les accréditations via le store/service du module, suppression de `lib/storage/accreditations.ts`.
 

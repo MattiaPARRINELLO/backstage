@@ -38,6 +38,26 @@ describe("AccreditationRow", () => {
     vi.unstubAllGlobals();
   });
 
+  it("affiche le badge d'une fiche a verifier", async () => {
+    const toasts: ModuleToasts = { show: vi.fn(() => "toast-1"), dismiss: vi.fn() };
+    const { root, container } = await mount(
+      <ModuleToastProvider value={toasts}>
+        <AccreditationRow
+          accreditation={{ ...entry, needsReview: true }}
+          onStatus={vi.fn(async () => undefined)}
+          onSave={vi.fn(async () => true)}
+          onDelete={vi.fn(async () => undefined)}
+        />
+      </ModuleToastProvider>
+    );
+
+    expect(container.textContent).toContain("À vérifier");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it("explique un presse-papiers indisponible et laisse le texte visible", async () => {
     const show = vi.fn(() => "toast-1");
     const toasts: ModuleToasts = { show, dismiss: vi.fn() };

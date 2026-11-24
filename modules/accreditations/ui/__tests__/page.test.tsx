@@ -56,6 +56,41 @@ describe("page des accreditations", () => {
     document.body.innerHTML = "";
   });
 
+  it("filtre les fiches a verifier depuis la page", async () => {
+    const { toasts } = makeToasts();
+    const call: ModuleActionInvoker = (_moduleId, name) => {
+      if (name === "load") {
+        return Promise.resolve({
+          accreditations: [
+            entry,
+            { ...entry, id: "acc-review", artist: "Incertain", needsReview: true },
+          ],
+        });
+      }
+      return Promise.resolve(null);
+    };
+
+    const { root, container } = await mount(pageFor(call, toasts));
+    const reviewFilter = Array.from(container.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("À vérifier")
+    );
+    expect(reviewFilter).toBeDefined();
+
+    await act(async () => {
+      reviewFilter!.click();
+    });
+
+    const rows = Array.from(container.querySelectorAll("article"));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.textContent).toContain("Incertain");
+    expect(rows[0]?.textContent).not.toContain("Le Groupe");
+    expect(reviewFilter?.getAttribute("aria-pressed")).toBe("true");
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it("affiche un toast danger quand un changement de statut echoue", async () => {
     const { toasts, show } = makeToasts();
     const call: ModuleActionInvoker = (_moduleId, name) => {

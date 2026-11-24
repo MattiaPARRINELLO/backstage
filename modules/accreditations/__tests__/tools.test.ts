@@ -114,7 +114,12 @@ describe("outil scan des accreditations", () => {
 
     assertToolOk(result);
     expect(service.addAccreditation).toHaveBeenCalledWith(
-      expect.objectContaining({ artist: "Muse", venue: "Zénith", concertDate: "2026-11-20" })
+      expect.objectContaining({
+        artist: "Muse",
+        venue: "Zénith",
+        concertDate: "2026-11-20",
+        needsReview: false,
+      })
     );
     expect(rows[0]).toMatchObject({ artist: "Muse", status: "accepted" });
     expect(rows[0]?.notes).toBe("Email: m1");

@@ -58,7 +58,20 @@ export function serializeConfig(config: ModulesConfigFile): string {
     return `{\n  "kernelApi": ${kernelApi},\n  "modules": {}\n}\n`;
   }
   const modules = entries
-    .map(([id, value]) => `    ${JSON.stringify(id)}: { "enabled": ${value.enabled ?? false} }`)
+    .map(([id, value]) => {
+      const v = (value ?? {}) as Record<string, unknown>;
+      const keys = Object.keys(v);
+      const ordered = keys.includes("enabled")
+        ? ["enabled", ...keys.filter((k) => k !== "enabled")]
+        : ["enabled", ...keys];
+      const fields = ordered
+        .map((k) => {
+          const val = k === "enabled" ? (v[k] ?? false) : v[k];
+          return `"${k}": ${JSON.stringify(val)}`;
+        })
+        .join(", ");
+      return `    ${JSON.stringify(id)}: { ${fields} }`;
+    })
     .join(",\n");
   return `{\n  "kernelApi": ${kernelApi},\n  "modules": {\n${modules}\n  }\n}\n`;
 }

@@ -37,4 +37,14 @@ describe("serializeConfig", () => {
       '{\n  "kernelApi": 1,\n  "modules": {}\n}\n'
     );
   });
+
+  it("preserve les cles inconnues d'une entree de module", () => {
+    const input = {
+      kernelApi: 1,
+      modules: { alpha: { enabled: true, pinnedVersion: "v1.2.3" } },
+    } as Parameters<typeof serializeConfig>[0];
+    const out = serializeConfig(input);
+    expect(out).toContain('"pinnedVersion": "v1.2.3"');
+    expect(serializeConfig(JSON.parse(out) as Parameters<typeof serializeConfig>[0])).toBe(out);
+  });
 });

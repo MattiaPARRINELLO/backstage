@@ -11,7 +11,19 @@ Source : issue #82 (pilotage) + issues ouvertes au 23/11. `main` à `bc00014`, C
 
 ## Objectif du jour
 
-Fermer la vague 1 : #250 puis #261, avec preuves (tests, typecheck, lint, boundaries). Préparer la sortie de vague 1 (mise en ligne) sans la déclencher sans accord.
+Fermer la vague 1 : #250 puis #261, avec preuves (tests, typecheck, lint, boundaries). Préparer la sortie de vague 1 (mise en ligne) sans la déclencher sans accord. En parallèle, traiter la PR #262 (scan IA) qui accompagne #260, déjà ouverte et mergeable.
+
+## Bloc 0 — En premier (~30 min) : PR #262 (scan IA, accompagne #260)
+
+PR ouverte, non draft, mergeable, sans review. Branche `fix/accreditations-scan-ia` -> `main`.
+
+Étapes :
+1. Vérifier les checks de la PR : `gh pr checks 262`.
+2. Lire le diff et le corps de la PR (déjà résumé : client Groq, pont `ctx.ai.json`, réécriture du scan, tests).
+3. Si checks verts et relecture OK, merger (squash ou merge) avec accord explicite, puis mettre à jour l'issue #82 (table vague 1) si #260 se ferme.
+4. Sinon, lister ce qui bloque et reporter.
+
+Critère de fin : PR mergée (ou blocage documenté) ; `main` vert.
 
 ## Bloc 1 — Matin (~3 h) : #250 refactor(search)
 
@@ -71,6 +83,7 @@ Le déploiement touche la production : il se fait avec accord explicite. Ne pas 
 
 ## Vérifications de fin de journée
 
+- PR #262 traitée (mergée ou blocage documenté), `main` vert.
 - `bun run lint` (plafond 11) et `bun run lint:budget`.
 - `bunx tsc --noEmit` et `bun run typecheck:strict`.
 - `bun run test`.

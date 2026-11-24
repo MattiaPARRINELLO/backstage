@@ -19,6 +19,12 @@ vi.mock("dns/promises", () => ({
 }));
 
 import { chatCompletion } from "@/lib/ai-providers";
+import {
+  addAccreditation,
+  deleteAccreditation,
+  searchAccreditations,
+  updateAccreditation,
+} from "@/modules/accreditations/service";
 
 const TEST_DIR = path.join(os.tmpdir(), "backstage-test-domains-" + Date.now());
 const originalCwd = process.cwd;
@@ -256,8 +262,7 @@ describe("storage - activity", () => {
 
 describe("storage - accreditations", () => {
   it("CRUD accreditations", async () => {
-    const storage = await getStorage();
-    const acc = await storage.addAccreditation({
+    const acc = await addAccreditation({
       artist: "Artist A",
       venue: "Venue A",
       concertDate: "2026-08-01",
@@ -265,14 +270,14 @@ describe("storage - accreditations", () => {
     });
     expect(acc.artist).toBe("Artist A");
 
-    const updated = await storage.updateAccreditation(acc.id, { status: "accepted" });
+    const updated = await updateAccreditation(acc.id, { status: "accepted" });
     expect(updated).not.toBeNull();
     expect(updated!.status).toBe("accepted");
 
-    const found = await storage.searchAccreditations("Artist");
+    const found = await searchAccreditations("Artist");
     expect(found.length).toBeGreaterThan(0);
 
-    const deleted = await storage.deleteAccreditation(acc.id);
+    const deleted = await deleteAccreditation(acc.id);
     expect(deleted).toBe(true);
   });
 });
@@ -560,8 +565,8 @@ describe("storage - prepareConcert", () => {
         }),
       } as Response);
 
+    await addAccreditation({ artist: "Muse", venue: "Stade", concertDate: "2026-07-15" });
     const storage = await getStorage();
-    await storage.addAccreditation({ artist: "Muse", venue: "Stade", concertDate: "2026-07-15" });
     await storage.saveConcerts({ events: [{ id: "c1", artist: "Muse", venue: "Stade", date: "2026-07-15", status: "shooted" }] });
 
     const prep = await storage.prepareConcert("c1");

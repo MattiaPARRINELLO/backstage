@@ -20,6 +20,7 @@ type GmailMessageRaw = {
 type GmailListResponse = {
   messages?: { id: string; threadId: string }[];
   resultSizeEstimate?: number;
+  nextPageToken?: string;
 };
 
 type CalendarEventRaw = {
@@ -138,18 +139,33 @@ async function googleFetch<T>(
 
 export async function fetchGmailMessages(query?: string, maxResults = 10): Promise<GmailMessage[]> {
   const auth = await getGmailClient();
-  const params = new URLSearchParams({
-    userId: "me",
-    maxResults: String(maxResults),
-  });
-  if (query) params.set("q", query);
 
-  const list = await googleFetch<GmailListResponse>(
-    auth,
-    `https://gmail.googleapis.com/gmail/v1/users/me/messages?${params.toString()}`
-  );
+  // Pagination : l'API Gmail trie les resultats par pertinence quand une query
+  // est fournie, donc on pagine pour recuperer jusqu'a `maxResults` messages
+  // puis on trie par date cote client. Cela evite de rater les mails recents
+  // noyes par des messages plus "pertinents" mais plus anciens.
+  const collected: { id: string; threadId: string }[] = [];
+  let pageToken: string | undefined;
+  const pageSize = Math.min(Math.max(maxResults, 1), 100);
+  while (collected.length < maxResults) {
+    const params = new URLSearchParams({
+      userId: "me",
+      maxResults: String(Math.min(pageSize, maxResults - collected.length)),
+    });
+    if (query) params.set("q", query);
+    if (pageToken) params.set("pageToken", pageToken);
 
-  const messages = list.messages ?? [];
+    const list = await googleFetch<GmailListResponse>(
+      auth,
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages?${params.toString()}`
+    );
+    const page = list.messages ?? [];
+    collected.push(...page);
+    pageToken = list.nextPageToken;
+    if (!pageToken || page.length === 0) break;
+  }
+
+  const messages = collected.slice(0, maxResults);
 
   const results = await Promise.allSettled(
     messages.map(async ({ id }) => {

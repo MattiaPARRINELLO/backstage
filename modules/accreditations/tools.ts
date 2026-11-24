@@ -29,6 +29,7 @@ const extractionSchema = z.object({
   concertDate: z.string().trim().default(""),
   status: accreditationStatusSchema.default("pending"),
   contactEmail: z.string().trim().default(""),
+  uncertainFields: z.array(z.enum(["artist", "venue", "concertDate"])).default([]),
 });
 
 type Extraction = z.infer<typeof extractionSchema>;
@@ -42,7 +43,7 @@ interface EmailMessage {
 
 const SYSTEM = `Tu extrais une demande d'accreditation photo depuis un email.
 Reponds uniquement un objet JSON avec exactement ces cles :
-{"artist":"","venue":"","concertDate":"","status":"pending","contactEmail":""}
+{"artist":"","venue":"","concertDate":"","status":"pending","contactEmail":"","uncertainFields":[]}
 
 Regles :
 - Rapstar est le media de l'utilisateur (le demandeur), jamais un artiste. Ne mets jamais "Rapstar" dans artist.
@@ -51,6 +52,7 @@ Regles :
 - concertDate : date du concert au format YYYY-MM-DD, ou "" si absente.
 - status : "accepted" si l'email accepte ou confirme, "refused" s'il refuse ou decline, "sent" s'il confirme l'envoi de la demande, sinon "pending".
 - contactEmail : adresse email de l'expediteur, ou "".
+- uncertainFields : liste des champs douteux parmi "artist", "venue" et "concertDate". Ajoute "venue" si la salle est absente ou inconnue, "concertDate" si la date est absente ou peu fiable, et "artist" si le libelle peut designer un evenement plutot qu'un artiste. Utilise [] seulement si les trois champs sont surs.
 Si l'email n'est pas une demande d'accreditation, mets artist a "".`;
 
 /** Noms qui designent le media de l'utilisateur, jamais un artiste. */

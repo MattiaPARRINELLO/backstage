@@ -34,7 +34,9 @@ Objectif : la recherche lit les accréditations via le store/service du module, 
 
 Critère de fin : aucun appelant de `lib/storage/accreditations.ts` ; fichier supprimé ; tests verts.
 
-## Bloc 2 — Après-midi (~3 h) : #261 marquer les fiches incertaines
+## Bloc 2 — FAIT : #261 marquer les fiches incertaines
+
+PR #265 mergée. Schema needsReview, extraction uncertainFields, badge et filtre "A verifier", exclusion du prompt de relance et du compteur, levée à la correction manuelle. CI verte. Aucun bug bloquant à la relecture. Vague 1 complète.
 
 Objectif : une fiche issue d'une extraction approximative est signalée « à vérifier » et n'alimente ni le prompt de relance ni le compteur d'accueil tant qu'elle n'est pas confirmée.
 

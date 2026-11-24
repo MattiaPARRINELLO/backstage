@@ -140,7 +140,7 @@ export default function AccreditationsPage() {
         <PageHeader
           eyebrow="Module"
           title="Accréditations"
-          description="Demandes extraites de Gmail : artiste, lieu, date et statut. Corrige une extraction approximative, change un statut, supprime une fiche."
+          description="Demandes extraites de Gmail : artiste, lieu, date et statut. Les extractions incertaines sont marquées à vérifier et n'alimentent pas les relances."
           actions={
             <button
               type="button"
@@ -171,6 +171,7 @@ export default function AccreditationsPage() {
                 type="button"
                 className="ui-chip shrink-0"
                 data-active={filter === id}
+                aria-pressed={filter === id}
                 onClick={() => setFilter(id)}
               >
                 {label}

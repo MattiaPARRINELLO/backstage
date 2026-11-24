@@ -76,9 +76,19 @@ export function AccreditationRow({ accreditation, onStatus, onSave, onDelete }: 
   return (
     <article className="flex flex-col gap-3 border-b border-[var(--line)] px-1 py-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0 flex-1">
-        <h3 className="truncate text-[length:var(--t-body)] font-medium text-[var(--text-1)]">
-          {accreditation.artist}
-        </h3>
+        <div className="flex min-w-0 items-center gap-2">
+          <h3 className="min-w-0 truncate text-[length:var(--t-body)] font-medium text-[var(--text-1)]">
+            {accreditation.artist}
+          </h3>
+          {accreditation.needsReview && (
+            <span
+              className="ui-chip shrink-0 text-[var(--warning)]"
+              title="Extraction incertaine a confirmer"
+            >
+              À vérifier
+            </span>
+          )}
+        </div>
         <p className="ui-mono mt-1 flex flex-wrap items-center gap-2 text-[var(--text-3)]">
           <span className="flex items-center gap-1">
             <MapPin className="h-3 w-3" aria-hidden />

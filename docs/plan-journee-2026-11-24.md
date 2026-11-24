@@ -21,7 +21,11 @@ PR mergée le 24/11/2026 (`--merge --delete-branch`). Checks verts (lint, typech
 
 PR #264 mergée. La recherche lit les accréditations via `getAccreditations` du module, `lib/storage/accreditations.ts` supprimé, barrel mis à jour. CI verte (lint, typecheck, tests, build). Aucun bug trouvé à la relecture.
 
-Objectif : la recherche lit les accréditations via le store/service du module, suppression de `lib/storage/accreditations.ts`.
+## Bloc 1 — FAIT : #250 refactor search via store module
+
+PR #264 mergée. `lib/storage/accreditations.ts` supprimé, recherche lit via le store du module. Tests verts.
+
+Objectif initial : la recherche lit les accréditations via le store/service du module, suppression de `lib/storage/accreditations.ts`.
 
 Étapes :
 1. Lire `modules/accreditations/store.ts` et `modules/accreditations/schema.ts` pour identifier le service de lecture exposé.
@@ -53,7 +57,12 @@ Objectif : une fiche issue d'une extraction approximative est signalée « à v�
 
 Critère de fin : badge + filtre visibles ; une fiche incertaine n'apparaît pas dans le prompt de relance ni le compteur ; test qui le prouve.
 
-## Bloc 3 — En fin de journée (~1 h) : une tâche S de réserve
+## Bloc 3 — FAIT : tâches S de réserve
+
+- #257 : `fix(todo): navigation interne via useRouter dans MicrosoftTodoPanel` (commit 37176ce).
+- #246 : `fix(kernel): doctor distingue installation en cours d'interruption (pid vivant)` (commit 983c6e8).
+
+## Bloc 3 — En fin de journée (~1 h) : une tâche S de réserve (historique)
 
 Si le bloc 2 est terminé et qu'il reste du temps, prendre une tâche courte de la vague 3 pour garder la dynamique. Premier choix : #257 (remplacer `window.location.href` par `useRouter().push` dans `MicrosoftTodoPanel.tsx`), S, libère une place du plafond de warnings. Alternative si bloqué : #246 ou #243 (S).
 

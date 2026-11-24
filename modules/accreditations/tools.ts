@@ -200,6 +200,7 @@ export const scanAccreditationsTool = defineTool({
       let updated = 0;
       let unchanged = 0;
       let ignored = 0;
+      let skippedReview = 0;
       let failed = 0;
       let lastError = "";
 
@@ -227,18 +228,30 @@ export const scanAccreditationsTool = defineTool({
         const artist = extraction.artist;
         const venue = extraction.venue;
         const concertDate = isoDate(extraction.concertDate);
+        const needsReview =
+          extraction.uncertainFields.length > 0 ||
+          isUnknown(artist) ||
+          isUnknown(venue) ||
+          !concertDate;
         const contact = z.string().email().safeParse(extraction.contactEmail).success
           ? extraction.contactEmail
           : emailOf(message.from);
         const current = findMatch(entries, artist, venue);
 
         if (current) {
+          // Une seconde extraction incertaine ne remplace pas silencieusement
+          // une fiche que l'utilisateur doit deja verifier.
+          if (current.needsReview && needsReview) {
+            skippedReview++;
+            continue;
+          }
           const nextStatus = mergeStatus(current.status, extraction.status);
           const updates: AccreditationUpdate = {
             ...(isUnknown(current.venue) && !isUnknown(venue) ? { venue } : {}),
             ...(isUnknown(current.concertDate) && concertDate ? { concertDate } : {}),
             ...(!current.contactEmail && contact ? { contactEmail: contact } : {}),
             ...(nextStatus !== current.status ? { status: nextStatus } : {}),
+            ...(needsReview !== current.needsReview ? { needsReview } : {}),
           };
           if (Object.keys(updates).length === 0) {
             unchanged++;
@@ -266,6 +279,7 @@ export const scanAccreditationsTool = defineTool({
           artist,
           venue: venue || "Inconnu",
           concertDate: concertDate || "Date inconnue",
+          needsReview,
           contactEmail: contact || undefined,
         });
         const problem = await verifyWrite(
@@ -302,6 +316,9 @@ export const scanAccreditationsTool = defineTool({
         `${unchanged} inchangee(s)`,
         `${ignored} ignoree(s)`,
       ];
+      if (skippedReview > 0) {
+        parts.push(`${skippedReview} non remplacee(s) car a verifier`);
+      }
       if (failed > 0) parts.push(`${failed} illisible(s)`);
       return toolOk(`Scan termine : ${parts.join(", ")}.`);
     } catch (error) {

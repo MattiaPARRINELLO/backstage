@@ -125,7 +125,14 @@ describe("outil scan des accreditations", () => {
     google.fetchGmailMessages.mockResolvedValue([
       email("m2", "Accreditation pour Muse", "Votre demande est en cours"),
     ]);
-    ai.json.mockResolvedValue(extraction({ artist: "Muse", venue: "Zénith", status: "sent" }));
+    ai.json.mockResolvedValue(
+      extraction({
+        artist: "Muse",
+        venue: "Zénith",
+        concertDate: "2026-11-20",
+        status: "sent",
+      })
+    );
 
     const result = await scanAccreditationsTool.run({}, ctx);
 

@@ -210,6 +210,13 @@ describe("setModuleEnabled", () => {
       setModuleEnabled({ id: "alpha", enabled: false, extra: 1 } as never)
     ).rejects.toMatchObject({ code: "validation" });
   });
+
+  it("refuse un identifiant qui n'est pas du kebab-case", async () => {
+    await expect(setModuleEnabled({ id: "../escape", enabled: false })).rejects.toMatchObject({
+      code: "validation",
+      message: expect.stringContaining("Identifiant de module invalide"),
+    });
+  });
 });
 
 describe("installModuleFromSource", () => {
@@ -228,6 +235,25 @@ describe("installModuleFromSource", () => {
       installModuleFromSource({ source: "https://example.test/module.git" })
     ).rejects.toMatchObject({ code: "validation" });
     expect(mocks.installModule).not.toHaveBeenCalled();
+  });
+
+  it("refuse un depot qui ressemble a une option de git", async () => {
+    await expect(
+      installModuleFromSource({ source: "--upload-pack=touch /tmp/pwned#v1.0.0" })
+    ).rejects.toMatchObject({
+      code: "validation",
+      message: expect.stringContaining("Depot invalide"),
+    });
+    expect(mocks.installModule).not.toHaveBeenCalled();
+  });
+
+  it("refuse une ref qui commence par un tiret", async () => {
+    await expect(
+      installModuleFromSource({ source: "https://example.test/module.git#-x" })
+    ).rejects.toMatchObject({
+      code: "validation",
+      message: expect.stringContaining("Ref invalide"),
+    });
   });
 
   it("remonte le conflit d'identifiant du noyau", async () => {

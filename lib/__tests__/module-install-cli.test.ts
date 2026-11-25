@@ -459,11 +459,13 @@ describe("module:doctor en erreur", () => {
 
   it("signale un dossier .install-* orphelin", () => {
     const root = createRoot();
-    mkdirSync(join(root, "modules/.install-install-999-1-abcd"), { recursive: true });
+    // Un pid tres au-dessus du maximum Linux est forcement mort : 999 peut
+    // appartenir a un service de la machine et rendre le test dependant de l'hote.
+    mkdirSync(join(root, "modules/.install-install-2147483646-1-abcd"), { recursive: true });
 
     const doctor = run(root, "doctor");
     expect(doctor.status).toBe(1);
-    expect(doctor.stderr).toContain(".install-install-999-1-abcd");
+    expect(doctor.stderr).toContain(".install-install-2147483646-1-abcd");
     expect(doctor.stderr).toContain("temporaire");
   });
 

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { PasskeyPairing } from "./PasskeyPairing";
 import { SettingsAppearance } from "./SettingsAppearance";
 import { SettingsConnections } from "./SettingsConnections";
@@ -7,7 +9,7 @@ import { SettingsData } from "./SettingsData";
 import { SettingsLeetcode } from "./SettingsLeetcode";
 import { SettingsModels } from "./SettingsModels";
 import { SettingsNotifications } from "./SettingsNotifications";
-import { Section } from "./SettingsSection";
+import { Row, Section } from "./SettingsSection";
 import { SettingsSession } from "./SettingsSession";
 import { useRuntimeInfo } from "./useRuntimeInfo";
 import { AppShell } from "@/components/layout/AppShell";
@@ -38,6 +40,20 @@ export default function SettingsPage() {
           <SettingsNotifications runtime={runtime} />
 
           <SettingsLeetcode />
+
+          <Section
+            title="Modules"
+            description="Les capacités branchées sur BACKSTAGE : état réel du registre, activation, ajout et retrait."
+          >
+            <Row label="Gérer les modules" hint="Voir ce que le serveur sert, installer ou retirer un module.">
+              <Link
+                href="/settings/modules"
+                className="ui-btn ui-btn--ghost ui-btn--sm px-4 text-[var(--t-small)]"
+              >
+                Ouvrir
+              </Link>
+            </Row>
+          </Section>
 
           <Section
             title="Sécurité"

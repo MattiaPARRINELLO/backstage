@@ -9,7 +9,12 @@
 # ── Dépendances ────────────────────────────────────────────────────────
 FROM oven/bun:1-alpine AS deps
 WORKDIR /app
+# Le paquet de workspace doit exister AVANT `bun install`, sinon Bun ne cree
+# pas le lien `node_modules/@backstage/module-kit` et le build echoue sur
+# `Can't resolve '@backstage/module-kit/json-store'`. On ne copie que son
+# manifeste ici : la couche de dependances reste cacheable.
 COPY package.json bun.lock ./
+COPY packages/module-kit/package.json ./packages/module-kit/package.json
 RUN bun install --frozen-lockfile
 
 # ── Build ──────────────────────────────────────────────────────────────

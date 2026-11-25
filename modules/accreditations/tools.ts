@@ -15,7 +15,15 @@ import {
   OWN_MEDIA,
   type Extraction,
 } from "./extraction";
-import type { Accreditation, AccreditationStatus } from "./schema";
+import {
+  contactOf,
+  findMatch,
+  isUnknown,
+  isoDate,
+  mergeStatus,
+  normalize,
+} from "./matching";
+import type { Accreditation } from "./schema";
 import {
   addAccreditation,
   getAccreditations,
@@ -31,14 +39,6 @@ import {
  * d'extraction : elle se trompait systematiquement sur l'artiste et le lieu.
  * L'ecriture reste locale et relue apres coup.
  */
-
-const STATUS_RANK: Record<AccreditationStatus, number> = {
-  pending: 0,
-  sent: 1,
-  accepted: 2,
-  refused: 2,
-  "follow-up": 3,
-};
 
 /** Termes qui designent une accreditation, dans les deux orthographes. */
 const PRECISE_TERMS = [
@@ -79,77 +79,6 @@ const SENT_QUERY = "in:sent newer_than:12m";
 /** Plafond de fils analyses par scan : borne la duree et le quota Groq. */
 const MAX_THREADS = 200;
 const BATCH_SIZE = 10;
-
-function normalize(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function isUnknown(value: string): boolean {
-  const normalized = normalize(value);
-  return normalized === "" || normalized.includes("inconnu");
-}
-
-/**
- * Retrouve une fiche malgre un lieu encore inconnu.
- *
- * Une fiche extraite hier sans salle (`Inconnu`) doit etre completee par le
- * scan du jour, pas dupliquee sous un nouveau couple artiste/lieu.
- */
-function findMatch(
-  entries: readonly Accreditation[],
-  artist: string,
-  venue: string
-): Accreditation | undefined {
-  const normalizedArtist = normalize(artist);
-  const sameArtist = entries.filter(
-    (entry) => normalize(entry.artist) === normalizedArtist
-  );
-  if (sameArtist.length === 0) return undefined;
-  const exact = sameArtist.find(
-    (entry) => normalize(entry.venue) === normalize(venue)
-  );
-  if (exact) return exact;
-  const unknownVenue = sameArtist.find((entry) => isUnknown(entry.venue));
-  if (unknownVenue) return unknownVenue;
-  if (sameArtist.length === 1 && isUnknown(venue)) return sameArtist[0];
-  return undefined;
-}
-
-function isoDate(value: string): string {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
-}
-
-function emailOf(from: string | undefined): string {
-  return from?.match(/[\w.+-]+@[\w.-]+\.\w+/)?.[0] ?? "";
-}
-
-/** Le statut ne recule jamais : un scan ne retrograde pas une fiche acceptee. */
-function mergeStatus(
-  current: AccreditationStatus,
-  next: AccreditationStatus
-): AccreditationStatus {
-  if (current === "follow-up" || current === "accepted" || current === "refused") {
-    return current;
-  }
-  return STATUS_RANK[next] > STATUS_RANK[current] ? next : current;
-}
-
-/**
- * Adresse du correspondant, jamais celle de l'utilisateur.
- *
- * Quand la demande part de la boite de l'utilisateur, le dernier message est de
- * lui : prendre son adresse transformerait la salle en lui-meme.
- */
-function contactOf(thread: GmailThread, extracted: string): string {
-  if (z.string().email().safeParse(extracted).success) return extracted;
-  const correspondent = thread.messages.find((message) => !message.fromMe);
-  return emailOf(correspondent?.from ?? thread.messages[0]?.from);
-}
 
 /**
  * Rassemble les fils candidats.

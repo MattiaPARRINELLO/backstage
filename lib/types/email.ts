@@ -12,6 +12,12 @@ export interface GmailMessage {
   messageId?: string;
 }
 
+/** Fil Gmail complet : tous ses messages, du plus recent au plus ancien. */
+export interface GmailThread {
+  id: string;
+  messages: GmailMessage[];
+}
+
 export interface Email {
   id: string;
   from: string;

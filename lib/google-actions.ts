@@ -1,5 +1,9 @@
 import { getGmailClient, getCalendarClient } from "./google-client";
-import type { GmailMessage, GoogleCalendarEvent as CalendarEventItem } from "@/lib/types";
+import type {
+  GmailMessage,
+  GmailThread,
+  GoogleCalendarEvent as CalendarEventItem,
+} from "@/lib/types";
 import type { OAuth2Client } from "google-auth-library";
 import { request as httpRequest, type HttpMethod } from "@/lib/http";
 
@@ -17,8 +21,14 @@ type GmailMessageRaw = {
   labelIds?: string[];
 };
 
+type GmailThreadRaw = {
+  id: string;
+  messages?: GmailMessageRaw[];
+};
+
 type GmailListResponse = {
   messages?: { id: string; threadId: string }[];
+  threads?: { id: string }[];
   resultSizeEstimate?: number;
   nextPageToken?: string;
 };
@@ -137,6 +147,26 @@ async function googleFetch<T>(
   return JSON.parse(text) as T;
 }
 
+/** Traduit un message Gmail brut en message exploitable (headers + corps). */
+function toGmailMessage(msg: GmailMessageRaw): GmailMessage {
+  const headers = msg.payload?.headers ?? [];
+  const body = msg.payload
+    ? extractBody(msg.payload.parts, msg.payload.mimeType, msg.payload.body)
+    : "";
+  return {
+    id: msg.id,
+    threadId: msg.threadId,
+    from: extractHeader(headers, "From"),
+    to: extractHeader(headers, "To") || undefined,
+    subject: extractHeader(headers, "Subject"),
+    date: extractHeader(headers, "Date"),
+    snippet: body,
+    body,
+    unread: msg.labelIds?.includes("UNREAD") ?? true,
+    messageId: extractHeader(headers, "Message-ID"),
+  };
+}
+
 export async function fetchGmailMessages(query?: string, maxResults = 10): Promise<GmailMessage[]> {
   const auth = await getGmailClient();
 
@@ -173,25 +203,7 @@ export async function fetchGmailMessages(query?: string, maxResults = 10): Promi
         auth,
         `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`
       );
-      const headers = msg.payload?.headers ?? [];
-      const from = extractHeader(headers, "From");
-      const to = extractHeader(headers, "To");
-      const subject = extractHeader(headers, "Subject");
-      const date = extractHeader(headers, "Date");
-      const messageId = extractHeader(headers, "Message-ID");
-      const snippet = msg.payload ? extractBody(msg.payload.parts, msg.payload.mimeType, msg.payload.body) : "";
-      return {
-        id: msg.id,
-        threadId: msg.threadId,
-        from,
-        to: to || undefined,
-        subject,
-        date,
-        snippet,
-        body: snippet,
-        unread: msg.labelIds?.includes("UNREAD") ?? true,
-        messageId,
-      };
+      return toGmailMessage(msg);
     })
   );
 
@@ -221,6 +233,79 @@ function compareGmailMessages(a: GmailMessage, b: GmailMessage): number {
   const tb = gmailTimestamp(b.date);
   if (ta !== tb) return tb - ta;
   // Dates identiques ou illisibles : l'ID departage.
+  return a.id.localeCompare(b.id);
+}
+
+/**
+ * Fils complets correspondant a une recherche Gmail.
+ *
+ * Gmail cherche dans un fil : une reponse sans mot-cle (« c'est ok pour
+ * vendredi ») est donc ramenee avec la demande qui l'a declenchee. Chaque fil
+ * arrive avec tous ses messages, du plus recent au plus ancien.
+ */
+export async function fetchGmailThreads(
+  query?: string,
+  maxThreads = 100
+): Promise<GmailThread[]> {
+  const auth = await getGmailClient();
+
+  const collected: { id: string }[] = [];
+  let pageToken: string | undefined;
+  const pageSize = Math.min(Math.max(maxThreads, 1), 100);
+  while (collected.length < maxThreads) {
+    const params = new URLSearchParams({
+      userId: "me",
+      maxResults: String(Math.min(pageSize, maxThreads - collected.length)),
+    });
+    if (query) params.set("q", query);
+    if (pageToken) params.set("pageToken", pageToken);
+
+    const list = await googleFetch<GmailListResponse>(
+      auth,
+      `https://gmail.googleapis.com/gmail/v1/users/me/threads?${params.toString()}`
+    );
+    const page = list.threads ?? [];
+    collected.push(...page);
+    pageToken = list.nextPageToken;
+    if (!pageToken || page.length === 0) break;
+  }
+
+  const results = await Promise.allSettled(
+    collected
+      .slice(0, maxThreads)
+      .map(async ({ id }) => {
+        const raw = await googleFetch<GmailThreadRaw>(
+          auth,
+          `https://gmail.googleapis.com/gmail/v1/users/me/threads/${id}?format=full`
+        );
+        const messages = (raw.messages ?? []).map(toGmailMessage);
+        return {
+          id: raw.id || id,
+          messages: messages.sort(compareGmailMessages),
+        };
+      })
+  );
+
+  const threads = results
+    .filter((r) => r.status === "fulfilled")
+    .map((r) => (r as { status: "fulfilled"; value: GmailThread }).value)
+    .filter((thread) => thread.messages.length > 0);
+
+  const rejected = results.length - threads.length;
+  if (rejected > 0) {
+    console.warn(`[gmail] ${rejected} fil(s) illisible(s) ignore(s)`);
+  }
+
+  return threads.sort(compareGmailThreads);
+}
+
+/** Le fil le plus recent d'abord ; l'ID departage deux dates identiques. */
+function compareGmailThreads(a: GmailThread, b: GmailThread): number {
+  const first = a.messages[0];
+  const second = b.messages[0];
+  const ta = first ? gmailTimestamp(first.date) : Number.NEGATIVE_INFINITY;
+  const tb = second ? gmailTimestamp(second.date) : Number.NEGATIVE_INFINITY;
+  if (ta !== tb) return tb - ta;
   return a.id.localeCompare(b.id);
 }
 

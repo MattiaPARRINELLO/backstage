@@ -978,7 +978,22 @@ modèle de conversation : un module demande `ctx.ai.json`, le noyau sert Groq si
 - `GROQ_API_KEYS` accepte plusieurs clés séparées par des virgules : la
   rotation passe au compte suivant sur `429` (quota) ou `401`/`403` (clé
   refusée). `GROQ_API_KEY` reste la clé unique.
+- Un `429` réessaie après l'en-tête `retry-after` (borné à 20 s, trois tours),
+  pas après un délai fixe qui retombait dans la même fenêtre de quota.
+- L'attente entre deux extractions vient du noyau (`ai.jsonDelayMs`) : 6 s avec
+  un compte, 1,5 s dès deux comptes, `GROQ_SCAN_DELAY_MS` pour forcer une valeur.
+  Le module ne lit plus `process.env` pour cela.
 - Le module ne connaît ni Groq ni la clé : il reçoit une réponse JSON brute et la
   valide avec Zod avant toute écriture.
 - Sans clé Groq, le scan des accréditations refuse de tourner plutôt que de
   deviner : l'extraction par regex a été retirée, elle se trompait d'artiste.
+
+#### Scan des accréditations
+
+`modules/accreditations/tools.ts` interroge Gmail en trois passes (termes
+précis, envois récents non filtrés, termes larges sur 12 à 24 mois), fusionne
+les fils par identifiant et plafonne à 200. `modules/accreditations/extraction.ts`
+envoie les fils par lots de 10 à `ctx.ai.json`, retire l'historique cité avant
+troncature et signale les messages de l'utilisateur (label `SENT`, donc
+`fromMe`) pour distinguer une demande envoyée d'une réponse. Un lot illisible
+est retenté fil par fil ; les échecs restants sont comptés dans le bilan.

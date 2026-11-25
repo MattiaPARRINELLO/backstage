@@ -49,6 +49,36 @@ export function isGroqConfigured(): boolean {
   return configuredGroqKeys().length > 0;
 }
 
+/** Delais par defaut entre deux extractions, selon le nombre de comptes. */
+const SINGLE_KEY_JSON_DELAY_MS = 6000;
+const POOLED_KEY_JSON_DELAY_MS = 1500;
+
+/**
+ * Attente entre deux extractions JSON.
+ *
+ * Chaque compte Groq a son propre quota de tokens par minute : empiler les
+ * comptes permet d'enchainer plus vite. Le plafond d'une cle unique (gpt-oss-20b)
+ * impose ~6 s entre deux lots ; avec deux comptes, 1,5 s suffit, et un 429
+ * eventuel est de toute facon rattrape via `retry-after`.
+ */
+export function jsonDelayForKeys(keyCount: number, override?: string): number {
+  if (override !== undefined) {
+    const value = Number(override);
+    if (Number.isFinite(value) && value >= 0) return value;
+  }
+  if (keyCount === 0) return 0;
+  return keyCount >= 2 ? POOLED_KEY_JSON_DELAY_MS : SINGLE_KEY_JSON_DELAY_MS;
+}
+
+/** Delai a respecter maintenant, selon la configuration courante. */
+export function groqJsonDelayMs(): number {
+  const config = getConfig();
+  return jsonDelayForKeys(
+    configuredGroqKeys().length,
+    config.GROQ_SCAN_DELAY_MS
+  );
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -115,6 +145,29 @@ async function callWithKey(
   throw new Error("Groq n'a rendu aucune reponse exploitable.");
 }
 
+/** Plafond d'attente : un scan ne doit pas rester bloque une minute par 429. */
+const MAX_RETRY_WAIT_MS = 20_000;
+
+/**
+ * Delai demande par Groq dans `retry-after`, en millisecondes.
+ *
+ * Le quota Groq est par minute : repartir apres 4 s fixes relance le 429.
+ * On suit l'en-tete quand il est present, borne pour rester exploitable.
+ */
+export function retryAfterMs(error: unknown): number | null {
+  const headers = (error as { headers?: unknown } | null)?.headers;
+  const raw =
+    headers instanceof Headers
+      ? headers.get("retry-after")
+      : typeof headers === "object" && headers !== null
+        ? (headers as Record<string, string | undefined>)["retry-after"]
+        : undefined;
+  if (!raw) return null;
+  const seconds = Number(raw);
+  if (!Number.isFinite(seconds) || seconds < 0) return null;
+  return Math.min(seconds * 1000, MAX_RETRY_WAIT_MS);
+}
+
 export async function groqJson(system: string, prompt: string): Promise<string> {
   const keys = configuredGroqKeys();
   if (keys.length === 0) {
@@ -122,9 +175,9 @@ export async function groqJson(system: string, prompt: string): Promise<string> 
   }
 
   let lastError: unknown = null;
-  // Deux tours : un 429 sur une cle unique est souvent passager (reset en
-  // quelques secondes). Avec plusieurs cles, le premier tour suffit.
-  for (let round = 0; round < 2; round++) {
+  // Trois tours : un 429 sur une cle unique est souvent passager (reset a la
+  // minute). Avec plusieurs cles, le premier tour suffit.
+  for (let round = 0; round < 3; round++) {
     for (const key of keys) {
       try {
         return await callWithKey(key, system, prompt);
@@ -136,8 +189,8 @@ export async function groqJson(system: string, prompt: string): Promise<string> 
         throw error;
       }
     }
-    if (statusOf(lastError) !== 429 || round === 1) break;
-    await sleep(4000);
+    if (statusOf(lastError) !== 429 || round === 2) break;
+    await sleep(retryAfterMs(lastError) ?? 4000);
   }
 
   throw lastError instanceof Error

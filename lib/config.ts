@@ -70,6 +70,9 @@ const configSchema = z.object({
   GROQ_API_KEYS: optional,
   GROQ_BASE_URL: withDefault("https://api.groq.com/openai/v1"),
   GROQ_MODEL: withDefault("openai/gpt-oss-20b"),
+  // Attente imposee entre deux extractions JSON enchainees. Absente : le noyau
+  // deduit le delai du nombre de comptes (une cle = 6 s, plusieurs = 1,5 s).
+  GROQ_SCAN_DELAY_MS: optional,
 
   // ---- Site ------------------------------------------------------------
   NEXT_PUBLIC_SITE_URL: withDefault("https://backstage.mprnl.fr"),

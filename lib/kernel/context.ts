@@ -1,7 +1,7 @@
 import type { ModuleContext } from "@backstage/module-kit";
 
 import { chatCompletion } from "@/lib/ai-providers";
-import { groqJson, isGroqConfigured } from "@/lib/ai-providers/groq";
+import { groqJson, groqJsonDelayMs, isGroqConfigured } from "@/lib/ai-providers/groq";
 import { getConfig } from "@/lib/app-config";
 import { logActivity } from "@/lib/storage";
 import { isSafeFetchUrl, safeFetchText } from "@/lib/web";
@@ -43,6 +43,7 @@ export function createModuleContext(
     ai: {
       // Le modèle vient des reglages applicatifs, jamais du module : un module
       // ne choisit ni le fournisseur ni le cout d'un appel.
+      jsonDelayMs: groqJsonDelayMs(),
       complete: async ({ system, prompt, maxChars = 2000 }) => {
         const config = await getConfig();
         const messages = system

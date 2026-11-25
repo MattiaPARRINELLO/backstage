@@ -5,7 +5,12 @@ vi.mock("../google-client", () => ({
   getGmailClient: () => Promise.resolve({ credentials: { access_token: "tok" } }),
 }));
 
-import { extractBody, createGoogleCalendarEvent, fetchGmailMessages } from "../google-actions";
+import {
+  extractBody,
+  createGoogleCalendarEvent,
+  fetchGmailMessages,
+  fetchGmailThreads,
+} from "../google-actions";
 import { jsonResponse, withHttpDouble, type HttpDoubleRoute } from "@/lib/http-double";
 
 const b64 = (text: string) => Buffer.from(text, "utf-8").toString("base64");
@@ -170,6 +175,91 @@ describe("fetchGmailMessages — tri deterministe et messages illisibles", () =>
 
     await expect(
       withHttpDouble(routes, () => fetchGmailMessages("inexistant", 10))
+    ).resolves.toEqual([]);
+  });
+});
+
+describe("fetchGmailThreads — fils complets", () => {
+  type Thread = { id: string; messageIds: string[]; dates: string[] };
+
+  function threadRoutes(threads: Thread[], broken: string[] = []): HttpDoubleRoute[] {
+    return [
+      {
+        match: /gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
+        response: (input) => {
+          if (input.includes("/threads?")) {
+            return jsonResponse({ threads: threads.map((t) => ({ id: t.id })) });
+          }
+          const id = /\/threads\/([^?]+)\?format=full/.exec(input)?.[1] ?? "";
+          if (broken.includes(id)) return new Response("boom", { status: 500 });
+          const thread = threads.find((t) => t.id === id);
+          if (!thread) return new Response("not found", { status: 404 });
+          return jsonResponse({
+            id,
+            messages: thread.messageIds.map((messageId, index) => ({
+              id: messageId,
+              threadId: id,
+              labelIds: ["INBOX"],
+              payload: {
+                mimeType: "text/plain",
+                headers: [
+                  { name: "From", value: "presse@salle.fr" },
+                  { name: "Subject", value: `Demande ${id}` },
+                  { name: "Date", value: thread.dates[index] },
+                ],
+                body: { data: b64(`corps ${messageId}`) },
+              },
+            })),
+          });
+        },
+      },
+    ];
+  }
+
+  it("ramene tous les messages d'un fil, du plus recent au plus ancien", async () => {
+    const routes = threadRoutes([
+      {
+        id: "t1",
+        messageIds: ["demande", "reponse"],
+        dates: ["Mon, 09 Nov 2026 08:00:00 +0000", "Tue, 10 Nov 2026 18:00:00 +0000"],
+      },
+    ]);
+
+    const threads = await withHttpDouble(routes, () => fetchGmailThreads("accreditation", 10));
+
+    expect(threads).toHaveLength(1);
+    expect(threads[0]?.messages.map((m) => m.id)).toEqual(["reponse", "demande"]);
+    expect(threads[0]?.messages[0]?.body).toBe("corps reponse");
+  });
+
+  it("trie les fils par message le plus recent", async () => {
+    const routes = threadRoutes([
+      { id: "vieux", messageIds: ["v1"], dates: ["Mon, 02 Nov 2026 08:00:00 +0000"] },
+      { id: "recent", messageIds: ["r1", "r2"], dates: ["Tue, 10 Nov 2026 09:00:00 +0000", "Wed, 11 Nov 2026 09:00:00 +0000"] },
+    ]);
+
+    const threads = await withHttpDouble(routes, () => fetchGmailThreads("photo", 10));
+
+    expect(threads.map((t) => t.id)).toEqual(["recent", "vieux"]);
+  });
+
+  it("isole un fil illisible sans faire echouer le lot", async () => {
+    const routes = threadRoutes(
+      [
+        { id: "ok", messageIds: ["a"], dates: ["Tue, 10 Nov 2026 09:00:00 +0000"] },
+        { id: "casse", messageIds: ["b"], dates: ["Tue, 10 Nov 2026 10:00:00 +0000"] },
+      ],
+      ["casse"]
+    );
+
+    const threads = await withHttpDouble(routes, () => fetchGmailThreads("photo", 10));
+
+    expect(threads.map((t) => t.id)).toEqual(["ok"]);
+  });
+
+  it("renvoie une liste vide quand Gmail ne trouve aucun fil", async () => {
+    await expect(
+      withHttpDouble(threadRoutes([]), () => fetchGmailThreads("inexistant", 10))
     ).resolves.toEqual([]);
   });
 });

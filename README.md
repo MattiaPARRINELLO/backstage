@@ -8,6 +8,7 @@
   </p>
   <p>
     <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-0f172a?style=flat-square" />
+    <a href="https://github.com/MattiaPARRINELLO/backstage/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/MattiaPARRINELLO/backstage/actions/workflows/ci.yml/badge.svg" /></a>
     <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-000?style=flat-square&logo=nextdotjs" />
     <img alt="Node 20.9+" src="https://img.shields.io/badge/node-%3E%3D20.9-3c873a?style=flat-square&logo=nodedotjs" />
     <img alt="Docker" src="https://img.shields.io/badge/docker-ready-2496ed?style=flat-square&logo=docker" />

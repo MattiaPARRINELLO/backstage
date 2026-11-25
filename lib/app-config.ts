@@ -3,6 +3,10 @@ import { readJsonSafe } from "./storage-core";
 import { mutateJson } from "./storage-core";
 import { peekAvailableModels, warmModelCatalog } from "./ai-providers/models";
 
+/** Catalogue des modules distribues depuis `mprnl/BS-modules` (issue #271). */
+export const DEFAULT_MODULE_CATALOG_URL =
+  "https://raw.githubusercontent.com/mprnl/BS-modules/main/catalog.json";
+
 export interface AppConfig {
   models: {
     general: string;
@@ -20,6 +24,10 @@ export interface AppConfig {
   };
   theme: {
     accentColor: string;
+  };
+  modules: {
+    /** Source du catalogue, surchargeable pour les tests ou un miroir. */
+    catalogUrl: string;
   };
 }
 
@@ -44,6 +52,9 @@ const defaultConfig: AppConfig = {
   theme: {
     accentColor: "#a5b4fc",
   },
+  modules: {
+    catalogUrl: DEFAULT_MODULE_CATALOG_URL,
+  },
 };
 
 const CACHE_TTL = 60_000;
@@ -67,6 +78,7 @@ export async function getConfig(): Promise<AppConfig> {
     llm: { ...defaultConfig.llm, ...parsed.llm },
     features: { ...defaultConfig.features, ...parsed.features },
     theme: { ...defaultConfig.theme, ...parsed.theme },
+    modules: { ...defaultConfig.modules, ...parsed.modules },
   };
   cachedConfig = { data: merged, ts: Date.now() };
   return merged;

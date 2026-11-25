@@ -632,6 +632,35 @@ module rendrait le noyau dépendant d'un module distribuable.
   `modules.config.json`, `modules/index.ts` et le lock, avec rollback si une
   écriture échoue.
 
+### Catalogue des modules (lecture seule, #271)
+
+`mprnl/BS-modules` publie un fichier catalog.json : la liste des modules connus, avec
+pour chacun `source` (`bundled` ou `external`), `path`, `repo`, `ref`,
+`distributable`, `description`, `kit`, `env` et `visibility`. L'application le
+lit sans jamais installer : `lib/kernel/module-catalog.ts` (lecture, cache,
+validation) et `app/actions/modules.ts` (`listModuleCatalog`, session requise)
+exposent uniquement ce que l'UI doit afficher.
+
+- **Source** : `modules.catalogUrl` dans `data/config.json`, avec pour défaut
+  `https://raw.githubusercontent.com/mprnl/BS-modules/main/catalog.json`
+  (`DEFAULT_MODULE_CATALOG_URL`). Surchargeable pour un miroir ou un test.
+- **Paresseuse** : la lecture part de la page qui affiche le catalogue, jamais
+  de `app/layout.tsx` ni du registre.
+- **Bornée** : timeout de 5 s (`CATALOG_TIMEOUT_MS`) et une seule tentative ;
+  le résultat est gardé 5 min en mémoire (`CATALOG_CACHE_TTL_MS`).
+  `fetchCatalog()` force une relecture. Un échec rend le cache précédent avec
+  `ok: false`, ou une erreur explicite : jamais une liste vide présentée comme
+  « aucun module ».
+- **Pas une source de confiance** : chaque entrée passe le schéma Zod
+  `moduleCatalogEntrySchema`. Une entrée invalide est ignorée et journalisée
+  (`[module-catalog] entree N ignoree`), les autres restent. Un module
+  `external` ou `distributable` doit déclarer `repo` et `ref`.
+- **Dépôt privé** : `GITHUB_TOKEN` est envoyé en `Authorization: Bearer` s'il
+  existe. Sans lui, une entrée `visibility: "private"` porte
+  `requiresToken: true` : l'UI annonce « installation avec token ».
+- **Aucune écriture** : pas de `module:add`, pas de bascule, pas de
+  `revalidatePath`. L'installation reste un geste explicite du CLI.
+
 ### Capacités fournies aux modules
 
 Le contexte d'un module porte les moyens d'agir du noyau, jamais ses fichiers :

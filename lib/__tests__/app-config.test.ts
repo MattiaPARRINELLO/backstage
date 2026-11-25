@@ -33,6 +33,9 @@ const defaultConfig = {
   llm: { temperature: 0.7, maxTokens: 4096 },
   features: { dailyBrief: true, webSearch: true },
   theme: { accentColor: "#a5b4fc" },
+  modules: {
+    catalogUrl: "https://raw.githubusercontent.com/mprnl/BS-modules/main/catalog.json",
+  },
 };
 
 describe("config", () => {

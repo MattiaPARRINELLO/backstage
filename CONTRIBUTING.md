@@ -142,9 +142,10 @@ s'audite dans `Settings > Rules > Rulesets`, et remplace les anciens réglages
   mono-mainteneur, exiger une seconde validation bloquerait chaque merge sans
   apporter de relecture ;
 - **checks obligatoires** : `CI OK` (agrégat de lint, typecheck, frontières,
-  documentation, tests Linux et macOS, build standalone et E2E), `Garde-fous`
-  et `Titre de PR (Conventional Commits)`. Ajouter un job à `ci.yml` ne demande
-  aucune reconfiguration : `CI OK` est le point d'entree unique ;
+  documentation, tests Linux et macOS, build standalone et E2E), `Hygiene du
+  depot` (hygiène du dépôt, workflow `Garde-fous`) et `Titre de PR
+  (Conventional Commits)`. Ajouter un job à `ci.yml` ne demande aucune
+  reconfiguration : `CI OK` est le point d'entree unique ;
 - **pas de force-push** et **pas de suppression** de `main`.
 
 La regle de fusion est appliquee par GitHub : un push direct sur `main` est

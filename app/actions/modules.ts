@@ -2,16 +2,22 @@
 
 import { AppError } from "@/lib/errors";
 import { readCatalog, type ModuleCatalog } from "@/lib/kernel/module-catalog";
+import { modulesRoot, readModulesState, type ModulesState } from "@/lib/kernel/module-admin";
 import { requireSession } from "@/lib/session";
 
 /**
- * Lecture seule du catalogue de modules (issue #271).
+ * Gestion des modules (issue #270).
  *
- * Aucune installation ici : cette action ne fait que rendre le catalogue lisible
- * par l'interface. Elle n'est appelee que par la page qui l'affiche, jamais au
- * demarrage. En cas de panne sans cache, l'erreur est explicite plutot qu'une
- * liste vide qui laisserait croire qu'il n'existe aucun module.
+ * `listModuleCatalog` (issue #271) reste la seule action de lecture du
+ * catalogue. Les actions qui ecrivent exigent une session et ne sont pas
+ * rate-limitees (meme situation que les autres Server Actions du depot).
  */
+
+export async function listInstalledModules(): Promise<ModulesState> {
+  await requireSession();
+  return readModulesState(modulesRoot());
+}
+
 export async function listModuleCatalog(): Promise<ModuleCatalog> {
   await requireSession();
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { GmailThread } from "@/lib/types";
+import type { GmailThread } from "@backstage/module-kit";
 import {
   buildBatchPrompt,
   chunk,

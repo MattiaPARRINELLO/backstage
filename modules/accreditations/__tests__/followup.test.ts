@@ -1,10 +1,11 @@
-import { withTempDataDir } from "@backstage/module-kit/testing";
+import {
+  createTestContext,
+  withTempDataDir,
+  type TestModuleContext,
+} from "@backstage/module-kit/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Accreditation } from "../schema";
-
-const push = { sendPushToAll: vi.fn() };
-vi.mock("@/lib/push-dispatch", () => push);
 
 const {
   buildFollowUpDraft,
@@ -128,11 +129,13 @@ describe("texte de relance", () => {
 });
 
 describe("job de relance", () => {
+  let ctx: TestModuleContext;
+
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-11-20T09:00:00.000Z"));
     vi.clearAllMocks();
-    push.sendPushToAll.mockResolvedValue({ sent: true, devices: 1 });
+    ctx = createTestContext({ moduleId: "accreditations" });
   });
 
   afterEach(() => {
@@ -151,10 +154,10 @@ describe("job de relance", () => {
         );
       });
 
-      const notified = await runAccreditationFollowUpCheck();
+      const notified = await runAccreditationFollowUpCheck(ctx);
 
       expect(notified).toBe(0);
-      expect(push.sendPushToAll).not.toHaveBeenCalled();
+      expect(ctx.notifications).toHaveLength(0);
       const after = await accreditationsStore.read();
       expect(after.accreditations[0]).toMatchObject({ status: "sent", needsReview: true });
       expect(after.accreditations[0]?.followUpNotifiedAt).toBeUndefined();
@@ -170,10 +173,15 @@ describe("job de relance", () => {
         );
       });
 
-      const notified = await runAccreditationFollowUpCheck();
+      const notified = await runAccreditationFollowUpCheck(ctx);
 
       expect(notified).toBe(1);
-      expect(push.sendPushToAll).toHaveBeenCalledTimes(1);
+      expect(ctx.notifications).toHaveLength(1);
+      expect(ctx.notifications[0]).toMatchObject({
+        title: "Relance accréditation : Damso",
+        tag: "accreditation-a",
+        url: "/m/accreditations",
+      });
       const after = await accreditationsStore.read();
       expect(after.accreditations[0]).toMatchObject({
         id: "a",
@@ -183,20 +191,36 @@ describe("job de relance", () => {
       expect(after.accreditations[0]?.followUpDraft).toContain("Damso");
       expect(after.accreditations[1]?.status).toBe("sent");
 
-      const again = await runAccreditationFollowUpCheck();
+      const again = await runAccreditationFollowUpCheck(ctx);
       expect(again).toBe(0);
-      expect(push.sendPushToAll).toHaveBeenCalledTimes(1);
+      expect(ctx.notifications).toHaveLength(1);
     });
   });
 
   it("ne marque rien quand l'envoi push échoue", async () => {
-    push.sendPushToAll.mockResolvedValue({ sent: false, devices: 0 });
+    ctx = { ...ctx, notify: async () => false };
     await withTempDataDir(async () => {
       await accreditationsStore.mutate((data) => {
         data.accreditations.push(fiche({ id: "a", followUpAt: "2026-11-19T10:00:00.000Z" }));
       });
 
-      const notified = await runAccreditationFollowUpCheck();
+      const notified = await runAccreditationFollowUpCheck(ctx);
+
+      expect(notified).toBe(0);
+      const after = await accreditationsStore.read();
+      expect(after.accreditations[0]?.status).toBe("sent");
+      expect(after.accreditations[0]?.followUpNotifiedAt).toBeUndefined();
+    });
+  });
+
+  it("ne marque rien quand l'hote n'a pas de notifications", async () => {
+    const noNotify = { moduleId: "accreditations", log: () => {}, emit: () => {} };
+    await withTempDataDir(async () => {
+      await accreditationsStore.mutate((data) => {
+        data.accreditations.push(fiche({ id: "a", followUpAt: "2026-11-19T10:00:00.000Z" }));
+      });
+
+      const notified = await runAccreditationFollowUpCheck(noNotify);
 
       expect(notified).toBe(0);
       const after = await accreditationsStore.read();

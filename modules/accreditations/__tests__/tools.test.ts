@@ -1,17 +1,16 @@
 import { assertToolError, assertToolOk } from "@backstage/module-kit/testing";
+import type { GmailThread } from "@backstage/module-kit";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { GmailThread } from "@/lib/types";
 import type { Accreditation } from "../schema";
 
-const google = { fetchGmailThreads: vi.fn() };
+const mail = { listThreads: vi.fn(), getThread: vi.fn(), getMessage: vi.fn() };
 const service = {
   getAccreditations: vi.fn(),
   addAccreditation: vi.fn(),
   updateAccreditation: vi.fn(),
 };
 
-vi.mock("@/lib/google-actions", () => google);
 vi.mock("../service", () => service);
 
 const { scanAccreditationsTool } = await import("../tools");
@@ -22,11 +21,17 @@ const ai = {
   log: () => {},
   emit: () => {},
 };
-const ctx = { moduleId: "accreditations", log: () => {}, emit: () => {}, ai };
+const ctx = {
+  moduleId: "accreditations",
+  log: () => {},
+  emit: () => {},
+  ai,
+  mail,
+};
 
 let messageCounter = 0;
 
-/** Un fil d'un message, tel que le rend fetchGmailThreads. */
+/** Un fil d'un message, tel que le rend `mail.listThreads`. */
 function thread(id: string, subject: string, body: string): GmailThread {
   messageCounter++;
   return {
@@ -140,17 +145,17 @@ describe("outil scan des accreditations", () => {
   });
 
   it("rend un resultat vide sans fil", async () => {
-    google.fetchGmailThreads.mockResolvedValue([]);
+    mail.listThreads.mockResolvedValue([]);
     const result = await scanAccreditationsTool.run({}, ctx);
     expect(result.status).toBe("empty");
   });
 
   it("interroge les termes precis, les envois recents et les termes larges", async () => {
-    google.fetchGmailThreads.mockResolvedValue([]);
+    mail.listThreads.mockResolvedValue([]);
 
     await scanAccreditationsTool.run({}, ctx);
 
-    const queries = google.fetchGmailThreads.mock.calls.map((call: unknown[]) => call[0]);
+    const queries = mail.listThreads.mock.calls.map((call: unknown[]) => call[0]);
     expect(queries).toHaveLength(3);
     expect(queries[0]).toMatch(/accréditation/);
     expect(queries[0]).toMatch(/photo pass/);
@@ -164,7 +169,7 @@ describe("outil scan des accreditations", () => {
       "Accreditation pour Muse",
       "Concert de Muse au Zenith le 20 novembre 2026, accepté"
     );
-    google.fetchGmailThreads.mockResolvedValue([demande]);
+    mail.listThreads.mockResolvedValue([demande]);
     ai.json.mockResolvedValue(
       batch([
         {
@@ -200,7 +205,7 @@ describe("outil scan des accreditations", () => {
       "Bonjour, je souhaite couvrir le concert de Muse au Zenith.",
       "C'est ok pour vendredi, accreditations au nom du media."
     );
-    google.fetchGmailThreads.mockResolvedValue([fil]);
+    mail.listThreads.mockResolvedValue([fil]);
     ai.json.mockResolvedValue(
       batch([{ id: fil.id, artist: "Muse", venue: "Zénith", status: "accepted" }])
     );
@@ -222,7 +227,7 @@ describe("outil scan des accreditations", () => {
   it("ne retrograde jamais une fiche acceptee", async () => {
     rows = [fiche({ id: "a1", artist: "Muse", venue: "Zénith", status: "accepted" })];
     const fil = thread("m3", "Accreditation pour Muse", "Votre demande est en cours");
-    google.fetchGmailThreads.mockResolvedValue([fil]);
+    mail.listThreads.mockResolvedValue([fil]);
     ai.json.mockResolvedValue(
       batch([
         {
@@ -258,7 +263,7 @@ describe("outil scan des accreditations", () => {
       "Accreditation pour Muse",
       "Concert de Muse au Zenith le 20 novembre 2026"
     );
-    google.fetchGmailThreads.mockResolvedValue([fil]);
+    mail.listThreads.mockResolvedValue([fil]);
     ai.json.mockResolvedValue(
       batch([
         {
@@ -285,7 +290,7 @@ describe("outil scan des accreditations", () => {
   });
 
   it("signale une reponse IA illisible sans rien ecrire", async () => {
-    google.fetchGmailThreads.mockResolvedValue([
+    mail.listThreads.mockResolvedValue([
       thread("m5", "Accreditation", "Texte quelconque"),
     ]);
     ai.json.mockResolvedValue("desole, je ne peux pas");
@@ -304,9 +309,17 @@ describe("outil scan des accreditations", () => {
     assertToolError(result, /IA indisponible/);
   });
 
+  it("refuse de scanner quand l'hote ne fournit pas de mail", async () => {
+    const result = await scanAccreditationsTool.run(
+      {},
+      { moduleId: "accreditations", log: () => {}, emit: () => {}, ai }
+    );
+    assertToolError(result, /Acces mail indisponible/);
+  });
+
   it("signale une ecriture non confirmee au lieu d'annoncer un succes", async () => {
     const fil = thread("m6", "Accreditation pour Muse", "Concert de Muse au Zenith");
-    google.fetchGmailThreads.mockResolvedValue([fil]);
+    mail.listThreads.mockResolvedValue([fil]);
     ai.json.mockResolvedValue(
       batch([{ id: fil.id, artist: "Muse", venue: "Zénith" }])
     );
@@ -325,7 +338,7 @@ describe("outil scan des accreditations", () => {
       "Demande d'accreditation",
       "Rapstar souhaite couvrir le concert"
     );
-    google.fetchGmailThreads.mockResolvedValue([fil]);
+    mail.listThreads.mockResolvedValue([fil]);
     ai.json.mockResolvedValue(
       batch([{ id: fil.id, artist: "Rapstar", venue: "Musée Imaginaire d'Oli" }])
     );
@@ -338,7 +351,7 @@ describe("outil scan des accreditations", () => {
   });
 
   it("signale une erreur de lecture Gmail", async () => {
-    google.fetchGmailThreads.mockRejectedValue(new Error("Gmail indisponible"));
+    mail.listThreads.mockRejectedValue(new Error("Gmail indisponible"));
     const result = await scanAccreditationsTool.run({}, ctx);
     assertToolError(result, /Gmail indisponible/);
   });
@@ -351,7 +364,7 @@ describe("outil scan des accreditations", () => {
     const precise = makeThreads("precis", 150);
     const sent = makeThreads("envoi", 80);
     const broad = makeThreads("large", 60);
-    google.fetchGmailThreads.mockImplementation(async (query: string, max: number) => {
+    mail.listThreads.mockImplementation(async (query: string, max: number) => {
       if (query === "in:sent newer_than:12m") return sent.slice(0, max);
       if (query.includes("photographe")) return broad.slice(0, max);
       return precise.slice(0, max);

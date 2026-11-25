@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import type { GmailThread } from "@/lib/types";
+import type { GmailThread } from "@backstage/module-kit";
+
 import { accreditationStatusSchema } from "./schema";
 
 /**

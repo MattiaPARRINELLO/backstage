@@ -1,8 +1,14 @@
 import { z } from "zod";
-import { defineTool, toolEmpty, toolError, toolOk, verifyWrite } from "@backstage/module-kit";
+import {
+  defineTool,
+  toolEmpty,
+  toolError,
+  toolOk,
+  verifyWrite,
+  type GmailThread,
+  type ModuleMail,
+} from "@backstage/module-kit";
 
-import { fetchGmailThreads } from "@/lib/google-actions";
-import type { GmailThread } from "@/lib/types";
 import {
   chunk,
   extractThreads,
@@ -153,11 +159,13 @@ function contactOf(thread: GmailThread, extracted: string): string {
  * quelconque. Le nombre de candidats est rendu pour annoncer ce qui n'a pas
  * ete analyse, plutot que de le taire.
  */
-async function collectThreads(): Promise<{ threads: GmailThread[]; candidates: number }> {
+async function collectThreads(
+  mail: ModuleMail
+): Promise<{ threads: GmailThread[]; candidates: number }> {
   const groups = await Promise.all([
-    fetchGmailThreads(PRECISE_QUERY, MAX_THREADS),
-    fetchGmailThreads(SENT_QUERY, Math.floor(MAX_THREADS / 2)),
-    fetchGmailThreads(BROAD_QUERY, Math.floor(MAX_THREADS / 2)),
+    mail.listThreads(PRECISE_QUERY, MAX_THREADS),
+    mail.listThreads(SENT_QUERY, Math.floor(MAX_THREADS / 2)),
+    mail.listThreads(BROAD_QUERY, Math.floor(MAX_THREADS / 2)),
   ]);
 
   const seen = new Set<string>();
@@ -290,9 +298,15 @@ export const scanAccreditationsTool = defineTool({
         "Extraction IA indisponible : configure GROQ_API_KEY dans .env.local, puis relance le scan."
       );
     }
+    const mail = ctx.mail;
+    if (!mail) {
+      return toolError(
+        "Acces mail indisponible : cet hote ne fournit pas la boite du noyau, le scan est impossible."
+      );
+    }
 
     try {
-      const { threads, candidates } = await collectThreads();
+      const { threads, candidates } = await collectThreads(mail);
       if (threads.length === 0) return toolEmpty("Aucun fil d'accreditation trouve.");
 
       const existing = await getAccreditations();

@@ -300,6 +300,37 @@ export async function fetchGmailThreads(
   return threads.sort(compareGmailThreads);
 }
 
+/**
+ * Fil complet par identifiant.
+ *
+ * Un module ne joint jamais l'API Gmail directement : il demande l'identifiant,
+ * le noyau rend un fil deja trie, ou `null` s'il n'existe pas.
+ */
+export async function fetchGmailThread(
+  threadId: string
+): Promise<GmailThread | null> {
+  const auth = await getGmailClient();
+  const raw = await googleFetch<GmailThreadRaw | null>(
+    auth,
+    `https://gmail.googleapis.com/gmail/v1/users/me/threads/${encodeURIComponent(threadId)}?format=full`
+  );
+  const messages = (raw?.messages ?? []).map(toGmailMessage);
+  if (!raw || messages.length === 0) return null;
+  return { id: raw.id || threadId, messages: messages.sort(compareGmailMessages) };
+}
+
+/** Message complet par identifiant, ou `null` s'il n'existe pas. */
+export async function fetchGmailMessage(
+  messageId: string
+): Promise<GmailMessage | null> {
+  const auth = await getGmailClient();
+  const raw = await googleFetch<GmailMessageRaw | null>(
+    auth,
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(messageId)}?format=full`
+  );
+  return raw ? toGmailMessage(raw) : null;
+}
+
 /** Le fil le plus recent d'abord ; l'ID departage deux dates identiques. */
 function compareGmailThreads(a: GmailThread, b: GmailThread): number {
   const first = a.messages[0];

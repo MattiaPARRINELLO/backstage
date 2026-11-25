@@ -4,11 +4,19 @@ const storage = { logActivity: vi.fn() };
 const web = { isSafeFetchUrl: vi.fn(), safeFetchText: vi.fn() };
 const ai = { chatCompletion: vi.fn() };
 const appConfig = { getConfig: vi.fn() };
+const googleActions = {
+  fetchGmailThreads: vi.fn(),
+  fetchGmailThread: vi.fn(),
+  fetchGmailMessage: vi.fn(),
+};
+const push = { sendPushToAll: vi.fn() };
 
 vi.mock("@/lib/storage", () => storage);
 vi.mock("@/lib/web", () => web);
 vi.mock("@/lib/ai-providers", () => ai);
 vi.mock("@/lib/app-config", () => appConfig);
+vi.mock("@/lib/google-actions", () => googleActions);
+vi.mock("@/lib/push-dispatch", () => push);
 
 const { createModuleContext } = await import("@/lib/kernel/context");
 
@@ -79,5 +87,39 @@ describe("contexte de module", () => {
       [{ role: "user", content: "Question" }],
       []
     );
+  });
+
+  it("envoie une notification par le canal du noyau", async () => {
+    push.sendPushToAll.mockResolvedValue({ sent: true, devices: 1 });
+    const ctx = createModuleContext("demo");
+    await expect(
+      ctx.notify?.({ title: "Relance", body: "Echeance", url: "/m/demo", tag: "a1" })
+    ).resolves.toBe(true);
+    const payload = JSON.parse(push.sendPushToAll.mock.calls[0][0]);
+    expect(payload).toMatchObject({
+      title: "Relance",
+      body: "Echeance",
+      tag: "a1",
+      data: { url: "/m/demo" },
+    });
+  });
+
+  it("rend false quand aucune notification n'est delivree", async () => {
+    push.sendPushToAll.mockResolvedValue({ sent: false, devices: 0 });
+    const ctx = createModuleContext("demo");
+    await expect(ctx.notify?.({ title: "t", body: "b" })).resolves.toBe(false);
+  });
+
+  it("delegue le mail aux actions Google du noyau", async () => {
+    googleActions.fetchGmailThreads.mockResolvedValue([{ id: "t1", messages: [] }]);
+    googleActions.fetchGmailThread.mockResolvedValue({ id: "t1", messages: [] });
+    googleActions.fetchGmailMessage.mockResolvedValue(null);
+    const ctx = createModuleContext("demo");
+    await ctx.mail?.listThreads("accreditation", 5);
+    await ctx.mail?.getThread("t1");
+    await ctx.mail?.getMessage("m1");
+    expect(googleActions.fetchGmailThreads).toHaveBeenCalledWith("accreditation", 5);
+    expect(googleActions.fetchGmailThread).toHaveBeenCalledWith("t1");
+    expect(googleActions.fetchGmailMessage).toHaveBeenCalledWith("m1");
   });
 });

@@ -21,6 +21,7 @@
     "lint:budget": "bun scripts/lint-budget.ts",
     "check:docs": "bun scripts/check-docs.ts",
     "boundaries": "depcruise app components lib packages proxy.ts instrumentation.ts",
+    "verify": "bun run lint && bun run lint:budget && bun run check:docs && bunx tsc --noEmit && bun run typecheck:strict && bun run boundaries && bun run test:coverage",
     "typecheck:strict": "bun scripts/typecheck-strict.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

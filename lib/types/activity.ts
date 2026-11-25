@@ -27,6 +27,7 @@ export type ActivityAction =
   | "course_notified"
   | "module_enabled"
   | "module_disabled"
+  | "module_installed"
   | "login"
   | "logout"
   | "ai_action";

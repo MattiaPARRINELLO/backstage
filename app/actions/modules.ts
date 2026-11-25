@@ -7,8 +7,10 @@ import { AppError, isAppError } from "@/lib/errors";
 import { readCatalog, type ModuleCatalog } from "@/lib/kernel/module-catalog";
 import {
   applyModuleEnabled,
+  installFromSource,
   modulesRoot,
   readModulesState,
+  type ModuleInstallResult,
   type ModulesState,
   type ModuleToggleResult,
 } from "@/lib/kernel/module-admin";
@@ -19,7 +21,8 @@ import { logActivity } from "@/lib/storage";
  * Gestion des modules (issue #270).
  *
  * `listModuleCatalog` (issue #271) reste la seule action de lecture du
- * catalogue. Les actions qui ecrivent exigent une session et ne sont pas
+ * catalogue. Les autres actions ecrivent `modules.config.json` ou
+ * `modules/index.ts` : elles exigent donc une session et ne sont pas
  * rate-limitees (meme situation que les autres Server Actions du depot).
  */
 
@@ -32,10 +35,13 @@ const toggleSchema = z
   })
   .strict();
 
-function asAppError(
-  error: unknown,
-  code: "validation" | "external_unavailable" = "validation"
-): AppError {
+const installSchema = z
+  .object({
+    source: z.string().trim().min(1, "Source requise : <url-git>#<ref>"),
+  })
+  .strict();
+
+function asAppError(error: unknown, code: "validation" | "external_unavailable" = "validation"): AppError {
   if (isAppError(error)) return error;
   const message = error instanceof Error ? error.message : "Operation impossible.";
   return new AppError(code, message, { cause: error });
@@ -75,6 +81,36 @@ export async function setModuleEnabled(input: {
   await logActivity(
     result.enabled ? "module_enabled" : "module_disabled",
     `Module ${result.enabled ? "active" : "desactive"} : ${result.id}`
+  );
+  refreshModulePaths(result.id);
+
+  return result;
+}
+
+export async function installModuleFromSource(input: {
+  source: string;
+}): Promise<ModuleInstallResult> {
+  await requireSession();
+
+  const parsed = installSchema.safeParse(input);
+  if (!parsed.success) throw new AppError("validation", firstIssue(parsed.error));
+
+  let result: ModuleInstallResult;
+  try {
+    result = await installFromSource(modulesRoot(), parsed.data.source);
+  } catch (error) {
+    // Un clone qui echoue vient du reseau ou du depot, pas de la saisie.
+    const message = error instanceof Error ? error.message : "";
+    const code = message.startsWith("Impossible de cloner")
+      ? "external_unavailable"
+      : "validation";
+    throw asAppError(error, code);
+  }
+
+  await logActivity(
+    "module_installed",
+    `Module installe : ${result.id}`,
+    `commit ${result.commit} - capacites ${JSON.stringify(result.capabilities)}`
   );
   refreshModulePaths(result.id);
 

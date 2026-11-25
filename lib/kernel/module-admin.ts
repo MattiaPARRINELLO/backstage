@@ -125,6 +125,7 @@ export async function readModulesState(root: string): Promise<ModulesState> {
   const ids = new Set<string>([
     ...inBuild,
     ...Object.keys(lock.modules),
+    ...Object.keys(runtime.config.modules ?? {}),
     ...registry.modules.map((definition) => definition.id),
     ...issues.map((issue) => issue.id),
   ]);
@@ -180,14 +181,30 @@ export async function readModulesState(root: string): Promise<ModulesState> {
 
 /**
  * Active ou desactive un module. Refuse si le module n'est pas servi par le
- * registre courant (un rebuild est alors requis) ou si la nouvelle liste
- * d'actives casserait le registre (dependance desactivee, job en double).
+ * registre courant (un rebuild est alors requis), si le doctor signale une
+ * erreur sur ce module, ou si la nouvelle liste d'actives casserait le
+ * registre (dependance desactivee, job en double). L'interface desactive deja
+ * le bouton dans ces cas : le noyau ne s'y fie pas.
  */
-export function applyModuleEnabled(root: string, id: string, enabled: boolean): ModuleToggleResult {
+export async function applyModuleEnabled(
+  root: string,
+  id: string,
+  enabled: boolean
+): Promise<ModuleToggleResult> {
   const registry = getRegistry();
-  if (registry.module(id) === undefined) {
+  const state = await readModulesState(root);
+  const row = state.modules.find((entry) => entry.id === id);
+  if (row === undefined) {
+    throw new Error(`Module "${id}" inconnu : rien a basculer.`);
+  }
+  if (!row.served) {
     throw new Error(
       `Le module "${id}" n'est pas charge par ce build : rebuild requis avant de le basculer.`
+    );
+  }
+  if (row.blocked) {
+    throw new Error(
+      `Le module "${id}" a un probleme du doctor : ${row.issues.join(" ")} Corrige-le avant de le basculer.`
     );
   }
 

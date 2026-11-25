@@ -1,9 +1,19 @@
 "use server";
 
-import { AppError } from "@/lib/errors";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+import { AppError, isAppError } from "@/lib/errors";
 import { readCatalog, type ModuleCatalog } from "@/lib/kernel/module-catalog";
-import { modulesRoot, readModulesState, type ModulesState } from "@/lib/kernel/module-admin";
+import {
+  applyModuleEnabled,
+  modulesRoot,
+  readModulesState,
+  type ModulesState,
+  type ModuleToggleResult,
+} from "@/lib/kernel/module-admin";
 import { requireSession } from "@/lib/session";
+import { logActivity } from "@/lib/storage";
 
 /**
  * Gestion des modules (issue #270).
@@ -13,9 +23,62 @@ import { requireSession } from "@/lib/session";
  * rate-limitees (meme situation que les autres Server Actions du depot).
  */
 
+const moduleIdSchema = z.string().trim().min(1, "Identifiant requis");
+
+const toggleSchema = z
+  .object({
+    id: moduleIdSchema,
+    enabled: z.boolean(),
+  })
+  .strict();
+
+function asAppError(
+  error: unknown,
+  code: "validation" | "external_unavailable" = "validation"
+): AppError {
+  if (isAppError(error)) return error;
+  const message = error instanceof Error ? error.message : "Operation impossible.";
+  return new AppError(code, message, { cause: error });
+}
+
+function firstIssue(error: z.ZodError): string {
+  return error.issues[0]?.message ?? "Payload invalide";
+}
+
+function refreshModulePaths(id?: string): void {
+  revalidatePath("/settings/modules");
+  revalidatePath("/", "layout");
+  if (id) revalidatePath(`/m/${id}`);
+}
+
 export async function listInstalledModules(): Promise<ModulesState> {
   await requireSession();
   return readModulesState(modulesRoot());
+}
+
+export async function setModuleEnabled(input: {
+  id: string;
+  enabled: boolean;
+}): Promise<ModuleToggleResult> {
+  await requireSession();
+
+  const parsed = toggleSchema.safeParse(input);
+  if (!parsed.success) throw new AppError("validation", firstIssue(parsed.error));
+
+  let result: ModuleToggleResult;
+  try {
+    result = await applyModuleEnabled(modulesRoot(), parsed.data.id, parsed.data.enabled);
+  } catch (error) {
+    throw asAppError(error);
+  }
+
+  await logActivity(
+    result.enabled ? "module_enabled" : "module_disabled",
+    `Module ${result.enabled ? "active" : "desactive"} : ${result.id}`
+  );
+  refreshModulePaths(result.id);
+
+  return result;
 }
 
 export async function listModuleCatalog(): Promise<ModuleCatalog> {

@@ -25,6 +25,8 @@ export type ActivityAction =
   | "daily_brief_sent"
   | "schedule_synced"
   | "course_notified"
+  | "module_enabled"
+  | "module_disabled"
   | "login"
   | "logout"
   | "ai_action";

@@ -4,8 +4,7 @@ import type {
   GmailThread,
   GoogleCalendarEvent as CalendarEventItem,
 } from "@/lib/types";
-import type { OAuth2Client } from "google-auth-library";
-import { request as httpRequest, type HttpMethod } from "@/lib/http";
+import { googleFetch } from "./google-fetch";
 
 type GmailHeader = { name?: string; value?: string };
 type GmailPart = { mimeType?: string; body?: { data?: string }; parts?: GmailPart[] };
@@ -114,37 +113,6 @@ export function extractBody(parts: GmailPart[] | undefined, mimeType: string | u
   if (plain) return plain;
   const html = findBodyPart(parts, mimeType, body, "text/html");
   return html ? extractTextFromHtml(html) : "";
-}
-
-// Timeout de sécurité : les APIs Google ne doivent pas pendre indéfiniment.
-const GOOGLE_FETCH_TIMEOUT_MS = 20_000;
-
-type GoogleFetchOptions = { method?: HttpMethod; body?: string };
-
-async function googleFetch<T>(
-  auth: OAuth2Client,
-  url: string,
-  init?: GoogleFetchOptions
-): Promise<T> {
-  const accessToken = auth.credentials.access_token;
-  if (!accessToken) {
-    throw new Error("Google access token manquant. Reconnecte ton compte Google.");
-  }
-  const res = await httpRequest(url, {
-    label: "google-api",
-    timeoutMs: GOOGLE_FETCH_TIMEOUT_MS,
-    ...init,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-  });
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`Google API error ${res.status}: ${text.slice(0, 300)}`);
-  }
-  if (!text) return null as T;
-  return JSON.parse(text) as T;
 }
 
 /** Traduit un message Gmail brut en message exploitable (headers + corps). */

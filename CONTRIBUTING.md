@@ -69,6 +69,7 @@ tester la production.
 | `bunx tsc --noEmit` | verification TypeScript |
 | `bun run typecheck:strict` | typecheck strict du noyau, des modules et du kit |
 | `bun run test` | suite Vitest complete |
+| `bun run test:coverage` | suite Vitest + planchers de couverture |
 | `bun run test:watch` | Vitest en mode watch |
 | `bun run test:e2e` | Playwright (installe Chromium avant) |
 | `bun run setup` | secrets locaux pour un vrai deploiement |

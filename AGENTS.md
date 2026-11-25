@@ -73,6 +73,7 @@ WebAuthn cassent sous Capacitor. Voir `docs/android-apk.md`.
 | Typecheck         | `bunx tsc --noEmit`                           |
 | Typecheck strict  | `bun run typecheck:strict`                    |
 | Tests unitaires   | `bun run test`                                |
+| Couverture        | `bun run test:coverage`                       |
 | Tests E2E         | `bun run test:e2e`                            |
 | Setup local       | `bun run setup`                               |
 | Setup sans cle IA | `bun run setup:dev`                           |

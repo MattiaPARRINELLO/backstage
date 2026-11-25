@@ -1,11 +1,10 @@
 import { assertToolOk, withTempDataDir } from "@backstage/module-kit/testing";
+import type { GmailThread } from "@backstage/module-kit";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { GmailThread } from "@/lib/types";
 import type { Accreditation } from "../schema";
 
-const google = { fetchGmailThreads: vi.fn() };
-vi.mock("@/lib/google-actions", () => google);
+const mail = { listThreads: vi.fn(), getThread: vi.fn(), getMessage: vi.fn() };
 
 const { scanAccreditationsTool } = await import("../tools");
 const { accreditationsStore } = await import("../store");
@@ -16,7 +15,13 @@ const ai = {
   log: () => {},
   emit: () => {},
 };
-const ctx = { moduleId: "accreditations", log: () => {}, emit: () => {}, ai };
+const ctx = {
+  moduleId: "accreditations",
+  log: () => {},
+  emit: () => {},
+  ai,
+  mail,
+};
 
 const THREAD: GmailThread = {
   id: "t-review",
@@ -70,7 +75,7 @@ function fiche(partial: Partial<Accreditation> & { id: string }): Accreditation 
 describe("revue humaine des extractions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    google.fetchGmailThreads.mockResolvedValue([THREAD]);
+    mail.listThreads.mockResolvedValue([THREAD]);
   });
 
   it("marque une creation incomplete sans changer son statut", async () => {

@@ -70,7 +70,38 @@ describe("createTestContext", () => {
     const ctx = createTestContext();
     expect(ctx.ai).toBeUndefined();
     expect(ctx.net).toBeUndefined();
+    expect(ctx.mail).toBeUndefined();
     expect(ctx.userId).toBeUndefined();
+  });
+
+  it("capture les notifications au lieu de les envoyer", async () => {
+    const ctx = createTestContext();
+    const sent = await ctx.notify?.({
+      title: "Relance",
+      body: "Une accreditation arrive a echeance",
+      tag: "accr-1",
+      url: "/m/demo",
+    });
+
+    expect(sent).toBe(true);
+    expect(ctx.notifications).toEqual([
+      {
+        title: "Relance",
+        body: "Une accreditation arrive a echeance",
+        tag: "accr-1",
+        url: "/m/demo",
+      },
+    ]);
+  });
+
+  it("rend le mail fourni tel quel", async () => {
+    const mail = {
+      listThreads: async () => [],
+      getThread: async () => null,
+      getMessage: async () => null,
+    };
+    const ctx = createTestContext({ mail });
+    expect(ctx.mail).toBe(mail);
   });
 });
 

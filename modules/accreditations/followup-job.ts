@@ -1,4 +1,4 @@
-import { sendPushToAll } from "@/lib/push-dispatch";
+import type { ModuleContext } from "@backstage/module-kit";
 
 import { buildFollowUpDraft, dueAccreditations } from "./followup";
 import { updateAccreditation } from "./service";
@@ -16,27 +16,29 @@ import { accreditationsStore } from "./store";
  * répondre à un fil existant ; l'envoi neuf est #142. La relance est donc une
  * notification plus un brouillon copiable, l'envoi reste manuel.
  */
-export async function runAccreditationFollowUpCheck(now = Date.now()): Promise<number> {
+export async function runAccreditationFollowUpCheck(
+  ctx: ModuleContext,
+  now = Date.now()
+): Promise<number> {
+  if (!ctx.notify) {
+    // Hôte sans canal de notification : le dire, ne pas marquer les fiches
+    // comme relancées alors que personne n'a été prévenu.
+    ctx.log("warn", "Notifications indisponibles : relances non envoyées.");
+    return 0;
+  }
+
   const data = await accreditationsStore.read();
   const due = dueAccreditations(data.accreditations, now);
   let notified = 0;
 
   for (const entry of due) {
-    const payload = JSON.stringify({
+    const sent = await ctx.notify({
       title: `Relance accréditation : ${entry.artist}`,
-      body: `${entry.venue} — ${entry.concertDate}. Texte prêt sur la fiche.`,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      body: `${entry.venue}, ${entry.concertDate}. Texte prêt sur la fiche.`,
       tag: `accreditation-${entry.id}`,
-      data: { type: "accreditation", accreditationId: entry.id, url: "/m/accreditations" },
-      requireInteraction: true,
-      renotify: true,
-      silent: false,
-      timestamp: now,
-      vibrate: [300, 150, 300, 150, 300],
+      url: "/m/accreditations",
+      data: { type: "accreditation", accreditationId: entry.id },
     });
-
-    const { sent } = await sendPushToAll(payload);
     if (!sent) continue;
 
     await updateAccreditation(entry.id, {

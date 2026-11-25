@@ -5,7 +5,17 @@
  * est consommé en source TypeScript : `tsc --noEmit` le couvre et Next le
  * compile avec le reste de l'application, sans étape de build séparée.
  */
-export type { LogLevel, ModuleAi, ModuleContext, ModuleNet } from "./context";
+export type {
+  GmailMessage,
+  GmailThread,
+  LogLevel,
+  ModuleAi,
+  ModuleContext,
+  ModuleMail,
+  ModuleNet,
+  ModuleNotify,
+  ModuleNotifyInput,
+} from "./context";
 export {
   assertCompatibleApiVersion,
   defineAction,

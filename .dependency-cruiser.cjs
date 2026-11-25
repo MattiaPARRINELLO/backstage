@@ -71,6 +71,29 @@ module.exports = {
       from: { path: "^packages/module-kit/" },
       to: { path: "^(lib|app|components)/" },
     },
+    {
+      name: "modules-sans-noyau",
+      comment:
+        "Un module distribue s'installe ailleurs que dans ce depot : importer lib/ le rend inseparable du noyau. Il consomme une capacite du kit (ctx.ai, ctx.net, ctx.notify, ctx.mail, ctx.activity). La liste d'exceptions ne doit que decroitre ; chaque module restant a son issue de migration (#255) :\n" +
+        "  - calendar : actions Google Agenda (#255)\n" +
+        "  - concerts : types et stockage du noyau (#255)\n" +
+        "  - daily-brief : job et stockage du noyau (#255)\n" +
+        "  - emails : actions Gmail du noyau (#255)\n" +
+        "  - followups : types et stockage du noyau (#255)\n" +
+        "  - github : client GitHub du noyau (#255)\n" +
+        "  - photo : types et stockage du noyau (#255)\n" +
+        "  - reminders : types, stockage et notifications (#255)\n" +
+        "  - schedule : client CESAR du noyau (#255)\n" +
+        "  - weather : client meteo du noyau (#255)\n" +
+        "  - web : client reseau du noyau (#255)",
+      severity: "error",
+      from: {
+        path: "^modules/",
+        pathNot:
+          "^modules/(calendar|concerts|daily-brief|emails|followups|github|photo|reminders|schedule|weather|web)/",
+      },
+      to: { path: "^(lib|app|components)/" },
+    },
   ],
   options: {
     doNotFollow: { path: "node_modules" },

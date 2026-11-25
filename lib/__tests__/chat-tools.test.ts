@@ -71,6 +71,12 @@ vi.mock("@/lib/kernel/context", () => ({
         }),
     },
     net: { isSafeUrl: async () => true, fetchText: async () => null },
+    mail: {
+      listThreads: (query?: string, maxThreads?: number) =>
+        mockGoogleActions.fetchGmailThreads(query, maxThreads),
+      getThread: async () => null,
+      getMessage: async () => null,
+    },
   }),
 }));
 

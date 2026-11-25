@@ -60,6 +60,74 @@ export interface ModuleNet {
   readonly fetchText: (url: string, timeoutMs?: number) => Promise<string | null>;
 }
 
+/**
+ * Message d'un fil de messagerie, tel que fourni par l'hôte.
+ *
+ * `fromMe` distingue un message envoyé par l'utilisateur d'un message reçu : un
+ * module qui cherche le correspondant ne doit jamais prendre l'utilisateur pour
+ * lui. Ces types appartiennent au contrat pour qu'un module distribué n'importe
+ * pas ceux du noyau.
+ */
+export interface GmailMessage {
+  readonly id: string;
+  readonly threadId: string;
+  readonly from: string;
+  readonly to?: string;
+  readonly subject: string;
+  readonly date: string;
+  readonly snippet: string;
+  readonly body: string;
+  readonly unread: boolean;
+  readonly messageId?: string;
+  /** Vrai pour un message envoyé par l'utilisateur (label Gmail SENT). */
+  readonly fromMe?: boolean;
+}
+
+/** Fil complet : ses messages, du plus récent au plus ancien. */
+export interface GmailThread {
+  readonly id: string;
+  readonly messages: readonly GmailMessage[];
+}
+
+/**
+ * Accès à la boîte mail, fourni par le noyau.
+ *
+ * Même règle d'optionalité que `ai` et `net` : un hôte qui n'a pas de mail ne
+ * fournit pas `mail`, et le module doit le dire honnêtement plutôt que
+ * d'inventer une boîte vide.
+ */
+export interface ModuleMail {
+  /** Fils correspondant à une recherche de l'hôte, du plus récent au plus ancien. */
+  readonly listThreads: (
+    query?: string,
+    maxThreads?: number
+  ) => Promise<GmailThread[]>;
+  /** Fil complet par identifiant, ou `null` s'il n'existe pas. */
+  readonly getThread: (threadId: string) => Promise<GmailThread | null>;
+  /** Message par identifiant, ou `null` s'il n'existe pas. */
+  readonly getMessage: (messageId: string) => Promise<GmailMessage | null>;
+}
+
+/** Notification poussée par l'hôte vers les appareils de l'utilisateur. */
+export interface ModuleNotifyInput {
+  readonly title: string;
+  readonly body: string;
+  /** Chemin ouvert au clic, par exemple `/m/mon-module`. */
+  readonly url?: string;
+  /** Identifiant de regroupement côté plateforme. */
+  readonly tag?: string;
+  /** Charge libre transmise au client. */
+  readonly data?: Record<string, unknown>;
+}
+
+/**
+ * Envoie une notification. Rend `true` si au moins un appareil l'a reçue.
+ *
+ * Absente chez un hôte sans canal de notification : un module doit alors
+ * dégrader proprement, pas prétendre avoir prévenu.
+ */
+export type ModuleNotify = (input: ModuleNotifyInput) => Promise<boolean>;
+
 export interface ModuleContext {
   /** Identifiant du module appelant, pour préfixer les logs. */
   readonly moduleId: string;
@@ -86,4 +154,8 @@ export interface ModuleContext {
   readonly ai?: ModuleAi;
   /** Accès réseau contrôlé, même règle d'optionalité que `ai`. */
   readonly net?: ModuleNet;
+  /** Envoi de notifications, même règle d'optionalité que `ai`. */
+  readonly notify?: ModuleNotify;
+  /** Accès mail, même règle d'optionalité que `ai`. */
+  readonly mail?: ModuleMail;
 }

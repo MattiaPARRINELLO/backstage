@@ -53,9 +53,9 @@ export default defineModule({
     {
       id: "accreditations-follow-up",
       cron: "0 * * * *",
-      handler: async () => {
+      handler: async (ctx) => {
         const { runAccreditationFollowUpCheck } = await import("./followup-job");
-        await runAccreditationFollowUpCheck();
+        await runAccreditationFollowUpCheck(ctx);
       },
     },
   ],

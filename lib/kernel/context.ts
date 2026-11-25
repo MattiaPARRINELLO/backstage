@@ -3,6 +3,12 @@ import type { ModuleContext } from "@backstage/module-kit";
 import { chatCompletion } from "@/lib/ai-providers";
 import { groqJson, groqJsonDelayMs, isGroqConfigured } from "@/lib/ai-providers/groq";
 import { getConfig } from "@/lib/app-config";
+import {
+  fetchGmailMessage,
+  fetchGmailThread,
+  fetchGmailThreads,
+} from "@/lib/google-actions";
+import { sendPushToAll } from "@/lib/push-dispatch";
 import { logActivity } from "@/lib/storage";
 import { isSafeFetchUrl, safeFetchText } from "@/lib/web";
 
@@ -85,6 +91,25 @@ export function createModuleContext(
           return null;
         }
       },
+    },
+    notify: async ({ title, body, url, tag, data }) => {
+      const payload = JSON.stringify({
+        title,
+        body,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        requireInteraction: true,
+        renotify: true,
+        ...(tag ? { tag } : {}),
+        data: { ...(data ?? {}), ...(url ? { url } : {}) },
+      });
+      const { sent } = await sendPushToAll(payload);
+      return sent;
+    },
+    mail: {
+      listThreads: (query, maxThreads) => fetchGmailThreads(query, maxThreads),
+      getThread: (threadId) => fetchGmailThread(threadId),
+      getMessage: (messageId) => fetchGmailMessage(messageId),
     },
   };
 }

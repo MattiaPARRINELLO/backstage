@@ -101,8 +101,8 @@ function ensureConfigOnDisk(root: string): void {
 function compositionIds(root: string): string[] {
   try {
     const composition = readComposition(join(root, "modules"));
-    return [...composition.source.matchAll(/from "\.\/([^/"]+)\/module"/g)].map(
-      (match) => match[1]
+    return [...composition.source.matchAll(/from "\.\/([^/"]+)\/module"/g)].flatMap(
+      (match) => (match[1] === undefined ? [] : [match[1]])
     );
   } catch {
     // Sortie standalone : `modules/index.ts` vit dans le bundle, pas sur disque.

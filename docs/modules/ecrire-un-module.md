@@ -392,8 +392,10 @@ liste des modules actifs est importee statiquement.
 Pieges :
 
 - un tag doit etre pousse (`git push --tags`), sinon le clone echoue ;
-- un depot prive se clone avec ta session git ; si `GITHUB_TOKEN` est defini
-  dans `.env.local` pour un autre depot, lance `GITHUB_TOKEN= bun run module:add ...` ;
+- un depot prive se clone avec les credentials de git (`gh auth login` puis
+  `gh auth setup-git`), jamais avec le `GITHUB_TOKEN` de `.env.local` : celui-ci
+  sert au catalogue et aux issues. Sans session git, le clone echoue en
+  demandant un nom d'utilisateur ;
 - un module deja installe se met a jour, il ne se reinstalle pas.
 
 ---

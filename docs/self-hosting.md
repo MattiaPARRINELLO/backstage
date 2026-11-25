@@ -188,6 +188,53 @@ crontab lines for the daily brief and reminders, is documented in
 The app starts and answers on every protected page without any of these; the
 AI chat only needs the endpoint + key.
 
+### Modules (public, or private with a token)
+
+A module lives in its own git repository and is installed from a pinned ref
+(tag or commit, never a branch):
+
+```bash
+bun run module:add https://github.com/mprnl/BS-watch-later#v1.0.1
+bun run module:list
+bun run module:doctor
+bun run build   # required: modules/index.ts is compiled
+```
+
+Every module of the official catalogue (`mprnl/BS-modules`) is **public**, so
+the command above is enough: `module:add` runs a plain `git clone`, without
+credentials, and `modules.lock.json` keeps the public URL.
+
+A **private** module needs credentials in git itself, because the clone has no
+access to the `.env` of BACKSTAGE:
+
+```bash
+gh auth login --hostname github.com        # or: export GH_TOKEN=<token>
+gh auth setup-git                          # installs the credential helper
+bun run module:add https://github.com/<owner>/<module>#<ref>
+```
+
+The token then needs `Contents: read` on that repository. A private module that
+is missing from the catalogue (or declared `"visibility": "public"` there)
+still installs, but the interface will not warn you that a token is required.
+The catalogue's `visibility` must match the repository: the UI only shows
+"installation with token" for an entry declared `private`.
+
+Rules that hold in every case:
+
+- no token is ever written to the catalogue, `modules.lock.json`, a log or a
+  commit: the lock stores the public repository URL;
+- without credentials, a private clone either prompts for a username or, in a
+  non-interactive context such as a server, fails with git's own message
+  (`could not read Username for 'https://github.com'`); that is the repository
+  asking for a token, not a broken module;
+- a private repository stays usable from a laptop where `gh` is logged in, but
+  a server (cPanel, container) has no such session: prefer public modules for
+  anything installed in production.
+
+The map of the organisation, with the role and visibility of every repository,
+lives in
+[the organisation map](https://github.com/mprnl/.github/blob/main/profile/README.md).
+
 ## 5. Backups & updates
 
 - Back up `data/` (it contains `users.json`, OAuth tokens, `memory.json`,

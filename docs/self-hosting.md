@@ -87,7 +87,20 @@ Full template with comments: [`.env.example`](../.env.example).
 
 **Optional** — Google (Gmail/Calendar), Microsoft To Do, OpenWeatherMap,
 Brave search, CESAR timetable, VAPID push, Groq for module JSON extraction
-(`GROQ_API_KEY`), `CRON_SECRET` + `CRON_BASE_URL` for `/api/cron/*`.
+(`GROQ_API_KEY`), `CRON_SECRET` + `CRON_BASE_URL` for `/api/cron/*`,
+`GITHUB_TOKEN` + `GITHUB_REPO` for GitHub issues and a private catalogue.
+
+**GitHub**
+
+| Variable | Role |
+| --- | --- |
+| `GITHUB_TOKEN` | fine-grained token: `Issues: write` for the agent, plus `Contents: read` if the module catalogue itself is private |
+| `GITHUB_REPO` | `owner/name` of the repository that receives the issues; **must follow the current repository** (`mprnl/backstage`) |
+
+`GITHUB_REPO` is a plain string, not a remote: if you run a fork, set it to
+`your-account/your-fork`. Leaving an old owner there still works because GitHub
+redirects renamed repositories, but the redirect is debt, not a contract, and
+it breaks as soon as the old name is reused.
 
 ### Startup configuration check
 

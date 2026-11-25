@@ -1,9 +1,10 @@
 import { assertToolOk, withTempDataDir } from "@backstage/module-kit/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { GmailThread } from "@/lib/types";
 import type { Accreditation } from "../schema";
 
-const google = { fetchGmailMessages: vi.fn() };
+const google = { fetchGmailThreads: vi.fn() };
 vi.mock("@/lib/google-actions", () => google);
 
 const { scanAccreditationsTool } = await import("../tools");
@@ -17,15 +18,39 @@ const ai = {
 };
 const ctx = { moduleId: "accreditations", log: () => {}, emit: () => {}, ai };
 
-function extraction(input: Record<string, unknown>): string {
+const THREAD: GmailThread = {
+  id: "t-review",
+  messages: [
+    {
+      id: "m-review",
+      threadId: "t-review",
+      from: "Presse Salle <presse@salle.fr>",
+      to: "Rapstar <contact@rapstar.fr>",
+      subject: "Demande d'accreditation",
+      date: "Tue, 10 Nov 2026 12:00:00 +0000",
+      snippet: "Demande pour un concert",
+      body: "Demande pour un concert",
+      unread: false,
+      fromMe: false,
+    },
+  ],
+};
+
+/** Reponse de lot attendue par extractThreads pour le fil de test. */
+function batch(input: Record<string, unknown>): string {
   return JSON.stringify({
-    artist: "",
-    venue: "",
-    concertDate: "",
-    status: "pending",
-    contactEmail: "",
-    uncertainFields: [],
-    ...input,
+    results: [
+      {
+        id: THREAD.id,
+        artist: "",
+        venue: "",
+        concertDate: "",
+        status: "pending",
+        contactEmail: "",
+        uncertainFields: [],
+        ...input,
+      },
+    ],
   });
 }
 
@@ -45,18 +70,11 @@ function fiche(partial: Partial<Accreditation> & { id: string }): Accreditation 
 describe("revue humaine des extractions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    google.fetchGmailMessages.mockResolvedValue([
-      {
-        id: "m-review",
-        from: "Presse Salle <presse@salle.fr>",
-        subject: "Demande d'accreditation",
-        snippet: "Demande pour un concert",
-      },
-    ]);
+    google.fetchGmailThreads.mockResolvedValue([THREAD]);
   });
 
   it("marque une creation incomplete sans changer son statut", async () => {
-    ai.json.mockResolvedValue(extraction({ artist: "Monsieur Nov" }));
+    ai.json.mockResolvedValue(batch({ artist: "Monsieur Nov" }));
 
     await withTempDataDir(async () => {
       const result = await scanAccreditationsTool.run({}, ctx);
@@ -75,7 +93,7 @@ describe("revue humaine des extractions", () => {
 
   it("marque un libelle artiste declare douteux meme si les champs sont complets", async () => {
     ai.json.mockResolvedValue(
-      extraction({
+      batch({
         artist: "Musee Imaginaire d'Oli",
         venue: "Grand Palais",
         concertDate: "2026-12-02",
@@ -98,7 +116,7 @@ describe("revue humaine des extractions", () => {
   });
 
   it("marque une fiche fiable quand la nouvelle extraction est incertaine", async () => {
-    ai.json.mockResolvedValue(extraction({ artist: "Monsieur Nov", venue: "La Salle" }));
+    ai.json.mockResolvedValue(batch({ artist: "Monsieur Nov", venue: "La Salle" }));
 
     await withTempDataDir(async () => {
       await accreditationsStore.mutate((data) => {
@@ -117,7 +135,7 @@ describe("revue humaine des extractions", () => {
 
   it("conserve une fiche deja marquee et signale une extraction incertaine ignoree", async () => {
     ai.json.mockResolvedValue(
-      extraction({
+      batch({
         artist: "Monsieur Nov",
         venue: "Nouvelle Salle",
         status: "accepted",
@@ -145,7 +163,7 @@ describe("revue humaine des extractions", () => {
 
   it("complete et leve la marque quand la nouvelle extraction est sure", async () => {
     ai.json.mockResolvedValue(
-      extraction({
+      batch({
         artist: "Monsieur Nov",
         venue: "La Salle",
         concertDate: "2026-12-05",

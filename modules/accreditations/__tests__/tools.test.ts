@@ -1,9 +1,10 @@
 import { assertToolError, assertToolOk } from "@backstage/module-kit/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { GmailThread } from "@/lib/types";
 import type { Accreditation } from "../schema";
 
-const google = { fetchGmailMessages: vi.fn() };
+const google = { fetchGmailThreads: vi.fn() };
 const service = {
   getAccreditations: vi.fn(),
   addAccreditation: vi.fn(),
@@ -23,18 +24,66 @@ const ai = {
 };
 const ctx = { moduleId: "accreditations", log: () => {}, emit: () => {}, ai };
 
-function email(id: string, subject: string, snippet: string) {
-  return { id, from: "Presse Salle <presse@salle.fr>", subject, snippet };
+let messageCounter = 0;
+
+/** Un fil d'un message, tel que le rend fetchGmailThreads. */
+function thread(id: string, subject: string, body: string): GmailThread {
+  messageCounter++;
+  return {
+    id: `t-${id}`,
+    messages: [
+      {
+        id: `${id}-m${messageCounter}`,
+        threadId: `t-${id}`,
+        from: "Presse Salle <presse@salle.fr>",
+        to: "Rapstar <contact@rapstar.fr>",
+        subject,
+        date: "Tue, 10 Nov 2026 12:00:00 +0000",
+        snippet: body,
+        body,
+        unread: false,
+      },
+    ],
+  };
 }
 
-function extraction(input: Partial<Record<string, string>>) {
+/** Un fil dont la demande est de l'utilisateur et la reponse de la salle. */
+function threadWithReply(
+  id: string,
+  subject: string,
+  request: string,
+  reply: string
+): GmailThread {
+  const base = thread(id, subject, request);
+  const oldest = base.messages[0]!;
+  return {
+    id: base.id,
+    messages: [
+      {
+        ...oldest,
+        id: `${id}-reponse`,
+        from: "Presse Salle <presse@salle.fr>",
+        date: "Wed, 11 Nov 2026 09:00:00 +0000",
+        snippet: reply,
+        body: reply,
+        fromMe: false,
+      },
+      { ...oldest, from: "Rapstar <contact@rapstar.fr>", fromMe: true },
+    ],
+  };
+}
+
+function batch(results: Array<Record<string, unknown>>) {
   return JSON.stringify({
-    artist: "",
-    venue: "",
-    concertDate: "",
-    status: "pending",
-    contactEmail: "",
-    ...input,
+    results: results.map((item) => ({
+      artist: "",
+      venue: "",
+      concertDate: "",
+      status: "pending",
+      contactEmail: "",
+      uncertainFields: [],
+      ...item,
+    })),
   });
 }
 
@@ -90,24 +139,43 @@ describe("outil scan des accreditations", () => {
     );
   });
 
-  it("rend un resultat vide sans email", async () => {
-    google.fetchGmailMessages.mockResolvedValue([]);
+  it("rend un resultat vide sans fil", async () => {
+    google.fetchGmailThreads.mockResolvedValue([]);
     const result = await scanAccreditationsTool.run({}, ctx);
     expect(result.status).toBe("empty");
   });
 
+  it("interroge les termes precis, les envois recents et les termes larges", async () => {
+    google.fetchGmailThreads.mockResolvedValue([]);
+
+    await scanAccreditationsTool.run({}, ctx);
+
+    const queries = google.fetchGmailThreads.mock.calls.map((call: unknown[]) => call[0]);
+    expect(queries).toHaveLength(3);
+    expect(queries[0]).toMatch(/accréditation/);
+    expect(queries[0]).toMatch(/photo pass/);
+    expect(queries[1]).toBe("in:sent newer_than:12m");
+    expect(queries[2]).toMatch(/photographe/);
+  });
+
   it("extrait artiste, lieu, date et statut par IA", async () => {
-    google.fetchGmailMessages.mockResolvedValue([
-      email("m1", "Accreditation pour Muse", "Concert de Muse au Zenith le 20 novembre 2026, accepté"),
-    ]);
+    const demande = thread(
+      "m1",
+      "Accreditation pour Muse",
+      "Concert de Muse au Zenith le 20 novembre 2026, accepté"
+    );
+    google.fetchGmailThreads.mockResolvedValue([demande]);
     ai.json.mockResolvedValue(
-      extraction({
-        artist: "Muse",
-        venue: "Zénith",
-        concertDate: "2026-11-20",
-        status: "accepted",
-        contactEmail: "presse@salle.fr",
-      })
+      batch([
+        {
+          id: demande.id,
+          artist: "Muse",
+          venue: "Zénith",
+          concertDate: "2026-11-20",
+          status: "accepted",
+          contactEmail: "presse@salle.fr",
+        },
+      ])
     );
 
     const result = await scanAccreditationsTool.run({}, ctx);
@@ -122,28 +190,59 @@ describe("outil scan des accreditations", () => {
       })
     );
     expect(rows[0]).toMatchObject({ artist: "Muse", status: "accepted" });
-    expect(rows[0]?.notes).toBe("Email: m1");
+    expect(rows[0]?.emailThreadId).toBe(demande.id);
+  });
+
+  it("lit la reponse d'un fil meme sans mot-cle, et garde le contact de la salle", async () => {
+    const fil = threadWithReply(
+      "m2",
+      "Demande de photos",
+      "Bonjour, je souhaite couvrir le concert de Muse au Zenith.",
+      "C'est ok pour vendredi, accreditations au nom du media."
+    );
+    google.fetchGmailThreads.mockResolvedValue([fil]);
+    ai.json.mockResolvedValue(
+      batch([{ id: fil.id, artist: "Muse", venue: "Zénith", status: "accepted" }])
+    );
+
+    const result = await scanAccreditationsTool.run({}, ctx);
+
+    assertToolOk(result);
+    expect(service.addAccreditation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        artist: "Muse",
+        contactEmail: "presse@salle.fr",
+      })
+    );
+    const prompt = ai.json.mock.calls[0]?.[0]?.prompt ?? "";
+    expect(prompt).toContain("(vous)");
+    expect(prompt).toContain("C'est ok pour vendredi");
   });
 
   it("ne retrograde jamais une fiche acceptee", async () => {
     rows = [fiche({ id: "a1", artist: "Muse", venue: "Zénith", status: "accepted" })];
-    google.fetchGmailMessages.mockResolvedValue([
-      email("m2", "Accreditation pour Muse", "Votre demande est en cours"),
-    ]);
+    const fil = thread("m3", "Accreditation pour Muse", "Votre demande est en cours");
+    google.fetchGmailThreads.mockResolvedValue([fil]);
     ai.json.mockResolvedValue(
-      extraction({
-        artist: "Muse",
-        venue: "Zénith",
-        concertDate: "2026-11-20",
-        status: "sent",
-      })
+      batch([
+        {
+          id: fil.id,
+          artist: "Muse",
+          venue: "Zénith",
+          concertDate: "2026-11-20",
+          status: "sent",
+        },
+      ])
     );
 
     const result = await scanAccreditationsTool.run({}, ctx);
 
     assertToolOk(result);
     expect(rows[0]?.status).toBe("accepted");
-    expect(service.updateAccreditation).not.toHaveBeenCalled();
+    expect(service.updateAccreditation).not.toHaveBeenCalledWith(
+      "a1",
+      expect.objectContaining({ status: expect.anything() })
+    );
   });
 
   it("complete une fiche dont le lieu et la date sont inconnus", async () => {
@@ -154,16 +253,22 @@ describe("outil scan des accreditations", () => {
         contactEmail: undefined,
       },
     ];
-    google.fetchGmailMessages.mockResolvedValue([
-      email("m3", "Accreditation pour Muse", "Concert de Muse au Zenith le 20 novembre 2026"),
-    ]);
+    const fil = thread(
+      "m4",
+      "Accreditation pour Muse",
+      "Concert de Muse au Zenith le 20 novembre 2026"
+    );
+    google.fetchGmailThreads.mockResolvedValue([fil]);
     ai.json.mockResolvedValue(
-      extraction({
-        artist: "Muse",
-        venue: "Zénith",
-        concertDate: "2026-11-20",
-        contactEmail: "presse@salle.fr",
-      })
+      batch([
+        {
+          id: fil.id,
+          artist: "Muse",
+          venue: "Zénith",
+          concertDate: "2026-11-20",
+          contactEmail: "presse@salle.fr",
+        },
+      ])
     );
 
     const result = await scanAccreditationsTool.run({}, ctx);
@@ -180,8 +285,8 @@ describe("outil scan des accreditations", () => {
   });
 
   it("signale une reponse IA illisible sans rien ecrire", async () => {
-    google.fetchGmailMessages.mockResolvedValue([
-      email("m4", "Accreditation", "Texte quelconque"),
+    google.fetchGmailThreads.mockResolvedValue([
+      thread("m5", "Accreditation", "Texte quelconque"),
     ]);
     ai.json.mockResolvedValue("desole, je ne peux pas");
 
@@ -200,10 +305,11 @@ describe("outil scan des accreditations", () => {
   });
 
   it("signale une ecriture non confirmee au lieu d'annoncer un succes", async () => {
-    google.fetchGmailMessages.mockResolvedValue([
-      email("m5", "Accreditation pour Muse", "Concert de Muse au Zenith"),
-    ]);
-    ai.json.mockResolvedValue(extraction({ artist: "Muse", venue: "Zénith" }));
+    const fil = thread("m6", "Accreditation pour Muse", "Concert de Muse au Zenith");
+    google.fetchGmailThreads.mockResolvedValue([fil]);
+    ai.json.mockResolvedValue(
+      batch([{ id: fil.id, artist: "Muse", venue: "Zénith" }])
+    );
     service.addAccreditation.mockImplementation(async () =>
       fiche({ id: "fantome", artist: "Muse", venue: "Zénith", status: "pending" })
     );
@@ -214,11 +320,14 @@ describe("outil scan des accreditations", () => {
   });
 
   it("refuse de faire de Rapstar, le media, un artiste", async () => {
-    google.fetchGmailMessages.mockResolvedValue([
-      email("m6", "Demande d'accreditation", "Rapstar souhaite couvrir le concert"),
-    ]);
+    const fil = thread(
+      "m7",
+      "Demande d'accreditation",
+      "Rapstar souhaite couvrir le concert"
+    );
+    google.fetchGmailThreads.mockResolvedValue([fil]);
     ai.json.mockResolvedValue(
-      extraction({ artist: "Rapstar", venue: "Musée Imaginaire d'Oli" })
+      batch([{ id: fil.id, artist: "Rapstar", venue: "Musée Imaginaire d'Oli" }])
     );
 
     const result = await scanAccreditationsTool.run({}, ctx);
@@ -229,8 +338,29 @@ describe("outil scan des accreditations", () => {
   });
 
   it("signale une erreur de lecture Gmail", async () => {
-    google.fetchGmailMessages.mockRejectedValue(new Error("Gmail indisponible"));
+    google.fetchGmailThreads.mockRejectedValue(new Error("Gmail indisponible"));
     const result = await scanAccreditationsTool.run({}, ctx);
     assertToolError(result, /Gmail indisponible/);
+  });
+
+  it("annonce le plafond quand il y a plus de fils candidats que le scan n'en traite", async () => {
+    const makeThreads = (prefix: string, count: number) =>
+      Array.from({ length: count }, (_, index) =>
+        thread(`${prefix}${index}`, "Accreditation", "Demande de photos")
+      );
+    const precise = makeThreads("precis", 150);
+    const sent = makeThreads("envoi", 80);
+    const broad = makeThreads("large", 60);
+    google.fetchGmailThreads.mockImplementation(async (query: string, max: number) => {
+      if (query === "in:sent newer_than:12m") return sent.slice(0, max);
+      if (query.includes("photographe")) return broad.slice(0, max);
+      return precise.slice(0, max);
+    });
+    ai.json.mockResolvedValue(JSON.stringify({ results: [] }));
+
+    const result = await scanAccreditationsTool.run({}, ctx);
+
+    assertToolOk(result);
+    expect(result.text).toContain("200 fils sur 290 candidats");
   });
 });

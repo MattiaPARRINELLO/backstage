@@ -205,7 +205,7 @@ export default function AccreditationsPage() {
             <EmptyState
               icon={<Ticket className="h-8 w-8" aria-hidden />}
               title="Aucune accréditation"
-              description="Lance un scan Gmail : les emails contenant « accréditation », « photo pass » ou « press » deviennent des fiches. Tu pourras ensuite corriger l'artiste, le lieu et la date."
+              description="Lance un scan Gmail : il lit des fils entiers (demande et réponses) et retient les accréditations trouvées par les mots-clés (accréditation, photo pass, presse, couverture, photographe) et dans tes envois récents. Tu pourras ensuite corriger l'artiste, le lieu et la date."
             />
           ) : (
             <EmptyState

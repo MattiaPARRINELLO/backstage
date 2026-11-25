@@ -25,6 +25,7 @@ const mockStorage = {
 
 const mockGoogleActions = {
   fetchGmailMessages: vi.fn(),
+  fetchGmailThreads: vi.fn(),
   sendGmailReply: vi.fn(),
   createGoogleCalendarEvent: vi.fn(),
   fetchGoogleCalendarEvents: vi.fn(),
@@ -185,13 +186,27 @@ describe("chat-tools — confirmation des actions IA", () => {
   it("exécute le scan des accréditations sans confirmation (analyse d'emails)", async () => {
     // Un email sans artiste détecté : le scan aboutit quand même (déclenché
     // immédiatement, jamais bloqué en attente de confirmation).
-    mockGoogleActions.fetchGmailMessages.mockResolvedValue([
-      { id: "m1", from: "a@b.fr", subject: "Re: accreditation", date: "2026-08-20", snippet: "confirme le pass presse" },
+    mockGoogleActions.fetchGmailThreads.mockResolvedValue([
+      {
+        id: "t1",
+        messages: [
+          {
+            id: "m1",
+            threadId: "t1",
+            from: "a@b.fr",
+            subject: "Re: accreditation",
+            date: "2026-08-20",
+            snippet: "confirme le pass presse",
+            body: "confirme le pass presse",
+            unread: false,
+          },
+        ],
+      },
     ]);
     const result = await executeTool("accreditations.scan", {});
     expect(result.startsWith(ACTION_BLOCKED_PREFIX)).toBe(false);
-    expect(result).toContain("Scan termine");
-    expect(mockGoogleActions.fetchGmailMessages).toHaveBeenCalled();
+    expect(result).toContain("Scan de 1 fils");
+    expect(mockGoogleActions.fetchGmailThreads).toHaveBeenCalled();
   });
 });
 

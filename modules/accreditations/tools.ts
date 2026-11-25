@@ -1,12 +1,15 @@
 import { z } from "zod";
 import { defineTool, toolEmpty, toolError, toolOk, verifyWrite } from "@backstage/module-kit";
 
-import { fetchGmailMessages } from "@/lib/google-actions";
+import { fetchGmailThreads } from "@/lib/google-actions";
+import type { GmailThread } from "@/lib/types";
 import {
-  accreditationStatusSchema,
-  type Accreditation,
-  type AccreditationStatus,
-} from "./schema";
+  chunk,
+  extractThreads,
+  OWN_MEDIA,
+  type Extraction,
+} from "./extraction";
+import type { Accreditation, AccreditationStatus } from "./schema";
 import {
   addAccreditation,
   getAccreditations,
@@ -15,49 +18,13 @@ import {
 } from "./service";
 
 /**
- * Scan des accréditations dans Gmail.
+ * Scan des accreditations dans Gmail.
  *
- * Extraction 100 % IA : chaque email est envoyé au modèle (`ctx.ai.json`,
- * servi par Groq côté noyau) qui rend un JSON validé par Zod. Aucune regex
- * d'extraction : elle se trompait systématiquement sur l'artiste et le lieu.
- * L'écriture reste locale et relue après coup.
+ * Extraction 100 % IA : chaque fil est envoye au modele (`ctx.ai.json`, servi
+ * par Groq cote noyau) qui rend un JSON valide par Zod. Aucune regex
+ * d'extraction : elle se trompait systematiquement sur l'artiste et le lieu.
+ * L'ecriture reste locale et relue apres coup.
  */
-
-const extractionSchema = z.object({
-  artist: z.string().trim().default(""),
-  venue: z.string().trim().default(""),
-  concertDate: z.string().trim().default(""),
-  status: accreditationStatusSchema.default("pending"),
-  contactEmail: z.string().trim().default(""),
-  uncertainFields: z.array(z.enum(["artist", "venue", "concertDate"])).default([]),
-});
-
-type Extraction = z.infer<typeof extractionSchema>;
-
-interface EmailMessage {
-  id: string;
-  from?: string | undefined;
-  subject?: string | undefined;
-  snippet?: string | undefined;
-  date?: string | undefined;
-}
-
-const SYSTEM = `Tu extrais une demande d'accreditation photo depuis un email.
-Reponds uniquement un objet JSON avec exactement ces cles :
-{"artist":"","venue":"","concertDate":"","status":"pending","contactEmail":"","uncertainFields":[]}
-
-Regles :
-- Rapstar est le media de l'utilisateur (le demandeur), jamais un artiste. Ne mets jamais "Rapstar" dans artist.
-- artist : nom de l'artiste ou du groupe, tel qu'ecrit. Retire les mots parasites ("pour", "concert de", "demande d'accréditation", "photo pass", "Rapstar").
-- venue : salle ou lieu du concert, sans "au", "a", "chez".
-- concertDate : date du concert au format YYYY-MM-DD, ou "" si absente.
-- status : "accepted" si l'email accepte ou confirme, "refused" s'il refuse ou decline, "sent" s'il confirme l'envoi de la demande, sinon "pending".
-- contactEmail : adresse email de l'expediteur, ou "".
-- uncertainFields : liste des champs douteux parmi "artist", "venue" et "concertDate". Ajoute "venue" si la salle est absente ou inconnue, "concertDate" si la date est absente ou peu fiable, et "artist" si le libelle peut designer un evenement plutot qu'un artiste. Utilise [] seulement si les trois champs sont surs.
-Si l'email n'est pas une demande d'accreditation, mets artist a "".`;
-
-/** Noms qui designent le media de l'utilisateur, jamais un artiste. */
-const OWN_MEDIA = new Set(["rapstar"]);
 
 const STATUS_RANK: Record<AccreditationStatus, number> = {
   pending: 0,
@@ -66,6 +33,46 @@ const STATUS_RANK: Record<AccreditationStatus, number> = {
   refused: 2,
   "follow-up": 3,
 };
+
+/** Termes qui designent une accreditation, dans les deux orthographes. */
+const PRECISE_TERMS = [
+  "accréditation",
+  "accréditations",
+  "accreditation",
+  "accreditations",
+  '"photo pass"',
+  '"press pass"',
+  '"pass photo"',
+  '"pass presse"',
+  '"demande d\'accès"',
+  '"demande d\'acces"',
+  '"accès presse"',
+  '"acces presse"',
+];
+
+/**
+ * Termes qui accompagnent une demande sans la nommer.
+ *
+ * Une demande ecrite « je peux couvrir le concert de samedi ? » n'utilise
+ * aucun des termes precis : sans cette famille, elle n'est jamais candidate.
+ */
+const BROAD_TERMS = [
+  "photographe",
+  "photographes",
+  "couverture",
+  "reportage",
+  "shooting",
+  '"autorisation photo"',
+];
+
+const PRECISE_QUERY = `(${PRECISE_TERMS.join(" OR ")}) newer_than:24m`;
+const BROAD_QUERY = `(${BROAD_TERMS.join(" OR ")}) newer_than:12m`;
+/** Le courrier envoye recent, meme sans mot-cle : une demande est un envoi. */
+const SENT_QUERY = "in:sent newer_than:12m";
+
+/** Plafond de fils analyses par scan : borne la duree et le quota Groq. */
+const MAX_THREADS = 200;
+const BATCH_SIZE = 10;
 
 function normalize(value: string): string {
   return value
@@ -82,10 +89,10 @@ function isUnknown(value: string): boolean {
 }
 
 /**
- * Retrouve une fiche malgré un lieu encore inconnu.
+ * Retrouve une fiche malgre un lieu encore inconnu.
  *
- * Une fiche extraite hier sans salle (`Inconnu`) doit être complétée par le
- * scan du jour, pas dupliquée sous un nouveau couple artiste/lieu.
+ * Une fiche extraite hier sans salle (`Inconnu`) doit etre completee par le
+ * scan du jour, pas dupliquee sous un nouveau couple artiste/lieu.
  */
 function findMatch(
   entries: readonly Accreditation[],
@@ -115,7 +122,7 @@ function emailOf(from: string | undefined): string {
   return from?.match(/[\w.+-]+@[\w.-]+\.\w+/)?.[0] ?? "";
 }
 
-/** Le statut ne recule jamais : un scan ne rétrograde pas une fiche acceptée. */
+/** Le statut ne recule jamais : un scan ne retrograde pas une fiche acceptee. */
 function mergeStatus(
   current: AccreditationStatus,
   next: AccreditationStatus
@@ -126,59 +133,156 @@ function mergeStatus(
   return STATUS_RANK[next] > STATUS_RANK[current] ? next : current;
 }
 
-function buildPrompt(message: EmailMessage): string {
-  return [
-    `De: ${message.from ?? ""}`,
-    `Sujet: ${message.subject ?? ""}`,
-    "Corps:",
-    (message.snippet ?? "").slice(0, 500),
-  ].join("\n");
+/**
+ * Adresse du correspondant, jamais celle de l'utilisateur.
+ *
+ * Quand la demande part de la boite de l'utilisateur, le dernier message est de
+ * lui : prendre son adresse transformerait la salle en lui-meme.
+ */
+function contactOf(thread: GmailThread, extracted: string): string {
+  if (z.string().email().safeParse(extracted).success) return extracted;
+  const correspondent = thread.messages.find((message) => !message.fromMe);
+  return emailOf(correspondent?.from ?? thread.messages[0]?.from);
 }
 
-function parseModelJson(raw: string): Extraction | null {
-  const start = raw.indexOf("{");
-  const end = raw.lastIndexOf("}");
-  if (start < 0 || end <= start) return null;
-  try {
-    const parsed = extractionSchema.safeParse(JSON.parse(raw.slice(start, end + 1)));
-    return parsed.success ? parsed.data : null;
-  } catch {
+/**
+ * Rassemble les fils candidats.
+ *
+ * Les fils trouves par les termes precis passent en premier : un plafond ne
+ * doit jamais ecarter une vraie accreditation au profit d'un « reportage »
+ * quelconque. Le nombre de candidats est rendu pour annoncer ce qui n'a pas
+ * ete analyse, plutot que de le taire.
+ */
+async function collectThreads(): Promise<{ threads: GmailThread[]; candidates: number }> {
+  const groups = await Promise.all([
+    fetchGmailThreads(PRECISE_QUERY, MAX_THREADS),
+    fetchGmailThreads(SENT_QUERY, Math.floor(MAX_THREADS / 2)),
+    fetchGmailThreads(BROAD_QUERY, Math.floor(MAX_THREADS / 2)),
+  ]);
+
+  const seen = new Set<string>();
+  const threads: GmailThread[] = [];
+  for (const group of groups) {
+    for (const thread of group) {
+      if (seen.has(thread.id)) continue;
+      seen.add(thread.id);
+      threads.push(thread);
+    }
+  }
+  return { threads: threads.slice(0, MAX_THREADS), candidates: threads.length };
+}
+
+interface ScanCounters {
+  created: number;
+  updated: number;
+  unchanged: number;
+  ignored: number;
+  skippedReview: number;
+  failed: number;
+}
+
+async function applyExtraction(
+  entries: Accreditation[],
+  thread: GmailThread,
+  extraction: Extraction,
+  counters: ScanCounters
+): Promise<string | null> {
+  if (!extraction.artist) {
+    counters.ignored++;
     return null;
   }
-}
+  // Le media de l'utilisateur n'est pas un artiste : une demande qui ne nomme
+  // que Rapstar n'a pas d'artiste exploitable.
+  if (OWN_MEDIA.has(normalize(extraction.artist))) {
+    counters.ignored++;
+    return null;
+  }
 
-type ExtractionAi = {
-  json?: (input: { system: string; prompt: string }) => Promise<string>;
-  complete: (input: { system?: string; prompt: string; maxChars?: number }) => Promise<string>;
-};
+  const artist = extraction.artist;
+  const venue = extraction.venue;
+  const concertDate = isoDate(extraction.concertDate);
+  const needsReview =
+    extraction.uncertainFields.length > 0 ||
+    isUnknown(artist) ||
+    isUnknown(venue) ||
+    !concertDate;
+  const contact = contactOf(thread, extraction.contactEmail);
+  const current = findMatch(entries, artist, venue);
 
-async function extractOne(
-  ai: ExtractionAi,
-  message: EmailMessage
-): Promise<Extraction | null> {
-  const raw = await extractWithAi(ai, message);
-  const parsed = parseModelJson(raw);
-  if (!parsed) throw new Error(`reponse IA illisible pour l'email ${message.id}`);
-  return parsed;
-}
+  if (current) {
+    // Une seconde extraction incertaine ne remplace pas silencieusement une
+    // fiche que l'utilisateur doit deja verifier.
+    if (current.needsReview && needsReview) {
+      counters.skippedReview++;
+      return null;
+    }
+    const nextStatus = mergeStatus(current.status, extraction.status);
+    const updates: AccreditationUpdate = {
+      ...(isUnknown(current.venue) && !isUnknown(venue) ? { venue } : {}),
+      ...(isUnknown(current.concertDate) && concertDate ? { concertDate } : {}),
+      ...(!current.contactEmail && contact ? { contactEmail: contact } : {}),
+      ...(nextStatus !== current.status ? { status: nextStatus } : {}),
+      ...(needsReview !== current.needsReview ? { needsReview } : {}),
+      ...(current.emailThreadId ? {} : { emailThreadId: thread.id }),
+    };
+    if (Object.keys(updates).length === 0) {
+      counters.unchanged++;
+      return null;
+    }
 
-async function extractWithAi(
-  ai: ExtractionAi,
-  message: EmailMessage
-): Promise<string> {
-  const prompt = buildPrompt(message);
-  if (ai.json) return ai.json({ system: SYSTEM, prompt });
-  return ai.complete({ system: SYSTEM, prompt });
+    const changed = await updateAccreditation(current.id, updates);
+    const problem = await verifyWrite(`la fiche "${current.artist}"`, async () => {
+      const after = await getAccreditations();
+      return after.accreditations.some((entry) => entry.id === current.id);
+    });
+    if (problem) return problem;
+    if (changed) {
+      const index = entries.findIndex((entry) => entry.id === current.id);
+      if (index >= 0) entries[index] = changed;
+      counters.updated++;
+    }
+    return null;
+  }
+
+  const createdAccreditation = await addAccreditation({
+    artist,
+    venue: venue || "Inconnu",
+    concertDate: concertDate || "Date inconnue",
+    needsReview,
+    contactEmail: contact || undefined,
+  });
+  const problem = await verifyWrite(
+    `l'accreditation "${createdAccreditation.artist}"`,
+    async () => {
+      const after = await getAccreditations();
+      return after.accreditations.some(
+        (entry) => entry.id === createdAccreditation.id
+      );
+    }
+  );
+  if (problem) return problem;
+
+  const status = mergeStatus("pending", extraction.status);
+  const updates: AccreditationUpdate = {
+    emailThreadId: thread.id,
+    ...(status !== "pending"
+      ? { status, notes: `Email: ${thread.messages[0]?.id ?? thread.id}` }
+      : {}),
+  };
+  const changed = await updateAccreditation(createdAccreditation.id, updates);
+  counters.created++;
+  entries.push(changed ?? { ...createdAccreditation, status });
+  return null;
 }
 
 export const scanAccreditationsTool = defineTool({
   name: "scan",
   description:
-    "Analyse les emails Gmail pour trouver des demandes d'accreditation (mots-cles: accreditation, photo pass, press). Extrait artiste, lieu, date, statut par IA et cree/met a jour les fiches dans accreditations.json.",
+    "Analyse les fils Gmail pour trouver des demandes d'accreditation (accreditation, photo pass, presse, couverture, photographe, envoles recents). Extrait artiste, lieu, date, statut par IA et cree/met a jour les fiches dans accreditations.json.",
   params: z.object({}),
   sideEffect: "write",
   describeAction: () =>
-    "Analyser les emails pour créer ou mettre à jour les fiches d'accréditations",
+    "Analyser les fils Gmail pour creer ou mettre a jour les fiches d'accreditations",
   run: async (_args, ctx) => {
     const ai = ctx.ai;
     if (!ai) {
@@ -188,163 +292,73 @@ export const scanAccreditationsTool = defineTool({
     }
 
     try {
-      const query =
-        'accréditation OR accreditation OR accredit OR "photo pass" OR "press pass"';
-      const [sent, inbox] = await Promise.all([
-        fetchGmailMessages(`in:sent (${query})`, 500),
-        fetchGmailMessages(`in:inbox (${query}) newer_than:365d`, 500),
-      ]);
-      const byId = new Map<string, EmailMessage>();
-      for (const message of [...sent, ...inbox]) {
-        if (!byId.has(message.id)) byId.set(message.id, message);
-      }
-      const messages = [...byId.values()].sort((a, b) => {
-        const ta = Date.parse(a.date ?? "");
-        const tb = Date.parse(b.date ?? "");
-        const va = Number.isFinite(ta) ? ta : 0;
-        const vb = Number.isFinite(tb) ? tb : 0;
-        if (vb !== va) return vb - va;
-        return a.id.localeCompare(b.id);
-      });
-      if (messages.length === 0) return toolEmpty("Aucun email d'accreditation trouve.");
+      const { threads, candidates } = await collectThreads();
+      if (threads.length === 0) return toolEmpty("Aucun fil d'accreditation trouve.");
 
       const existing = await getAccreditations();
       const entries = [...existing.accreditations];
-
-      let created = 0;
-      let updated = 0;
-      let unchanged = 0;
-      let ignored = 0;
-      let skippedReview = 0;
-      let failed = 0;
-      let lastError = "";
+      const counters: ScanCounters = {
+        created: 0,
+        updated: 0,
+        unchanged: 0,
+        ignored: 0,
+        skippedReview: 0,
+        failed: 0,
+      };
 
       const rawDelay = process.env.VITEST
         ? "0"
-        : (process.env.GROQ_SCAN_DELAY_MS ?? "2000");
+        : (process.env.GROQ_SCAN_DELAY_MS ?? "6000");
       const delayMs = Math.max(0, Number(rawDelay) || 0);
-      let isFirst = true;
-      for (const message of messages) {
-        if (!isFirst && delayMs > 0) {
+      let lastError = "";
+
+      for (const [index, batch] of chunk(threads, BATCH_SIZE).entries()) {
+        if (index > 0 && delayMs > 0) {
           await new Promise((resolve) => setTimeout(resolve, delayMs));
         }
-        isFirst = false;
-        let extraction: Extraction | null;
+        let extractions: Map<string, Extraction>;
         try {
-          extraction = await extractOne(ai, message);
+          extractions = await extractThreads(ai, batch);
         } catch (error) {
-          failed++;
           lastError = error instanceof Error ? error.message : String(error);
-          ctx.log("warn", `extraction impossible pour l'email ${message.id}`, error);
+          ctx.log("warn", `${batch.length} fil(s) non analyses`, error);
+          counters.failed += batch.length;
           continue;
         }
-        if (!extraction || !extraction.artist) {
-          ignored++;
-          continue;
-        }
-        // Le media de l'utilisateur n'est pas un artiste : une demande qui ne
-        // nomme que Rapstar n'a pas d'artiste exploitable.
-        if (OWN_MEDIA.has(normalize(extraction.artist))) {
-          ignored++;
-          continue;
-        }
-
-        const artist = extraction.artist;
-        const venue = extraction.venue;
-        const concertDate = isoDate(extraction.concertDate);
-        const needsReview =
-          extraction.uncertainFields.length > 0 ||
-          isUnknown(artist) ||
-          isUnknown(venue) ||
-          !concertDate;
-        const contact = z.string().email().safeParse(extraction.contactEmail).success
-          ? extraction.contactEmail
-          : emailOf(message.from);
-        const current = findMatch(entries, artist, venue);
-
-        if (current) {
-          // Une seconde extraction incertaine ne remplace pas silencieusement
-          // une fiche que l'utilisateur doit deja verifier.
-          if (current.needsReview && needsReview) {
-            skippedReview++;
+        for (const thread of batch) {
+          const extraction = extractions.get(thread.id);
+          if (!extraction) {
+            counters.failed++;
             continue;
           }
-          const nextStatus = mergeStatus(current.status, extraction.status);
-          const updates: AccreditationUpdate = {
-            ...(isUnknown(current.venue) && !isUnknown(venue) ? { venue } : {}),
-            ...(isUnknown(current.concertDate) && concertDate ? { concertDate } : {}),
-            ...(!current.contactEmail && contact ? { contactEmail: contact } : {}),
-            ...(nextStatus !== current.status ? { status: nextStatus } : {}),
-            ...(needsReview !== current.needsReview ? { needsReview } : {}),
-          };
-          if (Object.keys(updates).length === 0) {
-            unchanged++;
-            continue;
-          }
-
-          const changed = await updateAccreditation(current.id, updates);
-          const problem = await verifyWrite(
-            `la fiche "${current.artist}"`,
-            async () => {
-              const after = await getAccreditations();
-              return after.accreditations.some((entry) => entry.id === current.id);
-            }
-          );
+          const problem = await applyExtraction(entries, thread, extraction, counters);
           if (problem) return toolError(problem);
-          if (changed) {
-            const index = entries.findIndex((entry) => entry.id === current.id);
-            if (index >= 0) entries[index] = changed;
-            updated++;
-          }
-          continue;
         }
-
-        const createdAccreditation = await addAccreditation({
-          artist,
-          venue: venue || "Inconnu",
-          concertDate: concertDate || "Date inconnue",
-          needsReview,
-          contactEmail: contact || undefined,
-        });
-        const problem = await verifyWrite(
-          `l'accreditation "${createdAccreditation.artist}"`,
-          async () => {
-            const after = await getAccreditations();
-            return after.accreditations.some(
-              (entry) => entry.id === createdAccreditation.id
-            );
-          }
-        );
-        if (problem) return toolError(problem);
-
-        const status = mergeStatus("pending", extraction.status);
-        if (status !== "pending") {
-          await updateAccreditation(createdAccreditation.id, {
-            status,
-            notes: `Email: ${message.id}`,
-          });
-        }
-        created++;
-        entries.push({ ...createdAccreditation, status });
       }
 
-      if (failed > 0 && created === 0 && updated === 0) {
+      if (counters.failed > 0 && counters.created === 0 && counters.updated === 0) {
         return toolError(
-          `Scan interrompu : ${failed} email(s) n'ont pas pu etre analyses (${lastError}).`
+          `Scan interrompu : ${counters.failed} fil(s) sur ${threads.length} n'ont pas pu etre analyses${
+            lastError ? ` (${lastError})` : ""
+          }.`
         );
       }
 
       const parts = [
-        `${created} nouvelle(s)`,
-        `${updated} mise(s) a jour`,
-        `${unchanged} inchangee(s)`,
-        `${ignored} ignoree(s)`,
+        `${counters.created} nouvelle(s)`,
+        `${counters.updated} mise(s) a jour`,
+        `${counters.unchanged} inchangee(s)`,
+        `${counters.ignored} ignoree(s)`,
       ];
-      if (skippedReview > 0) {
-        parts.push(`${skippedReview} non remplacee(s) car a verifier`);
+      if (counters.skippedReview > 0) {
+        parts.push(`${counters.skippedReview} non remplacee(s) car a verifier`);
       }
-      if (failed > 0) parts.push(`${failed} illisible(s)`);
-      return toolOk(`Scan termine : ${parts.join(", ")}.`);
+      if (counters.failed > 0) parts.push(`${counters.failed} non analysee(s)`);
+      const header =
+        candidates > threads.length
+          ? `Scan de ${threads.length} fils sur ${candidates} candidats (plafond ${MAX_THREADS})`
+          : `Scan de ${threads.length} fils`;
+      return toolOk(`${header} : ${parts.join(", ")}.`);
     } catch (error) {
       return toolError(
         `Erreur lors du scan des accreditations : ${

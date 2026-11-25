@@ -7,7 +7,9 @@ import type {
   LogLevel,
   ModuleAi,
   ModuleContext,
+  ModuleMail,
   ModuleNet,
+  ModuleNotifyInput,
 } from "./context";
 import { assertModuleManifest } from "./manifest";
 import { defineModule, type ModuleDefinition } from "./module";
@@ -41,22 +43,26 @@ export interface CapturedActivity {
   readonly detail?: string;
 }
 
+export type CapturedNotification = ModuleNotifyInput;
+
 export interface TestContextOptions {
   readonly moduleId?: string;
   readonly userId?: string;
   readonly ai?: ModuleAi;
   readonly net?: ModuleNet;
+  readonly mail?: ModuleMail;
 }
 
 /**
- * `ModuleContext` de test : le logger et le bus capturent au lieu d'ecrire,
- * `activity` enregistre le fil d'activite, et `ai`/`net` restent absents par
- * defaut pour verifier qu'un module degrade proprement.
+ * `ModuleContext` de test : le logger, le bus et les notifications capturent au
+ * lieu d'ecrire, `activity` enregistre le fil d'activite, et `ai`/`net`/`mail`
+ * restent absents par defaut pour verifier qu'un module degrade proprement.
  */
 export interface TestModuleContext extends ModuleContext {
   readonly logs: CapturedLog[];
   readonly events: CapturedEvent[];
   readonly activityEntries: CapturedActivity[];
+  readonly notifications: CapturedNotification[];
 }
 
 export function createTestContext(
@@ -65,6 +71,7 @@ export function createTestContext(
   const logs: CapturedLog[] = [];
   const events: CapturedEvent[] = [];
   const activityEntries: CapturedActivity[] = [];
+  const notifications: CapturedNotification[] = [];
 
   return {
     moduleId: options.moduleId ?? "test-module",
@@ -77,12 +84,18 @@ export function createTestContext(
     activity(type, message, detail) {
       activityEntries.push(detail === undefined ? { type, message } : { type, message, detail });
     },
+    notify(input) {
+      notifications.push(input);
+      return Promise.resolve(true);
+    },
     logs,
     events,
     activityEntries,
+    notifications,
     ...(options.userId === undefined ? {} : { userId: options.userId }),
     ...(options.ai === undefined ? {} : { ai: options.ai }),
     ...(options.net === undefined ? {} : { net: options.net }),
+    ...(options.mail === undefined ? {} : { mail: options.mail }),
   };
 }
 

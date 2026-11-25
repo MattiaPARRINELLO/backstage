@@ -2,6 +2,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
+  assertModuleId,
   configPath,
   disableModule,
   doctorModules,
@@ -191,6 +192,7 @@ export async function applyModuleEnabled(
   id: string,
   enabled: boolean
 ): Promise<ModuleToggleResult> {
+  assertModuleId(id);
   const registry = getRegistry();
   const state = await readModulesState(root);
   const row = state.modules.find((entry) => entry.id === id);

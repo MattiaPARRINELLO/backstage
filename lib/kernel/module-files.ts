@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join, resolve, sep } from "node:path";
 
 import { KERNEL_API } from "@backstage/module-kit";
 
@@ -128,6 +128,33 @@ export function readComposition(modulesDir: string): { path: string; source: str
   return { path, source: readFileSync(path, "utf8") };
 }
 
+/**
+ * Identifiant de module sur : kebab-case uniquement. Il sert de nom de dossier
+ * et de cle de configuration, donc il ne doit jamais pouvoir designer un chemin
+ * ni un nom reserve (`__proto__`, `constructor`).
+ */
+const MODULE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export function assertModuleId(id: string): string {
+  if (!MODULE_ID_PATTERN.test(id)) {
+    throw new Error(
+      `Identifiant de module invalide : "${id}". Attendu : kebab-case (lettres minuscules, chiffres, tirets).`
+    );
+  }
+  return id;
+}
+
+/** Dossier d'un module, confine a `modules/` : aucune remontee de chemin. */
+export function moduleDirectory(root: string, id: string): string {
+  const safe = assertModuleId(id);
+  const base = resolve(root, "modules");
+  const directory = resolve(base, safe);
+  if (!directory.startsWith(`${base}${sep}`)) {
+    throw new Error(`Identifiant de module invalide : "${id}".`);
+  }
+  return directory;
+}
+
 /** Active ou desactive un module : `modules.config.json` est le seul fichier touche. */
 export function enableModule(root: string, id: string): void {
   setModuleEnabled(root, id, true);
@@ -137,17 +164,29 @@ export function disableModule(root: string, id: string): void {
   setModuleEnabled(root, id, false);
 }
 
+function moduleNames(root: string): Set<string> {
+  const modulesDir = join(root, "modules");
+  const directories = existsSync(modulesDir) ? readdirSync(modulesDir) : [];
+  return new Set([
+    ...Object.keys(readConfig(root).modules ?? {}),
+    ...Object.keys(readLock(root).modules),
+    ...directories,
+  ]);
+}
+
 function setModuleEnabled(root: string, id: string, enabled: boolean): void {
+  const moduleId = assertModuleId(id);
   const config = readConfig(root);
   if (enabled) {
-    const known =
-      existsSync(join(root, "modules", id)) ||
-      config.modules?.[id] !== undefined ||
-      readLock(root).modules[id] !== undefined;
-    if (!known) throw new Error(`Module "${id}" inconnu : rien a activer.`);
-  } else if (config.modules?.[id]?.enabled !== true) {
-    throw new Error(`Le module "${id}" est deja desactive.`);
+    if (!moduleNames(root).has(moduleId)) {
+      throw new Error(`Module "${moduleId}" inconnu : rien a activer.`);
+    }
+  } else if (config.modules?.[moduleId]?.enabled !== true) {
+    throw new Error(`Le module "${moduleId}" est deja desactive.`);
   }
-  config.modules = { ...(config.modules ?? {}), [id]: { enabled } };
+
+  const modules = new Map(Object.entries(config.modules ?? {}));
+  modules.set(moduleId, { enabled });
+  config.modules = Object.fromEntries(modules);
   writeFileSync(configPath(root), serializeConfig(config), "utf8");
 }

@@ -31,6 +31,16 @@ export interface InstalledModule {
   readonly capabilities: unknown;
 }
 
+/**
+ * Depots acceptes : url explicite uniquement. Un depot ne doit jamais
+ * ressembler a une option de git (`--upload-pack=...`), d'ou le prefixe
+ * obligatoire.
+ */
+const REPO_PATTERN = /^(?:https?:\/\/|ssh:\/\/|git:\/\/|git@|file:\/\/|\/)[^\s]+$/;
+
+/** Une ref ne commence jamais par un tiret ni ne contient d'espace. */
+const REF_PATTERN = /^[^\s-][^\s]*$/;
+
 /** `url#ref` : la ref est obligatoire, pour ne jamais installer « la branche ». */
 export function parseModuleSource(input: string): ModuleSource {
   const separator = input.lastIndexOf("#");
@@ -44,6 +54,14 @@ export function parseModuleSource(input: string): ModuleSource {
   if (!repo || !ref) {
     throw new Error("Source invalide : le depot et la ref sont obligatoires.");
   }
+  if (!REPO_PATTERN.test(repo)) {
+    throw new Error(
+      `Depot invalide : "${repo}". Attendu une url git (https://, ssh://, git://, git@) ou un chemin absolu.`
+    );
+  }
+  if (!REF_PATTERN.test(ref)) {
+    throw new Error(`Ref invalide : "${ref}". Attendu un tag ou un commit, sans espace.`);
+  }
   return { repo, ref };
 }
 
@@ -52,14 +70,14 @@ export function cloneAtRef(repo: string, ref: string, destination: string): stri
   try {
     execFileSync(
       "git",
-      ["clone", "--quiet", "--depth", "1", "--branch", ref, repo, destination],
+      ["clone", "--quiet", "--depth", "1", "--branch", ref, "--", repo, destination],
       { stdio: ["ignore", "pipe", "pipe"] }
     );
   } catch {
     // `--branch` ne connait pas les commits : seconde chance en clone complet.
     rmSync(destination, { recursive: true, force: true });
     try {
-      execFileSync("git", ["clone", "--quiet", repo, destination], {
+      execFileSync("git", ["clone", "--quiet", "--", repo, destination], {
         stdio: ["ignore", "pipe", "pipe"],
       });
       execFileSync("git", ["-C", destination, "checkout", "--quiet", ref], {

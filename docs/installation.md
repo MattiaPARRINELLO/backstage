@@ -174,10 +174,24 @@ app/globals.css        # Tokens + primitives .ui-* (système décrit dans docs/d
 app/landing.css        # Styles de la landing, isolés sous .landing-page
 ```
 
-## Santé du projet
+## Sante du projet
 
-- CI (GitHub Actions) : lint, vérification des références doc, typecheck, tests
-  unitaires, build, e2e à chaque push.
+`bun run verify` rejoue en local ce que la CI exige. Les workflows GitHub
+Actions sont separes pour qu'un echec designe une seule responsabilite :
+
+| Workflow | Declencheur | Ce qu'il verifie |
+| --- | --- | --- |
+| [`ci.yml`](../.github/workflows/ci.yml) | PR, push `main`, chaque nuit | lint, plafond de warnings, typecheck global et strict, frontieres de dependance, references doc, tests sur Linux et macOS, planchers de couverture, build, demarrage reel du serveur standalone, E2E Playwright |
+| [`guards.yml`](../.github/workflows/guards.yml) | PR, push `main` | fichiers interdits versionnes (`.env`, `data/`, `e2e/.auth/`), marqueurs de conflit, JSON invalide, collisions de casse, fichiers de plus de 2 Mio, workflows invalides (`actionlint`) |
+| [`security.yml`](../.github/workflows/security.yml) | PR, push `main`, chaque lundi | secrets dans les commits (`gitleaks`), vulnerabilites des dependances de production (`bun audit`), paquets ajoutes par la PR (`dependency-review`), dependances de developpement en informatif |
+| [`docker.yml`](../.github/workflows/docker.yml) | changement Docker/dependances, chaque lundi | build de l'image et demarrage reel du conteneur sur `/login` |
+| [`codeql.yml`](../.github/workflows/codeql.yml) | PR, push `main`, chaque lundi | analyse statique de securite (depots publics) |
+| [`strix.yml`](../.github/workflows/strix.yml) | manuel, un dimanche sur deux | pentest agentique complet |
+
+Les mises a jour de dependances passent par
+[`dependabot.yml`](../.github/dependabot.yml) : correctifs et mineures groupes,
+majeures isolees.
+
 - [`design.md`](design.md) — le système visuel.
 - [`product.md`](product.md) — objectif, utilisateurs, modules, ton.
 - [`architecture.md`](architecture.md) — les invariants techniques.

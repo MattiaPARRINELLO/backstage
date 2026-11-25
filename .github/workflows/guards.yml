@@ -1,0 +1,102 @@
+name: Garde-fous
+
+# Verifications rapides et independantes du langage : elles n'ont pas besoin de
+# node_modules et echouent en quelques secondes. Objectif : attraper ce que le
+# lint et les tests ne voient pas (secret committe, JSON casse, marqueur de
+# conflit, workflow invalide, fichier enorme).
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guards-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  repository:
+    name: Hygiene du depot
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Aucun fichier interdit n'est versionne
+        # Un `.env`, un jeton, le dossier `data/` ou un storageState Playwright
+        # committe expose des secrets et fausse tous les tests locaux.
+        run: |
+          set -euo pipefail
+          forbidden=$(git ls-files \
+            | grep -Ev '^\.env\.example$' \
+            | grep -E '^(\.env($|\.)|data/|e2e/\.auth/|android/data/|coverage/|test-results/|playwright-report/)|\.tsbuildinfo$|^\.deploy\.env$|\.pem$' \
+            || true)
+
+          if [ -n "$forbidden" ]; then
+            echo "$forbidden" | while IFS= read -r file; do
+              echo "::error file=$file::fichier interdit versionne (secret, donnee locale ou artefact)"
+            done
+            exit 1
+          fi
+          echo "Aucun fichier interdit versionne."
+
+      - name: Aucun marqueur de conflit
+        run: |
+          set -euo pipefail
+          if git grep -nE '^(<<<<<<< |>>>>>>> )' -- .; then
+            echo "::error::marqueur de conflit Git laisse dans le code"
+            exit 1
+          fi
+          echo "Aucun marqueur de conflit."
+
+      - name: Tous les fichiers JSON sont valides
+        run: |
+          set -euo pipefail
+          failed=0
+          while IFS= read -r file; do
+            if ! jq -e . "$file" >/dev/null 2>&1; then
+              echo "::error file=$file::JSON invalide"
+              failed=1
+            fi
+          done < <(git ls-files '*.json')
+          exit "$failed"
+
+      - name: Pas de noms de fichiers en collision de casse
+        # macOS et Windows sont insensibles a la casse : `Foo.ts` et `foo.ts`
+        # coexistent sous Linux et deviennent un seul fichier ailleurs.
+        run: |
+          set -euo pipefail
+          duplicates=$(git ls-files | tr '[:upper:]' '[:lower:]' | sort | uniq -d)
+          if [ -n "$duplicates" ]; then
+            echo "$duplicates" | while IFS= read -r file; do
+              echo "::error::nom en collision de casse : $file"
+            done
+            exit 1
+          fi
+          echo "Aucune collision de casse."
+
+      - name: Aucun fichier de plus de 2 Mio
+        # Un binaire lourd ralentit chaque clone et n'a rien a faire dans git.
+        # Les plus gros fichiers actuels font moins de 400 Kio.
+        run: |
+          set -euo pipefail
+          big=$(git ls-files -z | xargs -0 du -b | awk '$1 > 2097152 { print $2 }')
+          if [ -n "$big" ]; then
+            echo "$big" | while IFS= read -r file; do
+              echo "::error file=$file::fichier de plus de 2 Mio"
+            done
+            exit 1
+          fi
+          echo "Aucun fichier au-dela de 2 Mio."
+
+      - name: Workflows GitHub Actions valides (actionlint)
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" -w /repo \
+            rhysd/actionlint:latest \
+            -color

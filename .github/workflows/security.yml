@@ -1,16 +1,23 @@
 name: Security
 
-# Vérifications rapides sur chaque PR, en complément des scans Strix
-# bihebdomadaires : détection de secrets dans le diff et revue des dépendances.
+# Verifications rapides et continues, en complement des scans Strix
+# bihebdomadaires : secrets dans l'historique, vulnerabilites des dependances
+# et revue des paquets ajoutes par une PR.
 on:
   pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Chaque lundi : un CVE publie pendant la semaine est vu meme sans push.
+    - cron: "41 4 * * 1"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: security-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   secrets:
@@ -21,26 +28,81 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # gitleaks a besoin de l'historique pour lire le diff
+          # gitleaks a besoin de l'historique pour lire le diff.
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Scan des commits de la PR
+      - name: Scan des commits concernes
         run: |
-          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest \
-            detect --source=/repo --redact --verbose --no-banner \
-            --log-opts="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          set -euo pipefail
+          args=(detect --source=/repo --redact --verbose --no-banner)
 
-  dependencies:
-    name: Dépendances (dependency-review)
-    # l'action dependency-review nécessite GitHub Advanced Security sur les
-    # dépôts privés ; elle est gratuite sur les dépôts publics
-    if: github.event.repository.private == false
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            args+=(--log-opts="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}")
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            before="${{ github.event.before }}"
+            if [ -z "$before" ] || printf '%s' "$before" | grep -qE '^0+$'; then
+              # Nouvelle branche : aucun parent, on scanne tout.
+              :
+            else
+              args+=(--log-opts="$before..${{ github.event.after }}")
+            fi
+          fi
+
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest "${args[@]}"
+
+  production-dependencies:
+    name: Vulnerabilites des dependances de production
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Revue des dépendances ajoutées
+      - uses: ./.github/actions/setup
+
+      - name: bun audit (production uniquement)
+        # Seules les dependances expediees comptent : une CVE dans un paquet de
+        # test ne doit pas bloquer une PR. Les dependances de developpement sont
+        # surveillees par le job hebdomadaire ci-dessous.
+        run: bun audit --production --audit-level=high
+
+  development-dependencies:
+    name: Dependances de developpement (informatif)
+    # Un paquet de test vulnerable est un vrai sujet, mais pas un motif de
+    # bloquer une contribution sans rapport. Le job tourne chaque semaine et
+    # signale sans faire echouer la CI.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+
+      - name: bun audit (toutes dependances)
+        run: bun audit --audit-level=high
+
+  review:
+    name: Revue des dependances ajoutees (dependency-review)
+    # L'action dependency-review necessite GitHub Advanced Security sur les
+    # depots prives ; elle est gratuite sur les depots publics.
+    if: github.event_name == 'pull_request' && github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Revue des dependances ajoutees
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high

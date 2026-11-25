@@ -97,7 +97,7 @@ jobs:
       - name: Fail unless the scan completed
         if: always() && steps.gate.outputs.run == 'true'
         run: |
-          run_json=$(ls -t strix_runs/*/run.json 2>/dev/null | head -1)
+          run_json=$(find strix_runs -type f -name run.json -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -1 | cut -d' ' -f2-)
           if [ -z "$run_json" ]; then
             echo "::error title=Strix::Aucun run.json produit, le scan n'a pas tourné"
             exit 1

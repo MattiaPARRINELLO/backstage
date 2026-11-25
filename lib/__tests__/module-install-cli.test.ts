@@ -459,11 +459,14 @@ describe("module:doctor en erreur", () => {
 
   it("signale un dossier .install-* orphelin", () => {
     const root = createRoot();
-    mkdirSync(join(root, "modules/.install-install-999-1-abcd"), { recursive: true });
+    // PID hors de l'espace courant (max Linux : 2^22) : `process.kill(pid, 0)`
+    // ne peut pas le resoudre, donc le dossier est toujours vu comme orphelin.
+    // Un petit PID fixe (999) depend de la machine et rend le test instable.
+    mkdirSync(join(root, "modules/.install-install-2147483647-1-abcd"), { recursive: true });
 
     const doctor = run(root, "doctor");
     expect(doctor.status).toBe(1);
-    expect(doctor.stderr).toContain(".install-install-999-1-abcd");
+    expect(doctor.stderr).toContain(".install-install-2147483647-1-abcd");
     expect(doctor.stderr).toContain("temporaire");
   });
 

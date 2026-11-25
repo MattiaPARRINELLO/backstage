@@ -243,7 +243,7 @@ it("ecrit et relit une note", async () => {
 
 | Helper | Role |
 | --- | --- |
-| `createTestContext({ moduleId })` | `ModuleContext` factice ; `logs`, `events` et `activityEntries` capturent |
+| `createTestContext({ moduleId })` | `ModuleContext` factice ; `logs`, `events`, `activityEntries` et `notifications` capturent, `mail` s'injecte |
 | `runTool(outil, args, ctx)` | valide le schema puis execute l'outil ; arguments invalides et exception deviennent un resultat `error`, comme le noyau |
 | `assertToolOk` / `assertToolError` / `assertToolEmpty` | assertion lisible sur `ok`, `error`, `empty` |
 | `expectValidModule(module, { kernelApi })` | memes regles que le noyau a l'installation |
@@ -251,7 +251,16 @@ it("ecrit et relit une note", async () => {
 
 Cas a couvrir au minimum : arguments invalides refuses avant ecriture, entree
 nominale avec relecture du store, dependance optionnelle absente (`ctx.ai`,
-`ctx.net`) sans levee, et manifeste valide.
+`ctx.net`, `ctx.notify`, `ctx.mail`) sans levee, et manifeste valide.
+
+Le contexte de test capture les notifications dans `ctx.notifications` et
+accepte un `mail` factice : un module qui relance ou lit une boite se teste sans
+reseau ni push.
+
+Les capacites optionnelles sont le seul acces au monde exterieur. Un module ne
+doit jamais importer `@/lib/*` : la regle `modules-sans-noyau` le refuse en
+`error` (`bun run boundaries`). Besoin d'un service absent du kit : demander une
+capacite au contrat, pas un acces au noyau.
 
 ### Le point qui bloquait : tester hors du depot hote
 

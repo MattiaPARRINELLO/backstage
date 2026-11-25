@@ -575,6 +575,12 @@ avec `module:add` et se comporter à l'identique. `watch-later` sert de cas rée
 - commit figé dans le lock : `88e77d4e` ;
 - données inchangées : `data/watch-later.json`, via `legacyPath`.
 
+Depuis #255, `accreditations` prouve le cas d'un module qui **utilise le
+réseau, le mail et les notifications** et s'extrait quand même : le kit fournit
+`ctx.net`, `ctx.ai`, `ctx.mail` et `ctx.notify`, donc « seuls les modules sans
+réseau sont extractibles » n'est plus vrai. Un module n'a plus de raison
+d'importer `@/lib/*`.
+
 **Layout du dépôt extrait** (le dossier du dépôt devient `modules/<id>/`) :
 
 ```
@@ -636,9 +642,29 @@ Le contexte d'un module porte les moyens d'agir du noyau, jamais ses fichiers :
 | `ctx.net.isSafeUrl(url)` | contrôle anti-SSRF du noyau | le module refuse l'URL |
 | `ctx.net.fetchText(url, timeoutMs)` | corps texte d'une URL publique, `null` si refus ou échec | le module traite comme page vide |
 | `ctx.ai.complete({ system?, prompt, maxChars? })` | complétion avec le modèle général des réglages | le module n'écrit pas de résumé |
+| `ctx.ai.json({ system, prompt, maxChars? })` | tâche courte structurée, servie par Groq quand il est configuré | le module retombe sur `complete` ou dégrade |
+| `ctx.notify({ title, body, url?, tag?, data? })` | notification poussée vers les appareils, `true` si au moins un l'a reçue | le module n'annonce pas l'échéance |
+| `ctx.mail.listThreads(query?, maxThreads?)` | fils Gmail correspondant à une recherche, du plus récent au plus ancien | le module refuse la lecture de la boîte |
+| `ctx.mail.getThread(id)` / `ctx.mail.getMessage(id)` | fil ou message complet par identifiant, `null` s'il n'existe pas | idem |
 
-`net` et `ai` sont optionnelles dans le type : un contexte de test peut rester
-minimal, mais un module doit alors dégrader proprement, jamais lever.
+`net`, `ai`, `notify` et `mail` sont optionnelles dans le type : un contexte de
+test peut rester minimal, mais un module doit alors dégrader proprement, jamais
+lever ni inventer un résultat.
+
+Les types `GmailThread` et `GmailMessage` sont exportés par le kit : un module
+distribué lit la boîte sans importer un type du noyau.
+
+### Frontière modules / noyau
+
+Un module ne peut pas importer `@/lib/*`, `@/app/*` ni `@/components/*` : il ne
+serait plus installable ailleurs. La règle dependency-cruiser
+`modules-sans-noyau` (`.dependency-cruiser.cjs`, `bun run boundaries`) le refuse
+en `error`. Les modules pas encore migrés y figurent en exception, chacun avec
+son issue ; cette liste ne doit que décroître. Un module qui a besoin d'une
+capacité absente du kit demande une capacité au contrat, jamais un accès au
+noyau. `accreditations` est le premier module extrait sous cette règle : il
+consomme `ctx.mail`, `ctx.notify` et `ctx.ai`, et ne connaît aucun fichier de
+`lib/`.
 
 ## Jobs de module (`/api/cron`)
 

@@ -35,6 +35,12 @@ Ce fichier ne garde que les règles qui font casser le build ou la prod.
    utile : jamais seulement dans la réponse ou dans un commentaire de PR. Un
    constat corrigé dans la même session est cité dans le corps de la PR à la
    place.
+8. **Aucun module n'importe le noyau.** Un fichier de `modules/*` ne peut pas
+   importer `@/lib/*`, `@/app/*` ni `@/components/*` : il consomme une capacité
+   du kit (`ctx.ai`, `ctx.net`, `ctx.notify`, `ctx.mail`, `ctx.activity`) ou
+   demande une capacité au contrat. La règle `modules-sans-noyau` de
+   `bun run boundaries` le refuse en `error` ; sa liste d'exceptions par module
+   ne doit que décroître.
 
 ---
 

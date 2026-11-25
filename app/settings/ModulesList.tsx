@@ -4,9 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Package, RefreshCw } from "lucide-react";
 
+import type { ModuleCatalog } from "@/lib/kernel/module-catalog";
 import type { ModulesState } from "@/lib/kernel/module-admin";
 import { EmptyState } from "@backstage/module-kit";
 import { cn } from "@/lib/utils";
+
+import { ModuleInstaller } from "./ModuleInstaller";
 import { ModuleRowItem } from "./ModuleRowItem";
 
 /**
@@ -23,9 +26,19 @@ export interface ActionMessage {
   readonly text: string;
 }
 
-export function ModulesList({ state }: { state: ModulesState }) {
+export function ModulesList({
+  state,
+  catalog,
+}: {
+  state: ModulesState;
+  catalog: ModuleCatalog | null;
+}) {
   const router = useRouter();
   const [message, setMessage] = useState<ActionMessage | null>(null);
+
+  const installedIds = new Set(
+    state.modules.filter((row) => row.commit !== null).map((row) => row.id)
+  );
 
   const onDone = (next: ActionMessage) => {
     setMessage(next);
@@ -94,6 +107,8 @@ export function ModulesList({ state }: { state: ModulesState }) {
           </ul>
         </div>
       )}
+
+      <ModuleInstaller catalog={catalog} installedIds={installedIds} onDone={onDone} />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { listInstalledModules } from "@/app/actions/modules";
+import { listInstalledModules, listModuleCatalog } from "@/app/actions/modules";
 import { AppShell } from "@/components/layout/AppShell";
+import type { ModuleCatalog } from "@/lib/kernel/module-catalog";
 import { PageHeader } from "@backstage/module-kit";
 
 import { ModulesList } from "../ModulesList";
@@ -11,7 +12,8 @@ import { ModulesList } from "../ModulesList";
  * Page de gestion des modules (issue #270).
  *
  * Rendue a la demande : l'etat vient du registre en cours et du disque, jamais
- * d'un cache de build.
+ * d'un cache de build. Le catalogue est une lecture reseau : s'il est
+ * injoignable, la page reste utilisable en saisie manuelle.
  */
 export const dynamic = "force-dynamic";
 
@@ -20,7 +22,10 @@ export const metadata: Metadata = {
 };
 
 export default async function ModulesSettingsPage() {
-  const state = await listInstalledModules();
+  const [state, catalog] = await Promise.all([
+    listInstalledModules(),
+    listModuleCatalog().catch((): ModuleCatalog | null => null),
+  ]);
 
   return (
     <AppShell>
@@ -35,11 +40,11 @@ export default async function ModulesSettingsPage() {
           <div className="mt-4">
             <PageHeader
               title="Modules"
-              description="Voir quels modules le serveur sert vraiment, en activer ou en desactiver un."
+              description="Voir quels modules le serveur sert vraiment, en activer, en ajouter depuis un depot git ou en retirer."
             />
           </div>
 
-          <ModulesList state={state} />
+          <ModulesList state={state} catalog={catalog} />
         </div>
       </div>
     </AppShell>

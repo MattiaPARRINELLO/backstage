@@ -306,10 +306,7 @@ export const scanAccreditationsTool = defineTool({
         failed: 0,
       };
 
-      const rawDelay = process.env.VITEST
-        ? "0"
-        : (process.env.GROQ_SCAN_DELAY_MS ?? "6000");
-      const delayMs = Math.max(0, Number(rawDelay) || 0);
+      const delayMs = Math.max(0, ai.jsonDelayMs ?? 0);
       let lastError = "";
 
       for (const [index, batch] of chunk(threads, BATCH_SIZE).entries()) {

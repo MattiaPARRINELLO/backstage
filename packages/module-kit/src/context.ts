@@ -34,6 +34,14 @@ export interface ModuleAi {
     readonly prompt: string;
     readonly maxChars?: number;
   }) => Promise<string>;
+  /**
+   * Attente conseillee entre deux appels `json` consecutifs.
+   *
+   * Un module qui enchaine beaucoup d'extractions (scan par lots) doit la
+   * respecter pour ne pas saturer le quota du fournisseur. Le noyau la calcule
+   * d'apres le nombre de comptes configures ; absente ou nulle, enchainer.
+   */
+  readonly jsonDelayMs?: number;
 }
 
 /**

@@ -49,6 +49,36 @@ export function isGroqConfigured(): boolean {
   return configuredGroqKeys().length > 0;
 }
 
+/** Delais par defaut entre deux extractions, selon le nombre de comptes. */
+const SINGLE_KEY_JSON_DELAY_MS = 6000;
+const POOLED_KEY_JSON_DELAY_MS = 1500;
+
+/**
+ * Attente entre deux extractions JSON.
+ *
+ * Chaque compte Groq a son propre quota de tokens par minute : empiler les
+ * comptes permet d'enchainer plus vite. Le plafond d'une cle unique (gpt-oss-20b)
+ * impose ~6 s entre deux lots ; avec deux comptes, 1,5 s suffit, et un 429
+ * eventuel est de toute facon rattrape via `retry-after`.
+ */
+export function jsonDelayForKeys(keyCount: number, override?: string): number {
+  if (override !== undefined) {
+    const value = Number(override);
+    if (Number.isFinite(value) && value >= 0) return value;
+  }
+  if (keyCount === 0) return 0;
+  return keyCount >= 2 ? POOLED_KEY_JSON_DELAY_MS : SINGLE_KEY_JSON_DELAY_MS;
+}
+
+/** Delai a respecter maintenant, selon la configuration courante. */
+export function groqJsonDelayMs(): number {
+  const config = getConfig();
+  return jsonDelayForKeys(
+    configuredGroqKeys().length,
+    config.GROQ_SCAN_DELAY_MS
+  );
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

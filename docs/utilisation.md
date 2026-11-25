@@ -23,6 +23,8 @@ l'IA conversationnelle, la mémoire persistante et les outils du quotidien
 - **PWA** : installable, fonctionne hors-ligne, service worker, manifest
 - **Thèmes & accent** : clair ou sombre (suit le système, choix mémorisé),
   couleur d'accent réglable dans les paramètres
+- **Modules** : catalogue, installation depuis un dépôt git épinglé, bascule
+  immédiate et retrait depuis `/settings/modules`
 
 ## Stack
 
@@ -57,6 +59,7 @@ Toutes ces pages sont privées (passkey) sauf la landing et la connexion.
 | `/leetcode` | Progression LeetCode : série, activité, difficulté et rang |
 | `/schedule` | Emploi du temps CESAR (semaine + synchronisation) |
 | `/settings` | Modèles IA, accent, connexions Google/Microsoft, export et compte |
+| `/settings/modules` | Modules : état réel, bascule, ajout par URL avec confirmation, retrait |
 | `/search` | Recherche unifiée dans la mémoire, les mails, les rappels et le web |
 | `/activity` | Journal d'activité de l'application et des actions de l'IA |
 | `/demo-calls` | Console privée des appels de la démo publique (audit) |

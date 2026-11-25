@@ -5,8 +5,10 @@ import { KERNEL_API } from "@backstage/module-kit";
 
 import { addToComposition, removeFromComposition } from "./module-composition";
 import {
+  assertModuleId,
   configPath,
   lockPath,
+  moduleDirectory,
   readComposition,
   readConfig,
   readLock,
@@ -55,7 +57,7 @@ export async function updateModule(options: UpdateOptions): Promise<InstalledMod
   const ref = requested && requested.length > 0 ? requested : entry.ref;
 
   const modulesDir = join(root, "modules");
-  const destination = join(modulesDir, id);
+  const destination = moduleDirectory(root, id);
   if (!existsSync(destination)) {
     throw new Error(
       `Dossier modules/${id} absent : reinstalle le module avec module:add ${entry.repo}#${ref}.`
@@ -124,6 +126,7 @@ export interface RemoveResult {
  * dernier. Un dossier deja absent ne fait pas echouer le retrait.
  */
 export function removeModule(root: string, id: string): RemoveResult {
+  assertModuleId(id);
   const lock = readLock(root);
   if (!lock.modules[id]) {
     throw new Error(`Module "${id}" inconnu du lock : rien a retirer.`);
@@ -142,7 +145,7 @@ export function removeModule(root: string, id: string): RemoveResult {
     if (key !== id) remainingConfig[key] = value;
   }
 
-  const destination = join(modulesDir, id);
+  const destination = moduleDirectory(root, id);
   const backupDir = temporaryPath(modulesDir, "remove");
   const hadDirectory = existsSync(destination);
   if (hadDirectory) renameSync(destination, backupDir);

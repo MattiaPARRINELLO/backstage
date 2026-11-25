@@ -28,6 +28,7 @@ export type ActivityAction =
   | "module_enabled"
   | "module_disabled"
   | "module_installed"
+  | "module_removed"
   | "login"
   | "logout"
   | "ai_action";

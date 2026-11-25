@@ -10,7 +10,9 @@ import {
   installFromSource,
   modulesRoot,
   readModulesState,
+  removeById,
   type ModuleInstallResult,
+  type ModuleRemoveResult,
   type ModulesState,
   type ModuleToggleResult,
 } from "@/lib/kernel/module-admin";
@@ -38,6 +40,12 @@ const toggleSchema = z
 const installSchema = z
   .object({
     source: z.string().trim().min(1, "Source requise : <url-git>#<ref>"),
+  })
+  .strict();
+
+const removeSchema = z
+  .object({
+    id: moduleIdSchema,
   })
   .strict();
 
@@ -112,6 +120,25 @@ export async function installModuleFromSource(input: {
     `Module installe : ${result.id}`,
     `commit ${result.commit} - capacites ${JSON.stringify(result.capabilities)}`
   );
+  refreshModulePaths(result.id);
+
+  return result;
+}
+
+export async function removeModuleById(input: { id: string }): Promise<ModuleRemoveResult> {
+  await requireSession();
+
+  const parsed = removeSchema.safeParse(input);
+  if (!parsed.success) throw new AppError("validation", firstIssue(parsed.error));
+
+  let result: ModuleRemoveResult;
+  try {
+    result = removeById(modulesRoot(), parsed.data.id);
+  } catch (error) {
+    throw asAppError(error);
+  }
+
+  await logActivity("module_removed", `Module retire : ${result.id}`);
   refreshModulePaths(result.id);
 
   return result;

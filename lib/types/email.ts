@@ -10,6 +10,8 @@ export interface GmailMessage {
   body: string;
   unread: boolean;
   messageId?: string;
+  /** Vrai pour un message envoye par l'utilisateur (label Gmail SENT). */
+  fromMe?: boolean;
 }
 
 /** Fil Gmail complet : tous ses messages, du plus recent au plus ancien. */

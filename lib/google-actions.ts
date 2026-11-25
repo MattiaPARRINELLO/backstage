@@ -164,6 +164,7 @@ function toGmailMessage(msg: GmailMessageRaw): GmailMessage {
     body,
     unread: msg.labelIds?.includes("UNREAD") ?? true,
     messageId: extractHeader(headers, "Message-ID"),
+    fromMe: msg.labelIds?.includes("SENT") ?? false,
   };
 }
 

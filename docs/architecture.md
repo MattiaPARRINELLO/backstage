@@ -551,11 +551,19 @@ Cas d'erreur couverts par les tests (dépôt git local, sans réseau) et par
   compatible (un module laissé désactivé dans `modules.config.json` est signalé).
 - L'installation échoue sans laisser de dossier temporaire, et le clone ne
   conserve pas d'historique git.
-- Un rebuild Next est obligatoire : Next ne crée pas de route à l'exécution.
-  ⚠️ `modules.config.json` est **importé statiquement** par
-  `lib/kernel/registry.ts`, donc désactiver un module exige aussi un rebuild :
-  redémarrer le serveur ne suffit pas, et le module reste actif tant que le
-  build n'est pas refait.
+- Un rebuild Next est obligatoire pour ajouter ou retirer un module : Next ne
+  crée pas de route à l'exécution, et `modules/index.ts` est compilé.
+  En revanche, **activer ou désactiver ne demande plus de rebuild** : depuis
+  l'issue #270, `lib/kernel/registry.ts` lit `modules.config.json` à
+  l'exécution (`readRuntimeConfig`, cache invalidé par l'action) au lieu de
+  l'importer statiquement. La bascule prend effet à la requête suivante. Quand
+  le fichier est absent de la racine d'exécution (sortie standalone de Next qui
+  ne l'embarque pas), la config du build sert de repli et la première bascule
+  écrit le fichier.
+- **L'interface ne ment jamais sur l'état** : `/settings/modules` affiche l'état
+  du registre en cours (`Applique`, `Desactive`, `Rebuild requis`), pas la
+  simple intention de la config. Un module que le build sert encore est
+  `Rebuild requis`, jamais `Desactive`.
 - Module de référence vérifié de bout en bout (issue #168) :
   [`mprnl/BS-daily-quote`](https://github.com/mprnl/backstage-module-daily-quote)
   (`#v1.0.0`), un outil en lecture et une page, sans stockage ni réseau.

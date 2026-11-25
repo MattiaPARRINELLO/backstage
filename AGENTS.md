@@ -134,7 +134,7 @@ modules/
   watch-later/      outil, actions, page, rail, panneau, carte d'accueil
   weather/          outil météo (lecture externe non fiable)
   web/              recherche web et métadonnées de page (non fiable)
-modules.config.json quels modules sont activés (committé)
+modules.config.json quels modules sont activés (committé, lu à l'exécution)
 modules.lock.json   repo, ref, commit et date des modules externes (committé)
 e2e/  scripts/  android/  public/
 docs/               architecture.md, self-hosting, deploy-cpanel, android-apk
@@ -237,6 +237,17 @@ bloc des rappels : il appelle `renderModulePrompts(registry)`.
 `app/layout.tsx` et transmise par `ModuleHomeCardProvider` / `useModuleHomeCards`
 (kit) ; `HomeHero` l'affiche sous les raccourcis. Meme modele de confiance que
 les panneaux (composant client, actions via `useModuleAction`).
+
+⚠️ **Gestion des modules** : `modules.config.json` est lu **a l'execution** par
+`lib/kernel/registry.ts` (`readRuntimeConfig`, cache invalide par l'action), donc
+activer ou desactiver ne demande plus de rebuild ; un ajout ou un retrait touche
+`modules/index.ts` et en exige toujours un. `/settings/modules`
+(`app/settings/modules/page.tsx` + `ModulesList.tsx`) affiche l'etat du registre
+en cours, jamais la seule intention de la config. `app/actions/modules.ts` expose
+`listInstalledModules`, `setModuleEnabled`, `installModuleFromSource`,
+`removeModuleById` (session, Zod strict, journal d'activite) ; la logique vit
+dans `lib/kernel/module-admin.ts`, avec `modulesRoot()` remplacable par un depot
+temporaire dans les tests.
 
 ---
 

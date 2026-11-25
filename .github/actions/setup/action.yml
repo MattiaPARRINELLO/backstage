@@ -1,0 +1,28 @@
+name: Setup Bun
+description: Installe Bun, restaure le cache de paquets et installe les dependances gelees.
+
+# Action composite partagee par tous les workflows : une seule definition du
+# runtime et de l'installation evite qu'un job verifie un environnement
+# different des autres.
+
+runs:
+  using: composite
+  steps:
+    - name: Installer Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        # Version figee : `latest` peut changer de comportement entre deux runs
+        # et faire rougir une PR qui n'a rien modifie.
+        bun-version: "1.4.5"
+
+    - name: Restaurer le cache de paquets Bun
+      uses: actions/cache@v4
+      with:
+        path: ~/.bun/install/cache
+        key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-bun-
+
+    - name: Installer les dependances
+      shell: bash
+      run: bun install --frozen-lockfile

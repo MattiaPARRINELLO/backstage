@@ -46,7 +46,7 @@ secrets — no `sudo`, no telemetry.
 Prefer to see what happens? Same thing, step by step:
 
 ```bash
-git clone https://github.com/MattiaPARRINELLO/backstage.git
+git clone https://github.com/mprnl/backstage.git
 cd backstage
 bun install
 cp .env.example .env.local

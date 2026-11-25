@@ -6,12 +6,12 @@ const { createGithubIssue, listGithubIssues, isGithubConfigured, getGithubRepo }
   "@/lib/github-actions"
 );
 
-const REPO_URL = "https://api.github.com/repos/MattiaPARRINELLO/backstage";
+const REPO_URL = "https://api.github.com/repos/mprnl/backstage";
 
 describe("github-actions", () => {
   beforeEach(() => {
     process.env.GITHUB_TOKEN = "test-token";
-    process.env.GITHUB_REPO = "MattiaPARRINELLO/backstage";
+    process.env.GITHUB_REPO = "mprnl/backstage";
   });
 
   afterEach(() => {
@@ -39,7 +39,7 @@ describe("github-actions", () => {
           response: jsonResponse(
             {
               number: 42,
-              html_url: "https://github.com/MattiaPARRINELLO/backstage/issues/42",
+              html_url: "https://github.com/mprnl/backstage/issues/42",
               title: "Bug de rendu",
               state: "open",
               labels: [{ name: "bug" }],

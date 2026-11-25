@@ -27,7 +27,7 @@ JSON locales, installable et utilisable hors-ligne.
 ## Démarrer
 
 ```bash
-git clone https://github.com/MattiaPARRINELLO/backstage.git
+git clone https://github.com/mprnl/backstage.git
 cd backstage
 bun install && bun run setup:dev && bun dev
 ```

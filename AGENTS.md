@@ -312,7 +312,8 @@ Modèle commenté : [`.env.example`](.env.example).
 Obligatoires : `NEXT_PUBLIC_API_URL`, `IA_API_KEY`, `AUTH_SECRET`,
 `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN`, `SETUP_TOKEN`.
 Options : Google, Microsoft, `OPENWEATHERMAP_API_KEY`, `BRAVE_SEARCH_API_KEY`,
-`GITHUB_TOKEN` + `GITHUB_REPO` (issues creees par l'agent),
+`GITHUB_TOKEN` + `GITHUB_REPO` (issues creees par l'agent ; `GITHUB_REPO` doit
+suivre le depot courant, `mprnl/backstage` en production),
 VAPID, `CRON_SECRET`/`CRON_BASE_URL`, `CESAR_*`, `GOOGLE_TESTING_EXPIRY`,
 `ANDROID_CERT_SHA256`, `GROQ_API_KEY` (extractions JSON, `GROQ_API_KEYS` pour
 un pool de comptes, `GROQ_MODEL`, `GROQ_BASE_URL` et `GROQ_SCAN_DELAY_MS`

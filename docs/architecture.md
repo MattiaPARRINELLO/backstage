@@ -565,7 +565,7 @@ Cas d'erreur couverts par les tests (dépôt git local, sans réseau) et par
   simple intention de la config. Un module que le build sert encore est
   `Rebuild requis`, jamais `Desactive`.
 - Module de référence vérifié de bout en bout (issue #168) :
-  [`mprnl/BS-daily-quote`](https://github.com/mprnl/backstage-module-daily-quote)
+  [`mprnl/BS-daily-quote`](https://github.com/mprnl/BS-daily-quote)
   (`#v1.0.0`), un outil en lecture et une page, sans stockage ni réseau.
 - **Modèle de confiance inchangé** : un module externe exécute du code arbitraire
   dans le processus serveur. Il peut lire `.env.local` et `data/`. Les capacités
@@ -578,7 +578,7 @@ La phase 7 de #84 a vérifié le sens inverse de l'installation : un module déj
 présent dans `modules/` doit pouvoir vivre dans son propre dépôt, se réinstaller
 avec `module:add` et se comporter à l'identique. `watch-later` sert de cas réel :
 
-- dépôt : [`mprnl/BS-watch-later`](https://github.com/mprnl/backstage-module-watch-later)
+- dépôt : [`mprnl/BS-watch-later`](https://github.com/mprnl/BS-watch-later)
   (`#v1.0.1`) ;
 - commit figé dans le lock : `88e77d4e` ;
 - données inchangées : `data/watch-later.json`, via `legacyPath`.
@@ -632,9 +632,16 @@ module rendrait le noyau dépendant d'un module distribuable.
 **Pièges** :
 
 - le tag doit être poussé (`git push --tags`), sinon `module:add` échoue au clone ;
-- un dépôt privé se clone avec la session `gh`. Si `.env.local` définit
-  `GITHUB_TOKEN` avec un jeton restreint à un autre dépôt, `bun run module:add`
-  l'utilise et reçoit un 403 : lancer avec `GITHUB_TOKEN= bun run module:add ...` ;
+- un dépôt **privé** se clone avec les credentials de git, jamais avec le
+  `.env` de BACKSTAGE : sur un poste où `gh auth login` et `gh auth setup-git`
+  sont passés, le clone passe tout seul ; sur un serveur sans session git, il
+  échoue en réclamant un nom d'utilisateur. Un dépôt privé déclaré
+  `"visibility": "private"` dans le catalogue fait afficher « installation
+  avec token » ; un dépôt public déclaré privé fait l'inverse, et c'est un
+  défaut. Les modules officiels sont publics, donc le clone nu suffit ;
+- un dépôt privé que `.env.local` mentionne à travers `GITHUB_TOKEN` n'est pas
+  concerné : ce jeton sert au catalogue et aux issues, `module:add` ne le lit
+  pas ;
 - `modules.lock.json` impose une ref épinglée, jamais une branche ;
 - le retrait n'est plus manuel : `bun run module:remove <id>` nettoie dossier,
   `modules.config.json`, `modules/index.ts` et le lock, avec rollback si une
@@ -666,6 +673,12 @@ exposent uniquement ce que l'UI doit afficher.
 - **Dépôt privé** : `GITHUB_TOKEN` est envoyé en `Authorization: Bearer` s'il
   existe. Sans lui, une entrée `visibility: "private"` porte
   `requiresToken: true` : l'UI annonce « installation avec token ».
+- **Cohérence de visibilité** : `visibility` décrit le dépôt, il ne le change
+  pas. Un dépôt public déclaré privé annonce un token inutile ; un dépôt privé
+  déclaré public laisse l'installation échouer sans explication. La carte des
+  dépôts et leurs rôles vivent dans
+  [la carte de l'organisation](https://github.com/mprnl/.github/blob/main/profile/README.md),
+  et tout écart entre catalogue et dépôt est un défaut à corriger (voir #272).
 - **Aucune écriture** : pas de `module:add`, pas de bascule, pas de
   `revalidatePath`. L'installation reste un geste explicite du CLI.
 

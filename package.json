@@ -4,7 +4,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MattiaPARRINELLO/backstage.git"
+    "url": "git+https://github.com/mprnl/backstage.git"
   },
   "engines": {
     "node": ">=20.9.0"

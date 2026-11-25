@@ -12,7 +12,7 @@ issue avec le label `good first issue`.
 ## Minute 0 a 3 : installer
 
 ```bash
-git clone https://github.com/MattiaPARRINELLO/backstage.git
+git clone https://github.com/mprnl/backstage.git
 cd backstage
 bun install
 bun run setup:dev

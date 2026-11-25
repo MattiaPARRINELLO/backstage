@@ -12,7 +12,7 @@ curl -fsSL https://backstage.mprnl.fr/install.sh | bash
 Ou à la main :
 
 ```bash
-git clone https://github.com/MattiaPARRINELLO/backstage.git && cd backstage
+git clone https://github.com/mprnl/backstage.git && cd backstage
 cp .env.example .env.local && bun install && bun run setup
 docker compose up -d --build     # http://localhost:3000
 ```
@@ -28,7 +28,7 @@ aucun `sudo`, aucune donnée envoyée nulle part.
 ## Installation locale
 
 ```bash
-git clone https://github.com/MattiaPARRINELLO/backstage.git
+git clone https://github.com/mprnl/backstage.git
 cd backstage
 bun install
 cp .env.example .env.local

@@ -557,7 +557,7 @@ Cas d'erreur couverts par les tests (dépôt git local, sans réseau) et par
   redémarrer le serveur ne suffit pas, et le module reste actif tant que le
   build n'est pas refait.
 - Module de référence vérifié de bout en bout (issue #168) :
-  [`MattiaPARRINELLO/backstage-module-daily-quote`](https://github.com/MattiaPARRINELLO/backstage-module-daily-quote)
+  [`mprnl/BS-daily-quote`](https://github.com/mprnl/backstage-module-daily-quote)
   (`#v1.0.0`), un outil en lecture et une page, sans stockage ni réseau.
 - **Modèle de confiance inchangé** : un module externe exécute du code arbitraire
   dans le processus serveur. Il peut lire `.env.local` et `data/`. Les capacités
@@ -570,7 +570,7 @@ La phase 7 de #84 a vérifié le sens inverse de l'installation : un module déj
 présent dans `modules/` doit pouvoir vivre dans son propre dépôt, se réinstaller
 avec `module:add` et se comporter à l'identique. `watch-later` sert de cas réel :
 
-- dépôt : [`MattiaPARRINELLO/backstage-module-watch-later`](https://github.com/MattiaPARRINELLO/backstage-module-watch-later)
+- dépôt : [`mprnl/BS-watch-later`](https://github.com/mprnl/backstage-module-watch-later)
   (`#v1.0.1`) ;
 - commit figé dans le lock : `88e77d4e` ;
 - données inchangées : `data/watch-later.json`, via `legacyPath`.

@@ -980,6 +980,9 @@ modèle de conversation : un module demande `ctx.ai.json`, le noyau sert Groq si
   refusée). `GROQ_API_KEY` reste la clé unique.
 - Un `429` réessaie après l'en-tête `retry-after` (borné à 20 s, trois tours),
   pas après un délai fixe qui retombait dans la même fenêtre de quota.
+- L'attente entre deux extractions vient du noyau (`ai.jsonDelayMs`) : 6 s avec
+  un compte, 1,5 s dès deux comptes, `GROQ_SCAN_DELAY_MS` pour forcer une valeur.
+  Le module ne lit plus `process.env` pour cela.
 - Le module ne connaît ni Groq ni la clé : il reçoit une réponse JSON brute et la
   valide avec Zod avant toute écriture.
 - Sans clé Groq, le scan des accréditations refuse de tourner plutôt que de

@@ -131,6 +131,26 @@ chore(deps): met a jour vitest
 - Le sujet fait moins de 72 caracteres, sans point final.
 - Le corps explique le pourquoi, pas seulement le quoi.
 
+### Protection de `main`
+
+`main` est protegee par un **ruleset** GitHub (« Protection de main »), pas par
+la protection de branche historique : un seul objet porte les quatre regles,
+s'audite dans `Settings > Rules > Rulesets`, et remplace les anciens réglages
+éclatés. Regles actives :
+
+- **pull request obligatoire**, sans approbation requise : le depot est
+  mono-mainteneur, exiger une seconde validation bloquerait chaque merge sans
+  apporter de relecture ;
+- **checks obligatoires** : `CI OK` (agrégat de lint, typecheck, frontières,
+  documentation, tests Linux et macOS, build standalone et E2E), `Garde-fous`
+  et `Titre de PR (Conventional Commits)`. Ajouter un job à `ci.yml` ne demande
+  aucune reconfiguration : `CI OK` est le point d'entree unique ;
+- **pas de force-push** et **pas de suppression** de `main`.
+
+La regle de fusion est appliquee par GitHub : un push direct sur `main` est
+refuse, meme pour l'administrateur. Le detail et les preuves de mise en place
+sont dans l'issue #272.
+
 ## 5. Taille et contenu d'une pull request
 
 - Une PR traite **un seul sujet** et reste sous **400 lignes** modifiees.

@@ -1,67 +1,200 @@
 name: CI
 
+# Trois declencheurs :
+#  - push sur main : le depot reste verifie en continu ;
+#  - pull request : gate obligatoire avant merge ;
+#  - chaque nuit : detecte la derive (dependance cassee, test instable, build
+#    qui ne passe plus) meme quand personne ne pousse.
 on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+# Aucun job n'ecrit dans le depot ni dans une API GitHub.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # Une PR qui repousse annule son ancien run. Un push sur main ne s'annule pas.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Push neutralise partout : aucun job ne doit envoyer de notification reelle.
+  VAPID_PRIVATE_KEY: ""
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: ""
+  NEXT_TELEMETRY_DISABLED: "1"
 
 jobs:
-  quality:
-    name: Lint · Typecheck · Tests · Build
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
-
-      - name: Installer les dépendances
-        run: bun install --frozen-lockfile
-
-      - name: Lint
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: ESLint
         run: bun run lint
-
-      - name: Plafond de warnings lint
+      - name: Plafond de warnings (cliquet)
         run: bun run lint:budget
 
-      - name: References de la documentation
-        run: bun run check:docs
-
-      - name: Typecheck
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Typecheck global
         run: bunx tsc --noEmit
-
-      - name: Typecheck strict (noyau et modules)
+      - name: Typecheck strict du noyau, des modules et du kit
         run: bun run typecheck:strict
 
-      - name: Frontieres de dependance
+  boundaries:
+    name: Frontieres de dependance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: dependency-cruiser
         run: bun run boundaries
 
-      - name: Tests unitaires
-        run: bun run test
+  docs:
+    name: References de la documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: check:docs
+        run: bun run check:docs
 
+  tests:
+    name: Tests unitaires (${{ matrix.os }})
+    # Deux systemes : le projet tourne sous Linux, mais une contribution peut
+    # venir d'un poste macOS. Un chemin mal construit se voit ici, pas en prod.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Tests unitaires
+        if: runner.os != 'Linux'
+        run: bun run test
+      - name: Tests unitaires avec planchers de couverture
+        if: runner.os == 'Linux'
+        run: bun run test:coverage
+      - name: Archiver le rapport de couverture
+        if: runner.os == 'Linux' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage
+          if-no-files-found: warn
+          retention-days: 7
+
+  build:
+    name: Build et fumigation du serveur standalone
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
       - name: Build de production
-        # VAPID vides : neutralise le scheduler (aucun push réel possible).
-        run: VAPID_PRIVATE_KEY="" NEXT_PUBLIC_VAPID_PUBLIC_KEY="" bun run build
+        run: bun run build
+      - name: Demarrer le standalone et joindre /login
+        # Le build peut reussir et le serveur echouer au demarrage (assets
+        # manquants, config fatale). On verifie donc le vrai processus, pas
+        # seulement la sortie de `next build`.
+        run: |
+          set -euo pipefail
+          AUTH_SECRET="$(openssl rand -hex 32)" \
+          WEBAUTHN_RP_ID=localhost \
+          WEBAUTHN_ORIGIN=http://localhost:3000 \
+          AI_PROVIDER=mock \
+          bun run start &
+          server=$!
+          cleanup() { kill "$server" 2>/dev/null || true; wait "$server" 2>/dev/null || true; }
+          trap cleanup EXIT
+
+          ready=0
+          for _ in $(seq 1 60); do
+            if curl -fsS -o /dev/null http://127.0.0.1:3000/login; then
+              ready=1
+              break
+            fi
+            if ! kill -0 "$server" 2>/dev/null; then
+              echo "::error::le serveur standalone s'est arrete avant de repondre"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          if [ "$ready" -ne 1 ]; then
+            echo "::error::le serveur standalone ne repond pas sur /login apres 60 s"
+            exit 1
+          fi
+
+          echo "Serveur standalone operationnel : /login repond 200."
 
   e2e:
     name: Tests E2E (Playwright)
+    # Inutile de payer Chromium si les gates rapides sont deja rouges.
+    needs: [lint, typecheck, boundaries, docs, tests]
     runs-on: ubuntu-latest
-    needs: quality
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
-
-      - name: Installer les dépendances
-        run: bun install --frozen-lockfile
-
+          persist-credentials: false
+      - uses: ./.github/actions/setup
       - name: Installer Chromium (Playwright)
         run: bunx playwright install --with-deps chromium
-
       - name: Suite E2E
-        # AUTH_SECRET forcé : cohérent entre le storageState et le serveur dev.
-        # VAPID vides : pas de notification push réelle pendant les tests.
-        run: AUTH_SECRET="$(openssl rand -hex 32)" VAPID_PRIVATE_KEY="" NEXT_PUBLIC_VAPID_PUBLIC_KEY="" bun run test:e2e
+        # AUTH_SECRET force : identique entre le storageState et le serveur dev.
+        run: |
+          AUTH_SECRET="$(openssl rand -hex 32)" bun run test:e2e
+      - name: Archiver les traces en cas d'echec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  ci-success:
+    name: CI OK
+    # Point d'entree unique pour la protection de branche : une nouvelle gate
+    # ajoutee au graphe ci-dessus ne demande aucune reconfiguration GitHub.
+    if: always()
+    needs: [lint, typecheck, boundaries, docs, tests, build, e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verifier que tous les jobs ont reussi
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          echo "::error::au moins un job a echoue : ${{ join(needs.*.result, ', ') }}"
+          exit 1

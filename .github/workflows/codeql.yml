@@ -1,0 +1,43 @@
+name: CodeQL
+
+# Analyse statique de securite (dataflow, injections, failles de logique) tenue
+# par GitHub. Complementaire a Strix : CodeQL voit l'ensemble des chemins de
+# donnees, Strix tente l'exploitation reelle.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "13 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    name: Analyse (javascript-typescript)
+    # CodeQL est gratuit sur les depots publics. Sur un depot prive, il exige
+    # GitHub Advanced Security : le job est alors saute au lieu d'echouer.
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Initialiser CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+
+      - name: Analyser
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"

@@ -18,8 +18,7 @@
 
 - [ ] `bun run lint` passe
 - [ ] `bun run lint:budget` passe, plafond baisse si un fichier a ete decoupe
-- [ ] `bunx tsc --noEmit` passe
-- [ ] `bun run test` passe
+- [ ] `bun run verify` passe (lint, plafond de warnings, doc, typecheck, frontieres, tests et couverture)
 - [ ] `bun run build` passe
 - [ ] `bun run test:e2e` passe, ou raison precise de ne pas l'avoir lance
 - [ ] Un test couvre le changement (ou explication de pourquoi ce n'est pas pertinent)

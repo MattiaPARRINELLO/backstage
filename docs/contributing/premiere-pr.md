@@ -60,18 +60,18 @@ bunx vitest run lib/__tests__/ai-providers-mock.test.ts
 
 ## Minute 10 a 13 : verifier
 
-Avant de committer, lance la liste que la CI lancera :
+Avant de committer, lance la commande que la CI lancera :
 
 ```bash
-bun run lint
-bunx tsc --noEmit
-bun run test
+bun run verify
 ```
 
-Le build complet prend plus de temps mais reste obligatoire avant la PR :
+Le build complet et les E2E prennent plus de temps mais restent obligatoires
+avant la PR :
 
 ```bash
 bun run build
+bun run test:e2e
 ```
 
 Pour une modification d'interface, ajoute une capture avant / apres. Pour un

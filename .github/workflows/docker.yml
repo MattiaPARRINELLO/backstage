@@ -1,0 +1,96 @@
+name: Docker
+
+# Le Dockerfile est le chemin de deploiement auto-heberge. Un changement de
+# dependance, d'asset ou de sortie standalone peut casser l'image sans casser
+# `next build` : on construit donc l'image et on demarre le conteneur.
+on:
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "compose.yaml"
+      - "package.json"
+      - "bun.lock"
+      - "packages/module-kit/package.json"
+      - "next.config.ts"
+      - "scripts/standalone-assets.ts"
+      - "scripts/start.ts"
+      - ".github/workflows/docker.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "compose.yaml"
+      - "package.json"
+      - "bun.lock"
+      - "packages/module-kit/package.json"
+      - "next.config.ts"
+      - "scripts/standalone-assets.ts"
+      - "scripts/start.ts"
+      - ".github/workflows/docker.yml"
+  schedule:
+    - cron: "7 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  image:
+    name: Build de l'image et fumigation
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Configurer Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Construire l'image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: backstage:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Demarrer le conteneur et joindre /login
+        run: |
+          set -euo pipefail
+          docker run -d --name backstage-ci -p 3000:3000 \
+            -e AUTH_SECRET="$(openssl rand -hex 32)" \
+            -e WEBAUTHN_RP_ID=localhost \
+            -e WEBAUTHN_ORIGIN=http://localhost:3000 \
+            -e AI_PROVIDER=mock \
+            -e VAPID_PRIVATE_KEY="" \
+            -e NEXT_PUBLIC_VAPID_PUBLIC_KEY="" \
+            backstage:ci
+
+          trap 'docker rm -f backstage-ci >/dev/null 2>&1 || true' EXIT
+
+          for _ in $(seq 1 90); do
+            if curl -fsS -o /dev/null http://127.0.0.1:3000/login; then
+              echo "Image operationnelle : /login repond 200."
+              exit 0
+            fi
+            if [ -z "$(docker ps -q -f name=backstage-ci)" ]; then
+              echo "::error::le conteneur s'est arrete avant de repondre"
+              docker logs backstage-ci || true
+              exit 1
+            fi
+            sleep 1
+          done
+
+          echo "::error::le conteneur ne repond pas sur /login apres 90 s"
+          docker logs backstage-ci || true
+          exit 1

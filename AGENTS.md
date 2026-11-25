@@ -76,9 +76,11 @@ WebAuthn cassent sous Capacitor. Voir `docs/android-apk.md`.
 | Plafond warnings  | `bun run lint:budget`                         |
 | Refs doc          | `bun run check:docs`                          |
 | Frontières        | `bun run boundaries`                          |
+| Vérif. locale CI  | `bun run verify`                              |
 | Typecheck         | `bunx tsc --noEmit`                           |
 | Typecheck strict  | `bun run typecheck:strict`                    |
 | Tests unitaires   | `bun run test`                                |
+| Couverture        | `bun run test:coverage`                       |
 | Tests E2E         | `bun run test:e2e`                            |
 | Setup local       | `bun run setup`                               |
 | Setup sans cle IA | `bun run setup:dev`                           |

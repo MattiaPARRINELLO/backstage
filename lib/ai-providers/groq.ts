@@ -115,6 +115,29 @@ async function callWithKey(
   throw new Error("Groq n'a rendu aucune reponse exploitable.");
 }
 
+/** Plafond d'attente : un scan ne doit pas rester bloque une minute par 429. */
+const MAX_RETRY_WAIT_MS = 20_000;
+
+/**
+ * Delai demande par Groq dans `retry-after`, en millisecondes.
+ *
+ * Le quota Groq est par minute : repartir apres 4 s fixes relance le 429.
+ * On suit l'en-tete quand il est present, borne pour rester exploitable.
+ */
+export function retryAfterMs(error: unknown): number | null {
+  const headers = (error as { headers?: unknown } | null)?.headers;
+  const raw =
+    headers instanceof Headers
+      ? headers.get("retry-after")
+      : typeof headers === "object" && headers !== null
+        ? (headers as Record<string, string | undefined>)["retry-after"]
+        : undefined;
+  if (!raw) return null;
+  const seconds = Number(raw);
+  if (!Number.isFinite(seconds) || seconds < 0) return null;
+  return Math.min(seconds * 1000, MAX_RETRY_WAIT_MS);
+}
+
 export async function groqJson(system: string, prompt: string): Promise<string> {
   const keys = configuredGroqKeys();
   if (keys.length === 0) {
@@ -122,9 +145,9 @@ export async function groqJson(system: string, prompt: string): Promise<string> 
   }
 
   let lastError: unknown = null;
-  // Deux tours : un 429 sur une cle unique est souvent passager (reset en
-  // quelques secondes). Avec plusieurs cles, le premier tour suffit.
-  for (let round = 0; round < 2; round++) {
+  // Trois tours : un 429 sur une cle unique est souvent passager (reset a la
+  // minute). Avec plusieurs cles, le premier tour suffit.
+  for (let round = 0; round < 3; round++) {
     for (const key of keys) {
       try {
         return await callWithKey(key, system, prompt);
@@ -136,8 +159,8 @@ export async function groqJson(system: string, prompt: string): Promise<string> 
         throw error;
       }
     }
-    if (statusOf(lastError) !== 429 || round === 1) break;
-    await sleep(4000);
+    if (statusOf(lastError) !== 429 || round === 2) break;
+    await sleep(retryAfterMs(lastError) ?? 4000);
   }
 
   throw lastError instanceof Error

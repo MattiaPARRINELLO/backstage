@@ -22,10 +22,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ModulesSettingsPage() {
-  const [state, catalog] = await Promise.all([
-    listInstalledModules(),
-    listModuleCatalog().catch((): ModuleCatalog | null => null),
-  ]);
+  const state = await listInstalledModules();
 
   return (
     <AppShell>
@@ -44,7 +41,7 @@ export default async function ModulesSettingsPage() {
             />
           </div>
 
-          <ModulesList state={state} catalog={catalog} />
+          <ModulesList state={state} />
         </div>
       </div>
     </AppShell>

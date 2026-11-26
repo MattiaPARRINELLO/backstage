@@ -9,7 +9,9 @@ import type { ModulesState } from "@/lib/kernel/module-admin";
 import { EmptyState } from "@backstage/module-kit";
 import { cn } from "@/lib/utils";
 
-import { ModuleInstaller } from "./ModuleInstaller";
+// Installateur retire : l'installation d'un module exige un build Next.js et
+// Bun, indisponibles en production (voir docs/self-hosting.md). La gestion
+// (activation/desactivation) reste disponible ci-dessous.
 import { ModuleRowItem } from "./ModuleRowItem";
 
 /**
@@ -26,13 +28,7 @@ export interface ActionMessage {
   readonly text: string;
 }
 
-export function ModulesList({
-  state,
-  catalog,
-}: {
-  state: ModulesState;
-  catalog: ModuleCatalog | null;
-}) {
+export function ModulesList({ state }: { state: ModulesState }) {
   const router = useRouter();
   const [message, setMessage] = useState<ActionMessage | null>(null);
 
@@ -108,7 +104,11 @@ export function ModulesList({
         </div>
       )}
 
-      <ModuleInstaller catalog={catalog} installedIds={installedIds} onDone={onDone} />
+      <p className="text-[var(--t-small)] leading-relaxed text-[var(--text-3)]">
+        L'ajout d'un module externe se fait en local avec{" "}
+        <span className="ui-mono">bun run module:add &lt;url&gt;#&lt;ref&gt;</span>, puis un rebuild et un
+        redéploiement. L'interface ne gère ici que l'activation et la désactivation.
+      </p>
     </div>
   );
 }

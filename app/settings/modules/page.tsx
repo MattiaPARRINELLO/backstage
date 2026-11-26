@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { listInstalledModules, listModuleCatalog } from "@/app/actions/modules";
+import { listInstalledModules } from "@/app/actions/modules";
 import { AppShell } from "@/components/layout/AppShell";
-import type { ModuleCatalog } from "@/lib/kernel/module-catalog";
 import { PageHeader } from "@backstage/module-kit";
 
 import { ModulesList } from "../ModulesList";
@@ -22,10 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ModulesSettingsPage() {
-  const [state, catalog] = await Promise.all([
-    listInstalledModules(),
-    listModuleCatalog().catch((): ModuleCatalog | null => null),
-  ]);
+  const state = await listInstalledModules();
 
   return (
     <AppShell>
@@ -44,7 +40,7 @@ export default async function ModulesSettingsPage() {
             />
           </div>
 
-          <ModulesList state={state} catalog={catalog} />
+          <ModulesList state={state} />
         </div>
       </div>
     </AppShell>

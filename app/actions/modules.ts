@@ -97,7 +97,7 @@ export async function setModuleEnabled(input: {
 
 export async function installModuleFromSource(input: {
   source: string;
-}): Promise<ModuleInstallResult> {
+}): Promise<ModuleInstallResult | { ok: false; error: string }> {
   await requireSession();
 
   const parsed = installSchema.safeParse(input);
@@ -106,23 +106,27 @@ export async function installModuleFromSource(input: {
   let result: ModuleInstallResult;
   try {
     result = await installFromSource(modulesRoot(), parsed.data.source);
+    await logActivity(
+      "module_installed",
+      `Module installe : ${result.id}`,
+      `commit ${result.commit} - capacites ${JSON.stringify(result.capabilities)}`
+    );
+    refreshModulePaths(result.id);
+    return result;
   } catch (error) {
-    // Un clone qui echoue vient du reseau ou du depot, pas de la saisie.
-    const message = error instanceof Error ? error.message : "";
+    const message = error instanceof Error ? error.message : "Installation impossible.";
+    // Seul un echec de clone (reseau/depot) est attendu cote utilisateur :
+    // on le renvoie plutot qu'on ne lance, pour eviter un 500 et un
+    // React #441 minifie cote client. Les autres erreurs (validation,
+    // conflit) restent des throws.
+    if (message.startsWith("Impossible de cloner")) {
+      return { ok: false, error: message } as { ok: false; error: string };
+    }
     const code = message.startsWith("Impossible de cloner")
       ? "external_unavailable"
       : "validation";
     throw asAppError(error, code);
   }
-
-  await logActivity(
-    "module_installed",
-    `Module installe : ${result.id}`,
-    `commit ${result.commit} - capacites ${JSON.stringify(result.capabilities)}`
-  );
-  refreshModulePaths(result.id);
-
-  return result;
 }
 
 export async function removeModuleById(input: { id: string }): Promise<ModuleRemoveResult> {

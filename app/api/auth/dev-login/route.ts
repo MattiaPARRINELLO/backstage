@@ -11,7 +11,9 @@ import { getConfig } from "@/lib/config";
 // meme si la variable est presente par erreur.
 export async function GET(request: NextRequest) {
   const config = getConfig();
-  if (config.NODE_ENV === "production" || !config.DEV_AUTH_BYPASS) {
+  // TEMPORAIRE (debug #441) : autorise le dev-login des que DEV_AUTH_BYPASS est
+  // pose, meme en production. A revertir des que le diagnostic est termine.
+  if (!config.DEV_AUTH_BYPASS) {
     return NextResponse.json({ error: "Introuvable" }, { status: 404 });
   }
 

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Package, RefreshCw } from "lucide-react";
 
-import type { ModuleCatalog } from "@/lib/kernel/module-catalog";
 import type { ModulesState } from "@/lib/kernel/module-admin";
 import { EmptyState } from "@backstage/module-kit";
 import { cn } from "@/lib/utils";
@@ -31,10 +30,6 @@ export interface ActionMessage {
 export function ModulesList({ state }: { state: ModulesState }) {
   const router = useRouter();
   const [message, setMessage] = useState<ActionMessage | null>(null);
-
-  const installedIds = new Set(
-    state.modules.filter((row) => row.commit !== null).map((row) => row.id)
-  );
 
   const onDone = (next: ActionMessage) => {
     setMessage(next);

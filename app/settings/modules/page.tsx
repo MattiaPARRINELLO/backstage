@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { listInstalledModules, listModuleCatalog } from "@/app/actions/modules";
+import { listInstalledModules } from "@/app/actions/modules";
 import { AppShell } from "@/components/layout/AppShell";
-import type { ModuleCatalog } from "@/lib/kernel/module-catalog";
 import { PageHeader } from "@backstage/module-kit";
 
 import { ModulesList } from "../ModulesList";

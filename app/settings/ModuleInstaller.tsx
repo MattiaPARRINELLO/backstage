@@ -76,6 +76,10 @@ export function ModuleInstaller({
       const result = await installModuleFromSource({
         source: `${pending.repo}#${pending.ref}`,
       });
+      if ("error" in result) {
+        setError(result.error);
+        return;
+      }
       onDone({
         ok: true,
         text: `Module ${result.id} installe au commit ${result.commit.slice(0, 7)}. Rebuild requis.`,

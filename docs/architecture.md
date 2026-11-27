@@ -1041,7 +1041,9 @@ réécrire une liste à la main comme source de vérité :
   cache, rafraîchit ce catalogue en arrière-plan sinon, et **persiste** le
   remplacement dans `data/config.json`. Au démarrage,
   `healConfiguredModels()` répare la configuration une fois le catalogue
-  récupéré (jamais à partir du repli hors ligne).
+  récupéré (jamais à partir du repli hors ligne). `RETIRED_MODELS` n'y est
+  qu'une liste d'exclusion des identifiants confirmés morts en production,
+  jamais la source de vérité.
 - Le déploiement ne synchronise plus `data/config.json` : les réglages choisis
   sur le serveur ne sont pas écrasés par un fichier local resté avec d'anciens
   identifiants.

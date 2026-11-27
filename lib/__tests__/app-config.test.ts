@@ -26,8 +26,8 @@ const { getConfig, updateConfig, getConfigCachePath, clearConfigCache, getModel 
 const defaultConfig = {
   models: {
     general: "deepseek-v4.1-flash",
-    generalAlt: "deepseek-v4-pro",
-    code: "kimi-k2.7-code",
+    generalAlt: "qwen3.8-max",
+    code: "qwen4-max",
     titleModel: "deepseek-v4.1-flash",
   },
   llm: { temperature: 0.7, maxTokens: 4096 },
@@ -57,7 +57,7 @@ describe("config", () => {
     });
     const config = await getConfig();
     expect(config.models.general).toBe("custom-model");
-    expect(config.models.code).toBe("kimi-k2.7-code");
+    expect(config.models.code).toBe("qwen4-max");
     expect(config.llm.temperature).toBe(0.7);
   });
 
@@ -91,20 +91,20 @@ describe("config", () => {
   it("getModel retourne les modèles code pour le contexte code", async () => {
     vi.mocked(readJsonSafe).mockResolvedValue({});
     const result = await getModel("code");
-    expect(result.primary).toBe("kimi-k2.7-code");
-    expect(result.alt).toBe("kimi-k2.7-code");
+    expect(result.primary).toBe("qwen4-max");
+    expect(result.alt).toBe("qwen4-max");
   });
 
   it("getModel retourne general et generalAlt pour le contexte general", async () => {
     vi.mocked(readJsonSafe).mockResolvedValue({});
     const result = await getModel("general");
     expect(result.primary).toBe("deepseek-v4.1-flash");
-    expect(result.alt).toBe("deepseek-v4-pro");
+    expect(result.alt).toBe("qwen3.8-max");
   });
 
   it("getModel remplace un modele configure disparu du provider", async () => {
     vi.mocked(readJsonSafe).mockResolvedValue({ models: { general: "kimi-k2.6" } });
-    mockPeekAvailableModels.mockReturnValue(["deepseek-v4.1-flash", "deepseek-v4-pro"]);
+    mockPeekAvailableModels.mockReturnValue(["deepseek-v4.1-flash", "qwen3.8-max"]);
     const result = await getModel("general");
     expect(result.primary).toBe("deepseek-v4.1-flash");
   });

@@ -61,15 +61,16 @@ export function getAnthropicClientConfig(sessionId?: string) {
 // repond, mais autant n'y laisser que des modeles verifies vivants.
 const OPENAI_MODELS: readonly string[] = [
   "deepseek-v4.1-flash",
-  "deepseek-v4-pro",
-  "kimi-k2.7-code",
+  "glm-5.3",
+  "mimo-v2.6-pro",
+  "hy4",
 ];
 
 // Modeles servis par l'API Anthropic (`/v1/messages`) : le provider le declare
 // dans `api.messages` ; cette liste n'est que le repli quand le cache est
 // froid (cf. getModelProtocol).
 const ANTHROPIC_MODELS: readonly string[] = [
-  "claude-haiku-5-5",
+  "qwen4-max",
   "qwen3.8-max",
   "qwen3.8-flash",
   "qwen3.7-plus",

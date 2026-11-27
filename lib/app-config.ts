@@ -37,8 +37,8 @@ const CONFIG_PATH = path.join(process.cwd(), "data", CONFIG_FILENAME);
 const defaultConfig: AppConfig = {
   models: {
     general: "deepseek-v4.1-flash",
-    generalAlt: "deepseek-v4-pro",
-    code: "kimi-k2.7-code",
+    generalAlt: "qwen3.8-max",
+    code: "qwen4-max",
     titleModel: "deepseek-v4.1-flash",
   },
   llm: {

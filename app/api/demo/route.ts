@@ -32,7 +32,7 @@ function demoMessage(lang: "fr" | "en", fr: string, en: string): string {
 // Modele le plus leger du provider. Attention : un identifiant mort fait
 // repondre 400 "Model is unavailable" au provider, ce qui rend la demo
 // muette en production (constate avec `deepseek-v4-flash`).
-const DEMO_MODEL = "glm-5.3-flash";
+const DEMO_MODEL = "deepseek-v4.1-flash";
 const DEMO_MAX_TOKENS = 350;
 const DEMO_TIMEOUT_MS = 20_000;
 const RATE_LIMIT = 8; // demandes / minute / IP

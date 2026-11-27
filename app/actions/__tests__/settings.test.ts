@@ -23,17 +23,22 @@ const { loadRuntimeInfo, updateModels } = await import("@/app/actions/settings")
 
 const baseConfig = {
   models: {
-    general: "glm-5.3",
+    general: "deepseek-v4.1-flash",
     generalAlt: "qwen3.8-max",
     code: "qwen4-max",
-    titleModel: "glm-5.3-flash",
+    titleModel: "deepseek-v4.1-flash",
   },
   llm: { temperature: 0.7, maxTokens: 4096 },
   features: { dailyBrief: true, webSearch: true },
   theme: { accentColor: "#a5b4fc" },
 };
 
-const available = ["glm-5.3", "glm-5.3-flash", "qwen3.8-max", "qwen4-max"];
+const available = [
+  "deepseek-v4.1-flash",
+  "glm-5.3",
+  "qwen3.8-max",
+  "qwen4-max",
+];
 
 describe("settings actions", () => {
   beforeEach(() => {
@@ -52,7 +57,7 @@ describe("settings actions", () => {
     it("retourne les modèles configurés, la liste disponible et le nombre d'appareils push", async () => {
       const info = await loadRuntimeInfo();
       expect(info.models).toEqual({
-        general: "glm-5.3",
+        general: "deepseek-v4.1-flash",
         generalAlt: "qwen3.8-max",
         code: "qwen4-max",
       });

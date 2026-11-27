@@ -34,10 +34,10 @@ const {
 
 const defaultConfig = {
   models: {
-    general: "glm-5.3",
+    general: "deepseek-v4.1-flash",
     generalAlt: "qwen3.8-max",
     code: "qwen4-max",
-    titleModel: "glm-5.3-flash",
+    titleModel: "deepseek-v4.1-flash",
   },
   llm: { temperature: 0.7, maxTokens: 4096 },
   features: { dailyBrief: true, webSearch: true },
@@ -107,7 +107,7 @@ describe("config", () => {
   it("getModel retourne general et generalAlt pour le contexte general", async () => {
     vi.mocked(readJsonSafe).mockResolvedValue({});
     const result = await getModel("general");
-    expect(result.primary).toBe("glm-5.3");
+    expect(result.primary).toBe("deepseek-v4.1-flash");
     expect(result.alt).toBe("qwen3.8-max");
   });
 
@@ -128,12 +128,24 @@ describe("config", () => {
     );
   });
 
-  it("getModel ecarte un identifiant mort meme si le catalogue le liste encore", async () => {
+  it("getModel garde deepseek-v4.1-flash, modele par defaut voulu", async () => {
     vi.mocked(readJsonSafe).mockResolvedValue({
       models: { general: "deepseek-v4.1-flash" },
     });
     mockPeekAvailableModels.mockReturnValue([
       "deepseek-v4.1-flash",
+      "glm-5.3",
+    ]);
+    const result = await getModel("general");
+    expect(result.primary).toBe("deepseek-v4.1-flash");
+  });
+
+  it("getModel ecarte un identifiant mort meme si le catalogue le liste encore", async () => {
+    vi.mocked(readJsonSafe).mockResolvedValue({
+      models: { general: "deepseek-v4-pro" },
+    });
+    mockPeekAvailableModels.mockReturnValue([
+      "deepseek-v4-pro",
       "glm-5.3",
       "qwen3.8-max",
     ]);
@@ -147,6 +159,31 @@ describe("config", () => {
     const result = await getModel("general");
     expect(result.primary).toBe("kimi-k2.6");
     expect(mockWarmModelCatalog).toHaveBeenCalled();
+  });
+
+  it("healConfiguredModels conserve deepseek-v4.1-flash quand il est vivant", async () => {
+    vi.mocked(readJsonSafe).mockResolvedValue({
+      models: {
+        general: "deepseek-v4.1-flash",
+        generalAlt: "qwen3.8-max",
+        code: "qwen4-max",
+        titleModel: "deepseek-v4.1-flash",
+      },
+    });
+    mockFetchAvailableModels.mockResolvedValue([
+      "deepseek-v4.1-flash",
+      "qwen3.8-max",
+      "qwen4-max",
+    ]);
+    mockPeekAvailableModels.mockReturnValue([
+      "deepseek-v4.1-flash",
+      "qwen3.8-max",
+      "qwen4-max",
+    ]);
+
+    await healConfiguredModels();
+
+    expect(mockMutateJson).not.toHaveBeenCalled();
   });
 
   it("healConfiguredModels remplace les modeles morts quand le catalogue repond", async () => {

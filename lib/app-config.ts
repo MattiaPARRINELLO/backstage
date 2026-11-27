@@ -36,10 +36,10 @@ const CONFIG_PATH = path.join(process.cwd(), "data", CONFIG_FILENAME);
 
 const defaultConfig: AppConfig = {
   models: {
-    general: "glm-5.3",
+    general: "deepseek-v4.1-flash",
     generalAlt: "qwen3.8-max",
     code: "qwen4-max",
-    titleModel: "glm-5.3-flash",
+    titleModel: "deepseek-v4.1-flash",
   },
   llm: {
     temperature: 0.7,
@@ -130,7 +130,6 @@ type ModelField = keyof AppConfig["models"];
 // reste la reference, cette liste ne fait qu'ecarter des morts connus.
 const RETIRED_MODELS = new Set([
   "deepseek-v4-flash",
-  "deepseek-v4.1-flash",
   "deepseek-v4-pro",
   "kimi-k2.7-code",
 ]);

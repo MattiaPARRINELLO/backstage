@@ -257,6 +257,49 @@ describe("fetchGmailThreads — fils complets", () => {
     expect(threads.map((t) => t.id)).toEqual(["ok"]);
   });
 
+  it("retente un 429 de quota au lieu d'abandonner le fil", async () => {
+    let threadCalls = 0;
+    const routes: HttpDoubleRoute[] = [
+      {
+        match: /gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
+        response: (input) => {
+          if (input.includes("/threads?")) {
+            return jsonResponse({ threads: [{ id: "t1" }] });
+          }
+          threadCalls += 1;
+          if (threadCalls === 1) {
+            return new Response("rateLimitExceeded", {
+              status: 429,
+              headers: { "retry-after": "0" },
+            });
+          }
+          return jsonResponse({
+            id: "t1",
+            messages: [
+              {
+                id: "m1",
+                threadId: "t1",
+                labelIds: ["INBOX"],
+                payload: {
+                  mimeType: "text/plain",
+                  headers: [{ name: "Date", value: "Tue, 10 Nov 2026 09:00:00 +0000" }],
+                  body: { data: b64("corps") },
+                },
+              },
+            ],
+          });
+        },
+      },
+    ];
+
+    const threads = await withHttpDouble(routes, () =>
+      fetchGmailThreads("photo", 1)
+    );
+
+    expect(threadCalls).toBe(2);
+    expect(threads.map((t) => t.id)).toEqual(["t1"]);
+  });
+
   it("renvoie une liste vide quand Gmail ne trouve aucun fil", async () => {
     await expect(
       withHttpDouble(threadRoutes([]), () => fetchGmailThreads("inexistant", 10))

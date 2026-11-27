@@ -80,6 +80,10 @@ const SENT_QUERY = "in:sent newer_than:12m";
 const MAX_THREADS = 200;
 const BATCH_SIZE = 10;
 
+// Deux scans simultanes (chat + ecran) multiplieraient la consommation du
+// quota Gmail et Groq. Le premier garde la main, le second est refuse.
+let scanInFlight = false;
+
 /**
  * Rassemble les fils candidats.
  *
@@ -91,11 +95,14 @@ const BATCH_SIZE = 10;
 async function collectThreads(
   mail: ModuleMail
 ): Promise<{ threads: GmailThread[]; candidates: number }> {
-  const groups = await Promise.all([
-    mail.listThreads(PRECISE_QUERY, MAX_THREADS),
-    mail.listThreads(SENT_QUERY, Math.floor(MAX_THREADS / 2)),
-    mail.listThreads(BROAD_QUERY, Math.floor(MAX_THREADS / 2)),
-  ]);
+  // Les groupes partent l'un apres l'autre : chacun liste puis lit ses fils
+  // complets (10 unites de quota par fil). Trois groupes en parallele
+  // multipliaient la rafale par trois et declenchaient le quota Gmail.
+  const groups = [
+    await mail.listThreads(PRECISE_QUERY, MAX_THREADS),
+    await mail.listThreads(SENT_QUERY, Math.floor(MAX_THREADS / 2)),
+    await mail.listThreads(BROAD_QUERY, Math.floor(MAX_THREADS / 2)),
+  ];
 
   const seen = new Set<string>();
   const threads: GmailThread[] = [];
@@ -235,6 +242,13 @@ export const scanAccreditationsTool = defineTool({
     }
 
     try {
+      if (scanInFlight) {
+        return toolError(
+          "Un scan des accreditations est deja en cours. Attends qu'il se termine avant de relancer."
+        );
+      }
+      scanInFlight = true;
+
       const { threads, candidates } = await collectThreads(mail);
       if (threads.length === 0) return toolEmpty("Aucun fil d'accreditation trouve.");
 
@@ -305,6 +319,8 @@ export const scanAccreditationsTool = defineTool({
           error instanceof Error ? error.message : String(error)
         }`
       );
+    } finally {
+      scanInFlight = false;
     }
   },
 });

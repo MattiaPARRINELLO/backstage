@@ -1,5 +1,6 @@
 import { getConfig } from "@/lib/config";
 import { promises as fs } from "fs";
+import path from "path";
 
 export const SESSION_COOKIE = "pb_session";
 export const CHALLENGE_COOKIE = "pb_challenge";
@@ -17,9 +18,7 @@ export const TOKEN_PURPOSE = {
 
 export type TokenPurpose = (typeof TOKEN_PURPOSE)[keyof typeof TOKEN_PURPOSE];
 
-import { dataPath } from "./storage-core";
-
-const SECRET_FILE = dataPath(".auth-secret");
+const SECRET_FILE = path.join(process.cwd(), "data", ".auth-secret");
 
 // Décode la valeur hex (openssl rand -hex 32) en bytes ; sinon raw.
 // Garantit que AUTH_SECRET et data/.auth-secret produisent la MÊME clé

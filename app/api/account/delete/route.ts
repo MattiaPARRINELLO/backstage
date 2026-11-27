@@ -4,9 +4,8 @@ import type { Dirent } from "fs";
 import path from "path";
 import { clearSession } from "@/lib/session";
 import { authedRoute } from "@/lib/route";
-import { getDataDir } from "@/lib/storage-core";
 
-const DATA_DIR = getDataDir();
+const DATA_DIR = path.join(process.cwd(), "data");
 
 // Conservés après suppression : fichiers d'infrastructure non personnels.
 // La clé de signature (.auth-secret) permet de se réinscrire sans rotation.

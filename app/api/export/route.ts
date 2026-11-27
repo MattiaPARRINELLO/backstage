@@ -3,9 +3,8 @@ import { promises as fs } from "fs";
 import type { Dirent } from "fs";
 import path from "path";
 import { authedRoute } from "@/lib/route";
-import { getDataDir } from "@/lib/storage-core";
 
-const DATA_DIR = getDataDir();
+const DATA_DIR = path.join(process.cwd(), "data");
 
 // Fichiers exclus de l'export : secrets d'infra, identifiants d'authentification
 // et cache interne. Les données métier (conversations, rappels, mémoire,

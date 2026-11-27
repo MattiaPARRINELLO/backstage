@@ -8,9 +8,7 @@ type CacheEntry<T> = {
   ttlMs: number;
 };
 
-import { getDataDir } from "./storage-core";
-
-const CACHE_DIR = getDataDir();
+const CACHE_DIR = path.join(process.cwd(), "data");
 const CACHE_FILE = path.join(CACHE_DIR, "server-cache.json");
 
 let memoryCache: Record<string, CacheEntry<unknown>> = {};

@@ -95,7 +95,7 @@ describe("fetchGmailMessages — tri deterministe et messages illisibles", () =>
   function gmailRoutes(list: Listed[], broken: string[] = []): HttpDoubleRoute[] {
     return [
       {
-        match: /gmail\.googleapis\.com\/gmail\/v1\/users\/me\/messages/,
+        match: /^https:\/\/gmail\.googleapis\.com\/gmail\/v1\/users\/me\/messages/,
         response: (input) => {
           if (input.includes("/messages?")) {
             return jsonResponse({ messages: list.map((m) => ({ id: m.id })) });
@@ -185,7 +185,7 @@ describe("fetchGmailThreads — fils complets", () => {
   function threadRoutes(threads: Thread[], broken: string[] = []): HttpDoubleRoute[] {
     return [
       {
-        match: /gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
+        match: /^https:\/\/gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
         response: (input) => {
           if (input.includes("/threads?")) {
             return jsonResponse({ threads: threads.map((t) => ({ id: t.id })) });
@@ -261,7 +261,7 @@ describe("fetchGmailThreads — fils complets", () => {
     let threadCalls = 0;
     const routes: HttpDoubleRoute[] = [
       {
-        match: /gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
+        match: /^https:\/\/gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
         response: (input) => {
           if (input.includes("/threads?")) {
             return jsonResponse({ threads: [{ id: "t1" }] });
@@ -307,7 +307,7 @@ describe("fetchGmailThreads — fils complets", () => {
 
     const routes: HttpDoubleRoute[] = [
       {
-        match: /gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
+        match: /^https:\/\/gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
         response: async (input) => {
           if (input.includes("/threads?")) {
             return jsonResponse({ threads: ids.map((id) => ({ id })) });

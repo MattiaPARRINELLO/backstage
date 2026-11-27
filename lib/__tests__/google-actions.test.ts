@@ -300,6 +300,51 @@ describe("fetchGmailThreads — fils complets", () => {
     expect(threads.map((t) => t.id)).toEqual(["t1"]);
   });
 
+  it("ne lit pas plus de quatre fils en parallele", async () => {
+    const ids = Array.from({ length: 12 }, (_, index) => `t${index}`);
+    let inFlight = 0;
+    let maxInFlight = 0;
+
+    const routes: HttpDoubleRoute[] = [
+      {
+        match: /gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
+        response: async (input) => {
+          if (input.includes("/threads?")) {
+            return jsonResponse({ threads: ids.map((id) => ({ id })) });
+          }
+          inFlight += 1;
+          maxInFlight = Math.max(maxInFlight, inFlight);
+          await new Promise((resolve) => setTimeout(resolve, 2));
+          inFlight -= 1;
+          const id = /\/threads\/([^?]+)\?format=full/.exec(input)?.[1] ?? "";
+          return jsonResponse({
+            id,
+            messages: [
+              {
+                id: `${id}-m1`,
+                threadId: id,
+                labelIds: ["INBOX"],
+                payload: {
+                  mimeType: "text/plain",
+                  headers: [{ name: "Date", value: "Tue, 10 Nov 2026 09:00:00 +0000" }],
+                  body: { data: b64("corps") },
+                },
+              },
+            ],
+          });
+        },
+      },
+    ];
+
+    const threads = await withHttpDouble(routes, () =>
+      fetchGmailThreads("photo", ids.length)
+    );
+
+    expect(threads).toHaveLength(ids.length);
+    expect(maxInFlight).toBeLessThanOrEqual(4);
+    expect(maxInFlight).toBeGreaterThan(1);
+  });
+
   it("echoue clairement quand tous les fils sont illisibles", async () => {
     const routes = threadRoutes(
       [{ id: "casse", messageIds: ["b"], dates: ["Tue, 10 Nov 2026 10:00:00 +0000"] }],

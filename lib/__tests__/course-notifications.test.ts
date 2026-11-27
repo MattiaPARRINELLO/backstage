@@ -164,6 +164,13 @@ describe("cartes de cours", () => {
     expect((store.get("live-notifs.json") as { items: { tag: string }[] }).items).toHaveLength(0);
   });
 
+  it("deux appels simultanes n'envoient qu'une seule carte", async () => {
+    vi.setSystemTime(new Date(at(8, 0)));
+    await Promise.all([checkScheduleNotifs(), checkScheduleNotifs()]);
+
+    expect(sent.filter((s) => !s.dismiss)).toHaveLength(1);
+  });
+
   it("chaque cours a sa propre carte", async () => {
     const second = { ...COURSES[0], uuid: "c2", start: at(13, 30), end: at(16, 30) };
     COURSES.push(second);

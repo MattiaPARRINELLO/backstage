@@ -32,7 +32,7 @@ export function AddItemForm({
         throw new Error("Protocole non supporte");
       }
     } catch {
-      setError("Adresse invalide : utilise une URL complete, par exemple https://exemple.com.");
+      setError("Adresse invalide : utilise une URL complète, par exemple https://exemple.com.");
       return;
     }
     setError(null);

@@ -298,6 +298,21 @@ export async function fetchGmailThreads(
     console.warn(`[gmail] ${rejected} fil(s) illisible(s) ignore(s)`);
   }
 
+  // Aucun fil lisible alors que Gmail a repondu : ne pas renvoyer une liste
+  // vide, qui ferait dire au scan « aucun fil trouve » et masquerait un quota
+  // ou une panne d'API.
+  const failed = results.filter((r) => r.status === "rejected").length;
+  if (threads.length === 0 && failed > 0) {
+    const first = results.find(
+      (r): r is PromiseRejectedResult => r.status === "rejected"
+    );
+    const reason =
+      first?.reason instanceof Error ? first.reason.message : "raison inconnue";
+    throw new Error(
+      `Aucun fil Gmail lisible (${failed} echec(s) sur ${results.length}) : ${reason}`
+    );
+  }
+
   return threads.sort(compareGmailThreads);
 }
 

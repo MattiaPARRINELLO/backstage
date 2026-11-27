@@ -300,6 +300,17 @@ describe("fetchGmailThreads — fils complets", () => {
     expect(threads.map((t) => t.id)).toEqual(["t1"]);
   });
 
+  it("echoue clairement quand tous les fils sont illisibles", async () => {
+    const routes = threadRoutes(
+      [{ id: "casse", messageIds: ["b"], dates: ["Tue, 10 Nov 2026 10:00:00 +0000"] }],
+      ["casse"]
+    );
+
+    await expect(
+      withHttpDouble(routes, () => fetchGmailThreads("photo", 10))
+    ).rejects.toThrow(/Aucun fil Gmail lisible/);
+  });
+
   it("renvoie une liste vide quand Gmail ne trouve aucun fil", async () => {
     await expect(
       withHttpDouble(threadRoutes([]), () => fetchGmailThreads("inexistant", 10))

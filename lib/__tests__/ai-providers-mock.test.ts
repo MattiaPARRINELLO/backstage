@@ -1,8 +1,25 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { chatCompletion, streamChatCompletion } from "@/lib/ai-providers";
 import { isMockAiEnabled } from "@/lib/ai-providers/config";
 import { fetchModelCatalog, peekAvailableModels } from "@/lib/ai-providers/models";
 import { MOCK_CATALOG, MOCK_MODEL } from "@/lib/ai-providers/mock";
+
+// Cache memoire : ce test ne doit pas ecrire le catalogue factice dans
+// data/server-cache.json, ou il survivrait une heure et remplacerait les vrais
+// modeles au demarrage suivant (issue #302).
+vi.mock("@/lib/server-cache", () => {
+  const store = new Map<string, unknown>();
+  return {
+    getServerCached: (key: string) => store.get(key),
+    setServerCached: (key: string, value: unknown) => {
+      store.set(key, value);
+    },
+    invalidateServerCache: (key: string) => {
+      store.delete(key);
+    },
+    invalidateServerCachePattern: () => {},
+  };
+});
 
 const originalProvider = process.env.AI_PROVIDER;
 

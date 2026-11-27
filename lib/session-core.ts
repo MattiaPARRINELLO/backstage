@@ -18,7 +18,11 @@ export const TOKEN_PURPOSE = {
 
 export type TokenPurpose = (typeof TOKEN_PURPOSE)[keyof typeof TOKEN_PURPOSE];
 
-const SECRET_FILE = path.join(process.cwd(), "data", ".auth-secret");
+// Chemin resolu a chaque lecture : un test peut rediriger `process.cwd()` vers
+// un dossier temporaire sans reimporter le module.
+function secretFile(): string {
+  return path.join(process.cwd(), "data", ".auth-secret");
+}
 
 // Décode la valeur hex (openssl rand -hex 32) en bytes ; sinon raw.
 // Garantit que AUTH_SECRET et data/.auth-secret produisent la MÊME clé
@@ -39,7 +43,7 @@ async function getSecret(): Promise<Uint8Array> {
   }
 
   try {
-    const existing = await fs.readFile(SECRET_FILE, "utf-8");
+    const existing = await fs.readFile(secretFile(), "utf-8");
     return Uint8Array.from(Buffer.from(existing, "hex"));
   } catch {
     throw new Error(

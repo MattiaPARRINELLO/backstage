@@ -46,6 +46,39 @@ type CalendarEventsResponse = {
   items?: CalendarEventRaw[];
 };
 
+// Gmail compte 10 unites de quota par fil complet. Envoyer 200 requetes d'un
+// coup depassait le quota par utilisateur et faisait echouer le scan ; quatre
+// requetes a la fois restent sous le plafond et laissent le retry 429 agir.
+const GMAIL_FETCH_CONCURRENCY = 4;
+
+async function settleWithConcurrency<T, R>(
+  items: readonly T[],
+  worker: (item: T) => Promise<R>,
+  limit = GMAIL_FETCH_CONCURRENCY
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  let cursor = 0;
+
+  async function run(): Promise<void> {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      const item = items[index];
+      if (item === undefined) continue;
+      try {
+        results[index] = { status: "fulfilled", value: await worker(item) };
+      } catch (reason) {
+        results[index] = { status: "rejected", reason };
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => run())
+  );
+  return results;
+}
+
 function decodeBase64Url(input: string): string {
   const base64 = input.replace(/-/g, "+").replace(/_/g, "/");
   const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, "=");
@@ -166,14 +199,15 @@ export async function fetchGmailMessages(query?: string, maxResults = 10): Promi
 
   const messages = collected.slice(0, maxResults);
 
-  const results = await Promise.allSettled(
-    messages.map(async ({ id }) => {
+  const results = await settleWithConcurrency(
+    messages,
+    async ({ id }) => {
       const msg = await googleFetch<GmailMessageRaw>(
         auth,
         `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`
       );
       return toGmailMessage(msg);
-    })
+    }
   );
 
   const fulfilled = results
@@ -239,20 +273,19 @@ export async function fetchGmailThreads(
     if (!pageToken || page.length === 0) break;
   }
 
-  const results = await Promise.allSettled(
-    collected
-      .slice(0, maxThreads)
-      .map(async ({ id }) => {
-        const raw = await googleFetch<GmailThreadRaw>(
-          auth,
-          `https://gmail.googleapis.com/gmail/v1/users/me/threads/${id}?format=full`
-        );
-        const messages = (raw.messages ?? []).map(toGmailMessage);
-        return {
-          id: raw.id || id,
-          messages: messages.sort(compareGmailMessages),
-        };
-      })
+  const results = await settleWithConcurrency(
+    collected.slice(0, maxThreads),
+    async ({ id }) => {
+      const raw = await googleFetch<GmailThreadRaw>(
+        auth,
+        `https://gmail.googleapis.com/gmail/v1/users/me/threads/${id}?format=full`
+      );
+      const messages = (raw.messages ?? []).map(toGmailMessage);
+      return {
+        id: raw.id || id,
+        messages: messages.sort(compareGmailMessages),
+      };
+    }
   );
 
   const threads = results
@@ -263,6 +296,21 @@ export async function fetchGmailThreads(
   const rejected = results.length - threads.length;
   if (rejected > 0) {
     console.warn(`[gmail] ${rejected} fil(s) illisible(s) ignore(s)`);
+  }
+
+  // Aucun fil lisible alors que Gmail a repondu : ne pas renvoyer une liste
+  // vide, qui ferait dire au scan « aucun fil trouve » et masquerait un quota
+  // ou une panne d'API.
+  const failed = results.filter((r) => r.status === "rejected").length;
+  if (threads.length === 0 && failed > 0) {
+    const first = results.find(
+      (r): r is PromiseRejectedResult => r.status === "rejected"
+    );
+    const reason =
+      first?.reason instanceof Error ? first.reason.message : "raison inconnue";
+    throw new Error(
+      `Aucun fil Gmail lisible (${failed} echec(s) sur ${results.length}) : ${reason}`
+    );
   }
 
   return threads.sort(compareGmailThreads);

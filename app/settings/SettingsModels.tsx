@@ -18,15 +18,60 @@ export function SettingsModels({
   const [modelSaving, setModelSaving] = useState(false);
   const [modelMsg, setModelMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
+  const available = runtime?.availableModels ?? [];
+  // Un identifiant peut disparaitre du catalogue entre deux deploiements. On
+  // le signale avant l'enregistrement : la Server Action leve une AppError
+  // dont le message est masque par Next en production, ce qui donnait un
+  // ecran « erreur React » au lieu d'une explication.
+  const isStale = (value: string) => available.length > 0 && !available.includes(value);
+  const staleFields = modelSel
+    ? ([
+        isStale(modelSel.general) ? "principal" : null,
+        isStale(modelSel.generalAlt) ? "secours" : null,
+        isStale(modelSel.code) ? "code" : null,
+      ].filter(Boolean) as string[])
+    : [];
+
+  const pickAvailable = (current: string, index: number) =>
+    isStale(current) ? (available[index] ?? available[0] ?? current) : current;
+
+  const handleFixModels = () => {
+    if (!modelSel) return;
+    setModelSel({
+      general: pickAvailable(modelSel.general, 0),
+      generalAlt: pickAvailable(modelSel.generalAlt, 1),
+      code: pickAvailable(modelSel.code, 2),
+    });
+    setModelMsg(null);
+  };
+
   const handleModelsSave = async () => {
     if (!modelSel) return;
+    if (staleFields.length > 0) {
+      setModelMsg({
+        ok: false,
+        text: `Modele indisponible : ${staleFields.join(", ")}. Choisis une entree de la liste.`,
+      });
+      return;
+    }
     setModelSaving(true);
     setModelMsg(null);
     try {
       await updateModels(modelSel);
       setModelMsg({ ok: true, text: "Modèles mis à jour ✓" });
     } catch (e) {
-      setModelMsg({ ok: false, text: e instanceof Error ? e.message : "Erreur" });
+      const message = e instanceof Error ? e.message : "";
+      // Next masque le message d'une Server Action en production : afficher
+      // « An error occurred in the Server Components render » n'aide personne.
+      const redacted = /Server Components render|An error occurred|digest/i.test(
+        message
+      );
+      setModelMsg({
+        ok: false,
+        text: redacted
+          ? "Le provider a refusé ce modèle. Recharge la page pour rafraîchir la liste."
+          : message || "Erreur",
+      });
     } finally {
       setModelSaving(false);
     }
@@ -35,7 +80,7 @@ export function SettingsModels({
   // Le modèle actuellement sélectionné doit toujours être représenté dans le
   // select, même s'il n'apparaît plus dans la liste de l'API.
   const modelOptions = (m: string | undefined) => {
-    const opts = runtime?.availableModels ?? [];
+    const opts = available;
     if (m && !opts.includes(m)) return [...opts, m];
     return opts;
   };
@@ -49,6 +94,22 @@ export function SettingsModels({
         <Row label="Modèles" hint="Chargement des modèles…" />
       ) : (
         <>
+          {staleFields.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3 border-b border-[var(--line)] py-4">
+              <p className="text-[var(--t-small)]" style={{ color: "var(--danger)" }}>
+                Modèle(s) indisponible(s) : {staleFields.join(", ")}. Le provider ne
+                les sert plus.
+              </p>
+              <button
+                type="button"
+                className="ui-btn ui-btn--ghost ui-btn--sm px-4 text-[var(--t-small)]"
+                onClick={handleFixModels}
+              >
+                Choisir un modèle disponible
+              </button>
+            </div>
+          )}
+
           <Row label="Modèle principal" hint="Utilisé pour les conversations du chat.">
             <select
               value={modelSel.general}
@@ -57,7 +118,10 @@ export function SettingsModels({
               aria-label="Modèle principal"
             >
               {modelOptions(runtime?.models.general).map((m) => (
-                <option key={m} value={m}>{m}</option>
+                <option key={m} value={m}>
+                  {m}
+                  {isStale(m) ? " (indisponible)" : ""}
+                </option>
               ))}
             </select>
           </Row>
@@ -73,7 +137,10 @@ export function SettingsModels({
               aria-label="Modèle de secours"
             >
               {modelOptions(runtime?.models.generalAlt).map((m) => (
-                <option key={m} value={m}>{m}</option>
+                <option key={m} value={m}>
+                  {m}
+                  {isStale(m) ? " (indisponible)" : ""}
+                </option>
               ))}
             </select>
           </Row>
@@ -86,7 +153,10 @@ export function SettingsModels({
               aria-label="Modèle code"
             >
               {modelOptions(runtime?.models.code).map((m) => (
-                <option key={m} value={m}>{m}</option>
+                <option key={m} value={m}>
+                  {m}
+                  {isStale(m) ? " (indisponible)" : ""}
+                </option>
               ))}
             </select>
           </Row>
@@ -97,7 +167,7 @@ export function SettingsModels({
                 type="button"
                 className="ui-btn ui-btn--primary h-10 px-5 text-[var(--t-small)]"
                 onClick={() => void handleModelsSave()}
-                disabled={modelSaving}
+                disabled={modelSaving || staleFields.length > 0}
               >
                 {modelSaving ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />

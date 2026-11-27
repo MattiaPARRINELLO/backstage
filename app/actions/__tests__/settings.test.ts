@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 const mockConfig = {
   getConfig: vi.fn(),
   updateConfig: vi.fn(),
+  getModel: vi.fn(),
 };
 
 const mockSubs = {
@@ -22,9 +23,9 @@ const { loadRuntimeInfo, updateModels } = await import("@/app/actions/settings")
 
 const baseConfig = {
   models: {
-    general: "deepseek-v4-pro",
-    generalAlt: "deepseek-v4.1-flash",
-    code: "kimi-k2.7-code",
+    general: "deepseek-v4.1-flash",
+    generalAlt: "qwen3.8-max",
+    code: "qwen4-max",
     titleModel: "deepseek-v4.1-flash",
   },
   llm: { temperature: 0.7, maxTokens: 4096 },
@@ -32,12 +33,22 @@ const baseConfig = {
   theme: { accentColor: "#a5b4fc" },
 };
 
-const available = ["deepseek-v4-pro", "deepseek-v4.1-flash", "kimi-k2.7-code", "qwen3.8-max"];
+const available = [
+  "deepseek-v4.1-flash",
+  "glm-5.3",
+  "qwen3.8-max",
+  "qwen4-max",
+];
 
 describe("settings actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockConfig.getConfig.mockResolvedValue(baseConfig);
+    mockConfig.getModel.mockImplementation(async (context: "general" | "code") =>
+      context === "code"
+        ? { primary: baseConfig.models.code, alt: baseConfig.models.code }
+        : { primary: baseConfig.models.general, alt: baseConfig.models.generalAlt }
+    );
     mockSubs.getSubscriptions.mockResolvedValue([{ id: "a" }, { id: "b" }]);
     mockModels.fetchAvailableModels.mockResolvedValue(available);
   });
@@ -46,9 +57,9 @@ describe("settings actions", () => {
     it("retourne les modèles configurés, la liste disponible et le nombre d'appareils push", async () => {
       const info = await loadRuntimeInfo();
       expect(info.models).toEqual({
-        general: "deepseek-v4-pro",
-        generalAlt: "deepseek-v4.1-flash",
-        code: "kimi-k2.7-code",
+        general: "deepseek-v4.1-flash",
+        generalAlt: "qwen3.8-max",
+        code: "qwen4-max",
       });
       expect(info.availableModels).toEqual(available);
       expect(info.pushCount).toBe(2);
@@ -60,36 +71,36 @@ describe("settings actions", () => {
     it("sauvegarde les modèles choisis via updateConfig", async () => {
       mockConfig.updateConfig.mockResolvedValue(baseConfig);
       const result = await updateModels({
-        general: "qwen3.8-max",
-        generalAlt: "deepseek-v4.1-flash",
-        code: "kimi-k2.7-code",
+        general: "glm-5.3",
+        generalAlt: "qwen3.8-max",
+        code: "qwen4-max",
       });
       expect(mockConfig.updateConfig).toHaveBeenCalledWith({
-        models: { general: "qwen3.8-max", generalAlt: "deepseek-v4.1-flash", code: "kimi-k2.7-code" },
+        models: { general: "glm-5.3", generalAlt: "qwen3.8-max", code: "qwen4-max" },
       });
       expect(result).toEqual({
-        general: "qwen3.8-max",
-        generalAlt: "deepseek-v4.1-flash",
-        code: "kimi-k2.7-code",
+        general: "glm-5.3",
+        generalAlt: "qwen3.8-max",
+        code: "qwen4-max",
       });
     });
 
     it("rejette un modèle absent de la liste de l'API", async () => {
       await expect(
-        updateModels({ general: "modele-inexistant", generalAlt: "deepseek-v4.1-flash", code: "kimi-k2.7-code" })
+        updateModels({ general: "modele-inexistant", generalAlt: "qwen3.8-max", code: "qwen4-max" })
       ).rejects.toThrow("Modele indisponible : modele-inexistant");
       expect(mockConfig.updateConfig).not.toHaveBeenCalled();
     });
 
     it("rejette un champ vide après trim", async () => {
       await expect(
-        updateModels({ general: "  ", generalAlt: "deepseek-v4.1-flash", code: "kimi-k2.7-code" })
+        updateModels({ general: "  ", generalAlt: "qwen3.8-max", code: "qwen4-max" })
       ).rejects.toThrow("Modele requis");
     });
 
     it("rejette un champ inattendu (schéma strict)", async () => {
       await expect(
-        updateModels({ general: "kimi-k2.6", generalAlt: "deepseek-v4.1-flash", code: "kimi-k2.7-code", extra: "x" } as never)
+        updateModels({ general: "modele-inexistant-2", generalAlt: "qwen3.8-max", code: "qwen4-max", extra: "x" } as never)
       ).rejects.toThrow(/extra/);
     });
   });

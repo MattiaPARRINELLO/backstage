@@ -376,4 +376,27 @@ describe("outil scan des accreditations", () => {
     assertToolOk(result);
     expect(result.text).toContain("200 fils sur 290 candidats");
   });
+
+  it("refuse un second scan simultane et libere le verrou ensuite", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    mail.listThreads.mockImplementation(async () => {
+      await gate;
+      return [];
+    });
+
+    const first = scanAccreditationsTool.run({}, ctx);
+    const second = await scanAccreditationsTool.run({}, ctx);
+
+    assertToolError(second, /deja en cours/);
+
+    release();
+    const firstResult = await first;
+    expect(firstResult.status).toBe("empty");
+
+    const after = await scanAccreditationsTool.run({}, ctx);
+    expect(after.status).toBe("empty");
+  });
 });

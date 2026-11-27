@@ -73,9 +73,8 @@ export async function findSimilarMemoryFacts(content: string, category: MemoryFa
   // Try AI semantic matching
   try {
     const { chatCompletion } = await import("../ai-providers");
-    const { getConfig } = await import("../app-config");
-    const config = await getConfig();
-    const model = config.models.generalAlt;
+    const { getModel } = await import("../app-config");
+    const { alt: model } = await getModel("general");
 
     const factsList = categoryFacts
       .map((f) => `- id=${f.id}: ${f.content}`)

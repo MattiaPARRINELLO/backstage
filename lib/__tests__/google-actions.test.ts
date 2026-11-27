@@ -95,7 +95,7 @@ describe("fetchGmailMessages — tri deterministe et messages illisibles", () =>
   function gmailRoutes(list: Listed[], broken: string[] = []): HttpDoubleRoute[] {
     return [
       {
-        match: /gmail\.googleapis\.com\/gmail\/v1\/users\/me\/messages/,
+        match: /^https:\/\/gmail\.googleapis\.com\/gmail\/v1\/users\/me\/messages/,
         response: (input) => {
           if (input.includes("/messages?")) {
             return jsonResponse({ messages: list.map((m) => ({ id: m.id })) });
@@ -185,7 +185,7 @@ describe("fetchGmailThreads — fils complets", () => {
   function threadRoutes(threads: Thread[], broken: string[] = []): HttpDoubleRoute[] {
     return [
       {
-        match: /gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
+        match: /^https:\/\/gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
         response: (input) => {
           if (input.includes("/threads?")) {
             return jsonResponse({ threads: threads.map((t) => ({ id: t.id })) });
@@ -255,6 +255,105 @@ describe("fetchGmailThreads — fils complets", () => {
     const threads = await withHttpDouble(routes, () => fetchGmailThreads("photo", 10));
 
     expect(threads.map((t) => t.id)).toEqual(["ok"]);
+  });
+
+  it("retente un 429 de quota au lieu d'abandonner le fil", async () => {
+    let threadCalls = 0;
+    const routes: HttpDoubleRoute[] = [
+      {
+        match: /^https:\/\/gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
+        response: (input) => {
+          if (input.includes("/threads?")) {
+            return jsonResponse({ threads: [{ id: "t1" }] });
+          }
+          threadCalls += 1;
+          if (threadCalls === 1) {
+            return new Response("rateLimitExceeded", {
+              status: 429,
+              headers: { "retry-after": "0" },
+            });
+          }
+          return jsonResponse({
+            id: "t1",
+            messages: [
+              {
+                id: "m1",
+                threadId: "t1",
+                labelIds: ["INBOX"],
+                payload: {
+                  mimeType: "text/plain",
+                  headers: [{ name: "Date", value: "Tue, 10 Nov 2026 09:00:00 +0000" }],
+                  body: { data: b64("corps") },
+                },
+              },
+            ],
+          });
+        },
+      },
+    ];
+
+    const threads = await withHttpDouble(routes, () =>
+      fetchGmailThreads("photo", 1)
+    );
+
+    expect(threadCalls).toBe(2);
+    expect(threads.map((t) => t.id)).toEqual(["t1"]);
+  });
+
+  it("ne lit pas plus de quatre fils en parallele", async () => {
+    const ids = Array.from({ length: 12 }, (_, index) => `t${index}`);
+    let inFlight = 0;
+    let maxInFlight = 0;
+
+    const routes: HttpDoubleRoute[] = [
+      {
+        match: /^https:\/\/gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
+        response: async (input) => {
+          if (input.includes("/threads?")) {
+            return jsonResponse({ threads: ids.map((id) => ({ id })) });
+          }
+          inFlight += 1;
+          maxInFlight = Math.max(maxInFlight, inFlight);
+          await new Promise((resolve) => setTimeout(resolve, 2));
+          inFlight -= 1;
+          const id = /\/threads\/([^?]+)\?format=full/.exec(input)?.[1] ?? "";
+          return jsonResponse({
+            id,
+            messages: [
+              {
+                id: `${id}-m1`,
+                threadId: id,
+                labelIds: ["INBOX"],
+                payload: {
+                  mimeType: "text/plain",
+                  headers: [{ name: "Date", value: "Tue, 10 Nov 2026 09:00:00 +0000" }],
+                  body: { data: b64("corps") },
+                },
+              },
+            ],
+          });
+        },
+      },
+    ];
+
+    const threads = await withHttpDouble(routes, () =>
+      fetchGmailThreads("photo", ids.length)
+    );
+
+    expect(threads).toHaveLength(ids.length);
+    expect(maxInFlight).toBeLessThanOrEqual(4);
+    expect(maxInFlight).toBeGreaterThan(1);
+  });
+
+  it("echoue clairement quand tous les fils sont illisibles", async () => {
+    const routes = threadRoutes(
+      [{ id: "casse", messageIds: ["b"], dates: ["Tue, 10 Nov 2026 10:00:00 +0000"] }],
+      ["casse"]
+    );
+
+    await expect(
+      withHttpDouble(routes, () => fetchGmailThreads("photo", 10))
+    ).rejects.toThrow(/Aucun fil Gmail lisible/);
   });
 
   it("renvoie une liste vide quand Gmail ne trouve aucun fil", async () => {

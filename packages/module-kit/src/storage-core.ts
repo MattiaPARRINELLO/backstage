@@ -13,7 +13,7 @@ let dataDirOverride: string | null = null;
  * ecritures d'un module.
  */
 export function setDataDir(dir: string | null): void {
-  dataDirOverride = dir;
+  dataDirOverride = dir === null ? null : path.resolve(dir);
 }
 
 /** Redirection courante, ou `null` si le repertoire par defaut est utilise. */
@@ -22,13 +22,18 @@ export function getDataDirOverride(): string | null {
 }
 
 function dataDir(): string {
-  return dataDirOverride
-    ? path.resolve(dataDirOverride)
-    : path.join(process.cwd(), "data");
+  return dataDirOverride ?? path.join(process.cwd(), "data");
 }
 
-function backupDir(): string {
-  return path.join(dataDir(), "backups");
+/**
+ * Chemin d'un fichier de `data/`. Le prefixe est desactive du tracing : ce sont
+ * des donnees runtime (copiees par le deploiement), jamais des assets de build.
+ * Sans cela, Turbopack embarquait tout le depot dans `.next/standalone` (#304).
+ * Point unique : les autres chemins passent par ici pour ne pas multiplier les
+ * annotations.
+ */
+function dataFile(...segments: string[]): string {
+  return path.join(/* turbopackIgnore: true */ dataDir(), ...segments);
 }
 
 export function newId(): string {
@@ -91,7 +96,7 @@ function isTransientError(err: unknown): boolean {
 // Corps d'écriture sans lock : ne doit être appelé que sous withFileLock
 // (mutateJson) pour éviter un deadlock sur le lock par fichier.
 async function writeJsonAtomicUnlocked<T>(filename: string, data: T, retries = 3): Promise<void> {
-  const filePath = path.join(dataDir(), filename);
+  const filePath = dataFile(filename);
   // Un module ecrit dans `data/<module>/<fichier>.json` : creer le dossier du
   // fichier, pas seulement `data/`.
   await ensureDir(path.dirname(filePath));
@@ -149,7 +154,7 @@ export async function mutateJson<T>(
 }
 
 async function readJson<T>(filename: string): Promise<T> {
-  const filePath = path.join(dataDir(), filename);
+  const filePath = dataFile(filename);
   await ensureDir(path.dirname(filePath));
   const raw = await fs.readFile(filePath, "utf-8");
   return JSON.parse(raw) as T;
@@ -166,14 +171,14 @@ function isValidJson(raw: string): boolean {
 
 async function readBackupJson<T>(filename: string): Promise<T | null> {
   try {
-    await ensureDir(backupDir());
+    await ensureDir(dataFile("backups"));
   } catch {
     return null;
   }
   const prefix = `${filename}.`;
   let entries: string[];
   try {
-    entries = await fs.readdir(backupDir());
+    entries = await fs.readdir(dataFile("backups"));
   } catch {
     return null;
   }
@@ -182,7 +187,7 @@ async function readBackupJson<T>(filename: string): Promise<T | null> {
     .sort()
     .reverse();
   for (const name of candidates) {
-    const backupPath = path.join(backupDir(), name);
+    const backupPath = dataFile("backups", name);
     try {
       const raw = await fs.readFile(backupPath, "utf-8");
       if (isValidJson(raw)) {
@@ -196,7 +201,7 @@ async function readBackupJson<T>(filename: string): Promise<T | null> {
 }
 
 export async function readJsonSafe<T>(filename: string, fallback: T): Promise<T> {
-  const filePath = path.join(dataDir(), filename);
+  const filePath = dataFile(filename);
   const tmpPath = filePath + ".tmp";
 
   try {
@@ -220,10 +225,10 @@ export async function readJsonSafe<T>(filename: string, fallback: T): Promise<T>
 }
 
 async function backupFile(filename: string): Promise<void> {
-  await ensureDir(backupDir());
-  const src = path.join(dataDir(), filename);
+  await ensureDir(dataFile("backups"));
+  const src = dataFile(filename);
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
-  const dst = path.join(backupDir(), `${filename}.${ts}.bak`);
+  const dst = dataFile("backups", `${filename}.${ts}.bak`);
   try {
     await fs.copyFile(src, dst);
   } catch (err) {
@@ -239,7 +244,7 @@ async function rotateBackups(filename: string): Promise<void> {
   const prefix = `${filename}.`;
   let entries: string[];
   try {
-    entries = await fs.readdir(backupDir());
+    entries = await fs.readdir(dataFile("backups"));
   } catch {
     return;
   }
@@ -254,7 +259,7 @@ async function rotateBackups(filename: string): Promise<void> {
   let kept = 0;
 
   for (const name of backups) {
-    const backupPath = path.join(backupDir(), name);
+    const backupPath = dataFile("backups", name);
     kept++;
 
     if (kept > 5) {

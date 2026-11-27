@@ -109,24 +109,39 @@ describe("session-core", () => {
   });
 
   it("utilise AUTH_SECRET depuis le fichier si variable d'env absente", async () => {
-    const original = process.env.AUTH_SECRET;
-    delete process.env.AUTH_SECRET;
     const fs = await import("fs");
+    const os = await import("os");
     const path = await import("path");
-    const secretPath = path.join(process.cwd(), "data", ".auth-secret");
-    fs.mkdirSync(path.join(process.cwd(), "data"), { recursive: true });
-    fs.writeFileSync(secretPath, Buffer.from("test-secret-thirtytwo-chars-long-for-hmac!!").toString("hex"));
-    const mod = await import("@/lib/session-core");
-    const token = await mod.signJwt({
-      sub: "file-test",
-      purpose: mod.TOKEN_PURPOSE.session,
-    });
-    expect(token.split(".")).toHaveLength(3);
-    const decoded = await mod.verifyJwt<{ sub: string }>(
-      token,
-      mod.TOKEN_PURPOSE.session
-    );
-    expect(decoded?.sub).toBe("file-test");
-    process.env.AUTH_SECRET = original;
+    const original = process.env.AUTH_SECRET;
+    const originalCwd = process.cwd;
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "backstage-auth-secret-"));
+
+    try {
+      delete process.env.AUTH_SECRET;
+      // Le chemin est resolu a la lecture : le test n'ecrit jamais dans le
+      // `data/` reel du depot (#302).
+      process.cwd = () => tempDir;
+      fs.mkdirSync(path.join(tempDir, "data"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tempDir, "data", ".auth-secret"),
+        Buffer.from("test-secret-thirtytwo-chars-long-for-hmac!!").toString("hex")
+      );
+
+      const mod = await import("@/lib/session-core");
+      const token = await mod.signJwt({
+        sub: "file-test",
+        purpose: mod.TOKEN_PURPOSE.session,
+      });
+      expect(token.split(".")).toHaveLength(3);
+      const decoded = await mod.verifyJwt<{ sub: string }>(
+        token,
+        mod.TOKEN_PURPOSE.session
+      );
+      expect(decoded?.sub).toBe("file-test");
+    } finally {
+      process.cwd = originalCwd;
+      process.env.AUTH_SECRET = original;
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });

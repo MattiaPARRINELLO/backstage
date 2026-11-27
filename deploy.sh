@@ -234,6 +234,7 @@ rsync -avz --delete \
   --exclude 'data/*.json' \
   --exclude 'data/backups' \
   --exclude '.htaccess' \
+  --exclude '.git' \
   "$DEPLOY_TMP/" \
   "${SSH_USER}@${SSH_HOST}:${SSH_TARGET_DIR}/"
 

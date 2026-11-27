@@ -8,6 +8,7 @@ import {
   addToComposition,
   removeFromComposition,
   assertModuleManifest,
+  doctorModules,
   parseModuleSource,
 } from "@/lib/kernel/module-install";
 
@@ -203,5 +204,30 @@ describe("installation depuis un depot git local", () => {
       encoding: "utf8",
     });
     expect(doctor).toContain("aucun probleme detecte");
+  });
+});
+
+describe("doctor : dossiers .install-* et vivacite du pid (#268)", () => {
+  it("signale une installation en cours quand le pid est vivant", async () => {
+    const root = tempDir("backstage-doctor-alive-");
+    mkdirSync(join(root, "modules/.install-install-999-1-abcd"), { recursive: true });
+
+    const issues = await doctorModules(root, undefined, () => true);
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0]?.id).toBe(".install-install-999-1-abcd");
+    expect(issues[0]?.problem).toContain("installation en cours (pid 999)");
+    expect(issues[0]?.problem).not.toContain("temporaire");
+  });
+
+  it("signale une interruption quand le pid n'existe plus", async () => {
+    const root = tempDir("backstage-doctor-orphan-");
+    mkdirSync(join(root, "modules/.install-install-999-1-abcd"), { recursive: true });
+
+    const issues = await doctorModules(root, undefined, () => false);
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0]?.problem).toContain("temporaire");
+    expect(issues[0]?.problem).not.toContain("installation en cours");
   });
 });

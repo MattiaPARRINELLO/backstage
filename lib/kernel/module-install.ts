@@ -138,10 +138,23 @@ export interface ModuleDoctorIssue {
   readonly problem: string;
 }
 
+/** Vivacite systeme : `kill(pid, 0)` reussit, ou EPERM si le pid appartient a un autre compte. */
+function defaultIsProcessAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err) {
+    return (err as NodeJS.ErrnoException)?.code === "EPERM";
+  }
+}
+
 /** Verifie que chaque entree du lock correspond a un module utilisable. */
 export async function doctorModules(
   root: string,
-  kernelApi: number = KERNEL_API
+  kernelApi: number = KERNEL_API,
+  // Injectable pour que les tests ne dependent pas de l'etat des pid de la
+  // machine (#268) : le CLI garde la verification systeme par defaut.
+  isProcessAlive: (pid: number) => boolean = defaultIsProcessAlive
 ): Promise<ModuleDoctorIssue[]> {
   const lock = readLock(root);
   const config = readConfig(root);
@@ -177,12 +190,7 @@ export async function doctorModules(
       const pid = Number(parts[2]);
       let alive = false;
       if (Number.isInteger(pid) && pid > 0) {
-        try {
-          process.kill(pid, 0);
-          alive = true;
-        } catch (err) {
-          if ((err as NodeJS.ErrnoException)?.code === "EPERM") alive = true;
-        }
+        alive = isProcessAlive(pid);
       }
       if (alive) {
         issues.push({

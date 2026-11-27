@@ -40,6 +40,7 @@ export function AddShootForm({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Titre du shooting"
+          aria-label="Titre du shooting"
           autoFocus
           className="min-w-0 flex-1 bg-transparent text-base outline-none"
         />
@@ -66,6 +67,10 @@ export function AddShootForm({
           />
         </div>
       </div>
+
+      <p className="text-[var(--t-micro)] leading-relaxed text-[var(--text-3)]">
+        Titre, date et client sont requis.
+      </p>
 
       <div className="ui-field">
         <input

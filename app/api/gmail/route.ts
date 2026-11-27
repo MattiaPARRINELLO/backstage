@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchGmailMessages, sendGmailReply } from "@/lib/google-actions";
+import { hasGoogleTokens } from "@/lib/google-client";
 import { getServerCached, setServerCached, invalidateServerCachePattern } from "@/lib/server-cache";
 import { safeErrorMessage } from "@/lib/utils";
 import type { GmailMessage } from "@/lib/types";
@@ -12,17 +13,23 @@ const GMAIL_LIST_TTL_MS = 2 * 60 * 1000;
 export async function GET(request: NextRequest) {
   try {
     const query = request.nextUrl.searchParams.get("q") ?? undefined;
+
+    // Compte non lie : etat normal, pas une erreur serveur.
+    if (!(await hasGoogleTokens("gmail"))) {
+      return NextResponse.json({ linked: false, messages: [] });
+    }
+
     const cacheKey = query ? `${GMAIL_LIST_CACHE_KEY}:${query}` : GMAIL_LIST_CACHE_KEY;
 
     const cached = getServerCached<{ messages: GmailMessage[] }>(cacheKey);
     if (cached) {
-      return NextResponse.json(cached);
+      return NextResponse.json({ linked: true, ...cached });
     }
 
     const messages = await fetchGmailMessages(query, 10);
     const response = { messages };
     setServerCached(cacheKey, response, GMAIL_LIST_TTL_MS);
-    return NextResponse.json(response);
+    return NextResponse.json({ linked: true, ...response });
   } catch (err) {
     console.error("Gmail GET error:", err);
     return NextResponse.json({ error: safeErrorMessage(err) }, { status: 500 });

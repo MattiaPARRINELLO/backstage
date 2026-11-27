@@ -112,6 +112,7 @@ export default function TodayPage() {
 
   const fetchEvents = useCallback(async (): Promise<CalendarEvent[]> => {
     const res = await api.calendar.list(start, end);
+    if (res.linked === false) return [];
     if (res.error) throw new Error(res.error);
     return res.events ?? [];
   }, [start, end]);

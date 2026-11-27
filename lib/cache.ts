@@ -124,17 +124,23 @@ export function useCachedFetch<T>(
 
     const existing = globalCache.get(key);
     if (!existing) {
-      void preloadCache(key, fetcher);
+      void preloadCache(key, fetcher).catch(() => {
+        // L'erreur est deja stockee dans le cache et rendue par l'appelant.
+      });
       return;
     }
 
     if (existing.status === "success" && ttl && isStale(existing.fetchedAt, ttl)) {
-      void refreshCache(key, fetcher);
+      void refreshCache(key, fetcher).catch(() => {
+        // Idem : le rejet est deja reflete dans l'entree de cache.
+      });
       return;
     }
 
     if (staleWhileRevalidate && existing.status === "success") {
-      void refreshCache(key, fetcher);
+      void refreshCache(key, fetcher).catch(() => {
+        // Revalidation en arriere-plan : l'erreur reste dans le cache.
+      });
     }
   }, [enabled, key, fetcher, ttl, staleWhileRevalidate]);
 

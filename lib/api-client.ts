@@ -132,7 +132,7 @@ export const api = {
   gmail: {
     list: (query?: string) => {
       const qs = query ? `?q=${encodeURIComponent(query)}` : "";
-      return jsonFetch<{ messages?: GmailMessage[]; error?: string }>(`/api/gmail${qs}`);
+      return jsonFetch<{ messages?: GmailMessage[]; linked?: boolean; error?: string }>(`/api/gmail${qs}`);
     },
     send: (emailId: string, responseText: string) =>
       jsonFetch<{ success: boolean; id: string }>("/api/gmail", {
@@ -143,7 +143,7 @@ export const api = {
 
   calendar: {
     list: (timeMin: string, timeMax: string) =>
-      jsonFetch<{ events?: CalendarEvent[]; error?: string }>(
+      jsonFetch<{ events?: CalendarEvent[]; linked?: boolean; error?: string }>(
         `/api/calendar?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`
       ),
     create: (data: { summary: string; start: string; end: string; description?: string; location?: string }) =>

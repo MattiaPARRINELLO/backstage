@@ -10,26 +10,35 @@ import { monthWeeks, monthRangeKey } from "./calendar-utils";
 import { MonthGrid } from "./month-grid";
 import { EventEditor, type EditForm } from "./event-editor";
 
+type CalendarData = {
+  events: CalendarEvent[];
+  linked: boolean;
+};
+
 export default function CalendarPage() {
   const [today] = useState(() => new Date());
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const { timeMin, timeMax, cacheKey } = monthRangeKey(year, month);
 
-  const fetchCalendarEvents = useCallback(async (): Promise<CalendarEvent[]> => {
+  const fetchCalendarEvents = useCallback(async (): Promise<CalendarData> => {
     const res = await api.calendar.list(timeMin, timeMax);
+    if (res.linked === false) return { events: [], linked: false };
     if (res.error) throw new Error(res.error);
-    return res.events ?? [];
+    return { events: res.events ?? [], linked: true };
   }, [timeMin, timeMax]);
 
   const {
-    data: events,
+    data,
     loading,
     error,
     refetch: fetchEvents,
-  } = useCachedFetch<CalendarEvent[]>(cacheKey, fetchCalendarEvents, {
+  } = useCachedFetch<CalendarData>(cacheKey, fetchCalendarEvents, {
     ttl: 2 * 60 * 1000,
   });
+
+  const events = data?.events ?? [];
+  const linked = data?.linked ?? true;
 
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -148,12 +157,24 @@ export default function CalendarPage() {
             onCreateOnDay={createNewEvent}
           />
 
-          {!loading && events?.length === 0 && (
+          {!loading && events.length === 0 && (
             <div className="mt-6">
-              <EmptyState
-                title="Aucun événement"
-                description="Ton calendrier est vide pour ce mois."
-              />
+              {linked ? (
+                <EmptyState
+                  title="Aucun événement"
+                  description="Ton calendrier est vide pour ce mois."
+                />
+              ) : (
+                <EmptyState
+                  title="Calendrier non connecté"
+                  description="Connecte ton compte Google pour afficher tes événements ici."
+                  action={
+                    <a href="/api/auth/google?type=calendar" className="ui-btn ui-btn--primary">
+                      Connecter Google
+                    </a>
+                  }
+                />
+              )}
             </div>
           )}
         </div>

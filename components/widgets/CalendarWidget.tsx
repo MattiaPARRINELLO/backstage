@@ -37,6 +37,7 @@ export async function fetchUpcomingCalendarEvents(): Promise<CalendarEvent[]> {
   const timeMin = now.toISOString();
   const timeMax = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
   const res = await api.calendar.list(timeMin, timeMax);
+  if (res.linked === false) return [];
   if (res.error) throw new Error(res.error);
   return res.events ?? [];
 }

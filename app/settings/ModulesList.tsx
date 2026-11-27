@@ -56,8 +56,8 @@ export function ModulesList({ state }: { state: ModulesState }) {
           <div>
             <p className="text-[length:var(--t-body)] text-[var(--text-1)]">Rebuild requis</p>
             <p className="mt-1 text-[var(--t-small)] leading-relaxed text-[var(--text-3)]">
-              Un module a ete ajoute ou retire de{" "}
-              <span className="ui-mono">modules/index.ts</span>. Cet ecran dit ce que sert le
+              Un module a été ajouté ou retiré de{" "}
+              <span className="ui-mono">modules/index.ts</span>. Cet écran dit ce que sert le
               registre en cours, pas ce que fera le prochain build. Lance{" "}
               <span className="ui-mono">bun run build</span> puis redemarre le serveur.
             </p>
@@ -67,8 +67,8 @@ export function ModulesList({ state }: { state: ModulesState }) {
 
       {state.configSource === "build" && (
         <p className="text-[var(--t-small)] leading-relaxed text-[var(--text-3)]">
-          Aucun <span className="ui-mono">modules.config.json</span> a la racine d&apos;execution :
-          la configuration affichee est celle du build. La premiere bascule ecrira le fichier.
+          Aucun <span className="ui-mono">modules.config.json</span> à la racine d&apos;exécution :
+          la configuration affichée est celle du build. La première bascule écrira le fichier.
         </p>
       )}
 
@@ -76,7 +76,7 @@ export function ModulesList({ state }: { state: ModulesState }) {
         <EmptyState
           icon={<Package className="h-5 w-5" strokeWidth={1.6} />}
           title="Aucun module"
-          description="Installe un module depuis un depot git pour commencer."
+          description="Installe un module depuis un dépôt git pour commencer."
         />
       ) : (
         <ul className="flex flex-col gap-2">

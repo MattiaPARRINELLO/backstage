@@ -20,6 +20,7 @@ export const GMAIL_CACHE_KEY = "gmail:widget:list";
 
 export async function fetchInboxMessages(): Promise<GmailMessage[]> {
   const res = await api.gmail.list();
+  if (res.linked === false) return [];
   if (res.error) throw new Error(res.error);
   return res.messages ?? [];
 }

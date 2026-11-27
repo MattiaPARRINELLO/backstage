@@ -11,14 +11,14 @@ import type { ModuleRow } from "@/lib/kernel/module-admin";
 import type { ActionMessage } from "./ModulesList";
 
 /**
- * Une ligne de module : etat reel, version, problemes du doctor, bascule et
+ * Une ligne de module : état réel, version, problèmes du doctor, bascule et
  * retrait. Le retrait est confirme en deux temps parce qu'il touche quatre
- * fichiers du depot.
+ * fichiers du dépôt.
  */
 
 const STATUS_LABEL: Record<ModuleRow["status"], string> = {
   active: "Applique",
-  inactive: "Desactive",
+  inactive: "Désactivé",
   rebuild: "Rebuild requis",
 };
 
@@ -30,7 +30,7 @@ const STATUS_TONE: Record<ModuleRow["status"], "success" | "muted" | "warning"> 
 
 function toggleHint(row: ModuleRow): string | undefined {
   if (!row.served) return "Module absent de ce build : rebuild requis";
-  if (row.blocked) return "Corrige les problemes du doctor avant de basculer";
+  if (row.blocked) return "Corrige les problèmes du doctor avant de basculer";
   if (row.status === "rebuild") return "Rebuild requis avant de basculer";
   return undefined;
 }
@@ -55,7 +55,7 @@ export function ModuleRowItem({
     try {
       onDone({ ok: true, text: await action() });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Operation impossible.");
+      setError(caught instanceof Error ? caught.message : "Opération impossible.");
     } finally {
       setBusy(false);
       setConfirming(false);
@@ -65,13 +65,13 @@ export function ModuleRowItem({
   const toggle = () =>
     run(async () => {
       await setModuleEnabled({ id: row.id, enabled: !row.active });
-      return `Module ${row.id} ${row.active ? "desactive" : "active"}.`;
+      return `Module ${row.id} ${row.active ? "désactivé" : "activé"}.`;
     });
 
   const remove = () =>
     run(async () => {
       await removeModuleById({ id: row.id });
-      return `Module ${row.id} retire. Rebuild requis.`;
+      return `Module ${row.id} retiré. Rebuild requis.`;
     });
 
   return (
@@ -85,7 +85,7 @@ export function ModuleRowItem({
             <Pill tone={STATUS_TONE[row.status]} dot>
               {STATUS_LABEL[row.status]}
             </Pill>
-            {row.bundled && <Pill tone="neutral">Integre</Pill>}
+            {row.bundled && <Pill tone="neutral">Intégré</Pill>}
           </div>
           <p className="ui-mono mt-1 text-[var(--text-3)]">{row.id}</p>
           {row.repo !== null && (
@@ -105,7 +105,7 @@ export function ModuleRowItem({
             disabled={busy || !toggling}
             title={toggleHint(row)}
           >
-            {row.active ? "Desactiver" : "Activer"}
+            {row.active ? "Désactiver" : "Activer"}
           </Button>
           {removable &&
             (confirming ? (
@@ -139,7 +139,7 @@ export function ModuleRowItem({
 
       {confirming && (
         <p className="mt-3 text-[var(--t-small)] leading-relaxed text-[var(--warning)]">
-          Le dossier <span className="ui-mono">modules/{row.id}</span>, l&apos;entree de config, la
+          Le dossier <span className="ui-mono">modules/{row.id}</span>, l&apos;entrée de config, la
           composition et le lock seront retires. Un rebuild est requis.
         </p>
       )}
@@ -160,7 +160,7 @@ export function ModuleRowItem({
 
       {row.blocked && (
         <p className="mt-2 text-[var(--t-small)] text-[var(--text-3)]">
-          Module en erreur : corrige le probleme du doctor avant de le basculer.
+          Module en erreur : corrige le problème du doctor avant de le basculer.
         </p>
       )}
 

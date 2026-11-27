@@ -20,17 +20,29 @@ export function AddItemForm({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<WatchLaterCategory>("other");
+  const [error, setError] = useState<string | null>(null);
 
   const valid = Boolean(url.trim() && title.trim());
 
   const handleSubmit = () => {
     if (!valid) return;
+    try {
+      const parsed = new URL(url.trim());
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        throw new Error("Protocole non supporte");
+      }
+    } catch {
+      setError("Adresse invalide : utilise une URL complète, par exemple https://exemple.com.");
+      return;
+    }
+    setError(null);
     onSubmit({ url: url.trim(), title: title.trim(), description: description.trim() || undefined, category });
   };
 
   return (
     <form
       className="ui-card mb-6 max-w-2xl space-y-3 p-5"
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
         handleSubmit();
@@ -44,7 +56,10 @@ export function AddItemForm({
         <input
           type="url"
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          onChange={(e) => {
+            setUrl(e.target.value);
+            setError(null);
+          }}
           placeholder="https://…"
           aria-label="Adresse du lien"
           autoFocus
@@ -91,6 +106,12 @@ export function AddItemForm({
           );
         })}
       </div>
+
+      {error && (
+        <p role="alert" className="text-[var(--t-small)] text-[var(--danger)]">
+          {error}
+        </p>
+      )}
 
       <div className="flex items-center justify-end gap-2">
         <button type="button" className="ui-btn ui-btn--text" onClick={onCancel}>

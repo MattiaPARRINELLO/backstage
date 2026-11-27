@@ -226,4 +226,16 @@ describe("config", () => {
 
     expect(mockMutateJson).not.toHaveBeenCalled();
   });
+
+  it("healConfiguredModels ne remplace pas les modeles reels par les mocks", async () => {
+    vi.mocked(readJsonSafe).mockResolvedValue({
+      models: { general: "deepseek-v4.1-flash" },
+    });
+    mockFetchAvailableModels.mockResolvedValue(["mock-backstage", "mock-backstage-code"]);
+    mockPeekAvailableModels.mockReturnValue(["mock-backstage", "mock-backstage-code"]);
+
+    await healConfiguredModels();
+
+    expect(mockMutateJson).not.toHaveBeenCalled();
+  });
 });

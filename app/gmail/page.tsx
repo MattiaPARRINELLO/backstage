@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader, EmptyState } from "@/components/layout/Chrome";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -16,20 +17,27 @@ function extractName(from: string): string {
 
 const GMAIL_CACHE_KEY = "gmail:page:list";
 
-async function fetchAllGmail(): Promise<GmailMessage[]> {
+type GmailInbox = {
+  messages: GmailMessage[];
+  linked: boolean;
+};
+
+async function fetchAllGmail(): Promise<GmailInbox> {
   const res = await api.gmail.list();
+  if (res.linked === false) return { messages: [], linked: false };
   if (res.error) throw new Error(res.error);
-  return res.messages ?? [];
+  return { messages: res.messages ?? [], linked: true };
 }
 
 export default function GmailPage() {
-  const { data: messages, loading, error } = useCachedFetch<GmailMessage[]>(
+  const { data, loading, error } = useCachedFetch<GmailInbox>(
     GMAIL_CACHE_KEY,
     fetchAllGmail,
     { ttl: 2 * 60 * 1000 }
   );
 
-  const visible = messages ?? [];
+  const visible = data?.messages ?? [];
+  const linked = data?.linked ?? true;
   const unread = visible.filter((m) => m.unread).length;
 
   return (
@@ -81,10 +89,22 @@ export default function GmailPage() {
           )}
 
           {!loading && visible.length === 0 && (
-            <EmptyState
-              title="Aucun email"
-              description="Ta boîte de réception est vide."
-            />
+            linked ? (
+              <EmptyState
+                title="Aucun email"
+                description="Ta boîte de réception est vide."
+              />
+            ) : (
+              <EmptyState
+                title="Gmail non connecté"
+                description="Connecte ton compte Google pour lire ta boîte de réception ici."
+                action={
+                  <Link href="/settings" className="ui-btn ui-btn--primary">
+                    Connecter Gmail
+                  </Link>
+                }
+              />
+            )
           )}
 
           {visible.length > 0 && (

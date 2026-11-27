@@ -99,8 +99,8 @@ export function ModuleInstaller({
         Ajouter un module
       </h2>
       <p className="mt-1.5 max-w-xl text-[var(--t-small)] leading-relaxed text-[var(--text-3)]">
-        Depuis un depot git, avec une ref figee. Installer un module execute du code sur le
-        serveur : verifie le depot et la ref avant de confirmer.
+        Depuis un dépôt git, avec une ref figée. Installer un module exécute du code sur le
+        serveur : vérifie le dépôt et la ref avant de confirmer.
       </p>
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">

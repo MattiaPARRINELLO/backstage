@@ -2,6 +2,11 @@ import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/Chrome";
 import { getConcerts, getReminders, getIntentions } from "@/lib/storage";
 import { fetchGoogleCalendarEvents } from "@/lib/google-actions";
+
+// La page calcule la semaine a partir de `new Date()` et lit le stockage : sans
+// rendu dynamique, Next la prerendait au build et servait pour toujours la
+// semaine, les rappels et les concerts figes a cette date.
+export const dynamic = "force-dynamic";
 import { CancelIntentionButton } from "./CancelIntention";
 
 type WeekItem = {

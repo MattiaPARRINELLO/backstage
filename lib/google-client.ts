@@ -165,6 +165,14 @@ export async function isGoogleLinked(type: GoogleAccountType): Promise<boolean> 
   return !!tokens?.refresh_token;
 }
 
+/**
+ * Un jeton existe-t-il, meme sans refresh_token ? Les routes de lecture s'en
+ * servent pour repondre « compte non lie » sans lever d'erreur 500.
+ */
+export async function hasGoogleTokens(type: GoogleAccountType): Promise<boolean> {
+  return (await loadTokens(type)) !== null;
+}
+
 // ---------------------------------------------------------------------------
 // Échange du code OAuth — fetch direct avec timeout ferme.
 // google-auth-library (getToken) ne pose AUCUN timeout : sur un hébergeur

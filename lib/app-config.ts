@@ -2,6 +2,7 @@ import path from "path";
 import { readJsonSafe } from "./storage-core";
 import { mutateJson } from "./storage-core";
 import { fetchAvailableModels, peekAvailableModels, warmModelCatalog } from "./ai-providers/models";
+import { MOCK_CODE_MODEL, MOCK_MODEL } from "./ai-providers/mock";
 
 /** Catalogue des modules distribues depuis `mprnl/BS-modules` (issue #271). */
 export const DEFAULT_MODULE_CATALOG_URL =
@@ -33,6 +34,7 @@ export interface AppConfig {
 
 const CONFIG_FILENAME = "config.json";
 const CONFIG_PATH = path.join(process.cwd(), "data", CONFIG_FILENAME);
+const MOCK_MODELS = new Set([MOCK_MODEL, MOCK_CODE_MODEL]);
 
 const defaultConfig: AppConfig = {
   models: {
@@ -240,8 +242,14 @@ export async function healConfiguredModels(): Promise<void> {
   const available = peekAvailableModels();
   if (!available) return;
 
+  // Un catalogue qui ne contient que les modeles factices signifie que le vrai
+  // provider n'a pas repondu (repli). On ne remplace jamais les modeles reels
+  // par les mocks : la panne reseau est peut-etre passagere.
+  const realModels = available.filter((model) => !MOCK_MODELS.has(model));
+  if (realModels.length === 0) return;
+
   const config = await getConfig();
-  const usable = usableModels(available);
+  const usable = usableModels(realModels);
   const updates: Partial<AppConfig["models"]> = {};
   const fields: ModelField[] = ["general", "generalAlt", "code", "titleModel"];
   for (const field of fields) {

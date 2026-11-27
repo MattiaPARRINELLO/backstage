@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchGoogleCalendarEvents, createGoogleCalendarEvent, updateGoogleCalendarEvent, deleteGoogleCalendarEvent } from "@/lib/google-actions";
+import { hasGoogleTokens } from "@/lib/google-client";
 import { getServerCached, setServerCached, invalidateServerCache } from "@/lib/server-cache";
 import { safeErrorMessage } from "@/lib/utils";
 import type { GoogleCalendarEvent as CalendarEventItem } from "@/lib/types";
@@ -24,16 +25,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "timeMin et timeMax doivent être des dates valides" }, { status: 400 });
     }
 
+    // Compte non lie : etat normal, pas une erreur serveur.
+    if (!(await hasGoogleTokens("calendar"))) {
+      return NextResponse.json({ linked: false, events: [] });
+    }
+
     const cacheKey = `${CALENDAR_LIST_CACHE_KEY}:${timeMin}:${timeMax}`;
     const cached = getServerCached<{ events: CalendarEventItem[] }>(cacheKey);
     if (cached) {
-      return NextResponse.json(cached);
+      return NextResponse.json({ linked: true, ...cached });
     }
 
     const events = await fetchGoogleCalendarEvents(timeMin, timeMax);
     const response = { events };
     setServerCached(cacheKey, response, CALENDAR_LIST_TTL_MS);
-    return NextResponse.json(response);
+    return NextResponse.json({ linked: true, ...response });
   } catch (err) {
     console.error("Calendar GET error:", err);
     return NextResponse.json({ error: safeErrorMessage(err) }, { status: 500 });

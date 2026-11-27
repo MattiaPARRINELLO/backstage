@@ -300,6 +300,55 @@ describe("fetchGmailThreads — fils complets", () => {
     expect(threads.map((t) => t.id)).toEqual(["t1"]);
   });
 
+  it("retente un 403 de quota Gmail (unites par minute)", async () => {
+    let threadCalls = 0;
+    const routes: HttpDoubleRoute[] = [
+      {
+        match: /^https:\/\/gmail\.googleapis\.com\/gmail\/v1\/users\/me\/threads/,
+        response: (input) => {
+          if (input.includes("/threads?")) {
+            return jsonResponse({ threads: [{ id: "t1" }] });
+          }
+          threadCalls += 1;
+          if (threadCalls === 1) {
+            return jsonResponse(
+              {
+                error: {
+                  code: 403,
+                  message:
+                    "Quota exceeded for quota metric 'Total Query Cost' and limit 'Units per minute per user' of service 'gmail.googleapis.com'.",
+                },
+              },
+              { status: 403, headers: { "retry-after": "0" } }
+            );
+          }
+          return jsonResponse({
+            id: "t1",
+            messages: [
+              {
+                id: "m1",
+                threadId: "t1",
+                labelIds: ["INBOX"],
+                payload: {
+                  mimeType: "text/plain",
+                  headers: [{ name: "Date", value: "Tue, 10 Nov 2026 09:00:00 +0000" }],
+                  body: { data: b64("corps") },
+                },
+              },
+            ],
+          });
+        },
+      },
+    ];
+
+    const threads = await withHttpDouble(routes, () =>
+      fetchGmailThreads("photo", 1)
+    );
+
+    expect(threadCalls).toBe(2);
+    expect(threads.map((t) => t.id)).toEqual(["t1"]);
+  });
+
   it("ne lit pas plus de quatre fils en parallele", async () => {
     const ids = Array.from({ length: 12 }, (_, index) => `t${index}`);
     let inFlight = 0;

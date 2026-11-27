@@ -1076,7 +1076,10 @@ modèle de conversation : un module demande `ctx.ai.json`, le noyau sert Groq si
 
 `modules/accreditations/tools.ts` interroge Gmail en trois passes (termes
 précis, envois récents non filtrés, termes larges sur 12 à 24 mois), fusionne
-les fils par identifiant et plafonne à 200. `modules/accreditations/extraction.ts`
+les fils par identifiant et plafonne à 20 fils. Gmail facture 10 unités par fil
+complet avec 250 unités par minute et par utilisateur : trois listes (30 unités)
+et vingt fils (200 unités) tiennent sous le plafond, un scan plus large reçoit
+un 403 « Quota exceeded ». `modules/accreditations/extraction.ts`
 envoie les fils par lots de 10 à `ctx.ai.json`, retire l'historique cité avant
 troncature et signale les messages de l'utilisateur (label `SENT`, donc
 `fromMe`) pour distinguer une demande envoyée d'une réponse. Un lot illisible

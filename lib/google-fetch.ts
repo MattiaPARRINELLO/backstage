@@ -13,17 +13,18 @@ export type GoogleFetchOptions = { method?: HttpMethod; body?: string };
 
 const GOOGLE_FETCH_TIMEOUT_MS = 20_000;
 
-// Gmail applique un quota par utilisateur (250 unites/seconde). Un scan qui
-// demande 400 fils en parallele depasse ce plafond et recoit des 429 que rien
-// ne rattrapait : le scan s'arretait a mi-parcours. On retente donc les 429 et
-// les 403 de quota en respectant `Retry-After`.
-const QUOTA_MAX_ATTEMPTS = 4;
-const QUOTA_MAX_WAIT_MS = 20_000;
+// Gmail applique un quota de 250 unites par minute et par utilisateur. Un scan
+// qui demande 200 fils complets (10 unites chacun) depasse ce plafond et recoit
+// un 403 « Quota exceeded ... Units per minute per user ». On retente les 403
+// et 429 de quota en respectant `Retry-After`, avec une attente par defaut
+// alignee sur la fenetre d'une minute.
+const QUOTA_MAX_ATTEMPTS = 3;
+const QUOTA_MAX_WAIT_MS = 60_000;
 
 function isQuotaError(status: number, body: string): boolean {
   if (status === 429) return true;
   if (status !== 403) return false;
-  return /rateLimitExceeded|userRateLimitExceeded|quotaExceeded|dailyLimitExceeded/i.test(
+  return /quota exceeded|rate limit exceeded|user rate limit|daily limit|units per minute|rateLimitExceeded|userRateLimitExceeded|quotaExceeded|dailyLimitExceeded/i.test(
     body
   );
 }
@@ -40,7 +41,8 @@ function retryDelayMs(response: Response, attempt: number): number {
       return Math.min(Math.max(date - Date.now(), 0), QUOTA_MAX_WAIT_MS);
     }
   }
-  return Math.min(500 * 2 ** attempt, 8_000) + Math.floor(Math.random() * 250);
+  // Pas d'en-tete : le quota est par minute, on attend la fenetre complete.
+  return Math.min(60_000 * 2 ** attempt, QUOTA_MAX_WAIT_MS);
 }
 
 function sleep(ms: number): Promise<void> {

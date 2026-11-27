@@ -16,19 +16,28 @@ vi.mock("@/lib/storage-core", () => ({
 
 const mockPeekAvailableModels = vi.fn<() => string[] | null>();
 const mockWarmModelCatalog = vi.fn();
+const mockFetchAvailableModels = vi.fn<() => Promise<string[]>>();
 vi.mock("@/lib/ai-providers/models", () => ({
   peekAvailableModels: mockPeekAvailableModels,
   warmModelCatalog: mockWarmModelCatalog,
+  fetchAvailableModels: mockFetchAvailableModels,
 }));
 
-const { getConfig, updateConfig, getConfigCachePath, clearConfigCache, getModel } = await import("@/lib/app-config");
+const {
+  getConfig,
+  updateConfig,
+  getConfigCachePath,
+  clearConfigCache,
+  getModel,
+  healConfiguredModels,
+} = await import("@/lib/app-config");
 
 const defaultConfig = {
   models: {
-    general: "deepseek-v4.1-flash",
+    general: "glm-5.3",
     generalAlt: "qwen3.8-max",
     code: "qwen4-max",
-    titleModel: "deepseek-v4.1-flash",
+    titleModel: "glm-5.3-flash",
   },
   llm: { temperature: 0.7, maxTokens: 4096 },
   features: { dailyBrief: true, webSearch: true },
@@ -98,15 +107,25 @@ describe("config", () => {
   it("getModel retourne general et generalAlt pour le contexte general", async () => {
     vi.mocked(readJsonSafe).mockResolvedValue({});
     const result = await getModel("general");
-    expect(result.primary).toBe("deepseek-v4.1-flash");
+    expect(result.primary).toBe("glm-5.3");
     expect(result.alt).toBe("qwen3.8-max");
   });
 
   it("getModel remplace un modele configure disparu du provider", async () => {
     vi.mocked(readJsonSafe).mockResolvedValue({ models: { general: "kimi-k2.6" } });
-    mockPeekAvailableModels.mockReturnValue(["deepseek-v4.1-flash", "qwen3.8-max"]);
+    mockMutateJson.mockImplementation(async (_file, fallback, mutator) => {
+      const data = structuredClone(fallback);
+      const res = mutator(data);
+      return (res ?? data) as unknown;
+    });
+    mockPeekAvailableModels.mockReturnValue(["glm-5.3", "qwen3.8-max"]);
     const result = await getModel("general");
-    expect(result.primary).toBe("deepseek-v4.1-flash");
+    expect(result.primary).toBe("glm-5.3");
+    expect(mockMutateJson).toHaveBeenCalledWith(
+      "config.json",
+      expect.anything(),
+      expect.any(Function)
+    );
   });
 
   it("getModel garde le modele configure quand le catalogue est froid", async () => {
@@ -115,5 +134,46 @@ describe("config", () => {
     const result = await getModel("general");
     expect(result.primary).toBe("kimi-k2.6");
     expect(mockWarmModelCatalog).toHaveBeenCalled();
+  });
+
+  it("healConfiguredModels remplace les modeles morts quand le catalogue repond", async () => {
+    vi.mocked(readJsonSafe).mockResolvedValue({
+      models: {
+        general: "modele-mort",
+        generalAlt: "autre-mort",
+        code: "code-mort",
+        titleModel: "titre-mort",
+      },
+    });
+    mockMutateJson.mockImplementation(async (_file, fallback, mutator) => {
+      const data = structuredClone(fallback);
+      const res = mutator(data);
+      return (res ?? data) as unknown;
+    });
+    mockFetchAvailableModels.mockResolvedValue(["glm-5.3", "qwen3.8-max", "qwen4-max"]);
+    mockPeekAvailableModels.mockReturnValue(["glm-5.3", "qwen3.8-max", "qwen4-max"]);
+
+    await healConfiguredModels();
+
+    expect(mockMutateJson).toHaveBeenCalledWith(
+      "config.json",
+      expect.anything(),
+      expect.any(Function)
+    );
+    const config = await getConfig();
+    expect(config.models.general).toBe("glm-5.3");
+    expect(config.models.code).toBe("qwen3.8-max");
+  });
+
+  it("healConfiguredModels ne touche a rien si le catalogue est injoignable", async () => {
+    vi.mocked(readJsonSafe).mockResolvedValue({
+      models: { general: "modele-mort" },
+    });
+    mockFetchAvailableModels.mockResolvedValue([]);
+    mockPeekAvailableModels.mockReturnValue(null);
+
+    await healConfiguredModels();
+
+    expect(mockMutateJson).not.toHaveBeenCalled();
   });
 });

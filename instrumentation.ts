@@ -32,5 +32,13 @@ export async function register() {
     const { registry } = await import("./lib/kernel/registry");
     const { startScheduler } = await import("./lib/notification-scheduler");
     startScheduler(registry.jobs);
+
+    // Repare en arriere-plan une configuration dont un modele a disparu du
+    // catalogue. Ne bloque pas le demarrage : si le provider repond, le
+    // premier tour de chat et le brief du matin partent deja avec un modele
+    // vivant, sans repasser par les reglages.
+    void import("./lib/app-config")
+      .then(({ healConfiguredModels }) => healConfiguredModels())
+      .catch((err) => console.warn("[config] Reparation des modeles impossible", err));
   }
 }

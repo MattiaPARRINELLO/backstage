@@ -2,7 +2,7 @@ import type { ModuleContext } from "@backstage/module-kit";
 
 import { chatCompletion } from "@/lib/ai-providers";
 import { groqJson, groqJsonDelayMs, isGroqConfigured } from "@/lib/ai-providers/groq";
-import { getConfig } from "@/lib/app-config";
+import { getModel } from "@/lib/app-config";
 import {
   fetchGmailMessage,
   fetchGmailThread,
@@ -51,14 +51,14 @@ export function createModuleContext(
       // ne choisit ni le fournisseur ni le cout d'un appel.
       jsonDelayMs: groqJsonDelayMs(),
       complete: async ({ system, prompt, maxChars = 2000 }) => {
-        const config = await getConfig();
+        const { primary: model } = await getModel("general");
         const messages = system
           ? [
               { role: "system" as const, content: system },
               { role: "user" as const, content: prompt },
             ]
           : [{ role: "user" as const, content: prompt }];
-        const result = await chatCompletion(config.models.general, messages, []);
+        const result = await chatCompletion(model, messages, []);
         return result.content.slice(0, maxChars).trim();
       },
       // Tache courte et structuree : Groq quand il est configure, sinon le
@@ -68,9 +68,9 @@ export function createModuleContext(
           const raw = await groqJson(system, prompt);
           return raw.slice(0, maxChars).trim();
         }
-        const config = await getConfig();
+        const { primary: model } = await getModel("general");
         const result = await chatCompletion(
-          config.models.general,
+          model,
           [
             { role: "system" as const, content: system },
             { role: "user" as const, content: prompt },

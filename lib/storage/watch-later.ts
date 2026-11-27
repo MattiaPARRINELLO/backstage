@@ -111,9 +111,8 @@ export async function autoSummarize(url: string, title: string): Promise<{ summa
     if (!text) return { summary: "", tags: [] };
 
     const { chatCompletion } = await import("../ai-providers");
-    const { getConfig } = await import("../app-config");
-    const config = await getConfig();
-    const model = config.models.general;
+    const { getModel } = await import("../app-config");
+    const { primary: model } = await getModel("general");
 
     const result = await chatCompletion(
       model,

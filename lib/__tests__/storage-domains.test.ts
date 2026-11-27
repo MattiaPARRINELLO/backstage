@@ -8,8 +8,12 @@ vi.mock("@/lib/ai-providers", () => ({
 }));
 vi.mock("@/lib/app-config", () => ({
   getConfig: vi.fn().mockResolvedValue({
-    models: { generalAlt: "deepseek-v4-flash" },
+    models: { generalAlt: "glm-5.3" },
     llm: { temperature: 0, maxTokens: 128 },
+  }),
+  getModel: vi.fn().mockResolvedValue({
+    primary: "glm-5.3",
+    alt: "qwen3.8-max",
   }),
 }));
 // isSafeFetchUrl fait un lookup DNS réel : mocké pour garder les tests

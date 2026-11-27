@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const storage = { logActivity: vi.fn() };
 const web = { isSafeFetchUrl: vi.fn(), safeFetchText: vi.fn() };
 const ai = { chatCompletion: vi.fn() };
-const appConfig = { getConfig: vi.fn() };
+const appConfig = { getConfig: vi.fn(), getModel: vi.fn() };
 const googleActions = {
   fetchGmailThreads: vi.fn(),
   fetchGmailThread: vi.fn(),
@@ -23,7 +23,10 @@ const { createModuleContext } = await import("@/lib/kernel/context");
 describe("contexte de module", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    appConfig.getConfig.mockResolvedValue({ models: { general: "modele-general" } });
+    appConfig.getModel.mockResolvedValue({
+      primary: "modele-general",
+      alt: "modele-general",
+    });
   });
 
   it("journalise l'activite par le journal du noyau", async () => {
@@ -67,7 +70,7 @@ describe("contexte de module", () => {
       maxChars: 10,
     });
     expect(text).toBe("a".repeat(10));
-    expect(appConfig.getConfig).toHaveBeenCalled();
+    expect(appConfig.getModel).toHaveBeenCalled();
     expect(ai.chatCompletion).toHaveBeenCalledWith(
       "modele-general",
       [

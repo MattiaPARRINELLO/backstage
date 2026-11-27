@@ -60,8 +60,8 @@ export function getAnthropicClientConfig(sessionId?: string) {
 // vraie liste). Un identifiant mort ici ne coute rien tant que le provider
 // repond, mais autant n'y laisser que des modeles verifies vivants.
 const OPENAI_MODELS: readonly string[] = [
-  "deepseek-v4.1-flash",
   "glm-5.3",
+  "glm-5.3-flash",
   "mimo-v2.6-pro",
   "hy4",
 ];

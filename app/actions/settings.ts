@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { actionInput } from "@/lib/action";
 import { AppError } from "@/lib/errors";
-import { getConfig, updateConfig } from "@/lib/app-config";
+import { getConfig, getModel, updateConfig } from "@/lib/app-config";
 import { getSubscriptions } from "@/lib/push-subscriptions";
 import { fetchAvailableModels } from "@/lib/ai-providers/models";
 
@@ -24,11 +24,18 @@ export async function loadRuntimeInfo(): Promise<{
     getSubscriptions(),
     fetchAvailableModels(),
   ]);
+  // `getModel` remplace et persiste un identifiant retire par le provider :
+  // ouvrir les reglages suffit donc a reparer une config laissee avec un
+  // modele mort, sans erreur au moment d'enregistrer.
+  const [general, code] = await Promise.all([
+    getModel("general"),
+    getModel("code"),
+  ]);
   return {
     models: {
-      general: config.models.general,
-      generalAlt: config.models.generalAlt,
-      code: config.models.code,
+      general: general.primary,
+      generalAlt: general.alt,
+      code: code.primary,
     },
     availableModels,
     features: config.features,

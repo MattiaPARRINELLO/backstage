@@ -8,15 +8,6 @@ import path from "path";
 let dataDirOverride: string | null = null;
 
 /**
- * Repertoire par defaut, calcule une seule fois a partir d'une expression
- * statique. Turbopack trace les acces `fs` en analysant leurs chemins : un
- * `path.resolve(<variable>)` ici lui faisait tracer tout le depot dans
- * `.next/standalone` (#304). La redirection de test est resolue dans
- * `setDataDir`, hors du chemin trace.
- */
-const DEFAULT_DATA_DIR = path.join(process.cwd(), "data");
-
-/**
  * Redirige le repertoire de donnees, ou revient a `process.cwd()/data` avec
  * `null`. Utilise par le contrat de test (`withTempDataDir`) pour isoler les
  * ecritures d'un module.
@@ -31,7 +22,7 @@ export function getDataDirOverride(): string | null {
 }
 
 function dataDir(): string {
-  return dataDirOverride ?? DEFAULT_DATA_DIR;
+  return dataDirOverride ?? path.join(process.cwd(), "data");
 }
 
 /**

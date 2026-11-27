@@ -23,6 +23,25 @@ const nextConfig: NextConfig = {
       "./node_modules/@img/**/*",
     ],
   },
+  // Defense en profondeur du correctif #304 : le stockage de donnees reste un
+  // acces `fs` dynamique, donc Turbopack peut tracer des dossiers du depot qui
+  // ne servent jamais au runtime. Sans ces exclusions, `.next/standalone`
+  // embarquait `.git`, `e2e/`, `docs/` et `android/` (~190 Mo a l'origine).
+  outputFileTracingExcludes: {
+    // `**` couvre les routes ; `instrumentation` a un nom de trace hors route,
+    // seul point d'entree ou `docs/` etait encore embarque.
+    "**": [
+      "./.git",
+      "./.git/**",
+      "./.github/**",
+      "./e2e/**",
+      "./test-results/**",
+      "./coverage/**",
+      "./docs/**",
+      "./android/**",
+    ],
+    instrumentation: ["./docs/**"],
+  },
   // Le fichier Digital Asset Links doit vivre à la racine exacte
   // /.well-known/assetlinks.json : la route vit dans app/api/assetlinks et on la
   // réécrit ici (un dossier `.well-known` n'est pas fiable côté App Router).

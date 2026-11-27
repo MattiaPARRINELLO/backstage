@@ -12,7 +12,21 @@ import {
 import { clock, coursePayload, remainingMinutes } from "./notification-payloads";
 
 /** Cartes de cours : postees 1 h avant, mises a jour chaque minute, fermees au debut. */
-export async function checkScheduleNotifs(): Promise<void> {
+let scheduleCheck: Promise<void> | null = null;
+
+// Le cron cPanel et le scheduler interne appellent tous les deux ce controle
+// chaque minute. Sans verrou, les deux lisaient le registre avant que l'autre
+// n'ecrive et postaient la meme carte deux fois ; l'un des deux envois pouvait
+// aussi consommer le quota avant l'autre.
+export function checkScheduleNotifs(): Promise<void> {
+  if (scheduleCheck) return scheduleCheck;
+  scheduleCheck = runScheduleCheck().finally(() => {
+    scheduleCheck = null;
+  });
+  return scheduleCheck;
+}
+
+async function runScheduleCheck(): Promise<void> {
   try {
     const now = Date.now();
     const courses = await getCourses();

@@ -31,8 +31,10 @@ export default defineModule({
         const { checkScheduleNotifs, syncScheduleIfStale } = await import(
           "@/lib/notification-schedule"
         );
-        await checkScheduleNotifs();
+        // Synchroniser d'abord : après une nuit, l'EDT peut être périmé et la
+        // notification de 7 h doit voir les cours du jour, pas ceux de la veille.
         await syncScheduleIfStale();
+        await checkScheduleNotifs();
       },
     },
   ],

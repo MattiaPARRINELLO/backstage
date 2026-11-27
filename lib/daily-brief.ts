@@ -12,6 +12,27 @@ interface DailyBriefsData {
   briefs: DailyBrief[];
 }
 
+type BriefMessages = Parameters<typeof chatCompletion>[1];
+
+// Le brief est une tache du matin : un modele principal en panne ne doit pas
+// le faire disparaitre. Le secours n'est appele qu'en cas d'echec averé.
+async function completeBrief(
+  primary: string,
+  alt: string,
+  messages: BriefMessages
+) {
+  try {
+    return await chatCompletion(primary, messages, []);
+  } catch (error) {
+    if (alt === primary) throw error;
+    console.warn(
+      `[daily-brief] modele ${primary} en echec, repli sur ${alt}`,
+      error
+    );
+    return chatCompletion(alt, messages, []);
+  }
+}
+
 export async function generateDailyBrief(): Promise<string | null> {
   try {
     const config = await getConfig();
@@ -113,19 +134,17 @@ export async function generateDailyBrief(): Promise<string | null> {
 
     // Meme resolution que le chat : un identifiant de modele retire par le
     // provider ne doit pas condamner le brief (400 « Model is unavailable »).
-    const { primary: model } = await getModel("general");
-    const result = await chatCompletion(
-      model,
-      [
-        {
-          role: "system",
-          content:
-            "Tu es Backstage, l'assistant personnel de Mattia. Rédige le brief de sa journée en français, en t'adressant directement à lui à la deuxième personne du singulier (« tu ») ; n'utilise jamais son prénom ni la troisième personne. Objectif : le maximum d'informations utiles. Tu peux utiliser du markdown : une courte phrase d'introduction, puis des listes à puces ou un tableau quand c'est plus lisible (cours et créneaux, rappels, emails). Cite systématiquement les heures, les salles et les lieux, nomme les concerts et les rappels avec leur heure, la météo et les emails qui méritent son attention. N'omets aucun élément fourni, n'invente rien, et ne mentionne pas les rubriques sans données. Si des cours sont prévus, commence par l'heure et la salle du prochain cours. Si la journée est vide, une seule phrase suffit.",
-        },
-        { role: "user", content: prompt },
-      ],
-      []
-    );
+    // Si le principal echoue (panne, quota), le secours prend le relais : un
+    // brief manque un matin sur deux etait plus couteux qu'un second appel.
+    const { primary, alt } = await getModel("general");
+    const result = await completeBrief(primary, alt, [
+      {
+        role: "system",
+        content:
+          "Tu es Backstage, l'assistant personnel de Mattia. Rédige le brief de sa journée en français, en t'adressant directement à lui à la deuxième personne du singulier (« tu ») ; n'utilise jamais son prénom ni la troisième personne. Objectif : le maximum d'informations utiles. Tu peux utiliser du markdown : une courte phrase d'introduction, puis des listes à puces ou un tableau quand c'est plus lisible (cours et créneaux, rappels, emails). Cite systématiquement les heures, les salles et les lieux, nomme les concerts et les rappels avec leur heure, la météo et les emails qui méritent son attention. N'omets aucun élément fourni, n'invente rien, et ne mentionne pas les rubriques sans données. Si des cours sont prévus, commence par l'heure et la salle du prochain cours. Si la journée est vide, une seule phrase suffit.",
+      },
+      { role: "user", content: prompt },
+    ]);
 
     const summary = result.content.trim() || "Aucun élément notable aujourd'hui.";
 

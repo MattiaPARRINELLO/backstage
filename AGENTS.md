@@ -22,7 +22,8 @@ Ce fichier ne garde que les règles qui font casser le build ou la prod.
 ## Règles d'or
 
 1. **`proxy.ts` protège tout par défaut.** Une nouvelle route est privée sauf
-   ajout explicite dans `PUBLIC_PATHS` / `PUBLIC_API_PREFIXES`.
+   ajout explicite dans `PUBLIC_PATHS` / `PUBLIC_API_PREFIXES`. La vitrine
+   (`/`, `/en`) reste publique, mais une session valide renvoie vers `/chat`.
 2. **Server Actions : donnée brute + `throw`.** Pas de wrapper `{ ok, error }`.
 3. **`requireSession()` en première ligne** de chaque Server Action.
 4. **Bun uniquement** : `bun run <script>`, jamais `npm`/`yarn`/`bun build`.

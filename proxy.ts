@@ -55,6 +55,10 @@ const PUBLIC_API_PREFIXES = [
   "/api/demo",
 ];
 
+// Vitrine publique. Un visiteur deja connecte n'en a pas besoin : la racine le
+// renvoie dans le chat plutot que de lui resservir la landing.
+const HOME_PATHS = ["/", "/en"];
+
 function extractRoute(pathname: string): string {
   // Client-side navigation data: _next/data/<buildId>/<route>.json or .rsc
   const match = pathname.match(/^\/_next\/data\/[^/]+\/(.+)\.(json|rsc)$/);
@@ -93,6 +97,17 @@ function isPublicPath(pathname: string): boolean {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (HOME_PATHS.includes(pathname)) {
+    const token = request.cookies.get(SESSION_COOKIE)?.value;
+    if (token) {
+      const payload = await verifyJwt<{ sub: string }>(token, "session");
+      if (payload) {
+        return withRequestId(request, NextResponse.redirect(new URL("/chat", request.url)));
+      }
+    }
+    return withRequestId(request, NextResponse.next());
+  }
 
   if (isPublicPath(pathname)) {
     return withRequestId(request, NextResponse.next());

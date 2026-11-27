@@ -97,7 +97,9 @@ async function collectThreads(
 ): Promise<{ threads: GmailThread[]; candidates: number }> {
   // Les groupes partent l'un apres l'autre : chacun liste puis lit ses fils
   // complets (10 unites de quota par fil). Trois groupes en parallele
-  // multipliaient la rafale par trois et declenchaient le quota Gmail.
+  // multipliaient la rafale par trois et declenchaient le quota Gmail. Le
+  // nombre de candidats reste mesure sur les trois groupes, pour annoncer ce
+  // que le plafond laisse de cote.
   const groups = [
     await mail.listThreads(PRECISE_QUERY, MAX_THREADS),
     await mail.listThreads(SENT_QUERY, Math.floor(MAX_THREADS / 2)),

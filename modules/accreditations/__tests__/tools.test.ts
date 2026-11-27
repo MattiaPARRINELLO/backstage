@@ -356,7 +356,7 @@ describe("outil scan des accreditations", () => {
     assertToolError(result, /Gmail indisponible/);
   });
 
-  it("annonce le plafond quand il y a plus de fils candidats que le scan n'en traite", async () => {
+  it("borne le scan au budget Gmail et annonce le plafond", async () => {
     const makeThreads = (prefix: string, count: number) =>
       Array.from({ length: count }, (_, index) =>
         thread(`${prefix}${index}`, "Accreditation", "Demande de photos")
@@ -374,7 +374,10 @@ describe("outil scan des accreditations", () => {
     const result = await scanAccreditationsTool.run({}, ctx);
 
     assertToolOk(result);
-    expect(result.text).toContain("200 fils sur 290 candidats");
+    expect(result.text).toContain("Scan de 20 fils (plafond Gmail 20)");
+    // Le premier groupe remplit le budget : les deux autres ne partent pas.
+    expect(mail.listThreads).toHaveBeenCalledTimes(1);
+    expect(mail.listThreads).toHaveBeenCalledWith(expect.any(String), 20);
   });
 
   it("refuse un second scan simultane et libere le verrou ensuite", async () => {

@@ -76,8 +76,14 @@ const BROAD_QUERY = `(${BROAD_TERMS.join(" OR ")}) newer_than:12m`;
 /** Le courrier envoye recent, meme sans mot-cle : une demande est un envoi. */
 const SENT_QUERY = "in:sent newer_than:12m";
 
-/** Plafond de fils analyses par scan : borne la duree et le quota Groq. */
-const MAX_THREADS = 200;
+/**
+ * Plafond de fils analyses par scan.
+ *
+ * Gmail facture 10 unites par fil complet, avec 250 unites par minute et par
+ * utilisateur. Trois listes (30 unites) plus vingt fils (200 unites) tiennent
+ * sous le plafond ; au-dela, l'API repond 403 « Quota exceeded ».
+ */
+const MAX_THREADS = 20;
 const BATCH_SIZE = 10;
 
 // Deux scans simultanes (chat + ecran) multiplieraient la consommation du
@@ -94,28 +100,34 @@ let scanInFlight = false;
  */
 async function collectThreads(
   mail: ModuleMail
-): Promise<{ threads: GmailThread[]; candidates: number }> {
-  // Les groupes partent l'un apres l'autre : chacun liste puis lit ses fils
-  // complets (10 unites de quota par fil). Trois groupes en parallele
-  // multipliaient la rafale par trois et declenchaient le quota Gmail. Le
-  // nombre de candidats reste mesure sur les trois groupes, pour annoncer ce
-  // que le plafond laisse de cote.
-  const groups = [
-    await mail.listThreads(PRECISE_QUERY, MAX_THREADS),
-    await mail.listThreads(SENT_QUERY, Math.floor(MAX_THREADS / 2)),
-    await mail.listThreads(BROAD_QUERY, Math.floor(MAX_THREADS / 2)),
+): Promise<{ threads: GmailThread[]; capped: boolean }> {
+  // Les groupes partent l'un apres l'autre et s'arretent des que le budget
+  // Gmail est consomme : chaque fil complet coute 10 unites, et lire les trois
+  // groupes entiers depassait les 250 unites par minute. Les termes precis
+  // gardent la priorite, faute de budget pour tout lire.
+  const queries: readonly (readonly [string, number])[] = [
+    [PRECISE_QUERY, MAX_THREADS],
+    [SENT_QUERY, Math.floor(MAX_THREADS / 2)],
+    [BROAD_QUERY, Math.floor(MAX_THREADS / 2)],
   ];
 
   const seen = new Set<string>();
   const threads: GmailThread[] = [];
-  for (const group of groups) {
+  for (const [query, cap] of queries) {
+    const remaining = MAX_THREADS - threads.length;
+    if (remaining <= 0) break;
+    const group = await mail.listThreads(query, Math.min(cap, remaining));
     for (const thread of group) {
       if (seen.has(thread.id)) continue;
       seen.add(thread.id);
       threads.push(thread);
     }
   }
-  return { threads: threads.slice(0, MAX_THREADS), candidates: threads.length };
+
+  return {
+    threads: threads.slice(0, MAX_THREADS),
+    capped: threads.length >= MAX_THREADS,
+  };
 }
 
 interface ScanCounters {
@@ -251,7 +263,7 @@ export const scanAccreditationsTool = defineTool({
       }
       scanInFlight = true;
 
-      const { threads, candidates } = await collectThreads(mail);
+      const { threads, capped } = await collectThreads(mail);
       if (threads.length === 0) return toolEmpty("Aucun fil d'accreditation trouve.");
 
       const existing = await getAccreditations();
@@ -310,10 +322,9 @@ export const scanAccreditationsTool = defineTool({
         parts.push(`${counters.skippedReview} non remplacee(s) car a verifier`);
       }
       if (counters.failed > 0) parts.push(`${counters.failed} non analysee(s)`);
-      const header =
-        candidates > threads.length
-          ? `Scan de ${threads.length} fils sur ${candidates} candidats (plafond ${MAX_THREADS})`
-          : `Scan de ${threads.length} fils`;
+      const header = capped
+        ? `Scan de ${threads.length} fils (plafond Gmail ${MAX_THREADS})`
+        : `Scan de ${threads.length} fils`;
       return toolOk(`${header} : ${parts.join(", ")}.`);
     } catch (error) {
       return toolError(

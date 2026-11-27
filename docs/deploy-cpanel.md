@@ -70,9 +70,11 @@ version en place dans `backstage-releases/` (5 dernières, hors `node_modules` e
 bundle → durcissement des permissions (`data/` en 700, fichiers 600) →
 redémarrage.
 
-**`data/` n'est jamais écrasé** : seuls `config.json` et
-`firebase-service-account.json` sont synchronisés, le reste des JSON est exclu
-du rsync.
+**`data/` n'est jamais écrasé** : `config.json` (réglages choisis sur le
+serveur) reste la propriété de la production, seul
+`firebase-service-account.json` est synchronisé, le reste des JSON est exclu du
+rsync. Un `config.json` local ne doit donc jamais remplacer celui du serveur :
+c'est ce qui réinitialisait les modèles à chaque déploiement.
 
 ## 4. Premier login
 

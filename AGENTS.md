@@ -319,9 +319,7 @@ VAPID, `CRON_SECRET`/`CRON_BASE_URL`, `CESAR_*`, `GOOGLE_TESTING_EXPIRY`,
 un pool de comptes, `GROQ_MODEL`, `GROQ_BASE_URL` et `GROQ_SCAN_DELAY_MS`
 optionnels),
 `AI_PROVIDER=mock` (fournisseur IA factice),
-`DEV_AUTH_BYPASS=true` (session locale hors production),
-`DATA_DIR` (dossier des donnees JSON ; `bun run start` le fixe a la racine,
-sinon `<cwd>/data`).
+`DEV_AUTH_BYPASS=true` (session locale hors production).
 Déploiement : `.deploy.env.example`.
 
 Contrat du provider IA (session header, baseURL des deux SDK, modèles qui

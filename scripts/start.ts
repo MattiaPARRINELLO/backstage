@@ -8,6 +8,7 @@
  * lancer le serveur.
  */
 import { spawn } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 
 import { config as loadEnv } from "dotenv";
@@ -15,6 +16,39 @@ import { config as loadEnv } from "dotenv";
 import { hasStandaloneServer, prepareStandaloneAssets } from "./standalone-assets";
 
 const root = process.cwd();
+const dataDir = path.join(root, "data");
+const standaloneData = path.join(root, ".next", "standalone", "data");
+
+/**
+ * Le serveur standalone fait `process.chdir(.next/standalone)` : `data/` designe
+ * alors le dossier du build, qu'un `bun run build` efface. On relie donc le
+ * dossier du standalone au vrai `data/` de la racine.
+ *
+ * Une installation deja lancee avec l'ancienne disposition a pu ecrire dans le
+ * build : on rapatrie ses fichiers avant de remplacer le dossier par le lien.
+ */
+function linkStandaloneData(): void {
+  fs.mkdirSync(dataDir, { recursive: true });
+  try {
+    if (fs.lstatSync(standaloneData).isSymbolicLink()) {
+      if (fs.realpathSync(standaloneData) === fs.realpathSync(dataDir)) return;
+      fs.unlinkSync(standaloneData);
+    } else {
+      fs.cpSync(standaloneData, dataDir, { recursive: true, force: false });
+      fs.rmSync(standaloneData, { recursive: true, force: true });
+    }
+  } catch {
+    // Dossier absent : rien a reprendre.
+  }
+  try {
+    fs.symlinkSync(dataDir, standaloneData, "dir");
+  } catch (err) {
+    console.warn(
+      "[start] lien data/ impossible : les donnees resteront dans .next/standalone/data",
+      err
+    );
+  }
+}
 
 if (!hasStandaloneServer(root)) {
   console.error(
@@ -37,16 +71,14 @@ loadEnv({ path: path.join(root, ".env.local"), override: false, quiet: true });
 
 const port = process.env.PORT || "3000";
 const hostname = process.env.HOSTNAME || "0.0.0.0";
-// Le serveur standalone fait `process.chdir(.next/standalone)` : sans chemin
-// explicite, le stockage ecrirait dans le build, qu'un `bun run build` efface.
-const dataDir = process.env.DATA_DIR || path.join(root, "data");
+linkStandaloneData();
 
 console.log(`[start] serveur standalone sur http://${hostname}:${port}`);
 console.log(`[start] donnees : ${dataDir}`);
 
 const child = spawn(process.execPath, [path.join(root, ".next", "standalone", "server.js")], {
   stdio: "inherit",
-  env: { ...process.env, PORT: port, HOSTNAME: hostname, DATA_DIR: dataDir },
+  env: { ...process.env, PORT: port, HOSTNAME: hostname },
 });
 
 child.on("exit", (code, signal) => {

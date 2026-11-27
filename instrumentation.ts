@@ -29,13 +29,6 @@ export async function register() {
       );
     }
 
-    // Le serveur standalone de Next tourne dans `.next/standalone` : sans ce
-    // chemin explicite, toutes les donnees atterriraient dans le build et un
-    // rebuild les effacerait. `scripts/start.ts` pose DATA_DIR sur la racine.
-    const { getConfig } = await import("./lib/config");
-    const { setDataDir } = await import("@backstage/module-kit/storage-core");
-    setDataDir(getConfig().DATA_DIR ?? null);
-
     const { registry } = await import("./lib/kernel/registry");
     const { startScheduler } = await import("./lib/notification-scheduler");
     startScheduler(registry.jobs);

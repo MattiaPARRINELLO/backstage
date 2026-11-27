@@ -24,10 +24,21 @@ export default function WatchLaterPage() {
 
   useEffect(() => {
     startTransition(async () => {
-      const d = await api.load();
-      setItems(d.items);
+      try {
+        const d = await api.load();
+        setItems(d.items);
+      } catch (err) {
+        toast?.show({
+          message:
+            err instanceof Error && err.message
+              ? err.message
+              : "Impossible de charger les liens.",
+          tone: "danger",
+          duration: 5000,
+        });
+      }
     });
-  }, [api]);
+  }, [api, toast]);
 
   const handleCreate = (input: {
     url: string;
@@ -36,10 +47,21 @@ export default function WatchLaterPage() {
     category?: WatchLaterCategory | undefined;
   }) => {
     startTransition(async () => {
-      const item = await api.create(input);
-      setItems((prev) => (prev ? [item, ...prev] : [item]));
-      setShowAdd(false);
-      toast?.show({ message: "Lien ajouté à À voir", tone: "success", duration: 2200 });
+      try {
+        const item = await api.create(input);
+        setItems((prev) => (prev ? [item, ...prev] : [item]));
+        setShowAdd(false);
+        toast?.show({ message: "Lien ajouté à À voir", tone: "success", duration: 2200 });
+      } catch (err) {
+        toast?.show({
+          message:
+            err instanceof Error && err.message
+              ? err.message
+              : "Impossible d'ajouter le lien.",
+          tone: "danger",
+          duration: 5000,
+        });
+      }
     });
   };
 

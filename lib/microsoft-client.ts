@@ -1,10 +1,10 @@
 import { promises as fs } from "fs";
-import path from "path";
 import { writeJsonAtomic } from "./storage";
 import { serverLog } from "./logger";
 import { getConfig } from "@/lib/config";
 import { request as httpRequest } from "@/lib/http";
 import type { MicrosoftTodoList, MicrosoftTodoTask } from "./types";
+import { dataPath } from "./storage-core";
 
 export type { MicrosoftTodoList, MicrosoftTodoTask };
 
@@ -34,7 +34,7 @@ const GRAPH_TIMEOUT_MS = 20_000;
 let refreshInFlight: Promise<MicrosoftTokens> | null = null;
 
 function tokenPath(): string {
-  return path.join(process.cwd(), "data", "microsoft-todo-token.json");
+  return dataPath("microsoft-todo-token.json");
 }
 
 function requiredEnv() {

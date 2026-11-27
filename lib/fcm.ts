@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { GoogleAuth } from "google-auth-library";
 import { listDevices, removeDevice, touchDevice } from "./fcm-devices";
 import { serverLog } from "./logger";
 import { request as httpRequest } from "@/lib/http";
+import { dataPath } from "@/lib/storage-core";
 
 /**
  * Envoi de notifications natives Android via FCM HTTP v1.
@@ -44,7 +44,7 @@ let cachedAuth: { auth: GoogleAuth; projectId: string } | null = null;
 let serviceAccountMissing = false;
 
 function serviceAccountPath(): string {
-  return path.join(process.cwd(), "data", SERVICE_ACCOUNT_FILE);
+  return dataPath(SERVICE_ACCOUNT_FILE);
 }
 
 async function getAuth(): Promise<{ auth: GoogleAuth; projectId: string } | null> {

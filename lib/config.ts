@@ -50,6 +50,10 @@ const withDefault = (defaultValue: string) =>
 const configSchema = z.object({
   // ---- Runtime ---------------------------------------------------------
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  // Dossier des donnees JSON. Absent : <cwd>/data. `scripts/start.ts` le fixe
+  // sur la racine du depot, car le serveur standalone de Next fait un chdir
+  // dans `.next/standalone` et un rebuild effacerait les donnees.
+  DATA_DIR: optional,
 
   // ---- Authentification : requise pour demarrer ------------------------
   AUTH_SECRET: optional,

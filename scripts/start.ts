@@ -37,12 +37,16 @@ loadEnv({ path: path.join(root, ".env.local"), override: false, quiet: true });
 
 const port = process.env.PORT || "3000";
 const hostname = process.env.HOSTNAME || "0.0.0.0";
+// Le serveur standalone fait `process.chdir(.next/standalone)` : sans chemin
+// explicite, le stockage ecrirait dans le build, qu'un `bun run build` efface.
+const dataDir = process.env.DATA_DIR || path.join(root, "data");
 
 console.log(`[start] serveur standalone sur http://${hostname}:${port}`);
+console.log(`[start] donnees : ${dataDir}`);
 
 const child = spawn(process.execPath, [path.join(root, ".next", "standalone", "server.js")], {
   stdio: "inherit",
-  env: { ...process.env, PORT: port, HOSTNAME: hostname },
+  env: { ...process.env, PORT: port, HOSTNAME: hostname, DATA_DIR: dataDir },
 });
 
 child.on("exit", (code, signal) => {

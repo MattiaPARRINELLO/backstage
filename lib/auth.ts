@@ -2,15 +2,15 @@ import { getConfig } from "@/lib/config";
 import { promises as fs } from "fs";
 import path from "path";
 import { writeJsonAtomic, readJsonSafe } from "./storage";
-import { mutateJson } from "./storage-core";
+import { dataPath, mutateJson } from "./storage-core";
 
-const USERS_FILE = path.join(process.cwd(), "data", "users.json");
+const USERS_FILE = dataPath("users.json");
 const USERS_FILENAME = "users.json";
 
 // Marqueur "bootstrap consommé" : le SETUP_TOKEN ne doit servir qu'une fois.
 // Une fois le premier passkey enregistré, le token est inutilisable, même s'il
 // fuit. Seul `bun run reset:passkey` réouvre le bootstrap.
-export const SETUP_CONSUMED_FILE = path.join(process.cwd(), "data", ".setup-consumed");
+export const SETUP_CONSUMED_FILE = dataPath(".setup-consumed");
 
 /**
  * Le bootstrap passkey peut-il rester ouvert sans SETUP_TOKEN ?

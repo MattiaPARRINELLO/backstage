@@ -1,5 +1,4 @@
-import path from "path";
-import { readJsonSafe } from "./storage-core";
+import { dataPath, readJsonSafe } from "./storage-core";
 import { mutateJson } from "./storage-core";
 import { fetchAvailableModels, peekAvailableModels, warmModelCatalog } from "./ai-providers/models";
 
@@ -32,7 +31,7 @@ export interface AppConfig {
 }
 
 const CONFIG_FILENAME = "config.json";
-const CONFIG_PATH = path.join(process.cwd(), "data", CONFIG_FILENAME);
+const CONFIG_PATH = dataPath(CONFIG_FILENAME);
 
 const defaultConfig: AppConfig = {
   models: {

@@ -27,6 +27,16 @@ function dataDir(): string {
     : path.join(process.cwd(), "data");
 }
 
+/** Chemin absolu dans le repertoire de donnees courant. */
+export function dataPath(...segments: string[]): string {
+  return path.join(dataDir(), ...segments);
+}
+
+/** Repertoire de donnees courant, resolu. */
+export function getDataDir(): string {
+  return dataDir();
+}
+
 function backupDir(): string {
   return path.join(dataDir(), "backups");
 }

@@ -1,7 +1,7 @@
 import { OAuth2Client, type Credentials } from "google-auth-library";
 import { promises as fs } from "fs";
-import path from "path";
 import { writeJsonAtomic } from "./storage";
+import { dataPath } from "./storage-core";
 import { invalidateServerCache } from "./server-cache";
 import { serverLog } from "./logger";
 import { getConfig } from "@/lib/config";
@@ -27,7 +27,7 @@ const HEALTH_FILE = ".google-health.json";
 type GoogleHealthFile = Partial<Record<GoogleAccountType, { brokenSinceMs?: number }>>;
 
 function tokenPath(type: GoogleAccountType): string {
-  return path.join(process.cwd(), "data", `${type}-token.json`);
+  return dataPath(`${type}-token.json`);
 }
 
 export function createOAuth2Client() {
@@ -240,7 +240,7 @@ export async function exchangeAuthorizationCode(
 async function readHealthFile(): Promise<GoogleHealthFile> {
   try {
     const raw = await fs.readFile(
-      path.join(process.cwd(), "data", HEALTH_FILE),
+      dataPath(HEALTH_FILE),
       "utf-8",
     );
     return JSON.parse(raw) as GoogleHealthFile;

@@ -75,8 +75,10 @@ export async function googleFetch<T>(
 
     if (isQuotaError(res.status, text) && attempt < QUOTA_MAX_ATTEMPTS - 1) {
       const wait = retryDelayMs(res, attempt);
+      // Ne pas journaliser l'URL : elle contient des identifiants venus de
+      // Gmail, et CodeQL la voit comme une entree utilisateur (log injection).
       console.warn(
-        `[google] quota ${res.status} sur ${url.split("?")[0]}, nouvelle tentative dans ${wait} ms`
+        `[google] quota ${res.status}, nouvelle tentative dans ${wait} ms`
       );
       await sleep(wait);
       continue;

@@ -31,12 +31,12 @@ export default async function ModulesSettingsPage() {
             href="/settings"
             className="text-[var(--t-small)] text-[var(--text-3)] hover:text-[var(--text-1)]"
           >
-            Parametres
+            Paramètres
           </Link>
           <div className="mt-4">
             <PageHeader
               title="Modules"
-              description="Voir quels modules le serveur sert vraiment, en activer, en ajouter depuis un depot git ou en retirer."
+              description="Voir quels modules le serveur sert vraiment, en activer, en ajouter depuis un dépôt git ou en retirer."
             />
           </div>
 

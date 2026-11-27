@@ -1038,7 +1038,13 @@ réécrire une liste à la main comme source de vérité :
   peut pas attendre un appel réseau ; cache froid → repli statique.
 - `lib/app-config.ts` (`getModel`, `getTitleModel`) remplace automatiquement un
   modèle configuré qui n'existe plus par un modèle vivant du catalogue déjà en
-  cache, et rafraîchit ce catalogue en arrière-plan sinon.
+  cache, rafraîchit ce catalogue en arrière-plan sinon, et **persiste** le
+  remplacement dans `data/config.json`. Au démarrage,
+  `healConfiguredModels()` répare la configuration une fois le catalogue
+  récupéré (jamais à partir du repli hors ligne).
+- Le déploiement ne synchronise plus `data/config.json` : les réglages choisis
+  sur le serveur ne sont pas écrasés par un fichier local resté avec d'anciens
+  identifiants.
 - Les constantes `OPENAI_MODELS` / `ANTHROPIC_MODELS` de
   `lib/ai-providers/config.ts` ne sont qu'un **repli hors ligne** : elles ne
   doivent contenir que des modèles vérifiés vivants.

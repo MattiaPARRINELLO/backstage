@@ -60,7 +60,18 @@ export function SettingsModels({
       await updateModels(modelSel);
       setModelMsg({ ok: true, text: "Modèles mis à jour ✓" });
     } catch (e) {
-      setModelMsg({ ok: false, text: e instanceof Error ? e.message : "Erreur" });
+      const message = e instanceof Error ? e.message : "";
+      // Next masque le message d'une Server Action en production : afficher
+      // « An error occurred in the Server Components render » n'aide personne.
+      const redacted = /Server Components render|An error occurred|digest/i.test(
+        message
+      );
+      setModelMsg({
+        ok: false,
+        text: redacted
+          ? "Le provider a refusé ce modèle. Recharge la page pour rafraîchir la liste."
+          : message || "Erreur",
+      });
     } finally {
       setModelSaving(false);
     }

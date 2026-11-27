@@ -128,6 +128,19 @@ describe("config", () => {
     );
   });
 
+  it("getModel ecarte un identifiant mort meme si le catalogue le liste encore", async () => {
+    vi.mocked(readJsonSafe).mockResolvedValue({
+      models: { general: "deepseek-v4.1-flash" },
+    });
+    mockPeekAvailableModels.mockReturnValue([
+      "deepseek-v4.1-flash",
+      "glm-5.3",
+      "qwen3.8-max",
+    ]);
+    const result = await getModel("general");
+    expect(result.primary).toBe("glm-5.3");
+  });
+
   it("getModel garde le modele configure quand le catalogue est froid", async () => {
     vi.mocked(readJsonSafe).mockResolvedValue({ models: { general: "kimi-k2.6" } });
     mockPeekAvailableModels.mockReturnValue(null);

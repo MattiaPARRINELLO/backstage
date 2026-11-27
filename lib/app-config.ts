@@ -124,6 +124,22 @@ export function clearConfigCache() {
 // on rafraichit en arriere-plan pour le tour suivant.
 type ModelField = keyof AppConfig["models"];
 
+// Identifiants confirmes morts en production, meme quand `GET /models` les
+// liste encore (cache provider en retard, ou modele global non servi a ce
+// compte). Une liste de noms ici n'est pas une source de verite : le catalogue
+// reste la reference, cette liste ne fait qu'ecarter des morts connus.
+const RETIRED_MODELS = new Set([
+  "deepseek-v4-flash",
+  "deepseek-v4.1-flash",
+  "deepseek-v4-pro",
+  "kimi-k2.7-code",
+]);
+
+function usableModels(available: readonly string[]): string[] {
+  const usable = available.filter((model) => !RETIRED_MODELS.has(model));
+  return usable.length > 0 ? usable : [...available];
+}
+
 function replacementModel(
   available: readonly string[],
   context: "general" | "code",
@@ -171,9 +187,10 @@ async function resolveAvailableModel(
     warmModelCatalog();
     return preferred;
   }
-  if (available.includes(preferred)) return preferred;
+  const usable = usableModels(available);
+  if (usable.includes(preferred)) return preferred;
 
-  const replacement = replacementModel(available, context, preferred, avoid);
+  const replacement = replacementModel(usable, context, preferred, avoid);
   if (replacement !== preferred) {
     console.warn(
       `[config] Modele indisponible chez le provider (${preferred}), repli sur ${replacement}`
@@ -225,13 +242,14 @@ export async function healConfiguredModels(): Promise<void> {
   if (!available) return;
 
   const config = await getConfig();
+  const usable = usableModels(available);
   const updates: Partial<AppConfig["models"]> = {};
   const fields: ModelField[] = ["general", "generalAlt", "code", "titleModel"];
   for (const field of fields) {
     const current = config.models[field];
-    if (available.includes(current)) continue;
+    if (usable.includes(current)) continue;
     const context = field === "code" ? "code" : "general";
-    updates[field] = replacementModel(available, context, current, updates.general);
+    updates[field] = replacementModel(usable, context, current, updates.general);
   }
   if (Object.keys(updates).length === 0) return;
 
